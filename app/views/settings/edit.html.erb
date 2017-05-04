@@ -1,0 +1,25 @@
+<% @page_title = "Bottlenose Settings" %>
+
+<%= form_tag :settings, method: :patch do %>
+  <div class="form-group">
+    <%= label_tag :site_email, "Site Email" %>
+    <%= text_field_tag :site_email, @cfg['site_email'], class: 'form-control' %>
+
+    <p>This will be used as the "from" address for email messages sent by
+    Bottlenose. It should include the domain of this site to minimize problems
+    with spam filters.</p>
+  </div>
+
+  <div class="form-group">
+    <%= label_tag :backup_login, "Backup Login" %>
+    <%= text_field_tag :backup_login, @cfg['backup_login'], class: 'form-control' %>
+
+    <p>This is the ssh login (user@host) for the remote backup server.
+    See the <a href="https://github.com/NatTuck/bottlenose/wiki/Backups">backup
+    documentation</a> for details. Leave this blank to disable backups.</p>
+  </div>
+
+  <div class="form-group">
+    <%= submit_tag "Save Settings", class: 'btn btn-primary' %>
+  </div>
+<% end %>

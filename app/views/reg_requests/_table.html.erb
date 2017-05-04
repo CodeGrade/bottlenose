@@ -1,0 +1,63 @@
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Requests</h3>
+  </div>
+
+  <table class="table table-striped">
+    <tr>
+      <th style="vertical-align: middle;">Name</th>
+      <th style="vertical-align: middle;">Role</th>
+      <th style="vertical-align: middle;">Email</th>
+      <th style="vertical-align: middle;">Note</th>
+      <th>
+        <% if requests.length > 0 %>
+          <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
+            <%= link_to course_reg_request_accept_all_path(@course), 
+                method: :delete, 
+                style: "float: unset;",
+                class: "btn btn-success btn-sm" do %>
+              <span class="glyphicon glyphicon-ok"></span>
+              <span style="padding-left: 1em;">Accept All</span>
+            <% end %><% # commenting out the whitespace, so there's no gap...
+          %><%= link_to course_reg_request_reject_all_path(@course), 
+                method: :delete,
+                style: "float: unset;",
+                data: { confirm: "Are you sure you want to reject ALL registration requests?" },
+                class: "btn btn-danger btn-sm" do %>
+              <span class="glyphicon glyphicon-remove"></span>
+              <span style="padding-left: 1em;">Reject All</span>
+            <% end %>
+          </div>
+        <% else %>
+          &nbsp;
+        <% end %>
+      </th>
+    </tr>
+
+    <% requests.each do |request| %>
+      <tr>
+        <td><%= link_to request.user.name, user_path(request.user) %></td>
+        <td><%= request.role.humanize %></td>
+        <td><%= request.user.email %></td>
+        <td><%= request.notes %></td>
+        <td>
+          <div class="btn-group pull-right" role="group">
+            <%= link_to course_reg_request_accept_path(@course, request), 
+                method: :delete, 
+                class: "btn btn-success btn-xs" do %>
+              <span class="glyphicon glyphicon-ok"></span>
+              <span style="padding-left: 0.5em;">Accept</span>
+            <% end %>
+            <%= link_to course_reg_request_reject_path(@course, request), 
+                method: :delete, 
+                data: { confirm: "Are you sure you want to reject this registration request?" },
+                class: "btn btn-danger btn-xs" do %>
+              <span class="glyphicon glyphicon-remove"></span>
+              <span style="padding-left: 0.5em;">Reject</span>
+            <% end %>
+          </div>
+        </td>
+      </tr>
+    <% end %>
+  </table>
+</div>

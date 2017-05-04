@@ -1,0 +1,23 @@
+<% cur_reg = current_user.registration_for(@course) %>
+<% @page_title = "#{@course.name} - Team ##{@team.id}" %>
+
+<p>
+    Team starts on
+    <strong><%= @team.start_date.strftime("%b %d, %Y") %></strong>
+    <% if @team.end_date %>
+        and ends the night before
+        <strong><%= @team.end_date.strftime("%b %d, %Y") %></strong>.
+    <% else %>
+        and doesn't end.
+    <% end %>
+</p>
+
+<h4>Status</h4>
+<p><%= @team.active? ? "Active" : "Inactive" %></p>
+
+<h4>Members</h4>
+<ul>
+    <% @team.users.each do |uu| %>
+        <li><%= if current_user.site_admin? || (cur_reg && cur_reg.staff?) then link_to uu.name, user_path(uu) else uu.name end %></li>
+    <% end %>
+</ul>

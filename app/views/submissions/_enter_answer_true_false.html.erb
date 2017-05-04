@@ -1,0 +1,12 @@
+<div class="form-inline">
+  <% if @answers and @answers[index]
+     value = @answers[index]["main"].capitalize
+     end %>
+  <input type="hidden" name="answers[<%= index %>][main]" id="answer_<%= index %>" <% if value %>value="<%= value %>"<% end %>>
+  <button type="button" class="answer btn btn-default <%= if value ==
+     'True' then 'active' elsif @answers and value.nil? then 'unanswered' end %>"
+          data-id="answer_<%= index %>">True</button>
+  <button type="button" class="answer btn btn-default <%= if value ==
+     'False' then 'active' elsif @answers and value.nil? then 'unanswered' end %>"
+          data-id="answer_<%= index %>">False</button>
+</div>

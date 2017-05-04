@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+Course.all.each do |course|
+  course.chapters.each do |chapter|
+    chapter.assignments.each do |assgn|
+       course.student_registrations.map {|reg| reg.user}.each do |student|
+         subs = assgn.submissions.where(user_id: student.id)
+         puts "#{assgn.name} / #{student.name} / #{subs.count}"
+       end
+    end
+  end
+end

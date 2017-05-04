@@ -1,0 +1,8 @@
+/* assignments.scss */
+.for-type .files-type { display: none; }
+.for-type .questions-type { display: none; }
+.for-type .exam-type { display: none; }
+.for-type.files-type .files-type { display: initial; }
+.for-type.questions-type .questions-type { display: initial; }
+.for-type.exam-type .exam-type { display: initial; }
+   

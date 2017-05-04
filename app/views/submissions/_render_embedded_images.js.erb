@@ -1,0 +1,27 @@
+function renderInlineImages(cm, code) {
+  var lines = $(code).text().split(/\r\n?|\n/);
+  for (var lineNo = 0; lineNo < lines.length; lineNo++) {
+    var idx = undefined;
+    var elided = 0;
+    var startIdx = 0;
+    while((idx = lines[lineNo].search(/~embed:\d+:s~/)) >= 0) {
+      startIdx = idx + elided;
+      var start = lines[lineNo].match(/~embed:(\d+):s~/);
+      var end = new RegExp("~embed:" + start[1] + ":s~(.*?\)~embed:" + start[1] + ":e~");
+      end = lines[lineNo].match(end);
+      elided += end[0].length;
+      var endIdx = startIdx + end[0].length;
+      lines[lineNo] = lines[lineNo].replace(end[0], "");
+      var img = document.createElement("img");
+      img.src = end[1];
+      img.style = "vertical-align: baseline; max-width: 50%; max-height: 50%;";
+      console.log(startIdx);
+      console.log(endIdx);
+      console.log(end[1]);
+      document.body.append(img);
+      debugger;
+      cm.markText({line: lineNo, ch: startIdx}, {line: lineNo, ch: endIdx},
+                  {replacedWith: img});
+    }
+  }
+}

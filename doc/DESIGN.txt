@@ -1,0 +1,49 @@
+
+== Data Model ==
+
+Bottlenose is about Courses and the Users who take or teach
+them.
+
+A Course is made up of several Chapters, each of which contains
+several Lessons and one Assignment. Each Lesson consists of a Video, a
+Question, and a second Video to be watched after the Question.
+
+Users who take Courses will navigate to the Lesson web page, watch the
+first Video, submit an Answer to the Question, and then optionally
+watch the second Video. At the end of the Chapter, they can download
+an Assignment, complete it and submit their answer as a Submission.
+
+Users who teach Courses have administrative control over Chapters,
+Lessons, Assignments, Videos, and Questions. They also have access to
+student Answers and Submissions, as well as to reports summarizing
+student performance.
+
+Some users are site administrators who have administrative control
+over Courses and which Users are teaching them.
+
+== Cast of Characters ==
+
+ * Ken is a site admin.
+ * Fred is a professor.
+ * Mark is a teaching assistant.
+ * Alan is a student.
+ * John is a student trying to break the program to cheat.
+
+== Core Story ==
+
+ * On a fresh install, Ken has admin access.
+ * Ken is able to create a Course with Fred as the professor.
+ * Fred is able to add Mark as another teacher for his Course.
+ * John can't access the admin pages for the course.
+ * Fred is able to add Alan and John as students.
+ * Fred is able to create a chapter with a lesson in it.
+ * Mark is able to edit the video and question for the lesson.
+ * Fred is able to set the chapter's assignment.
+ * Alan is able to answer the question.
+ * Alan is able to submit the assignment; his assignment is
+   automatically graded.
+ * John cannot access Alan's answer or submission.
+ * Fred can see a report showing that Alan has done the question
+   and assignment while John has not.
+ * John can't access that report.
+

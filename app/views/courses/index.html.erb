@@ -1,0 +1,22 @@
+<% @page_title = "Courses" %>
+
+<div class="page-header">
+  <h1>Courses</h1>
+
+  <div class="actions">
+    <% if current_user.site_admin? %>
+      <%= link_to "New Course", new_course_path, class: "btn btn-success" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <% @courses_by_term.each do |term, courses| %>
+      <% next if term.archived? %>
+      <h2><%= term.name %></h2>
+
+      <%= render 'table', courses: courses %>
+    <% end %>
+  </div>
+</div>

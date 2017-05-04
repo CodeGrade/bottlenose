@@ -1,0 +1,60 @@
+<% @page_title = "View Response" %>
+<% cur_reg = current_user.registration_for(@course) %>
+<% content_for :wide_content_before do %>
+
+<p>
+  <%= link_to "Back to submission",
+      course_assignment_submission_path(@course, @assignment, @submission) %>
+</p>
+
+<h1>Response</h1>
+
+<%= render 'submissions/sub_info' %>
+
+<% unless @answers_are_newer %>
+<h3>These responses are for an outdated submission!</h3>
+<% end %>
+
+<% end %>
+
+<% content_for :wide_content do %>
+<% if @assignment.related_assignment_id %>
+<div class="col-sm-6">
+  <div id="files-sidebar" data-spy="affix">
+    <div id="files-treeview">
+      <div id="files" class="nav treeview condensed"></div>
+    </div>
+    <div class="tab-content">
+      <%= render "files", sub_files: @submission_files %>
+    </div>
+  </div>
+  <script>
+    <%= render partial: "render_comments.js", locals: {vertical: true} %>
+  </script>
+</div>
+<% end %>
+
+<% if @assignment.related_assignment_id.nil? %>
+<script>
+  $(function() {
+  $("textarea.sourceCode").each(function(index, code) {
+    if ($(code).data("lang")) {
+      var cm = CodeMirror.fromTextArea(code, {
+        readOnly: true, indentUnit: 2,
+        mode: $(code).data("lang"),
+        theme: 'mdn-like', viewportMargin: Infinity,
+        lineNumbers: true, lineWrapping: false,
+        styleActiveLine: true
+      });
+    }
+    $(code).addClass("cm-s-mdn-like cm-s-default");
+  });
+  });
+</script>
+<div id="responses" class="form-group container">
+<% else %>
+<div id="responses" class="form-group col-sm-6">
+<% end %>
+<%= render "render_questions" %>  
+</div>
+<% end %>

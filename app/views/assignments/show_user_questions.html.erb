@@ -1,0 +1,33 @@
+<% @page_title = "#{@course.name} / #{@gradesheet.assignment.name} / Responses for #{@user.display_name}" %>
+<% cur_reg = current_user.registration_for(@course) %>
+
+<%= render 'assignment_questions_info', gradesheet: @gradesheet,
+    cur_reg: cur_reg %>
+<h3>
+  Responses
+  <% if @user.id != current_user.id %>
+  for <%= @user.name %>
+  <% else %>
+  (<%= @gradesheet.submissions.count %>)
+  <% end %>
+  <% if @user.id == current_user.id %>
+  <% if @assignment.related_assignment.nil?
+     confirmation = {}
+     else
+     confirmation = {confirm:
+                      "Once you view the questions on the self-eval, " +
+                      "you are not allowed to resubmit your files. " +
+                      "Are you sure you want to continue?"}
+
+     end %>
+  <% if true %>
+  <%= link_to "New Response",
+      new_course_assignment_submission_path(@course,
+      @gradesheet.assignment), class: "btn btn-success",
+      data: confirmation %>
+  <% else %>
+  <div class="btn btn-warning">Submissions are temporarily disabled; they will resume later today.</div>
+  <% end %>
+  <% end %>
+</h3>
+<%= render 'user_subs', user: @user, course: @course, gradesheet: @gradesheet %>

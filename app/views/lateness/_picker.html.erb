@@ -1,0 +1,150 @@
+<div id="<%= f_late.object_name %>_lateness-configuration" class="">
+  <% if !within_course %>
+  <p class="col-sm-12">(This is the default late policy for all
+    assignments in this course.)</p>
+  <% end %>
+  <%= f_late.hidden_field :type %>
+  <ul class="nav nav-tabs">
+    <% if within_course %>
+    <li><a data-toggle="tab" href="#<%= f_late.object_name %>_UseCourseDefaultConfig">Course default</a></li>
+    <% end %>
+    <li><a data-toggle="tab" href="#<%= f_late.object_name %>_LatePerDayConfig">Late-per-day</a></li>
+    <li><a data-toggle="tab" href="#<%= f_late.object_name %>_LatePerHourConfig">Late-per-hour</a></li>
+    <li><a data-toggle="tab" href="#<%= f_late.object_name %>_FixedDaysConfig">Limited number</a></li>
+    <li><a data-toggle="tab" href="#<%= f_late.object_name %>_reuse-lateness">Copy existing settings</a></li>
+  </ul>
+  <div class="tab-content">
+    <% if within_course %>
+    <div id="<%= f_late.object_name %>_UseCourseDefaultConfig" class="tab-pane equal-height-group form-group">
+      <p>Use course-default lateness policy:</p>
+      <p><%= @course.lateness_config.to_s %></p>
+    </div>
+    <% end %>
+
+    <%= f_late.fields_for :LatePerDayConfig do |lpd| %>
+    <div id="<%= f_late.object_name %>_LatePerDayConfig" class="tab-pane equal-height-group form-group">
+      <div class="form-inline">
+        Deduct
+        <%= lpd.spinner "percent_off", 20, :min => 0, :max => 100, :delta => 5 %>
+        percent every
+        <%= lpd.spinner "frequency", 1, :min => 0, :max => 100 %>
+        days late to a maximum of
+        <%= lpd.spinner "max_penalty", 100, :min => 0, :max => 100, :delta => 5 %>
+        percent off.
+      </div>
+      <br>
+      <div class="form-inline">
+        Stop accepting assignments after
+        <%= lpd.spinner "days_per_assignment", 5, :min => 0, :max => 5 %>
+        days.
+      </div>
+    </div>
+    <% end %>
+
+    <%= f_late.fields_for :LatePerHourConfig do |lph| %>
+    <div id="<%= f_late.object_name %>_LatePerHourConfig" class="tab-pane equal-height-group form-group">
+      <div class="form-inline">
+        <%= lph.hidden_field "frequency", value: "1" %>
+        Deduct
+        <%= lph.spinner "percent_off", 1, :min => 0, :max => 100, :delta => 1 %>
+        percent every hour to a maximum of
+        <%= lph.spinner "max_penalty", 100, :min => 0, :max => 100, :delta => 5 %>
+        percent off.
+      </div>
+      <br>
+      <div class="form-inline">
+        Stop accepting assignments after
+        <%= lph.spinner "days_per_assignment", 10, :min => 0, :max => 5 %>
+        days.
+      </div>
+    </div>
+    <% end %>
+
+    <%= f_late.fields_for :FixedDaysConfig do |fd| %>
+    <div id="<%= f_late.object_name %>_FixedDaysConfig" class="tab-pane equal-height-group form-group">
+      <div class="form-inline">
+        Allow users or teams at most
+        <%= fd.spinner "days_per_assignment", 2, :min => 0, :max => 5 %>
+        late days per assignment with no penalty, up to
+        <%= f_course.spinner "total_late_days", 4, :min => 0 %>
+        late days for the entire course.
+      </div>
+    </div>
+    <% end %>
+    <div id="<%= f_late.object_name %>_reuse-lateness" class="tab-pane equal-height-group form-group">
+      <label for="sel1">Select existing lateness policy:</label>
+      <select class="form-control" id="<%= f_late.object_name %>_lateness-config-options">
+        <% LatenessConfig.unique.each do |c| %>
+        <%  attribs = c.attributes.map do |k, v| ["data-" + k, v || ""] end.to_h %>
+        <%= content_tag :option, attribs do c.to_s end %>
+        <% end %>
+      </select>
+      <br>
+      <div class="text-right">
+        <button id="<%= f_late.object_name %>_select-lateness-config" class="btn btn-info">Use this configuration</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  $(function() {
+    $('#<%= f_late.object_name %>_lateness-configuration a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      var target = $(e.target).attr("href") // activated tab
+      $("#<%= f_late.object_name %>_type").val(target.substr(1));
+    });
+    <% if within_course %>
+      <% if @assignment && @assignment.lateness_config && @assignment.lateness_config != @course.lateness_config %>
+      $("[href='#<%= f_late.object_name %>_<%= @assignment.lateness_config.type %>']").tab('show');
+      <% else %>
+      $("[href='#<%= f_late.object_name %>_UseCourseDefaultConfig']").tab('show');
+      <% end %>
+    <% else %>
+      <% if @course && @course.lateness_config %>
+      $("[href='#<%= f_late.object_name %>_<%= @course.lateness_config.type %>']").tab('show');
+      <% else %>
+      $("[href='#<%= f_late.object_name %>_LatePerDayConfig']").tab('show');
+      <% end %>
+    <% end %>
+
+    <% if within_course && @assignment.lateness_config != @course.lateness_config
+         lateness = @assignment.lateness_config
+       elsif !within_course && @course.lateness_config
+         lateness = @course.lateness_config
+       end %>
+    <% if lateness %>
+      $("<%= f_late.object_name %>_lateness-configuration div.spinner > input[type='text']").val("");
+      $("<%= f_late.object_name %>_lateness-configuration input#course_total_late_days").val(<%= @course.total_late_days %>);
+      $("<%= f_late.object_name %>_lateness-configuration [href='#<%= @course.lateness_config.type %>']").tab('show');
+      <% lateness.attributes.each do |k, v|
+           unless k == "type" 
+             id = "##{f_late.object_name}_" + lateness.type + "_" + k %>
+             $("<%= id %>").val(<%= v %>);
+      <%   end %>
+      <% end %>
+    <% end %>
+
+    var sel = $("#<%= f_late.object_name %>_lateness-config-options");
+    $("#<%= f_late.object_name %>_select-lateness-config").on("click", function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      sel.find("option:selected").each(function() {
+        var opt_data = $(this).data();
+        var type = "<%= f_late.object_name %>_" + opt_data["type"];
+        var props = Object.keys(opt_data)
+        for (var i = 0; i < props.length; i++) {
+          if (props[i] === "type") continue;
+          var id = "#" + type + "_" + props[i];
+          console.log(id, $(id).length, opt_data[props[i]]);
+          $(id).val(opt_data[props[i]]);
+        }
+        $("[href='#" + type + "']").tab('show');
+      });
+    });
+  });
+
+  $(function() {
+    $("#<%= f_late.object_name %>_lateness-configuration .equal-height-group")
+      .matchHeight({byRow: false, property: 'height'});
+    $('#<%= f_late.object_name %>_lateness-configuration .spinner').each(function() { activateSpinner(this) });
+  });
+</script>

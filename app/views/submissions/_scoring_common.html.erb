@@ -1,0 +1,146 @@
+<h1>Scoring Details</h1>
+<% cur_reg_staff = cur_reg && cur_reg.staff? %>
+
+<table class="table table-striped row-vcenter">
+  <% grades = @gradesheet.grades[:grades].find(sub: @submission).first
+     all_scores = if cur_reg_staff then grades[:staff_scores] else grades[:blind_scores] end
+     graders = @gradesheet.graders[@submission.id]
+     unavailable = (!graders or !(graders.all?(&:available)))
+     complete = (graders and graders.all?(&:complete?))
+     @gradesheet.configs.each_with_index do |c, i|
+       scores = all_scores[:scores][i]
+       grader = (graders and graders.find{|gr| gr.grader_config_id == c.id})
+     %>
+  <tr>
+    <td><%= c.display_type %></td>
+    <td>
+      <% if scores.kind_of?(Array) %>
+      <%= show_score(scores[0], @gradesheet.assignment, cur_reg_staff) %>&nbsp;/&nbsp;<%= to_fixed(scores[1]) %>
+      <% if scores[-1] == "hidden" %> (hidden) <% end %>
+      <% else %>
+      <%= scores %>
+      <% end %>
+    </td>
+    <td>
+      <% if cur_reg_staff %>
+        <% if grader.nil? %>
+          Missing
+          <%= link_to "Create grader",
+              recreate_grader_course_assignment_submission_path(@course, @assignment, @submission, @gradesheet.configs[i]),
+              method: 'post', class: "btn btn-warning" %>
+        <% else %>
+          <%= link_to "Grader output", 
+              course_assignment_submission_grader_path(@course, @assignment, @submission, grader) %>
+          <%= if !grader.available then " (unavailable)"
+              elsif !grader.complete? then " (hidden)" end %>
+          <% if c.autograde? %>
+            <%= link_to "Rerun autograder", 
+                regrade_course_assignment_submission_grader_path(@course, @assignment, @submission, grader),
+                method: 'post', class: "btn btn-default", style: "margin-left: 5em;" %>
+          <% else %>
+            <% if grader.complete? %>
+            <%= link_to "Regrade",
+                edit_course_assignment_submission_grader_path(@course, @assignment, @submission, grader),
+                class: "btn btn-info", style: "margin-left: 5em;"%>
+            <% else %>
+            <%= link_to "Grade",
+                edit_course_assignment_submission_grader_path(@course, @assignment, @submission, grader),
+                class: "btn btn-success", style: "margin-left: 5em;" %>
+            <% end %>
+          <% end %>
+        <% end %>  
+      <% else %>
+        <% if grader && grader.available %>
+          <%= link_to "Grader output",
+              course_assignment_submission_grader_path(@course, @assignment, @submission, grader) %>
+        <% else %>
+          No grader available
+        <% end %>
+      <% end %>
+    </td>
+  </tr>
+  <% end %>
+  <tr>
+    <td>Raw Score:</td>
+    <td>
+      <% if all_scores[:raw_score].nil? %>
+      <%= image_tag("question-mark.png", height: 16) %>&nbsp;/&nbsp;<%= to_fixed(@gradesheet.max_score) %>
+      <% else %>
+      <%= to_fixed(all_scores[:raw_score]) %>&nbsp;/&nbsp;<%= to_fixed(@gradesheet.max_score) %>
+      <%= if !complete then " (hidden)" end %>
+      <% end %>
+    </td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Raw Percentage</td>
+    <td>
+      <% if all_scores[:raw_score].nil? %>
+      <%= image_tag("question-mark.png", height: 16) %>
+      <% else %>
+      <%= to_fixed(100.0 * (all_scores[:raw_score] / @gradesheet.max_score)) %>%
+      <%= if !complete then " (hidden)" end %>
+      <% end %>
+    </td>
+    <td></td>
+  </tr>
+  <% if @submission.late? or @submission.ignore_late_penalty %>
+  <tr>
+    <td>Days Late:</td>
+    <td><%= @submission.days_late(true) %></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>Late Penalty:</td>
+    <td><%= to_fixed(@submission.late_penalty) %>%</td>
+    <td>
+      <%= if @submission.ignore_late_penalty
+            "(penalty ignored)"
+          elsif @submission.days_late > 0 && cur_reg && cur_reg.professor?
+            link_to("Rescind lateness penalty",
+              rescind_lateness_course_assignment_submission_path(@course, @assignment, @submission),
+              class: "btn btn-default", method: "patch")
+          end
+          %>
+    </td>
+  </tr>
+  <% end %>
+  <tr>
+    <td>Total Score:</td>
+    <td>
+      <% if !all_scores[:raw_score].nil? %>
+      <%= show_score(@submission.score, @gradesheet.assignment, cur_reg_staff) %>%
+      <% if !complete then %>
+      (hidden)
+      <% end %>
+      <% else %>
+      <%= image_tag("question-mark.png", height: 16) %>
+      <% end %>
+    </td>
+    <td>
+      <% if cur_reg_staff %>
+        <% if @gradesheet.assignment.due_date > DateTime.now %>
+        <span class="btn btn-default disabled">Cannot publish grades before assignment is due</span>
+        <% elsif complete && unavailable %>
+        <%= link_to "Publish grades", 
+            publish_course_assignment_submission_path(@course, @gradesheet.assignment, @submission), class: "btn btn-default",
+            method: 'patch',
+            data: { confirm: "Are you sure you want to publish grades for this submission?" }%>
+        <% elsif !complete %>
+        <span class="btn btn-default disabled">Finish grading before publishing score</span>
+        <% end %>
+      <% end %>
+      <% if cur_reg && cur_reg.professor? %>
+      <% if @plagiarized %>
+      <span class="btn btn-danger disabled">Plagiarized submission</span>
+      <% else %>
+      <%= link_to edit_plagiarism_course_assignment_submission_path(@course, @gradesheet.assignment, @submission),
+          class: "btn btn-danger",
+          data: {confirm: "Are you sure you want to mark this submission as plagiarized?"} do %>
+      <i class="glyphicon glyphicon-bullhorn"></i> Penalize for plagiarism
+      <% end %>
+      <% end %>
+      <% end %>
+    </td>
+  </tr>
+</table>

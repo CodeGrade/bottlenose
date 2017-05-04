@@ -1,0 +1,25 @@
+<%= form_for(@term) do |f| %>
+  <% if @term.errors.any? %>
+    <div id="error_explanation" class="alert alert-danger">
+      <h2><%= pluralize(@term.errors.count, "error") %> prohibited this term from being saved:</h2>
+
+      <ul>
+      <% @term.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :name %><br />
+    <%= f.text_field :name, class: 'form-control' %>
+  </div>
+  <div class="form-group">
+    <%= f.label :archived %>
+    <%= f.check_box :archived %>
+  </div>
+  <div class="form-group">
+    <%= f.submit nil, class: 'btn btn-primary' %>
+  </div>
+<% end %>

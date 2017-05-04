@@ -1,0 +1,61 @@
+<% @page_title = "JUnit Grader" %>
+<% cur_reg = current_user.registration_for(@course)
+   cur_reg_staff = cur_reg && cur_reg.staff? %>
+
+<p>
+  <%= link_to "Back to submission",
+      course_assignment_submission_path(@course, @assignment, @submission) %>
+</p>
+
+<h1>Submission</h1>
+
+<%= render 'submissions/sub_info' %>
+
+
+<h1>Scoring Details: Junit grader</h1>
+
+<h3>
+  <%= @grading_header %>
+  <% if cur_reg_staff && @grading_output.kind_of?(TapParser) %>
+  <%= link_to Upload.upload_path_for(@grader.grading_output), class: "btn btn-default" do %>
+    <i class="glyphicon glyphicon-download-alt"></i> Download raw output
+  <% end %>
+
+  <span class="pull-right">Total score:
+    <%= to_fixed(@grading_output.points_earned) %>&nbsp;/&nbsp;
+    <%= to_fixed(@grading_output.points_available)%>
+  </span>
+  <% end %>
+</h3>
+<% if @grading_output.nil? %>
+<h3>Weird -- there's an error</h3>
+<% elsif @grading_output.kind_of?(String) %>
+<pre><%= @grading_output %></pre>
+<% else %>
+<div id="tests">
+  <% @tests.each do |t| %>
+    <% if t[:passed] %>
+      <div class="alert alert-success">
+        <p>
+          <% if cur_reg_staff %>
+          <span class="pull-right">Weight: <%= t[:info]["weight"] || 1 %></span>
+          <% end %>
+          <b>Passed:</b> <%= t[:comment] %>
+        </p>
+      </div>
+    <% else %>
+      <div class="alert alert-danger">
+        <p>
+          <% if cur_reg_staff %>
+          <span class="pull-right">Weight: <%= t[:info]["weight"]  %></span>
+          <% end %>
+          <b>Failed:</b> <%= t[:info]["header"] %>
+        </p>
+        <p>Message: <code class="text-muted"><%= t[:info]["message"] %></code></p>
+        <p style="display: inline-block;">Stack:</p>
+        <pre><%= t[:info]["stack"].join("\n") %></pre>
+      </div>
+    <% end %>
+  <% end %>  
+</div>
+<% end %>

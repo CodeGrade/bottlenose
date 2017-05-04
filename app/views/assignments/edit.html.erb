@@ -1,0 +1,11 @@
+<%= @page_title = "Edit Assignment" %>
+
+<p>
+  <%= link_to "Back to Course: #{@course.name}", course_path(@course) %>
+<% unless @chapter.nil? %>
+  | <%= link_to "Back to Chapter: #{@chapter.name}", @chapter %>
+<% end %>
+  | <%= link_to "View Assignment", course_assignment_path(@course, @assignment) %>
+</p>
+
+<%= render 'form' %>

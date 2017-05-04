@@ -1,0 +1,41 @@
+<%= form_for [@course, @reg_request] do |f| %>
+  <% if @reg_request.errors.any? %>
+    <div id="error_explanation" class="alert alert-danger">
+      <h2><%= pluralize(@reg_request.errors.count, "error") %> prohibited this reg_request from being saved:</h2>
+
+      <ul>
+      <% @reg_request.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <p>
+    You are requesting registration as
+    <strong>
+      <%= current_user.name %>
+      &lt;<%= current_user.email %>&gt;
+    </strong>
+    .
+  </p>
+
+  <div class="form-group">
+    <%= f.label :role %><br />
+    <%= f.select :role, RegRequest.roles.to_a.map { |role_name, role_val| [role_name.humanize, role_name] } %>
+  </div>
+
+  <div class="form-group">
+    <%= f.label :section %><br />
+    <%= f.select :section, @course.course_sections.to_a.map {|s| [s.to_s, s.crn] } %>
+  </div>
+  
+  <div class="form-group">
+    <%= f.label :notes %><br />
+    <%= f.text_area :notes, class: 'form-control' %>
+  </div>
+
+  <div class="form-group">
+    <%= f.submit "Request Registration", id: 'submit-button', class: 'btn btn-primary' %>
+  </div>
+<% end %>

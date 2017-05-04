@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+assign = Assignment.find(ARGV[0])
+
+if assign.nil?
+  puts "Usage: script/regrade-whole-assignment submission-id"
+  exit(0)
+end
+
+puts
+puts "Regrading assignment: #{assign.name}"
+puts
+
+assign.submissions.each do |sub|
+    puts
+    puts "Regrading submission from: #{sub.user.name}"
+    puts
+    system("script/grade-submission #{sub.id}")
+end
+

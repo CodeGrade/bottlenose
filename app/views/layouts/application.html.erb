@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%= csrf_meta_tags %>
+
+    <!-- Set the page's title. -->
+    <% default_page_title = "#{params[:controller]} / #{params[:action]}" %>
+    <title><%= @page_title || default_page_title %> - Bottlenose Course Manager</title>
+
+    <!-- Set the page's favicon. -->
+    <%= favicon_link_tag 'site-icon.png', :type => 'image/png' %>
+    <%= favicon_link_tag 'site-icon.png', :rel => 'apple-touch-icon', :type => 'image/png' %>
+
+    <!-- Include the page's javascripts and stylesheets. -->
+    <%= stylesheet_link_tag    "application", :media => "all" %>
+    <%= javascript_include_tag "application" %>
+</head>
+<body>
+
+<%= javascript_tag do %>
+window.current_page_name = "<%= params[:controller] %>/<%= params[:action] %>";
+<% end %>
+
+<%= render "layouts/navbar" %>
+
+<%= render "layouts/flash" %>
+
+<% if content_for?(:wide_content) %>
+<div class="container-fluid">
+  <% if content_for?(:wide_content_before) %>
+  <!-- Before wide content -->
+  <div class="container">
+<%= yield(:wide_content_before) %>
+  </div>
+  <% end %>
+  <!-- Wide content -->
+<%= yield(:wide_content) %>
+  <% if content_for?(:wide_content_after) %>
+  <!-- After wide content -->
+  <div class="container">
+<%= yield(:wide_content_after) %>
+  </div>
+  <% end %>
+</div>
+<% else %>
+<div class="container">
+    <%= content_for?(:content) ? yield(:content) : yield %>
+</div>
+<% end %>
+
+<!-- TODO: Should this footer be here, or inside course templates? -->
+<% if @course %>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <%= raw @course.footer %>
+            </div>
+        </div>
+    </div>
+<% end %>
+
+<%= render "layouts/footer" %>
+
+</body>
+</html>

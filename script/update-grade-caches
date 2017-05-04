@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+Submission.all.each do |sub|
+  sub.assignment.update_best_sub_for!(sub.user)
+end

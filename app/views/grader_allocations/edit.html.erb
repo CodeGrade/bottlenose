@@ -1,0 +1,141 @@
+<h3>Edit grader allocations for <%= @config.display_type %> for
+  <%= link_to @assignment.name, course_assignment_path(@course,
+      @assignment) %></h3>
+
+<div class="well">
+  <%= form_for([@course, @assignment, @config],
+               :url => { action: :update, method: :patch }) do |f| %>
+  <h3>Bulk grading allocations</h3>
+  <p>
+    Set the spinners below to the relative workload of each grader.
+    By default, graders are given a weight of 1, and everyone else is
+    given a weight of 0, meaning that all graders get equal work, and
+    all professors and assistants do no grading.  But if some graders
+    have a higher workload, set their values to 1.2 or 1.5 (indicating
+    20% or 50% higher workload than the default).  Click the button
+    below to apportion all unassigned submissions to all graders
+    according to their weights.
+  </p>
+  <p>
+    <b>If you want to assign some students to some specific graders,</b>
+    do so <i>first</i> in the single-grader section below, then return to
+    this section once grading has been assigned.
+  </p>
+  <div class="row">
+  <% @course.staff.each do |staff| %>
+  <span class="col-sm-4" style="vertical-align: middle;">
+    <span><%= staff.name %></span>
+    <span style="display: inline-block; vertical-align: inherit;">
+      <%= spinner_tag "weight[#{staff.id}]",
+          if staff.course_grader?(@course) then 1.0 else 0 end,
+          min: 0, max: 2, delta: 0.1 %>
+    </span>
+  </span>
+  <% end %>
+  </div>
+  <p></p>
+  <div class="row text-center">
+    <%= f.submit "Assign graders", class: 'btn btn-primary' %>
+  </div>
+  <% end %>
+
+  <h3 class="middle-separator">OR</h3>
+
+  <h3>Assign single grader</h3>
+  <p>
+    Choose a submission from the left and a grader from the right,
+    then click the middle button to create that grading allocation.
+  </p>
+  <%= form_for([@course, @assignment, @config],
+               :url => { action: :patch, method: :patch }) do |f| %>
+
+  <div class="row form-group" style="vertical-align: middle;">
+    <div class="col-sm-4">
+      <%= select_tag(:submission_id,
+          names_for_submissions(@unfinished),
+          size: 10,
+          multiple: false, class: "form-control") %>
+    </div>
+    <div class="col-sm-4 text-center">
+      <%= f.submit "Assign grader", class: 'btn btn-primary' %>
+    </div>
+    <div class="col-sm-4">
+      <%= select_tag(:grader_id,
+          names_for_graders(@course.staff),
+          size: 10,
+          multiple: false, class: "form-control") %>
+    </div>
+  </div>
+  <% end %>
+</div>
+
+<h3>Students with unassigned graders (<%= @unfinished.count %> remaining)</h3>
+<div class="row">
+  <% @who_grades[nil].each do |sub| %>
+  <p class="col-md-3">
+    <%= sub.submission_user_names %>
+    <% if @graders[sub.id].score %>
+    <br>(completed <span class="local-time"><%= @graders[sub.id].updated_at %></span>)
+    <% end %>
+  </p>
+  <% end %>
+</div>
+
+
+<h3>Existing grading allocations</h3>
+<div class="row">
+  <% @who_grades.each do |g, subs| %>
+  <% next if g.nil? %>
+  <div class="col-md-4">
+    <% grader = @course.staff.find_by(id: g) %>
+    <% next if grader.nil? %>
+    <h4><%= grader.name %></h4>
+    <ul>
+      <% subs.each do |sub| %>
+      <% grader = @graders[sub.id] %>
+      <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.grader_id == g} %>
+      <li>
+        <%= link_to sub.submission_user_names,
+            edit_course_assignment_submission_grader_path(@course, @assignment, sub, grader) %>
+        <% if grader.score.nil? %>
+        <% if alloc.abandoned? %>
+        <span class="bg-warning text-danger"><br>abandoned</span></span>
+        <% else %>
+          <% days_assigned = (Time.now - alloc.grading_assigned) / 1.day 
+             if 3 >= days_assigned
+             textclass = ""
+             elsif 5 >= days_assigned
+             textclass = "bg-warning"
+             else
+             textclass = "bg-danger"
+             end
+             %>
+            <span class="<%= textclass %>">
+              <br>assigned <span class="local-time"><%= alloc.grading_assigned %></span>
+            </span>
+            <br>
+            <span class="btn-group">
+            <%= link_to "Delete",
+                delete_course_grader_allocation_path(@course, alloc, :config => @config),
+                class: "abandon btn btn-sm btn-warning",
+                title: "Use this to remove this assignment from this grader, without penalty",
+                method: :patch, data: { confirm: "Are you sure?" } %>
+            <%= link_to "Abandon",
+                abandon_course_grader_allocation_path(@course, alloc, :config => @config),
+                class: "abandon btn btn-sm btn-danger",
+                title: "Use this to remove this assignment from this grader, and blame them",
+                method: :patch, data: { confirm: "Are you sure?" } %>
+            </span>
+          <% end %>
+        <% else %>
+          <span class="text-muted"><br>completed <span class="local-time"><%= grader.updated_at %></span></span>
+        <% end %>
+      </li>
+      <% end %>
+    </ul>
+  </div>
+  <% end %>
+</div>
+<script>
+  $(".spinner").each(function() { activateSpinner(this, {precision: 1}); });
+</script>

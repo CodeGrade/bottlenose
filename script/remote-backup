@@ -1,0 +1,43 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+if Settings['backup_login'].empty?
+  puts "No backup_login set. Skipping backup."
+  exit(0)
+end
+
+bn_dir = Rails.root.basename
+puts "Starting backup of Bottlenose instance to #{Settings['backup_login']}:~/#{bn_dir}"
+
+puts "Dumping database to db/data.yml.gz..."
+Dir.chdir(Rails.root)
+system(%Q{rake db:data:dump})
+system(%Q{gzip -f db/data.yml})
+
+puts "Dumping database to db/dump.sql.gz..."
+Dir.chdir(Rails.root)
+system(%Q{rake dump_sql})
+
+puts "Backing up ~/.config/bottlenose..."
+system(%Q{mkdir -p ~/.config/bottlenose})
+Dir.chdir(File.expand_path("~/.config"))
+system(%Q{tar czf "#{Rails.root}/config/bottlenose.tar.gz" bottlenose})
+Dir.chdir(Rails.root)
+
+puts "Rsyncing to remote server..."
+system(%Q{rsync -aPz "#{Rails.root}" "#{Settings['backup_login']}:~/#{bn_dir}"})
+
+puts "Creating snapshot on remote server..."
+
+user_name = Settings['backup_login'].match(/^(.*)\@/)[1]
+
+snap_desc    = "Bottlenose Backup: #{`whoami`.chomp}@#{`hostname`.chomp}"
+snap_command = %Q{snapper -c #{user_name} create --description "#{snap_desc}" --cleanup-algorithm timeline}
+puts " $ #{snap_command}"
+system(%Q{ssh "#{Settings['backup_login']}" '#{snap_command}'})
+
+puts "Backup complete"

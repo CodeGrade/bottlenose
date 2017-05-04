@@ -1,0 +1,70 @@
+<h3>Pending grading for
+  <%= link_to @assignment.name,
+      course_assignment_path(@course, @assignment) %></h3>
+
+<h4 style="display: inline-block;">Submissions not assigned to graders</h4>
+<div style="padding-bottom: 0.5em; display: inline-block;">
+  <%= link_to edit_course_assignment_grader_allocations_path(@course, @assignment, @config),
+      class: "btn btn-default btn-md" do %>
+  <i class="glyphicon glyphicon-list-alt"></i>
+  Assign manual graders
+  <% end %>
+</div>
+<ul>
+  <% @who_grades[nil].each do |sub| %>
+  <% grader = @graders[sub.id] %>
+  <% usernames = sub.submission_user_names %>
+  <li>
+    <% if grader.score.nil? %>
+    <%= link_to usernames,
+        edit_course_assignment_submission_grader_path(@course, @assignment, sub, grader) %>
+    <% else %>
+    <%= link_to usernames,
+        course_assignment_submission_grader_path(@course, @assignment, sub, grader) %>
+      (completed <span class="local-time"><%= grader.updated_at %></span>)
+    <% end %>
+  </li>
+  <% end %>
+</ul>
+
+<div class="row">
+<% @who_grades.each do |g, subs| %>
+<% next if g.nil? %>
+<% grader = @course.staff.find_by(id: g) %>
+<% next if grader.nil? %>
+<div class="col-md-4">
+<h4><%= grader.name %></h4>
+<ul>
+  <% subs.each do |sub| %>
+  <% usernames =  %>
+  <% grader = @graders[sub.id] %>
+  <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.grader_id == g} %>
+  <li>
+    <%= link_to sub.submission_user_names,
+        edit_course_assignment_submission_grader_path(@course, @assignment, sub, grader) %>
+    <% if grader.score.nil? %>
+      <% if alloc.abandoned? %>
+      <span class="bg-warning text-danger"><br>abandoned</span></span>
+      <% else %>
+      <% days_assigned = (Time.now - alloc.grading_assigned) / 1.day 
+         if 3 >= days_assigned
+         textclass = ""
+         elsif 5 >= days_assigned
+         textclass = "bg-warning"
+         else
+         textclass = "bg-danger"
+         end
+         %>
+      <span class="<%= textclass %>">
+        <br>assigned <span class="local-time"><%= alloc.grading_assigned %>
+      </span></span>
+      <% end %>
+    <% else %>
+      <span class="text-muted"><br>completed <span class="local-time"><%= grader.updated_at %></span></span>
+    <% end %>
+  </li>
+  <% end %>
+</ul>
+</div>
+<% end %>
+</div>

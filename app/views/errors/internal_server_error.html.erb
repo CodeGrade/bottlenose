@@ -1,0 +1,26 @@
+<% @page_title = "Well that's odd..." %>
+<% @bgcolor = "#cdb38b" %>
+<%= render "layouts/navbar" %>
+
+<%= render "layouts/flash" %>
+
+<div class="container text-center">
+  <span class="col-sm-12 text-center">
+    <%= image_tag "failure-option.jpg" %>
+  </span>
+  <h1 class="text-center">Something has gone wrong.</h1>
+  <div class="col-sm-3">&nbsp;</div>
+  <div class="col-sm-6 text-left">
+  <p>
+    If you think you've reached this page in error, please report the
+    URL of the page you were on, the time you visited it, and what you
+    were trying to do, and we'll look into it.
+  </p>
+  <p>
+    You can resume your work by using the Back button, or by selecting
+    an option from the menubar above.
+  </p>
+  </div>
+  <%= image_tag "dolphin.png", style: "transform: rotate(20deg);" %>
+</div>
+<%= render "layouts/footer" %>

@@ -1,0 +1,78 @@
+[X] time-taken
+[X] unzip archives
+[X] per-file markup
+   [X] edit the .../files endpoint
+   [X] save individual comments
+[ ] automated graders
+   [X] junit
+   [X] java-style
+   [X] checker
+   [ ] ounit
+[ ] hide autograders, too
+[ ] extra credit assignments
+[X] plagiarism
+   [X] points-off penalty
+   [X] choose which students get penalized
+   [X] create a new submission for the penalized students if necessary
+[X] background tasks
+   [X] defered running of grading scripts
+   [X] delayed jobs?
+[X] configuring graders for assignments
+[X] assigning tutors to grade particular students
+   [X] display who grades each assignment
+   [X] display which submissions have no grader assigned
+   [X] record how long graders take to grade
+   [X] record who abandoned their grading
+   [X] randomly assign graders proportionally
+   [X] assign individual graders
+[X] NUID
+   [X] make sure it's only visible to faculty -- not just any staff!
+[ ] meta-grading
+   [X] have a publish-grades button per assignment and per submission
+[?] revise solution files for assignments
+[X] user profiles
+   [X] NUID
+   [X] profile picture
+   [X] nickname
+   [X] initial login experience
+   [ ] fix profile pictures on initial select?  (could be a DoS attack, though)
+[ ] clone course
+   [ ] deep-clone assignments
+[ ] backup database
+[ ] export all files
+[ ] self-evals
+   [X] new assignment type
+   [X] upload YAML
+   [X] view questions
+   [X] enter answers
+   [X] view answers (w/ grading if available)
+   [X] grading
+   [ ] timestamp better to prevent delayed submissions
+[X] exams
+   [X] bulk upload grades
+[X] quizzes
+   [X] online
+   [?] auto-graded?
+[X] dropping class
+   [X] students self-dropping
+   [X] profs dropping students -- via impersonation
+   [X] invalidating teams
+   [X] storing date of drop
+   [X] hide students from class roster
+   [X] affect exporting?
+[ ] export course spreadsheet
+   [X] initial grade support
+   [X] fix gradesheet construction
+   [X] exam export
+   [ ] letter-grade computation
+[X] test with syntactically invalid inputs / compile-error inputs
+[X] bulk random teams
+[X] support CRN section numbers
+   [X] in course registration
+   [X] in bulk registration
+   [X] in export
+   [X] in course creation
+[ ] sub-assignments (i.e. assignments in parts)
+[X] why are the status icons all weird
+[ ] when are grades nil versus 0?
+[X] let students see their own running grade (on the assignments page?, course page?)

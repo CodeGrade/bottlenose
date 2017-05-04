@@ -1,0 +1,30 @@
+
+
+DIR_SETUP_COMMAND = setup-directory.sh
+
+    Constructs the chroot for the sandbox.
+    Unpacks the grading tarball; if there's
+    no .bottlenose directory also unpacks
+    the submission.
+
+DIR_TEARDOWN_COMMAND = teardown-directory.sh
+
+    Cleans up the chroot.
+
+START_MAKE_COMMAND = build-assignment.sh
+
+    Runs .bottlenose/build from the grading tarball or
+    finds exactly one Makefile and runs "make" in that
+    directory.
+
+GRADING_PREP_COMMAND = grading-prep.sh
+
+    Runs .bottlenose/prep from the grading tarball or
+    re-unpacks the grading tarball to overwrite student
+    modifications.
+
+START_TEST_COMMAND = test-assignment.sh
+
+    Runs .bottlenose/grade from the grading tarball or
+    finds exactly one Makefile and runs "make test" in
+    that directory.

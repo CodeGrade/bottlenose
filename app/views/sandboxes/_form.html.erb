@@ -1,0 +1,25 @@
+<%= form_for(@sandbox) do |f| %>
+  <% if @sandbox.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@sandbox.errors.count, "error") %> prohibited this sandbox from being saved:</h2>
+
+      <ul>
+      <% @sandbox.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :name %><br>
+    <%= f.text_field :name %>
+  </div>
+  <div class="field">
+    <%= f.label :submission_id %><br>
+    <%= f.text_field :submission_id %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

@@ -1,0 +1,9 @@
+<% index ||= "new_section" %>
+<%= f.fields_for section, index: index do |f_s| %>
+<td><%= f_s.hidden_field :id %><%= f_s.text_field :crn, class: 'form-control numeric' %></td>
+<td class="form-inline"><%= f_s.text_field :instructor, class: 'form-control',
+        value: (section.instructor and section.instructor.username) %>
+  <span class="findUser pull-right"> (<%= section.instructor ?
+                                          section.instructor.name : "no one" %>)</span></td>
+<td class="col-sm-6"><%= f_s.text_field :meeting_time, class: 'form-control' %></td>
+<% end %>

@@ -1,0 +1,27 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <% courses.each do |course| %>
+            <% registration = current_user.registration_for(course) %>
+            <tr>
+                <td><%= link_to course.name, course_path(course) %></td>
+                <% if registration %>
+                  <% if registration.dropped_date %>
+                    <td><span class="label label-default pull-right">Withdrawn</span></td>
+                  <% else %>
+                    <td><span class="label label-default pull-right"><%= registration.role.titleize %></span></td>
+                  <% end %>
+                <% elsif current_user.reg_requests.map { |r| r.course }.include?(course) %>
+                    <td><span class="btn btn-success btn-xs disabled pull-right">Registration Pending...</span></td>
+                <% else %>
+                    <td><%= link_to "Request Registration", new_course_reg_request_path(course), class: "btn btn-success btn-xs pull-right" %></td>
+                <% end %>
+            </tr>
+        <% end %>
+    </tbody>
+</table>

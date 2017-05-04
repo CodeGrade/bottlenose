@@ -1,0 +1,68 @@
+<% @page_title = "User: #{@user.name}" %>
+
+</p>
+
+<h2>
+  Basic Profile Information
+  <%= link_to 'Edit Profile', edit_user_path(@user),
+      class: "btn btn-primary pull-right" %>
+</h2>
+<div class="row">
+  <div class="col-sm-3 text-center">
+    <%= image_tag Upload.upload_path_for(@user.profile || "silhouette.jpg"), width: "75%"  %>
+  </div>
+  <div class="col-sm-9">
+    <table class="table">
+      <tr>
+        <td>Name:</td>
+        <td><%= @user.first_name %> <%= @user.last_name %></td>
+      </tr>
+      <tr>
+        <td>Nickname:</td>
+        <td><%= @user.nickname %></td>
+      </tr>
+      
+      <tr>
+        <td>Email:</td>
+        <td><%= mail_to "#{@user.name} <#{@user.email}>", @user.email %></td>
+      </tr>
+      <tr>
+        <td>NUID:</td>
+        <td><%= @user.nuid_safe(current_user) %></td>
+      </tr>
+      <% if current_user.site_admin? %>
+      <tr>
+        <td>Site Admin?</td>
+        <td><%= @user.site_admin? ? "Yes" : "No" %></td>
+      </tr>
+      <% end %>
+    </table>
+  </div>
+</div>
+
+
+<h2>Registrations
+<% if (current_user.site_admin? || current_user.professor_ever?) &&
+   current_user.id != @user.id %>
+<%= link_to "Impersonate", impersonate_user_path(@user), 
+    method: 'post',
+    class: "btn btn-primary pull-right" %>
+<% end %>
+</h2>
+
+<% grouped_regs = @user.grouped_registrations
+   terms = Term.all_sorted.to_a %>
+<% Registration.roles.to_a.reverse.each do |role_name, role_val| %>
+  <% as_role = grouped_regs[role_name] %>
+  <% if as_role[:count] > 0 %>
+<h3>As <%= role_name.capitalize %>:</h3>
+<ul>
+    <% terms.each do |term| %>
+      <% by_term = as_role[term.name] %>
+      <% by_term.sort.each do |course| %>
+  <li><%= term.name %> &mdash; <%= course.name %> (<%= link_to "View", course %>)</li>
+      <% end %>
+    <% end %>
+  <% end %>
+</ul>
+<% end %>

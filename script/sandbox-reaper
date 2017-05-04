@@ -1,0 +1,72 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+puts "\n/|\\/|\\/|\\/|\\/|\\/|\\/|\\/|\\/|\\/|\\/|\\\n\n"
+puts "   Running the sandbox reaper "
+puts "\n/|\\/|\\/|\\/|\\/|\\/|\\/|\\/|\\/|\\/|\\/|\\\n\n"
+
+# First, check for submissions that are still active in the DB.
+
+active_subs = Submission.where("submissions.grading_uid is not null")
+
+active_subs.each do |sub|
+  puts "Active submission #{sub.id} found."
+
+  if (sub.updated_at + 6.minutes) > Time.now
+    puts "Less than five minutes old. We'll let it live."
+    next
+  end
+
+  puts "It's a zombie. Killing processes..."
+  system("/usr/local/bottlenose/bin/sandbox", "-reap", "#{sub.grading_uid}")
+
+  sub.grading_uid = nil
+  sub.save!
+end
+
+# Second, reap *every* sandbox UID that's not associated with a
+# living submission.
+
+7000.upto(7999) do |uid|
+  sub = Submission.find_by_grading_uid(uid)
+
+  if sub.nil?
+    system("/usr/local/bottlenose/bin/sandbox", "-reap", "#{uid}")
+  else
+    puts "Not reaping #{uid} due to active sub #{sub.id}."
+  end
+end
+
+# Finally, cleanup excess grading directories.
+Dir.entries("/tmp").each do |ent|
+  if match = ent.match(/^grade-(\d+)-(\d+)$/)
+    test_dir = "/tmp/#{ent}"
+    sid = match[1]
+    uid = match[2]
+
+    sub = Submission.find(sid)
+
+    if sub.nil? or sub.grading_uid.nil?
+      puts "Cleaning up #{test_dir}..."
+      system(%Q{/usr/local/bottlenose/bin/sandbox -teardown "#{test_dir}"})
+      system(%Q{rm --one-file-system -rf "#{test_dir}"}) if test_dir.match(/^\/tmp/)
+    else
+      puts "Not cleaning up test directory #{test_dir} due to active sub #{sub.id}"
+    end
+  end
+end
+
+# Then, for the lolz, delete all "RackMultipart*" files that are more than
+# an hour old.
+Dir.entries("/tmp").each do |ent|
+  if ent =~ /^RackMultipart/
+    temp = "/tmp/#{ent}"
+    if File.mtime(temp) < (Time.now - 1.hour)
+      File.unlink(temp)
+    end
+  end
+end

@@ -1,0 +1,21 @@
+Hi <%= @teacher.name %>,
+
+A registration request was received for your course
+
+  Course: <%= @course.name %>
+
+From a prospective student:
+
+  Student: <%= @req.name %>
+  Email:   <%= @req.email %>
+
+The following message was included:
+
+<% @req.notes %>
+
+You can view your registration requests for this course
+here: <%= course_url(@course) + '/reg_requests' %>
+
+Thanks,
+
+The Bottlenose System

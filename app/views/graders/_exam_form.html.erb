@@ -1,0 +1,175 @@
+<% questions = @assignment.questions %>
+<% flat_questions = @assignment.flattened_questions %>
+<% col_count = flat_questions.count %>
+<% any_parts = (questions.count != col_count) %>
+<% total_score = questions.map do |q| q["weight"] end.sum %>
+
+<% if @student_info.length > 1 %>
+<style>
+  <% @course.course_sections.each do |s| %>
+  #grades-table.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
+  <% end %>
+</style>
+<h4>Select a section: <select id="sections">
+    <option value="show_all">Show all sections</option>
+    <% @course.course_sections.each do |s| %>
+    <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
+    <% end %>
+</select></h4>
+<% end %>
+<table id="grades-table" class="table table-striped col-sm-12">
+  <thead>
+    <tr style="vertical-align: top;">
+      <th>Last name<% if any_parts %><br>&nbsp;<% end %></th>
+      <th>First name<% if any_parts %><br>&nbsp;<% end %></th>
+      <% questions.each do |q| %>
+        <% if q["parts"] %>
+        <% q["parts"].each_with_index do |p, i| %>
+        <th><small><%= if i == 0 then q["name"] else "" end %><br><%= p["name"] %></small></th>
+        <% end %>
+        <% else %>
+        <th><small><%= q["name"] %><% if any_parts %><br>&nbsp;<% end %></small></th>
+        <% end %>
+      <% end %>
+      <th>Curved <% if any_parts %><br><% end %>grade</th>
+      <th>Final <% if any_parts %><br><% end %>grade</th>
+      <th class="col-sm-1"></th>
+      <th style="width: 2rem; padding-left: 0px;"></th>
+    </tr>
+  </thead>
+  <tbody id="grades">
+  <% used_subs = @used_subs.group_by(&:user_id) %>
+  <% @student_info.order("LOWER(last_name)", "LOWER(first_name)").each do |u| %>
+    <tr id="<%= u.id %>" class="sec_<%= u.section_id %>">
+      <td>
+        <form id="grade_<%= u.id %>">
+          <input type="hidden" name="user_id" value="<%= u.id %>" />
+          <input type="hidden" name="grade_action" value="" />
+          <input type="hidden" name="timestamp" value="" />
+        </form>
+        <%= u.last_name %>
+      </td>
+      <td><%= u.first_name %></td>
+      <!-- grades display -->
+      <% sub = used_subs[u.id].first if used_subs[u.id] %>
+      <% grades = @grade_comments[sub.id] if sub %>
+      <% grades = (0..col_count).map do |i|
+           (grades and grades.find do |g| g.line == i end) or {weight: nil}
+         end %>
+      <% score = 0 %>
+      <% col_count.times do |i| %>
+      <td class="question">
+        <input form="grade_<%= u.id %>" type="hidden" name="student[<%= u.id %>][<%= i %>]" />
+        <span><% if grades and grades[i] and grades[i]["weight"] %>
+        <% score += grades[i]["weight"] %>
+        <%= show_score(grades[i]["weight"]) %>
+        <% end %></span>
+      </td>
+      <% end %>
+      <% curved = "" %>
+      <% if grades[flat_questions.count]
+         curved = grades[flat_questions.count]["weight"]
+         score = curved if curved
+         end %>
+      <td class="curved">
+        <input form="grade_<%= u.id %>" type="hidden" name="student[<%= u.id %>][<%= col_count %>]" />
+        <span><%= show_score(curved) if curved %></span>
+      </td>
+      <td class="final"><%= show_score(score) if sub %></td>
+      <!-- edit grades -->      
+      <td>
+        <button type="button" class="btn btn-info trigger"
+                data-name="<%= u.display_name %>">Enter Grades</button>
+      </td>
+      <td style="width: 2rem; padding-left: 0px;">
+        <i id="success_<%= u.id %>" style="font-size: 150%;"
+             class="hidden text-success glyphicon glyphicon-ok"
+             data-toggle="tooltip" title="Exam scores saved"></i>
+        <i id="failure_<%= u.id %>" style="font-size: 150%;"
+           class="hidden text-danger glyphicon glyphicon-remove"
+           data-toggle="tooltip" title="Exam scores NOT saved"></i>
+      </td>
+    </tr>
+  <% end %>
+  </tbody>
+</table>
+
+<div id="enter_grades" class="modal" role="dialog">
+  <div class="modal-dialog">
+
+    <!-- Modal content-->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title">Enter grades for SOMEONE</h4>
+      </div>
+      <div class="modal-body">
+        <table class="table">
+          <thead>
+            <tr style="vertical-align: top;">
+              <th>Problem</th>
+              <th>Score</th>
+              <th>Out of</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% i = 0 %>
+            <% questions.each_with_index do |q, q_num| %>
+            <tr>
+              <td>Problem <%= q_num + 1 %>: <%= q["name"] %><% if q["extra"] %> (Extra Credit)<% end %></td>
+              <% if q["parts"] %>
+              <td></td>
+              <% else %>
+              <td>
+                <%= spinner_tag "question[#{i}]", "",
+                    min: 0, max: flat_questions[i]["weight"], delta: 0.5,
+                    wrapper: {style: "float: right;"} %></td>
+              <td>/ <%= show_score(q["weight"]) %></td>
+              <% end %>
+            </tr>
+            <% if q["parts"] %>
+            <% q["parts"].each_with_index do |p, j| %>
+            <tr>
+              <td style="padding-left: 2em;">(<%= ('a'..'z').to_a[j] %>) <%= p["name"] %></td>
+              <td style="padding-left: 2em;">
+                <%= spinner_tag "question[#{i}]", "",
+                    min: 0, max: flat_questions[i]["weight"], delta: 0.5,
+                    wrapper: {style: "float: right;"} %></td>
+              <td>/ <%= show_score(p["weight"]) %></td>
+            </tr>
+            <% i += 1 %>
+            <% end %>
+            <% else %>
+            <% i += 1 %>
+            <% end %>
+            <% end %>
+            <tr>
+              <td><h4>Raw score:</h4></td>
+              <td class="text-right"><h4 class="raw_score"></h4></td>
+              <td><h4>/ <%= show_score(total_score) %></h4></td>
+            </tr>
+            <tr>
+              <td><h4>Curved score:</h4></td>
+              <td><%= spinner_tag "question[#{i}]", "",
+                      min: 0, max: total_score, delta: 0.5, wrapper: {style: "float: right;"} %></td>
+              <td><h4>/ <%= show_score(total_score) %></h4></td>
+            </tr>
+            <tr>
+              <td><h4>Final score:</h4></td>
+              <td class="text-right"><h4 class="final_score"></h4></td>
+              <td><h4>/ <%= show_score(total_score) %></h4></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success save">Save</button>
+        <button type="button" class="btn btn-danger cancel">Cancel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script>
+  <%= render partial: "edit_exam_grades.js", locals: {col_count: col_count} %>
+</script>
+  

@@ -1,0 +1,11 @@
+language:
+    - ruby
+before_script:
+    - psql -c 'create database bottlenose_test;' -U postgres
+    - psql -c "CREATE USER bottlenose WITH PASSWORD '';" -U postgres
+    - psql -c "GRANT ALL PRIVILEGES ON DATABASE bottlenose_test to bottlenose;" -U postgres
+    - RAILS_ENV=test bundle exec rake db:migrate --trace
+    - bundle exec rake install
+before_install:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"

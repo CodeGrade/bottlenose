@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+# Fixes names that imported poorly.
+# Only looks at students in a specific course, specified below.
+# Changes the format \"Last,First Mid\" to First Last
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+COURSE_ID = 8
+
+students = Course.find_by_id(COURSE_ID).students
+
+students.each do |s|
+  puts "\n**** " + s.name
+  if s.name =~ /\".*,.*\"/
+    name = s.name[1..-2]
+    (last, first) = name.split(",")
+
+    newname = first + " " + last
+    puts newname
+    s.name = newname
+
+    begin
+      s.save!
+      puts "saved"
+    rescue
+      puts "NOT SAVED"
+    end
+  end
+end
+
+exit(0)
+

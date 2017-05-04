@@ -1,0 +1,69 @@
+<% @page_title = "Dashboard" %>
+<style>
+  h3 i.glyphicon { font-size: 80%; margin-left: 0.5em; }
+  h3 i.glyphicon-chevron-up { display: none; }
+  h3 i.glyphicon-chevron-down { display: initial; }
+  h3.collapsed i.glyphicon-chevron-up { display: initial; }
+  h3.collapsed i.glyphicon-chevron-down { display: none; }
+</style>
+
+<h2>Your courses</h2>
+<% regs = current_user.course_regs_by_term %>
+<% regs.keys.sort_by{|t| t.canonical_name}.reverse.each_with_index do |term, i| %>
+<% info = regs[term] %>
+  <h3 <% if term.archived? %>class="collapsed" data-toggle="collapse" data-target="#term_<%= i %>"<% end %>>
+    <%= term.name %>
+    <% if term.archived? %>
+    <i class="glyphicon glyphicon-chevron-down"></i>
+    <i class="glyphicon glyphicon-chevron-up"></i>
+    <% end %>
+  </h3>
+  <div id="term_<%= i %>" <% if term.archived? %>class="collapse"<% end %>>
+  <% info.each do |term, course, section, dropped| %>
+    <% if dropped %>
+    <h3 style="font-size: 21px;"><%= course.name %></h3>
+    <div class="row">
+      <p class="col-sm-12">Withdrawn on <span class="local-time"><%= dropped %></span></p>
+    </div>
+    <% else %>
+    <h3 style="font-size: 21px;"><%= link_to course.name, course_path(course) %>
+      <span style="padding-left: 3em;">Section <%= section.to_s %></span></h3>
+
+    <div class="row">
+        <div class="col-md-7">
+            <%= render "assignments/table", 
+                assignments: course.assignments, 
+                for_user: current_user, show_all: current_user.course_professor?(course) %>
+        </div>
+
+        <div class="col-md-5">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Teams</h3>
+                </div>
+
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Start</th>
+                            <th>End</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% current_user.teams.where(course: course).order(end_date: :desc).each do |team| %>
+                            <tr class="<%= team.active? ? "success" : "" %>">
+                                <td><%= team %></td>
+                                <td><%= team.start_date %></td>
+                                <td><%= team.end_date %></td>
+                            </tr>
+                        <% end %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <% end %>
+  <% end %>
+  </div>
+<% end %>

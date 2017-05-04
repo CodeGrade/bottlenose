@@ -1,0 +1,122 @@
+<% @page_title = "Checker Grader" %>
+<% cur_reg = current_user.registration_for(@course)
+   cur_reg_staff = cur_reg && cur_reg.staff? %>
+
+<p>
+  <%= link_to "Back to submission",
+      course_assignment_submission_path(@course, @assignment, @submission) %>
+</p>
+
+<h1>Submission</h1>
+
+<%= render 'submissions/sub_info' %>
+
+
+<h1>Scoring Details: Checker grader</h1>
+
+<h3>
+  <%= @grading_header %>
+  <% if cur_reg_staff && @grading_output.kind_of?(TapParser) %>
+  <%= link_to Upload.upload_path_for(@grader.grading_output), class: "btn btn-default" do %>
+    <i class="glyphicon glyphicon-download-alt"></i> Download raw output
+  <% end %>
+
+  <span class="pull-right">Total score:
+    <%= to_fixed(@grading_output.points_earned) %>&nbsp;/&nbsp;
+    <%= to_fixed(@grading_output.points_available)%>
+  </span>
+  <% end %>
+</h3>
+<% if @grading_output.kind_of?(String) %>
+<pre><%= @grading_output %></pre>
+<% else %>
+<div id="tests">
+  <% @tests.each do |t| %>
+    <% if t[:passed] %>
+      <div class="alert alert-success">
+        <p>
+          <% if cur_reg_staff %>
+          <span class="pull-right">Weight: <%= t[:info]["weight"] %></span>
+          <% end %>
+          <b>Passed:</b> <%= t[:info]['message'] %>
+          <% if t[:info]["actual"] %>
+          <% unless t[:comment].strip.empty? %>(using <code><%= t[:comment].strip %></code>)<% end %>
+          <% end %>
+        </p>
+        <% if t[:info]["timeout"] || t[:info]["stack"] %>
+        <p><b>Test:</b> <%= t[:comment] %></p>
+        <% end %>
+      </div>
+    <% else %>
+      <div class="alert alert-danger">
+        <p>
+          <% if cur_reg_staff %>
+          <span class="pull-right">Weight: <%= t[:info]["weight"] %></span>
+          <% end %>
+          <b>Failed:</b> <%= t[:info]['message'] %>
+          <% if t[:info]["actual"] %>
+          <% unless t[:comment].strip.empty? %>(using <code><%= t[:comment].strip %></code>)<% end %>
+          <% end %>
+        </p>
+        <% if t[:info]["timeout"] || t[:info]["stack"] %>
+        <p><b>Test:</b> <%= t[:comment] %></p>
+        <% end %>
+        <% if t[:info]["methodName"] %>
+        <p>Method signature:
+          <code class="text-muted"><%= t[:info]["methodName"] %>(<%= t[:info]["paramNames"].join(", ") %>)</code>
+        </p>
+        <p style="display: inline-block;">Given arguments:
+          <dl class="dl-horizontal">
+            <% t[:info]["paramNames"].zip(t[:info]["args"]).each do |param, arg| %>
+            <dt><code><%= param %></code></dt>
+            <dd><pre><%= arg.join("\n") %></pre></dd>
+            <% end %>
+          </dl>
+        </p>
+        <%= render "actual_expected", locals: {actual: t[:info]["actual"], expected: t[:info]["expected"] } %>
+        <% elsif t[:info]["timeout"] %>
+        <p style="display: inline-block;">Stack:</p>
+        <pre><%= t[:info]["stack"].join("\n") %></pre>
+        <% elsif t[:info]["targetClassName"] %>
+        <p>Target: <code class="text-muted"><%= t[:info]["targetClassName"] %></code></p>
+        <p></p>
+        <div class="row">
+          <div class="col-sm-6">
+            <p><b>Actual:</b></p>
+            <p>Exception name: <code class="text-muted"><%= t[:info]["actualExnName"] %></code></p>
+            <p>Exception message: <code class="text-muted"><%= t[:info]["actualExnMessage"] %></code></p>
+          </div>
+          <div class="col-sm-6">
+            <p><b>Expected:</b></p>
+            <p>Exception name: <code class="text-muted"><%= t[:info]["expectedExnName"] %></code></p>
+            <p>Exception message: <code class="text-muted"><%= t[:info]["expectedExnMessage"] %></code></p>
+          </div>
+        </div>
+        <% elsif t[:info]["stack"] %>
+        <p>
+        <p style="display: inline-block;">Stack:</p>
+        <pre><%= t[:info]["stack"].join("\n") %></pre>        
+        <% else %>
+        <div class="row">
+          <% if t[:info]["actual"][0] == "" and t[:info]["expected"][0] == ""
+             t[:info]["actual"].shift
+             t[:info]["expected"].shift
+             end %>
+          <% diff = t[:info]["actual"].zip(t[:info]["expected"]).map{|a, e| a == e} %>
+          <div class="col-sm-6">
+            <p><b>Actual:</b></p>
+            <pre><% t[:info]["actual"].zip(diff).each do |a, d| %><% if !d then %><span class='alert-danger'><% else %><span><% end %><%= a %></span>
+<% end %></pre>
+          </div>
+          <div class="col-sm-6">
+            <p><b>Expected:</b></p>
+            <pre><% t[:info]["expected"].zip(diff).each do |e, d| %><% if !d then %><span class='alert-danger'><% else %><span><% end %><%= e %></span>
+<% end %></pre>
+          </div>
+        </div>
+        <% end %>
+      </div>
+    <% end %>
+  <% end %>  
+</div>
+<% end %>

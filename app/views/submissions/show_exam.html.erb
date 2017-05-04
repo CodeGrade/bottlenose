@@ -1,0 +1,70 @@
+<% @page_title = "View grades: #{@assignment.name}" %>
+
+<% cur_reg = current_user.registration_for(@course)
+   cur_reg_staff = cur_reg && cur_reg.staff? %>
+
+<p>
+  <%= link_to "Back to Assignment: #{@assignment.name}", course_assignment_path(@course, @assignment) %>
+</p>
+
+<% if cur_reg_staff || @submission.graders[0].available? %>
+<table id="grades-table" class="table col-sm-12">
+  <% q_count = @assignment.flattened_questions.count %>
+  <% grades = (0..q_count).map do |i|
+       (@grade_comments.find do |g| g.line == i end) or InlineComment.new
+     end %>
+  <% i = 0 %>
+  <% @assignment.questions.each_with_index do |q, q_num| %>
+  <tr>
+    <td>Problem <%= q_num + 1 %>: <%= q["name"] %><% if q["extra"] %> (Extra Credit)<% end %></td>
+    <% if q["parts"] %>
+    <% q_score = (grades[i .. (i - 1 + q["parts"].length)]).map do |g|
+         ((g and g["weight"]) or 0.0).to_f
+       end.sum %>
+    <td>
+      <%= show_score(q_score, @assignment, cur_reg_staff) %> / <%= show_score(q["weight"]) %></td>
+    <% else %>
+    <td>
+      <%= show_score((grades[i] && grades[i].weight), @assignment, cur_reg_staff) %>
+       / <%= show_score(q["weight"]) %>
+    </td>
+    <% end %>
+  </tr>
+  <% if q["parts"] %>
+    <% q["parts"].each_with_index do |p, j| %>
+    <tr>
+      <td style="padding-left: 2em;">(<%= ('a'..'z').to_a[j] %>) <%= p["name"] %></td>
+      <td style="padding-left: 2em;"><%= show_score((grades[i] && grades[i].weight), @assignment, cur_reg_staff) %>
+        / <%= show_score(p["weight"]) %></td>
+    </tr>
+    <% i += 1 %>
+    <% end %>
+  <% else %>
+  <% i += 1 %>
+  <% end %>
+  <% end %>
+  <tr>
+    <td><h4>Raw score:</h4></td>
+    <td><h4><%= show_score(grades[0..@assignment.flattened_questions.count - 1].map(&:weight).map(&:to_f).sum,
+                @assignment, cur_reg_staff) %> / <%= show_score(@grader_config.avail_score) %></h4></td>
+  </tr>
+  <% if grades[@assignment.flattened_questions.count] and !grades[@assignment.flattened_questions.count].new_record? %>
+  <tr>
+    <td><h4>Curved score:</h4></td>
+    <td><h4><%= show_score(grades[@assignment.flattened_questions.count].weight,
+                @assignment, cur_reg_staff) %> / <%= show_score(@grader_config.avail_score) %></h4></td>
+  </tr>
+  <% end %>
+  <tr>
+    <td><h4>Final score:</h4></td>
+    <td><h4><%= show_score(@submission.score, @assignment, cur_reg_staff) %>%</h4></td>
+  </tr>
+</table>
+<% if cur_reg_staff %>
+<%= link_to "Edit grades",
+    edit_course_assignment_submission_grader_path(@course, @assignment, @submission, @grader),
+    class: "btn btn-warning" %>
+<% end %>
+<% else %>
+<h3>Grades not yet available</h3>
+<% end %>

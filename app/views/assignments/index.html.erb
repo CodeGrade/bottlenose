@@ -1,0 +1,176 @@
+<% @page_title = "#{@course.name} / Assignments" %>
+
+
+<% if @course && (@course.registered_by?(current_user) || current_user.site_admin?) %>
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <div class="panel-title" id="assignments" data-toggle="collapse" data-target="#assignments-table">
+      Assignments
+
+      <% if @course && @course.registered_by?(current_user) %>
+      <div class="pull-right">
+        <%= link_to "New", new_course_assignment_path(@course), class: 'btn btn-xs btn-success' %>
+      </div>
+      <div class="pull-right">
+        <%= link_to "Edit Assignment Weights", weights_course_assignments_path, class: 'btn btn-xs btn-default' %>
+      </div>
+      <% end %>
+    </div>
+    <script>
+      $("#assignments a.btn").on("click", function(e) { e.stopPropagation(); });
+    </script>
+  </div>
+
+  <div id="assignments-table" class="panel-body collapse in">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Assignment</th>
+          <th>Assigned</th>
+          <th>Due</th>
+          <th>Weight</th>
+          <th>Min (%)</th>
+          <th>Avg (%)</th>
+          <th>Max (%)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%
+           assignments = @course.assignments.order(due_date: :desc, available: :desc)
+           stats = Submission.joins(:subs_for_gradings).where(assignment: assignments)
+                             .select("min(submissions.assignment_id) as a_id")
+                             .select("min(score), avg(score), max(score)")
+                             .group("submissions.assignment_id").to_a
+        %>
+        <% assignments.each do |assn| %>
+        <% if assn.available > DateTime.current %>
+        <tr class="text-muted">
+          <td><%= link_to assn.name, course_assignment_path(@course, assn) %></td>
+          <td><span class="local-time"><%= assn.available %></span></td>
+          <td><span class="local-time"><%= assn.due_date %></span></td>
+          <td><%= show_score(assn.points_available, assn, true) %>
+          <td>N/A</td>
+          <td>N/A</td>
+          <td>N/A</td>
+        <% else %>
+        <tr>
+          <td><%= link_to assn.name, course_assignment_path(@course, assn) %></td>
+          <td><span class="local-time"><%= assn.available %></span></td>
+          <td><span class="local-time"><%= assn.due_date %></span></td>
+          <td><%= show_score(assn.points_available, assn, true) %>
+          <% if assn.due_date > DateTime.current %>
+          <td class="text-muted">N/A</td>
+          <td class="text-muted">N/A</td>
+          <td class="text-muted">N/A</td>
+          <% else %>
+          <% stat = stats.find{|r| r.a_id == assn.id} %>
+          <td><%= show_score(stat && stat.min, assn, true) %>%</td>
+          <td><%= show_score(stat && stat.avg, assn, true) %>%</td>
+          <td><%= show_score(stat && stat.max, assn, true) %>%</td>
+          <% end %>
+        <% end %>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <div class="panel-title" data-toggle="collapse" data-target="#students-table">
+      Students
+      <div id="toggle-dropped" class="pull-right btn-xs btn btn-default">Show dropped students</div>
+      <script>
+        $("#toggle-dropped").on("click", function(e) {
+          $("#students-table").toggleClass("hide-dropped");
+          if ($("#students-table").hasClass("hide-dropped"))
+            $(this).text("Show dropped students");
+          else
+            $(this).text("Hide dropped students");
+          e.stopPropagation();
+          e.preventDefault();
+        });
+      </script>
+    </div>
+  </div>
+  <div id="students-table" class="panel-body collapse in hide-dropped">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th colspan=2>Student</th>
+          <th>Min</th>
+          <th>Cur</th>
+          <th>Max</th>
+          <th>No&nbsp;subs</th>
+          <th>Ungraded</th>
+          <th>Future</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% 
+           @course.score_summary.each do |info|
+           total = info[:max] + info[:unsub] + info[:pending]
+           %>
+          <% if info[:dropped] %>
+          <tr class="dropped text-muted">
+          <% else %>
+          <tr>
+          <% end %>
+            <td width="1em"><span><%= mail_to "#{info[:s].name} <#{info[:s].email}>", "@" %></span></td>
+            <td><span><%= link_to info[:s].display_name, impersonate_user_path(info[:s]), method: 'post' %></span></td>
+            <td class="col-md-1"><span class="<%= color_warning(info[:min]) %>"><%= show_score(info[:min], nil, true) %></span></td>
+            <td class="col-md-1">
+              <% if info[:cur].nan? %>
+              <span>?</span>
+              <% else %>
+              <span class="<%= color_warning(info[:cur]) %>"><%= show_score(info[:cur], nil, true) %></span>
+              <% end %>
+            </td>
+            <td class="col-md-1"><span class="<%= color_warning(total) %>"><%= show_score(total, nil, true) %></span></td>
+            <td class="col-md-1"><span data-toggle="tooltip" data-placement="top" title="(<%= info[:unsub_names].join(", ") %>)">
+                <%= show_score(info[:unsub], nil, true) %></span></td>
+            <td class="col-md-1"><span data-toggle="tooltip" data-placement="top" title="(<%= info[:pending_names].join(", ") %>)">
+                <%= show_score(info[:pending], nil, true) %></span></td>
+            <td class="col-md-1"><span><%= show_score(info[:remaining], nil, true) %></span></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <script>
+    $(function() {
+      $.tablesorter.themes.bootstrap = {
+        caption      : 'caption',
+        sortNone     : '',
+        sortAsc      : '',
+        sortDesc     : '',
+        active       : '', // applied when column is sorted
+        hover        : '', // custom css required - a defined bootstrap style may not override other classes
+        // icon class names
+        icons        : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+        iconSortAsc  : 'glyphicon glyphicon-chevron-up', // class name added to icon when column has ascending sort
+        iconSortDesc : 'glyphicon glyphicon-chevron-down', // class name added to icon when column has descending sort
+        filterRow    : '', // filter row class; use widgetOptions.filter_cssFilter for the input/select element
+        footerRow    : '',
+        footerCells  : '',
+        even         : '', // even row zebra striping
+        odd          : ''  // odd row zebra striping
+      };
+      $("#students-table > table").tablesorter({
+        headerTemplate: "{content} {icon}",
+        theme: "bootstrap",
+        widgets: ['uitheme']
+      });
+    });
+  </script>    
+</div>
+
+<% else %>
+<%= render "assignments/table", assignments: @course.assignments, 
+    for_user: current_user, show_all: false, show_weight: true %>
+<%= render "assignments/grade_stats",
+    for_user: current_user, stats:
+    @course.score_summary([current_user]).first %>
+<% end %>

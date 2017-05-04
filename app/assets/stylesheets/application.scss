@@ -1,0 +1,257 @@
+//= require codemirror
+//= require codemirror/themes/mdn-like
+//= require jquery-tablesorter/theme.bootstrap_2
+
+// Import the bootstrap overrides *before* bootstrap.
+@import "bootstrap-overrides";
+
+// External stylesheets.
+@import "bootstrap-sprockets";
+@import "bootstrap";
+@import "font-awesome";
+@import "bootstrap-datetimepicker";
+@import "bootstrap-treeview";
+@import "toggle";
+
+// Internal stylesheets.
+@import "old";  // TODO: Delete me.
+@import "footer";
+@import "actions";
+@import "page-header";
+@import "assignment";
+@import "button-file-inputs";
+@import "questions";
+
+table.row-vcenter > tbody > tr > td,
+table.row-vcenter > thead > tr > th {
+   vertical-align: middle;
+}
+
+textarea.autoHeight + .CodeMirror {
+   height: auto;
+   }
+
+div.CodeMirror .highlightLine {
+   background-color: #FAFAD2;
+}
+
+.gradeA { color: darkgreen; }
+.gradeB { color: green; }
+.gradeC { color: darkgoldenrod; }
+.gradeD { color: firebrick; }
+.gradeF { color: darkred; }
+
+
+ol#grader-defns {
+   list-style: none;
+}
+li.grader {
+   counter-increment: item;
+   margin-bottom: 5px;
+}
+li.grader:before {
+   margin-right: -6em;
+   content: counter(item);
+   background: #286090;
+   border-radius: 25%;
+   color: white;
+   width: 1.4em;
+   text-align: center;
+   float: left;
+   position: relative;
+   right: 1.6em;
+   display: inline-block;
+   font-size: 200%;
+}
+
+
+input.no-spinners {
+   -moz-appearance:textfield;
+}
+input.no-spinners::-webkit-outer-spin-button,
+input.no-spinners::-webkit-inner-spin-button {
+   -webkit-appearance: none;
+   margin: 0;
+}
+
+/* .hide-dropped tr.dropped > td > span { display: block; padding: 0; height: 0; overflow: none; visibility: hidden; } */
+/* .hide-dropped tr.dropped > td { padding: 0; margin: 0; border: 0px solid white; } */
+.hide-dropped tr.dropped { display: none; }
+
+div.grader-config {
+   display: inline-block;
+   width: 100%;
+   vertical-align: top;
+}
+
+.bootstrap-datetimepicker-widget > div.row {
+   margin-left: initial;
+   margin-right: initial;
+}
+.tab-pane {
+    border-left: 1px solid $table-border-color;
+    border-right: 1px solid $table-border-color;
+    border-bottom: 1px solid $table-border-color;
+    border-radius: 0px 0px 5px 5px;
+    padding: 10px;
+}
+
+.panel-tab-pane {
+    border: 1px solid $table-border-color;
+    border-radius: 5px;
+}
+
+.nav-tabs {
+    margin-bottom: 0;
+}
+.nav-tabs > li > a:focus {
+   outline: none;
+}
+
+.list-group-item.active:hover {
+   color: black;
+}
+
+@media(min-width: 768px) {
+   .affix {
+      top: 0;
+   }
+}
+@media(max-width: 767px) {
+   .affix {
+      position: initial;
+   }
+}
+
+.middle-separator {
+    overflow: hidden;
+    text-align: center;
+}
+.middle-separator:before,
+.middle-separator:after {
+    background-color: #000;
+    content: "";
+    display: inline-block;
+    height: 1px;
+    position: relative;
+    vertical-align: middle;
+    width: 50%;
+}
+.middle-separator:before {
+    right: 0.5em;
+    margin-left: -50%;
+}
+.middle-separator:after {
+    left: 0.5em;
+    margin-right: -50%;
+}
+
+
+.treeview.condensed {
+   overflow: scroll;
+   border: 1px solid $table-border-color;
+   border-radius: 5px;
+}
+.treeview.condensed .list-group-item { 
+   padding: 0.1em; 
+   white-space: nowrap;
+   border: 0px solid white;
+}
+
+.vert-tabs > .tab-pane { display: none; }
+.vert-tabs > .tab-pane.active { display: initial; }
+
+#error_explanation > h2:first-child {
+   margin-top: 0;
+}
+
+div.CodeMirror-linewidget > div {
+   background: $btn-default-bg;
+   border-radius: 5px;
+   color: black;
+   padding: 5px;
+}
+
+div.CodeMirror-linewidget > div td {
+   vertical-align: top;
+}
+div.CodeMirror-linewidget > div td.nowrap {
+   white-space: nowrap;
+}
+
+
+div.CodeMirror-linewidget > div span {
+   margin-left: 3px;
+   margin-right: 3px;
+}
+div.CodeMirror-linewidget > div span.label {
+   vertical-align: middle;
+}
+div.CodeMirror-linewidget > div span.description {
+   white-space: pre-line;
+}
+div.CodeMirror-linewidget > div span.glyphicon {
+   vertical-align: middle;
+}
+
+div.CodeMirror-linewidget > div.Error {
+   background: $alert-danger-bg;
+}
+
+div.CodeMirror-linewidget > div.Warning {
+   background: $alert-warning-bg;
+}
+
+div.CodeMirror-linewidget > div.Info {
+   background: $alert-info-bg;
+}
+
+li.list-group-item.unvisited {
+   background: $alert-danger-bg;
+}
+
+.spinner {
+  width: 100px;
+}
+.spinner input {
+  text-align: right;
+}
+.input-group-btn-vertical {
+  position: relative;
+  white-space: nowrap;
+  width: 1%;
+  vertical-align: middle;
+  display: table-cell;
+}
+.input-group-btn-vertical > .btn {
+  display: block;
+  float: none;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px;
+  margin-left: -1px;
+  position: relative;
+  border-radius: 0;
+}
+.input-group-btn-vertical > .btn:first-child {
+  border-top-right-radius: 4px;
+}
+.input-group-btn-vertical > .btn:last-child {
+  margin-top: -2px;
+  border-bottom-right-radius: 4px;
+}
+.input-group-btn-vertical i{
+  position: absolute;
+  top: 0;
+  left: 4px;
+}
+
+.tablesorter-bootstrap .tablesorter-header {
+   background-image: initial;
+   background-color: initial;
+}
+
+.long-table {
+   max-height: 500px;
+   overflow-y: auto;
+}

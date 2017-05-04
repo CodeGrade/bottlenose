@@ -1,0 +1,182 @@
+<% new_grader ||= "new_grader" %>
+<div id="<%= new_grader %>" name="grader-configuration" class="grader-config">
+  <%= f_grader.hidden_field "type" %>
+  <%= f_grader.hidden_field "id" %>
+  <%= f_grader.hidden_field "removed", value: false %>
+  <ul class="nav nav-tabs">
+    <% @in_use = usage_counts[target.id].to_i > 0 %>
+    <% @target = target %>
+    <% @new_grader = new_grader %>
+    <% def tab_if_type(type, text)
+         if (@in_use and (type == @target.type)) or !@in_use
+           content_tag(:a, text, data: {toggle: "tab"}, href: "##{@new_grader}_#{type}")
+         else
+           content_tag(:a, text, data: {toggle: ""})
+         end
+       end %>           
+    <li><%= tab_if_type("JavaStyleGrader", "Java style") %></li>
+    <li><%= tab_if_type("CheckerGrader", "Checker tests") %></li>
+    <li><%= tab_if_type("JunitGrader", "JUnit tests") %></li>
+    <li><%= tab_if_type("ManualGrader", "Manual grading") %></li>
+    <li><%= tab_if_type("SandboxGrader", "Sandboxed tests") %></li>
+    <li><%= tab_if_type("reuse", "Copy existing settings") %></li>
+    <li class="pull-right">
+      <% if @in_use %>
+      <span class="btn btn-warning disabled">Grader is in use</span>
+      <% else %>
+      <span id="remove-grader" class="btn btn-warning"
+            data-on="click" data-call="remove_grader" data-args="[]">
+        Delete this grader</span>
+      <% end %>
+    </li>
+
+  </ul>
+  <div class="tab-content">
+    <% cur_file = target.upload %>
+    <% if cur_file then cur_file = Upload.upload_path_for(target.upload.submission_path) end %>
+    <%= f_grader.fields_for "JavaStyleGrader" do |jsg| %>
+    <div id="<%= new_grader %>_JavaStyleGrader" class="tab-pane equal-height-group form-group">
+      <table class="table" style="margin-bottom: 0px;">
+        <tr>
+          <td><%= jsg.label "avail_score", "Points available:" %></td>
+          <td><%= jsg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %></td>
+        </tr>
+        <tr>
+          <td><%= jsg.label "upload_file", "Custom configuration:" %></td>
+          <td><%= jsg.file_field "upload_file" %>
+            <% if cur_file %>
+            <br>Current file: <%= link_to target.upload_file, cur_file %>
+            <% end %>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <% end %>
+    <%= f_grader.fields_for "CheckerGrader" do |cg| %>
+    <div id="<%= new_grader %>_CheckerGrader" class="tab-pane equal-height-group form-group">
+      <table class="table" style="margin-bottom: 0px;">
+        <tr class="form-group">
+          <td><%= cg.label "avail_score", "Points available:" %></td>
+          <td><%= cg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %></td>
+        </tr>
+        <tr class="form-group">
+          <td><%= cg.label "upload_file", "Reference tests:" %></td>
+          <td><%= cg.file_field "upload_file" %>
+            <% if cur_file %>
+            <br>Current file: <%= link_to target.upload_file, cur_file %>
+            <% end %>
+          </td>
+        </tr>
+        <tr class="form-group">
+          <td><%= cg.label "params", "Test class:" %></td>
+          <td><%= cg.text_field "params", value: target.params %></td>
+        </tr>
+      </table>
+    </div>
+    <% end %>
+    <%= f_grader.fields_for "JunitGrader" do |jg| %>
+    <div id="<%= new_grader %>_JunitGrader" class="tab-pane equal-height-group form-group">
+      <table class="table" style="margin-bottom: 0px;">
+        <tr class="form-group">
+          <td><%= jg.label "avail_score", "Points available:" %></td>
+          <td><%= jg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %></td>
+        </tr>
+        <tr class="form-group">
+          <td><%= jg.label "upload_file", "Reference tests:" %></td>
+          <td><%= jg.file_field "upload_file" %>
+            <% if cur_file %>
+            <br>Current file: <%= link_to target.upload_file, cur_file %>
+            <% end %>
+          </td>
+        </tr>
+        <tr class="form-group">
+          <td><%= jg.label "params", "Test class:" %></td>
+          <td><%= jg.text_field "params", value: target.params %></td>
+        </tr>
+      </table>
+    </div>
+    <% end %>
+    <%= f_grader.fields_for "ManualGrader" do |mg| %>
+    <div id="<%= new_grader %>_ManualGrader" class="tab-pane equal-height-group form-group">
+      <div class="form-inline">
+        <%= mg.label "avail_score", "Points available:" %>
+        <%= mg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %>
+      </div>
+    </div>
+    <% end %>
+    <%= f_grader.fields_for "SandboxGrader" do |sg| %>
+    <div id="<%= new_grader %>_SandboxGrader" class="tab-pane equal-height-group form-group">
+      <table class="table" style="margin-bottom: 0px;">
+        <tr class="form-group">
+          <td><%= sg.label "avail_score", "Points available:" %></td>
+          <td><%= sg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %></td>
+        </tr>
+        <tr class="form-group">
+          <td><%= sg.label "upload_file", "Grading file:" %></td>
+          <td><%= sg.file_field "upload_file" %>
+            <% if cur_file %>
+            <br>Current file: <%= link_to target.upload_file, cur_file %>
+            <% end %>
+          </td>
+        </tr>
+        <tr class="form-group">
+          <td><%= sg.label "params", "Grading driver:" %></td>
+          <td><%= sg.select("params", grading_drivers.map { |dd| [dd, dd] },
+                  selected: target.params || 'makefile.rb' )%></td>
+        </tr>
+      </table>
+    </div>
+    <% end %>
+
+    <div id="<%= new_grader %>_reuse" class="tab-pane equal-height-group form-group">
+      <label for="sel1">Select existing grader configuration:</label>
+      <select class="form-control" id="<%= new_grader %>_grader-config-options">
+        <% unique_configs.each do |c| %>
+        <%  attribs = c.attributes.map do |k, v| ["data-" + k, v || ""] end.to_h %>
+        <%= content_tag :option, attribs do c.to_s end %>
+        <% end %>
+      </select>
+      <br>
+      <div class="text-right">
+        <button id="<%= new_grader %>_select-grader-config" class="btn btn-info">Use this configuration</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  $(function() {
+    $('#<%= new_grader %> a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      var target = $(e.target).attr("href") // activated tab
+      $("#<%= new_grader %> #<%= f_grader.object_name %>_<%= f_grader.index || f_grader.instance_variable_get(:@auto_index) %>_type").val(target.substr(1));
+    });
+    <% if target %>
+    $("[href='#<%= new_grader %>_<%= target.type %>']").tab('show');
+    <% else %>
+    $("[href='#<%= new_grader %>_JavaStyleGrader']").tab('show');
+    <% end %>
+    var sel = $("#<%= new_grader %>_grader-config-options");
+    $("#<%= new_grader %>_select-grader-config").on("click", function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+      sel.find("option:selected").each(function() {
+        var opt_data = $(this).data();
+        var type = "<%= f_grader.object_name %>_<%= f_grader.index || f_grader.instance_variable_get(:@auto_index) %>_" + opt_data["type"];
+        var props = Object.keys(opt_data)
+        for (var i = 0; i < props.length; i++) {
+          if (props[i] === "type") continue;
+          var id = "#" + type + "_" + props[i];
+          console.log(id, $(id).length, opt_data[props[i]]);
+          $(id).val(opt_data[props[i]]);
+        }
+        $("[href='#<%= new_grader %>_" + opt_data["type"] + "']").tab('show');
+      });
+    });
+  });
+
+
+  $(function() {
+    $("#<%= new_grader %> .equal-height-group")
+      .matchHeight({byRow: false, property: 'height'});
+    $('#<%= new_grader %> .spinner').each(function() { activateSpinner(this) });
+  });
+</script>

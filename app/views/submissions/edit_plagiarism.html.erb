@@ -1,0 +1,66 @@
+<% @page_title = "Mark submission as plagiarized" %>
+
+<div class="alert alert-danger">
+  <h3>Mark submission as plagiarized</h3>
+  <h4>Marking a sumbmission as plagiarized cannot be undone.
+    The assignment will need to be resubmitted and regraded entirely,
+    if this is a mistake.
+  </h4>
+  <%= form_for [@course, @assignment, @submission],
+      :url => { action: :update_plagiarism, method: :patch } do |f| %>
+  <p>
+    The assignment was graded out of
+    <%= @max_points %> points.  How many points
+    should each student be penalized?
+  </p>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Involved?</th>
+        <th>Penalty</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @submission.submission_users.each do |u| %>
+      <tr>
+        <td><%= u.name %></td>
+        <td><input type="checkbox" id="involved[<%= u.id %>]"
+                   checked="checked" class="involved"
+                   data-target="submission_penalty_<%= u.id %>"
+                   data-toggle="toggle" data-on="Yes" data-off="No"
+                   />
+        </td>
+        <td><%= f.spinner "penalty[#{u.id}]", @max_points,
+                class: "penalty", min: 0, max: @max_points %></td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p>
+    Leave a comment to the students:
+  </p>
+  <textarea name="comment" id="comment" rows="5"
+            class="form-control"></textarea>
+  <p></p>
+  <div class="row">
+    <span class="col-md-2"></span>
+    <span class="col-md-1">
+      <%= link_to "Cancel",
+          course_assignment_submission_path(@course, @assignment, @submission),
+          class: "btn btn-default pull-left" %>
+    </span>
+    <span class="col-md-6"></span>
+    <span class="col-md-1">
+      <%= f.submit "Confirm plagiarism", class: "btn btn-danger pull-right" %>
+    </span>
+  </div>
+  <% end %>
+</div>
+<script>
+  $(".involved").change(function() {
+    var target = $("input#" + $(this).data("target"));
+    target.prop("disabled", !$(this).prop("checked"));
+  });
+  $('.spinner').each(function() { activateSpinner(this, {precision: 1}) });
+</script>

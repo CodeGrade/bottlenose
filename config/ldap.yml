@@ -1,0 +1,28 @@
+development:
+  host: ldap.ccs.neu.edu
+  port: 636
+  attribute: uid
+  base: ou=people,dc=ccs,dc=neu,dc=edu
+  ssl: true
+
+# TODO: The configurations below are untested.
+
+test:
+  host: localhost
+  port: 3389
+  attribute: uid
+  base: ou=people,dc=test,dc=com
+  admin_user: cn=admin,dc=test,dc=com
+  admin_password: admin_password
+  ssl: simple_tls
+  # <<: *AUTHORIZATIONS
+
+production:
+  host: ldap.ccs.neu.edu
+  port: 636
+  attribute: uid
+  base: ou=people,dc=ccs,dc=neu,dc=edu
+  # admin_user: cn=admin,dc=test,dc=com
+  # admin_password: admin_password
+  ssl: true
+  # <<: *AUTHORIZATIONS

@@ -1,0 +1,165 @@
+<div class="row">
+  <% if @team.errors.any? %>
+  <div id="error_explanation" class="alert alert-danger">
+    <h3><%= pluralize(@team.errors.count, "error") %> prohibited this team from being saved:</h3>
+    <ul>
+      <% @team.errors.full_messages.each do |message| %>
+      <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+  <% end %>
+</div>
+
+<h3>Active Dates</h3>
+<div class="row">
+  <div class="col-md-1">&nbsp;</div>
+  <div class="col-md-4">
+    <div class="form-group">
+      <%= label_tag :start_date %><br>
+      <div class='input-group date', data-default="<%= Date.current.strftime("%Y/%m/%d") %>" >
+        <%= text_field_tag :start_date, "", class: 'form-control' %>
+        <span class="input-group-addon">
+          <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-2 text-center"><p>&nbsp;</p><p><b>until</b></p></div>
+  <div class="col-md-4">
+    <div class="form-group">
+      <%= label_tag :end_date %><br>
+      <div class='input-group date'>
+        <%= text_field_tag :end_date, "", class: 'form-control', include_blank: true %>
+        <span class="input-group-addon">
+          <span class="glyphicon glyphicon-calendar"></span>
+        </span>
+      </div>
+    </div>
+    <script type="text/javascript">
+      $(function () {
+        $('.input-group.date').each(function() {
+          var target = $(this);
+          target.datetimepicker({
+            sideBySide: true,
+            format: "MMMM Do, YYYY",
+            minDate: "<%= Date.current.strftime("%Y/%m/%d") %>",
+            defaultDate: target.data("default"),
+            allowInputToggle: true
+          });
+        });
+        var start = $("#start_date").parent();
+        var end = $("#end_date").parent();
+        start.on("dp.change", function(e) {
+          var v = $("#start_date").val();
+          $("#random_start_date").val(v);
+          $("#team_start_date").val(v);
+        });
+        end.on("dp.change", function(e) {
+          var v = $("#end_date").val()
+          $("#random_end_date").val(v);
+          $("#team_end_date").val(v);
+        });
+        start.trigger("dp.change");
+        end.trigger("dp.change");
+        start.on("dp.change", function(e) {
+          var v = end.data("DateTimePicker").date();
+          end.data("DateTimePicker").minDate(e.date);
+          if (v.isBefore(e.date)) end.data("DateTimePicker").clear();
+        });
+      })
+    </script>
+  </div>
+</div>
+
+<div class="well">
+  <%= form_for(@course, :url => { action: :randomize, method: :patch }) do |f| %>
+  <h3>Randomize all teams</h3>
+  <%= fields_for "random" do |rand| %>
+  <div class="row">
+    <div class="col-sm-12 form-inline">
+      <%= rand.hidden_field "start_date" %>
+      <%= rand.hidden_field "end_date" %>
+      Generate random teams of size <%= rand.spinner "size", 2, :min => 2, :max => 10 %>
+    </div>
+    <p class="col-sm-12">
+      <%= f.submit "Generate random teams", id: "submit-random",
+          class: 'btn btn-primary', method: :patch %>
+    </p>
+  </div>
+  <% end %>
+  <% end %>
+
+  <h3 class="middle-separator">OR</h3>
+
+  <%= form_for([@course, @team]) do |f| %>
+  <%= f.hidden_field :course_id %>
+  <%= f.hidden_field :start_date %>
+  <%= f.hidden_field :end_date %>
+  <h3>Select Team Members</h3>
+  <div class="row form-group">
+    <div class="col-sm-10">
+      <%= select_tag(:users, names_for_select(@team.users), multiple: true, class: "form-control") %>
+    </div>
+    <span class="remove-users-btn btn btn-default col-sm-2">Remove Selected</span>
+  </div>
+  <p class="form-group">
+    <%= f.submit "Create single team", id: "submit-btn", class: 'btn btn-primary' %>
+  </p>
+  <% end %>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <h3>Active Teams
+      <%= link_to "Dissolve all",
+          dissolve_all_course_teams_path(@course),
+          class: "btn btn-danger pull-right", 
+          method: :patch, data: { confirm: "Are you sure you want to dissolve all teams?" } %>
+    </h3>
+
+    <div class="long-table">
+    <table id="teams" class="table table-striped">
+      <thead>
+        <tr>
+          <th>Members</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @teams.each do |team| %>
+        <tr>
+          <td><%= team %></td>
+          <td>
+            <%= link_to "Dissolve", dissolve_course_team_path(@course, team), class: "btn btn-danger btn-xs pull-right", method: :patch, data: { confirm: "Are you sure?" } %>
+          </td>
+        </tr>
+        <% end %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <h3>Students Without Teams (<%= @others.length %> remaining)</h3>
+
+    <div class="long-table">
+    <table id="users" class="table table-striped">
+      <thead>
+	<tr>
+	  <th>Name</th>
+	  <th></th>
+	</tr>
+      </thead>
+      <tbody>
+	<% @others.sort_by(&:sort_name).each do |user| %>
+	<%= content_tag("tr", class: "user", data: { id: user.id, name: user.name }) do %>
+	<td><%= user.sort_name %></td>
+        <td><div class="add-user-btn btn btn-success btn-xs pull-right">Add</div></td>
+	<% end %>
+	<% end %>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>

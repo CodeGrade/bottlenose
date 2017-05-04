@@ -1,0 +1,15 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Archived</th>
+        </tr>
+    </thead>
+
+    <% terms.each do |term| %>
+        <tr>
+            <td><%= link_to term.name, term_path(term) %></td>
+            <td style="text-align: center"><%= term.archived? ? "archived" : "active" %></td>
+        </tr>
+    <% end %>
+</table>

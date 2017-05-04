@@ -1,0 +1,92 @@
+h4 {
+    margin: 20px 0 0 20px;
+}
+
+/* Toggle instances */
+ .toggle {
+    width: 140px;
+}
+.stacked .toggle {
+    display: block;
+}
+
+/* General toggle styles */
+ .toggle {
+    position: relative;
+    padding: 0;
+    display: inline-block;
+    white-space: nowrap;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+.toggle input {
+    position: absolute;
+    opacity: 0;
+}
+.toggle > div {
+    overflow: hidden;
+    padding: 0;
+    width: 100%;
+}
+.toggle label {
+    display: block;
+    margin: 0 0 0 -100%;
+    padding: 0;
+    width: 200%;
+    max-width: unset;
+    -webkit-transition: margin 0.15s cubic-bezier(1, 0.035, 0.665, 0.91);
+    transition: margin 0.15s cubic-bezier(1, 0.035, 0.665, 0.91);
+}
+.toggle label:before, .toggle label:after {
+    content:" ";
+    display: table;
+}
+.toggle label:after {
+    clear: both;
+}
+.toggle label .btn {
+    display: block;
+    float: left;
+}
+.toggle input:focus + div {
+    outline: thin dotted #333;
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: -2px;
+}
+.toggle input:checked + div > label {
+    margin-left: 0;
+}
+.toggle input:checked + div > label .toggle-handle {
+    left: 90%;
+    left: calc(90% - 1px);
+}
+.toggle-on, .toggle-off {
+    width: 50%;
+}
+.toggle-on {
+    padding-right: 10%;
+}
+.toggle-off {
+    padding-left: 10%;
+}
+.toggle-handle {
+    width: 10%;
+    padding: 0;
+    position: absolute;
+    left: 1px;
+    top: 1px;
+    bottom: 1px;
+    -webkit-transition: left 0.15s cubic-bezier(1, 0.035, 0.665, 0.91);
+    transition: left 0.15s cubic-bezier(1, 0.035, 0.665, 0.91);
+}
+.toggle-align .toggle-on {
+    text-align: left;
+    padding-right: 0;
+}
+.toggle-align .toggle-off {
+    text-align: right;
+    padding-left: 0;
+}

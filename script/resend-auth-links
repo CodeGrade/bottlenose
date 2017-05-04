@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+# Primitive bulk-user-upload script. Requires course_id to be hard-coded, below.
+# Reads comma-separated values of time, name, email, section, but ignores all but name and email.
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+course_id = ARGV[0]
+
+if course_id.nil?
+  puts "Usage"
+  puts "  #{$0} course_id"
+  exit(1)
+end
+
+course = Course.find(course_id.to_i)
+
+course.students.each do |user|
+  puts "Resending auth link for #{user.name}..."
+  user.send_auth_link_email!("https://grader.cs.uml.edu/")
+end

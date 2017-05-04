@@ -1,0 +1,44 @@
+#!/usr/bin/env ruby
+
+# Primitive bulk-user-upload script. Requires course_id to be hard-coded, below.
+# Reads comma-separated values of time, name, email, section, but ignores all but name and email.
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+COURSE_ID = 13
+
+filename  = ARGV[0]
+
+if filename.nil?
+  puts "Usage"
+  puts "  #{$0} users-to-add.csv"
+  exit(1)
+end
+
+File.open(filename, 'r') do |f1|
+  while line = f1.gets
+    line.chomp!
+    (name, email) = line.split(/\s*;\s*/)
+    puts "Adding " + name + " with " + email
+    new_user = nil
+
+    begin
+      new_user = User.new(email: email.downcase, name: name)
+      new_user.save!
+    rescue
+      new_user = User.find_by_email(email.downcase)
+    end
+
+    begin
+      Registration.new(user_id: new_user.id, course_id: COURSE_ID).save!
+    rescue
+      puts "Skip registration"
+    end
+
+    new_user.send_auth_link_email!("https://grader.cs.uml.edu/")
+    puts "Sent email to #{new_user.email}"
+  end
+end

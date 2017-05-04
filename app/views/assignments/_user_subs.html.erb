@@ -1,0 +1,112 @@
+<% cur_reg = current_user.registration_for(@course)
+   cur_reg_staff = cur_reg && cur_reg.staff? %>
+
+<% if gradesheet.submissions.empty? %>
+  <div class="well">
+    No submissions yet.
+  </div>
+<% else %>
+  <table class="table table-striped row-vcenter">
+    <tr>
+      <th>Status</th>
+      <th>Submitter</th>
+      <th>Team</th>
+      <th>Date</th>
+      <th>Status</th>
+      <% gradesheet.grades[:configs].each do |c| %>
+      <th class="text-right"><%= c.display_type %></th>
+      <% end %>
+      <th class="text-right">Total</th>
+      <th>Grade</th>
+      <th class="text-right" style="width: 6.5em;">Action</th>
+    </tr>
+
+  <% gradesheet.grades[:grades].each do |grade| %>
+    <% sub = grade[:sub] %>
+    <% used_sub = gradesheet.assignment.used_sub_for(user) %>
+    <% used = (!used_sub.nil? && used_sub.id == sub.id) %>
+    <% if sub.stale_team? %>
+    <tr class='muted'>
+    <% elsif used %>
+    <tr class='success'>
+    <% else %>
+    <tr>
+    <% end %>
+      <td>
+        <% if sub.stale_team? %>
+        <span class="well-sm glyphicon glyphicon-alert" 
+              title="Team was dissolved before homework was due"></span>
+        <% elsif used %>
+        <span class="well-sm glyphicon glyphicon-chevron-right" 
+              title="This submission is used for grading"></span>
+        <% end %>
+      </td>
+      <td><%= if cur_reg_staff then link_to sub.user.name, user_path(sub.user) else sub.user.name end %></td>
+      <td><%= sub.team %></td>
+      <td><span class="local-time"><%= sub.created_at %></span></td>
+      <% scores = if cur_reg_staff then grade[:staff_scores] else grade[:blind_scores] end %>
+      <% if scores[:raw_score]
+         score = scores[:raw_score] / gradesheet.max_score
+         no_score = false
+         else
+         score = (scores[:scores].reduce([0, 0, true]) do |acc, s|
+           if s.kind_of?(Array)
+             [acc[0] + s[0], acc[1] + s[1], false]
+           else
+             acc
+           end
+         end)
+         no_score = score[2]
+         score = (score[1] == 0 ? 0 : score[0] / score[1])
+         end %>
+      <td><%= if no_score
+              then image_tag("question-mark.png", height: 32)
+              else status_image(sub, 100.0 * score) end %></td>
+      <% scores[:scores].each do |s| %>
+      <td class="text-right">
+        <% if s.kind_of?(Array) %>
+        <%= to_fixed(s[0]) %>&nbsp;/&nbsp;<%= to_fixed(s[1]) %>
+        <% else %>
+        <%= s %>
+        <% end %>
+      </td>
+      <% end %>
+      <% if scores[:raw_score] && sub.score %>
+      <td class="text-right"><%= to_fixed(scores[:raw_score]) %>&nbsp;/&nbsp;<%= to_fixed(gradesheet.max_score) %></td>
+      <td>(<%= to_fixed(sub.score) %>%)</td>
+      <% else %>
+      <td><%= image_tag("question-mark.png", height: 32) %></td><td></td>
+      <% end %>
+      <% if cur_reg_staff %>
+      <td class="text-right">
+        <form method="link"
+              action="<%= course_assignment_submission_path(@course, @gradesheet.assignment, sub) %>">
+          <div class="btn-group" style="white-space: nowrap;">
+            <%= link_to "View",
+                course_assignment_submission_path(course, gradesheet.assignment, sub),
+                class: "btn btn-sm btn-default" %><% #
+            %><button type="button" class="btn btn-sm btn-default dropdown-toggle"
+                    data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+              <span class="caret"></span>
+              <span class="sr-only">Toggle Dropdown</span>
+            </button><% #
+            %><ul class="dropdown-menu">
+              <li><%= link_to "View", 
+                      course_assignment_submission_path(course, gradesheet.assignment, sub), 
+                      class: "dropdown-item" %></li>
+              <li><%= link_to "Use for grading", 
+                      use_course_assignment_submission_path(course, gradesheet.assignment, sub),
+                      class: "dropdown-item" %></li>
+            </ul>
+          </div>
+        </form>
+      </td>
+      <% else %>
+      <td><%= link_to "View", course_assignment_submission_path(course, gradesheet.assignment, sub) %></td>
+      <% end %>
+    </tr>
+  <% end %>
+
+  </table>
+<% end %>

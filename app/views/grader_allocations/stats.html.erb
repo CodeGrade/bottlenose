@@ -1,0 +1,21 @@
+<h3>Grading statistics</h3>
+
+<% people = @course.staff.sort_by(&:name) %>
+
+<% people.each do |p| %>
+<% info = @grader_info[p.id] %>
+<p>
+  <b><%= p.name %></b>
+  <% if info.nil? %>
+  <ul>
+    <li>No assignments graded</li>
+  </ul>
+  <% else %>
+  <ul>
+    <li><i>Incomplete gradings:</i> <%= info[:incomplete] %></li>
+    <li><i>Abandoned gradings:</i> <%= info[:abandoned] %></li>
+    <li><i>Average grading time:</i> <%= "#{'%.01f' % info[:avg_grading_time]} days" %></li>
+  </ul>
+  <% end %>
+</p>
+<% end %>

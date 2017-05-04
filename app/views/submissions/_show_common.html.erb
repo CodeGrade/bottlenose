@@ -1,0 +1,57 @@
+<% def maybe_link_to(which, text, link)
+     if which then link_to(text, link) else text end
+   end %>
+<% cur_reg_staff = cur_reg && cur_reg.staff? %>
+
+<p>
+  <%= link_to "Back to Assignment: #{@assignment.name}", course_assignment_path(@course, @assignment) %>
+</p>
+
+<h1>Submission</h1>
+
+<table class="table row-vcenter">
+  <tr>
+    <td><strong>Assignment</strong></td>
+    <td><%= @submission.assignment.name %></td>
+  </tr>
+  <% if @submission.team.nil? %>
+    <tr>
+      <td><strong>Student</strong></td>
+      <td><%= maybe_link_to cur_reg_staff, @submission.user.name, user_path(@submission.user) %></td>
+    </tr>
+  <% else %>
+    <tr>
+      <td><strong>Team</strong></td>
+      <td><%= maybe_link_to cur_reg_staff, @submission.team, course_team_path(@course, @submission.team) %>
+        (submitted by <%= maybe_link_to cur_reg_staff, @submission.user.name, user_path(@submission.user) %>)</td>
+    </tr>
+  <% end %>
+  <tr>
+    <td><strong>Submission Time</strong></td>
+    <td><span class="local-time"><%= @submission.created_at %></span></td>
+  </tr>
+  <tr>
+    <td><strong>Submission Details</strong></td>
+    <td><%= link_to "See individual #{kind}",
+            details_course_assignment_submission_path(@course, @assignment, @submission),
+            class: "btn btn-success" %>
+      <% if show_download %>
+      <%= link_to @submission.file_path, class: "btn btn-default" do %>
+      <i class="glyphicon glyphicon-download-alt"></i> Download  <%= @submission.file_name %> 
+      <% end %>
+      <% end %>
+    </td>
+  </tr>
+  <% if @submission.time_taken %>
+    <tr>
+      <td><strong>Time Taken</strong></td>
+      <td><%= @submission.time_taken %> hours</td>
+    </tr>
+  <% end %>
+  <tr>
+    <td><strong>Student Notes</strong></td>
+    <td>
+      <div class="prose"><%= @submission.student_notes %></div>
+    </td>
+  </tr>
+</table>

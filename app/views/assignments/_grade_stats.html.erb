@@ -1,0 +1,95 @@
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Current grade information</h3>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th class="col-md-4"></th>
+        <th class="col-md-4"></th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Minimum grade:</strong></td>
+        <td><span class="<%= color_warning(stats[:min]) %>"><%= show_score(stats[:min], nil, true) %></span></td>
+        <td><i class="glyphicon glyphicon-question-sign" style="cursor: pointer;"
+               data-toggle="collapse" data-target="#min-grade-info"></i></td>
+        <td><p id="min-grade-info" class="collapse">
+              These points have already been earned.  If you
+              earn no points for the rest of the semester, this is your
+              final grade.
+            </p>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Grade so far:</strong></td>
+        <td>
+          <% if stats[:cur].nan? %>
+          <span>?</span>
+          <% else %>
+          <span class="<%= color_warning(stats[:cur]) %>"><%= show_score(stats[:cur], nil, true) %></span>
+          <% end %>
+        </td>
+        <td><i class="glyphicon glyphicon-question-sign" style="cursor: pointer;"
+               data-toggle="collapse" data-target="#so-far-info"></i></td>
+        <td><p id="so-far-info" class="collapse">
+              This is your grade so far, divided by the total
+              you could have gotten on graded assignments so far.  If
+              you continue at this rate, this is your likely final grade.
+            </p>
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Maximum grade:</strong></td>
+        <td><span class="<%= color_warning(stats[:max] + stats[:unsub] + stats[:pending]) %>">
+            <%= show_score(stats[:max] + stats[:unsub] + stats[:pending], nil, true) %></span></td>
+        <td><i class="glyphicon glyphicon-question-sign" style="cursor: pointer;"
+               data-toggle="collapse" data-target="#max-grade-info"></i></td>
+        <td><p id="max-grade-info" class="collapse">
+              This is your maximum possible grade, assuming that you
+              submit everything that can still be submitted, and that
+              you do perfectly on each of those submissions.
+            </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-left: 2em;">Homeworks not yet submitted:</td>
+        <td><span><%= show_score(stats[:unsub], nil, true) %></span>
+          <span>(<%= stats[:unsub_names].join(", ") %>)</span></td>
+        <td><i class="glyphicon glyphicon-question-sign" style="cursor: pointer;"
+               data-toggle="collapse" data-target="#not-yet-info"></i></td>
+        <td><p id="not-yet-info" class="collapse">
+               These assignments are available and not yet due, and
+               you have not yet submitted anything for them.
+            </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-left: 2em;">Ungraded assignments' potential score:</td>
+        <td><span><%= show_score(stats[:pending], nil, true) %></span>
+          <span>(<%= stats[:pending_names].join(", ") %>)</span></td>
+        <td><i class="glyphicon glyphicon-question-sign" style="cursor: pointer;"
+               data-toggle="collapse" data-target="#ungraded-info"></i></td>
+        <td><p id="ungraded-info" class="collapse">
+              These assignments have been submitted but not yet
+              graded; if you do perfectly you could earn this many points.
+            </p>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-left: 2em;">Future assignments:</td>
+        <td><span><%= show_score(stats[:remaining], nil, true) %></span>
+        </td>
+        <td><i class="glyphicon glyphicon-question-sign" style="cursor: pointer;"
+               data-toggle="collapse" data-target="#future-info"></i></td>
+          <td><p id="future-info" class="collapse">
+              These assignments have not yet been assigned.
+            </p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

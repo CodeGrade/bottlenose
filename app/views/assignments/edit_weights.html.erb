@@ -1,0 +1,70 @@
+<% @page_title = "#{@course.name} / Assignment Weights" %>
+
+<% if @course.errors.any? %>
+<div id="error_explanation" class="alert alert-danger">
+  <h2><%= pluralize(@course.errors.count, "error") %> prohibited
+  these weights from being saved:</h2>
+
+  <ul>
+    <% @course.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+    <% end %>
+  </ul>
+</div>
+<% end %>
+
+<%= form_tag do %>
+<table class="table table-hover">
+  <thead>
+    <th class="col-sm-4">Assignment Name</th>
+    <th>Weight</th>
+  </thead>
+  <tbody>
+<% @course.assignments.order(:due_date).each do |a| %>
+    <tr>
+      <td><%= label_tag("weight[#{a.id}]", a.name) %></td>
+      <td><%= text_field_tag "weight[#{a.id}]", a.points_available,
+      class: "weight form-field numeric" %></td>
+    </tr>
+<% end %>
+   <tr id="total-row" class="alert alert-success">
+     <td>Points currently assigned</td>
+     <td id="total"></td>
+   </tr>
+   <tr id="remaining-row" class="alert alert-info">
+     <td>Remaining points</td>
+     <td id="remaining"></td>
+   </tr>
+  </tbody>
+</table>
+  <div class="form-group">
+    <%= submit_tag "Update weights", class: 'btn btn-primary' %>
+  </div>
+<script type="text/javascript">
+$(function() {
+  var weights = $("input.weight");
+  
+  function refresh() {
+    var sum = 0;
+    weights.each(function() {
+      var val = Number($(this).val());
+      if (!isNaN(val)) sum += val;
+    });
+    $("#remaining").text(100 - sum);
+    $("#total").text(sum);
+    if (sum > 100) {
+     $("#remaining-row").removeClass("alert-info").addClass("alert-danger");
+     $("#total-row").removeClass("alert-success").addClass("alert-danger");
+    } else {
+     $("#remaining-row").addClass("alert-info").removeClass("alert-danger");
+     $("#total-row").addClass("alert-success").removeClass("alert-danger");
+    }
+  }
+  weights.blur(refresh);
+  refresh();
+  $("form").submit(ensureValidNumericInputOnSubmit);
+});
+</script>
+
+
+<% end %>

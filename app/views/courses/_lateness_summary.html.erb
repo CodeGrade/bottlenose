@@ -1,0 +1,48 @@
+<% if @course.total_late_days %>
+<% if show_all then
+     assns = assignments
+   else
+     assns = assignments.where("available <= ?", DateTime.current)
+   end %>
+<% used_subs = for_user.used_submissions_for(assns).to_a %>
+<% total_latedays = used_subs.reduce(0) do |acc, s| acc + s.submission.days_late end %>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Late submissions summary</h3>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Total days used:</th><th><%= total_latedays %></th>
+          </tr>
+          <tr>
+            <th>Remaining late days:</th><th><%= @course.total_late_days - total_latedays %></th>
+          </tr>
+        </thead>
+      </table>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Submitted</th>
+            <th>Late Days Used</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% assns.order(due_date: :desc, available: :desc).each do |assignment| %>
+          <% used = used_subs.detect{|u| u.assignment_id == assignment.id} %>
+          <tr>
+            <td><%= link_to assignment.name, course_assignment_path(assignment.course, assignment) %></td>
+            <% if used.nil? %>
+            <td></td>
+            <td>0</td>
+            <% else %>
+            <td><span class="local-time"><%= used.created_at %></span></td>
+            <td><%= used.submission.days_late %></td>
+            <% end %>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+<% end %>

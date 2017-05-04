@@ -1,0 +1,41 @@
+<% @page_title = @course.name %>
+
+<style>
+  <% @sections.each do |s| %>
+  #students.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
+  <% end %>
+</style>
+
+<h1>Facebook View</h1>
+<h4>Select a section: <select id="sections">
+    <option value="show_all">Show all sections</option>
+    <% @sections.each do |s| %>
+    <option value="show_one sec_<%= s.crn %>">Section <%= s.crn %></option>
+    <% end %>
+</select></h4>
+  
+
+<div id="students" class="row">
+  <% @students.each_slice(6) do |row| %>
+  <div class="row">
+    <% row.each do |s| %>
+    <div class="col-md-2 text-center sec_<%= s.section_id %>">
+      <%= image_tag Upload.upload_path_for(s.profile || "silhouette.jpg"), 
+          alt: s.display_name, style: "max-height: 200px; max-width: 100%;" %>
+      <p><%= link_to s.display_name, user_path(s) %></p>
+      <% if s.dropped_date %><p>(withdrawn <%= s.dropped_date %>)</p><% end %>
+    </div>
+    <% end %>
+  </div>
+  <% end %>
+</div>
+
+<script>
+  $(function() {
+    var prevSection = "";
+    $("#sections").change(function(e) {
+      $("#students").removeClass(prevSection).addClass($(this).val());
+      prevSection = $(this).val();
+    });
+  });
+</script>

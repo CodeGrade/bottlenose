@@ -1,0 +1,20 @@
+<% @page_title = "Terms" %>
+
+<div class="page-header">
+  <h1>Terms</h1>
+
+  <% if current_user && (current_user.site_admin? ||
+     current_user.professor_ever?) %>
+  <div class="actions">
+    <% if current_user.site_admin? %>
+      <%= link_to "New Term", new_term_path, class: "btn btn-success" %>
+    <% end %>
+  </div>
+  <% end %>
+</div>
+
+<div class="row">
+  <div class="col-md-12">
+    <%= render 'table', terms: @terms %>
+  </div>
+</div>

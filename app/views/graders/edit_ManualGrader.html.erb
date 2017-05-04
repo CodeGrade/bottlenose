@@ -1,0 +1,111 @@
+<% @page_title = "Manual Style Grader" %>
+<% cur_reg = current_user.registration_for(@course) %>
+<% content_for :wide_content_before do %>
+<style id="comment-styles"></style>
+
+<p>
+  <%= link_to "Back to submission",
+      course_assignment_submission_path(@course, @assignment, @submission) %>
+</p>
+
+<h1>Submission</h1>
+
+<table class="table row-vcenter">
+  <tr>
+    <td><strong>Assignment</strong></td>
+    <td><%= @submission.assignment.name %></td>
+  </tr>
+  <% if @submission.team.nil? %>
+    <tr>
+      <td><strong>Student</strong></td>
+      <td><%= @submission.user.name %></td>
+    </tr>
+  <% else %>
+    <tr>
+      <td><strong>Team</strong></td>
+      <td><%= @submission.team %></td>
+    </tr>
+  <% end %>
+  <tr>
+    <td><strong>Submission Time</strong></td>
+    <td><span class="local-time"><%= @submission.created_at %></span></td>
+  </tr>
+  <tr>
+    <td><strong>Student Notes</strong></td>
+    <td>
+      <div class="prose"><%= @submission.student_notes %></div>
+    </td>
+  </tr>
+</table>
+
+
+<h1>Manual Grading</h1>
+<p>The treeview to the left shows the files in this submission.  Click
+  on each one to show that file's content.  You cannot submit grades
+  without having at least viewed each file.</p>
+<p>To create a comment, click on a line number in the file view.  You
+  can specify what kind of comment it is, the points to be deducted,
+  and leave a message for the student.</p>
+<h3>
+  <span class="pull-right">Total score:
+    <span id="score">??</span>&nbsp;/&nbsp;<%= to_fixed(@grader.out_of)%>
+  </span>
+  <%= form_for [@course, @assignment, @submission, @grader] do |f| %>
+  <%= hidden_field_tag :finalScore %>
+  <%= hidden_field_tag :comments %>
+  <%= f.submit "Give comments on all files below", id: "completed", class: "btn btn-success disabled" %>
+  <% end %>
+</h3>
+<% end %>
+
+<% content_for :wide_content do %>
+<div class="col-sm-3">
+  <div id="files-sidebar" data-spy="affix">
+    <div id="files" class="nav treeview condensed"></div>
+    <p>
+      <label>Show other inline comments:
+        <input id="toggle-comments" data-toggle="toggle" data-on="Shown" data-off="Hidden" type="checkbox">
+      </label>
+    </p>
+  </div>
+</div>
+<div class="col-sm-9 tab-content">
+  <%= render 'submissions/files', sub_files: @submission_files %>
+</div>
+
+<script>
+  var lineComments = <%= raw(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
+  <%= render :partial => 'submissions/render_embedded_images.js' %>
+  <%= render :partial => 'submissions/render_comments.js' %>
+  <%= render :partial => 'graders/enter_comments.js' %>
+  $(function() {
+    var manualComments = [];
+    for (var i = 0; i < lineComments.length; i++) {
+      manualComments[i] = lineComments[i].ManualGrader || {};
+      delete lineComments[i].ManualGrader;
+    }
+    renderComments(lineComments);
+    $(".file-pane").each(function(index) {
+      var theseComments = lineComments[index] || {};
+      if (theseComments["noCommentsFor"]) return;
+      var cm = $(this).find(".CodeMirror")[0].CodeMirror;
+      cm.operation(function() {
+        var theseComments = manualComments[index];
+        Object.keys(theseComments).forEach(function(line, _) {
+          var commentsOnLine = theseComments[line];
+          commentsOnLine.forEach(function(comment, _) {
+            // lines are off-by-one so they appear beneath the code they comment on
+            if (comment.editable || <%= cur_reg.professor? %>)
+              insertComment(cm, Number.parseInt(line) - 1, comment);
+            else
+              renderComment(cm, "ManualGrader", line, comment);
+          });
+        });
+      });
+    });
+    updateScore();
+  });
+  $("form").submit(ensureValidNumericInputOnSubmit);
+</script>
+
+<% end %>

@@ -1,0 +1,27 @@
+<% @page_title = "View Submission" %>
+<% cur_reg = current_user.registration_for(@course) %>
+
+<%= render "show_common", cur_reg: cur_reg, kind: "files",
+    show_download: true %>
+
+<%= render "scoring_common", cur_reg: cur_reg %>
+
+<% show_hidden = (current_user.site_admin? || cur_reg.staff?)
+   sub_comments = @submission.grader_submission_comments(show_hidden)
+   if sub_comments.count > 0 %>
+<h1>General comments</h1>
+<div class="row">
+<div class="col-sm-12"> 
+<% sub_comments.each do |file, comments| %>
+<h3><%= if file == @submission.upload.extracted_path.to_s then "Overall" else file end %>:</h3>
+  <% comments.each do |c| %>
+  <div class="<%= "#{c.severity.humanize(:capitalize => false)} #{c.grader.grader_config.type.humanize}" %>">
+  <span class="label label-default">- <%= to_fixed(c.weight) %></span>
+  <span class="description"><%= c.title %>: <%= c.comment %></span>
+</div>
+    <% end %>
+  <% end %>
+</div>
+</div>
+<p>&nbsp;</p>
+<% end %>

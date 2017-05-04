@@ -1,0 +1,16 @@
+<p class="form-inline">
+  File: <select name="answers[<%= i + count %>][parts][<%= part_i %>][file]"
+                class="pick-file <%= if @answers and (part_ans.nil? or part_ans['file'].to_s.empty?) then 'unanswered' end %>">
+    <option disabled selected value style="display: none;"> -- select a file -- </option>
+    <option value="<none>" <% if part_ans and part_ans["file"] == "<none>" %>selected<% end %>>&lt;none&gt;</option>
+    <% @submission_files.each do |file| %>
+    <option value="<%= file[:link] %>" <% if part_ans and part_ans["file"] == file[:link] %>selected<% end %>>
+      <%= file[:name] %>
+    </option>
+    <% end %>
+  </select>
+  Line number: <input type="text"
+                      class="form-control numeric <%= if @answers and (part_ans.nil? or part_ans['info'].to_s.empty?) then 'unanswered' end %>"
+                      name="answers[<%= i + count %>][parts][<%= part_i %>][line]"
+                      <% if part_ans %>value="<%= part_ans['line'] %>"<% end %>>
+</p>

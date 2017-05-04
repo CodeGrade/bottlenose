@@ -1,0 +1,66 @@
+<% if role == :student %>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">
+      <%= header %>
+      <%= link_to "Edit student registrations",
+          bulk_edit_course_registrations_path(@course, {role: role}),
+          class: "pull-right btn-xs btn btn-default" %>
+      </a>
+    </h3>
+  </div>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <% all_emails = users.order("LOWER(name)").map {|u| "#{u.name} <#{u.email}>"} %>
+        <th><%= mail_to "#{current_user.name} <#{current_user.email}>", "@",
+                           bcc: all_emails.join(","), title: "Email everyone (bcc)" %></th>
+        <th>Name</th>
+        <th>&nbsp;</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.order("LOWER(name)").each do |user| %>
+      <tr>
+        <td width="1em"><%= mail_to "#{user.name} <#{user.email}>", "@" %></td>
+        <td><%= link_to user.name, user_path(user) %></td>
+        <td><%= link_to 'Impersonate', impersonate_user_path(user), method: 'post'%></td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<% else
+   staff = @course.registrations.to_a %>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">
+      <%= header %>
+      <%= link_to "Edit staff registrations",
+          bulk_edit_course_registrations_path(@course, {role: role}),
+          class: "pull-right btn-xs btn btn-default" %>
+    </h3>
+  </div>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <% all_emails = users.order("LOWER(name)").map {|u| "#{u.name} <#{u.email}>"} %>
+        <th><%= mail_to all_emails.join(","), "@", title: "Email everyone" %></th>
+        <th>Name</th>
+        <th>Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.sort_by(&:name).each do |user| %>
+      <tr>
+        <td width="1em"><%= mail_to "#{user.name} <#{user.email}>", "@" %></td>
+        <td><%= user.name %></td>
+        <td><%= staff.detect{|u| u.user_id == user.id}.role.humanize %></td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<% end %>   

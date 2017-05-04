@@ -1,0 +1,55 @@
+<% @page_title = "New Submission: #{@assignment.name}" %>
+
+<%= form_for [@course, @assignment, @submission] do |f| %>
+  <% allowed = @assignment.sub_allow_submission?(@submission)
+     not_following = @assignment.sub_not_following_related?(current_user)
+     rate_limit = @assignment.rate_limit?(@submission)
+     staff_override = true_user.course_staff?(@course)
+     %>
+  <%= render "new_common", f: f, type: {noun: "submission", verb: "submit", gerund: "submitting" },
+      not_following: not_following, allowed: allowed, rate_limit: rate_limit, staff_override: staff_override %>
+
+<% if (allowed && not_following && !rate_limit) || staff_override %>
+<% if @assignment.request_time_taken %>
+<div class="form-group">
+  <%= f.label :time_taken, "How many hours have you worked on this assignment?" %>
+  <%= f.spinner :time_taken, @submission.time_taken || "", :min => 0, :delta => 0.5 %>
+</div>
+<script>
+  $(function() { $(".spinner").each(function() { activateSpinner(this, {precision: 1}) }); })
+</script>
+<% end %>
+<div class="form-group">
+  <%= f.label :student_notes %>
+  <%= f.text_area :student_notes, class: 'form-control' %>
+</div>
+<div class="form-group">
+  <%= f.label :upload_file %>
+  <%= f.file_field :upload_file %>
+</div>
+<div class="form-group">
+  <div id="late-warning">
+    <h3 class="hidden" style="margin-top: initial;">Warning!</h3>
+    <p class="hidden">It is now past the due date and time for this
+      assignment, and your submission will be considered late.  Are you
+      sure you want to submit?</p>
+    <p><%= f.submit nil, class: "btn btn-primary" %></p>
+  </div>
+</div>
+<script>
+  var deadline = moment(Date.parse("<%= @assignment.due_date.strftime("%Y/%m/%d %H:%M") %>")).valueOf();
+  var now = moment().valueOf();
+  setTimeout(function() {
+    var warning = $("#late-warning");
+    warning.addClass("alert alert-danger");
+    warning.find("p").removeClass("hidden");
+    warning.find("h3").removeClass("hidden");
+  }, Math.max(deadline - now, 0));
+  $("form").submit(function(e) {
+    var num = ensureValidNumericInputOnSubmit(e, "div.spinner > input");
+    var files = ensureFilesPresentOnSubmit(e);
+    return num && files;
+  });
+</script>
+<% end %>
+<% end %>

@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+#
+# This script cleans up possible database weirdnesses.
+# It should be safe to run at any time.
+#
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+
+# Make sure all email addresses in the users table are lowercase.
+
+User.all.each do |user|
+  if user.email =~ /[A-Z]/ || user.email =~ /\W$/
+    puts "Fixing user email: #{user.email}"
+
+    unless user.save
+        user.email = "invalid-user-#{user.id}@example.com"
+        user.save!
+    end
+  end
+end
+
+# Remove users with invalid emails who have no submissions.
+
+User.all.each do |user|
+    if user.email =~ /^invalid-user.*@example.com$/
+        sc = user.submissions.count
+        if sc == 0
+            user.registrations.each do |reg|
+                reg.destroy
+            end
+
+            unless user.destroy
+                puts "#{user.id} #{user.name}"
+                puts user.errors.full_messages
+            end
+        end
+    end
+end
+
+# Remove registration requests from invalid users.
+
+RegRequest.all.each do |rr|
+    if rr.user.nil?
+        rr.destroy
+    end
+end

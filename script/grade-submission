@@ -1,0 +1,128 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+sub = Submission.find(ARGV[0])
+
+if sub.nil?
+  puts "Must provide valid submisison id."
+  exit(0)
+end
+
+unless sub.assignment.has_grading?
+  puts "No grading file. Submission must be graded manually."
+  exit(0)
+end
+
+# Find a free UID to grade with.
+while sub.grading_uid.nil?
+  begin
+    sub.grading_uid = 7000 + rand(1000)
+    sub.save!
+  rescue ActiveRecord::RecordNotUnique
+    sub.grading_uid = nil
+  end
+end
+
+# Make a test output key.
+require 'securerandom'
+output_key = SecureRandom.urlsafe_base64
+
+# Set up test directory.
+
+Dir.mktmpdir("grade-#{sub.id}-#{sub.grading_uid}") do |test_dir|
+
+  if sub.file_full_path.to_s.match(/gz$/)
+    FileUtils.cp(sub.file_full_path, "#{test_dir}/sub.tar.gz")
+  else
+    FileUtils.cp(sub.file_full_path, "#{test_dir}/#{sub.file_name}")
+    system(%Q{(cd #{test_dir} && tar czf sub.tar.gz "#{sub.file_name}")})
+  end
+
+  FileUtils.cp(sub.assignment.grading_full_path, "#{test_dir}/grading.tar.gz")
+
+  # Run the grading process.
+  # pipe = File.popen(["/usr/local/bottlenose/bin/sandbox",
+  #                    "#{test_dir}", "#{sub.grading_uid}", "#{output_key}"])
+
+  output_lines = [output_key]
+  Dir.chdir(test_dir) do
+    system("tar xf grading.tar.gz")
+    system("tar xf sub.tar.gz -C grading")
+  end
+
+  pipe = File.popen(["sh", File.join(test_dir, "grading/test.sh")])
+
+  begin
+    while not pipe.eof?
+      line = pipe.readline()
+      if line
+        puts line
+        output_lines << line
+        sub.grading_output = output_lines.join
+        sub.save!
+      end
+    end
+  rescue Exception => ee
+    p ee
+    output_lines << ee.to_s
+    sub.grading_output = output_lines.join
+    sub.save!
+
+    output_lines = []
+  end
+
+  output_lines << output_key
+
+  # TODO: Add sandboxing back.
+  # # Make sure everything's cleaned up.
+  # system("/usr/local/bottlenose/bin/sandbox", "-reap", "#{sub.grading_uid}")
+
+  # Process results
+  if output_lines.any? {|xx| xx.match(output_key)}
+    require 'array_split'
+    results = output_lines.split_on(output_key)[1].join
+
+    p results
+
+    require 'tap_parser'
+    parser = TapParser.new(results)
+    puts
+    puts "Summary:"
+    puts parser.summary
+
+    score = 0
+
+    begin
+      score = (parser.points_earned * sub.assignment.points_available) /
+        parser.points_available
+    rescue ZeroDivisionError
+      # Yay, no points available.
+    end
+
+    sub.auto_score = score
+    sub.save!
+  end
+end
+
+# Clean up afterwards.
+
+# if File.exists?("#{test_dir}/sandbox/bin/bash")
+#   puts "Loopback mounts still exist. Calling in the reaper man."
+#   system(%Q{cd #{Rails.root} && script/sandbox-reaper &})
+# end
+
+sub.grading_uid = nil
+sub.save!
+
+# TODO: Sandboxing reaper might be needed again later.
+# # Run the sandbox reaper occasionally.
+#
+# last_reap = Rails.root.join('tmp', 'last-reap')
+# if !File.exists?(last_reap) || File.mtime(last_reap) < (Time.now - 6.hours)
+#   File.write(last_reap, "#{Time.now}\n")
+#   system(%Q{cd #{Rails.root} && script/sandbox-reaper &})
+# end

@@ -1,0 +1,45 @@
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Abnormal submissions summary</h3>
+  </div>
+  <div class="panel-body">
+    <% if @abnormals.count == 0 %>
+    None
+    <% else %>
+    <% @abnormals.each do |assn, people| %>
+    <h4><%= link_to assn.name, course_assignment_path(@course,
+            assn.id) %></h4>
+    <ul>
+      <% people.each do |s| %>
+      <li><%= s.name %>: <%= link_to "View all submissions",
+              course_assignment_user_path(@course, assn, s) %></li>
+      <% end %>
+    </ul>
+    <% end %>
+    <% end %>
+  </div>
+</div>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Unpublished submissions summary</h3>
+  </div>
+  <div class="panel-body">
+    <% @unpublished = @unpublished.group_by(&:assignment_id) %>
+    <% if @unpublished.count == 0 %>
+      None
+    <% else %>
+      <% @assns.each do |a| %>
+        <% if @unpublished[a.id] %>
+          <h4><%= link_to a.name, course_assignment_path(@course, a.id) %></h4>
+          <ul>
+          <% @unpublished[a.id].group_by(&:id).each do |sub_id, subs| %>
+            <% usernames = subs.map(&:user_name).join(", ") %>  
+            <li><%= link_to usernames, course_assignment_submission_path(@course,
+                    a.id, sub_id) %></li>
+          <% end %>
+          </ul>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+</div>

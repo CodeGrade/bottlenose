@@ -1,0 +1,33 @@
+<% @page_title = "Status" %>
+
+<h2>Bottlenose Grading Queue</h2>
+<table class="table">
+  <tr>
+    <td><strong>Queue length</strong></td>
+    <td><%= @backlog.length %></td>
+  </tr>
+  <tr>
+    <td><strong>Average wait</strong></td>
+    <td><%= @avg_wait %></td>
+  </tr>
+  <tr>
+    <td><strong>Submissions</strong></td>
+    <td>
+      <% @backlog.each do |b| %>
+      <% if b[:sub].is_a? GraderConfig %>
+      <p>Regrading <%= b[:sub].display_type %> for <%= link_to "#{b[:args][1].user.display_name}",
+             course_assignment_submission_path(b[:args][0].course,
+             b[:args][0], b[:args][1]) %>,
+        (<%= b[:wait_s] %>)
+      </p>
+      <% else %>
+      <p><%= link_to b[:sub].user.display_name, 
+             course_assignment_submission_path(b[:sub].assignment.course,
+             b[:sub].assignment, b[:sub]) %>,
+        (<%= b[:wait_s] %>)
+      </p>
+      <% end %>
+      <% end %>
+    </td>
+  </tr>
+</table>

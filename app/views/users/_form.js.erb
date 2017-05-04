@@ -1,0 +1,30 @@
+$(function() {
+  $("input.numeric").on("keydown", function(e) {
+    if (e.key === "ArrowUp") { increment(); return; }
+    if (e.key === "ArrowDown") { decrement(); return; }
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") { return; }
+    var curVal = $(this).val();
+    var newVal = curVal.slice(0, this.selectionStart) + e.key + curVal.slice(this.selectionEnd, curVal.length);
+    newVal = Number(newVal);
+    if (Number.isNaN(newVal) || newVal < 0 || newVal > 999999999 || newVal != Number.parseInt(newVal)) {
+      e.preventDefault();
+    }
+  }).bind("paste", function(e) { e.preventDefault(); }); 
+  $("#nick_is_name").change(function() {
+    $("#user_nickname").prop('readonly', $(this).prop('checked'));
+    if ($(this).prop('checked'))
+      $("#user_nickname").val($("#user_first_name").val());
+  });
+});
+$("form").submit(ensureValidNumericInputOnSubmit);
+$("input#user_profile").change(function(e) {
+  try {
+    var img = document.getElementById("profile_preview");
+    img.src = window.URL.createObjectURL(this.files[0]);
+    img.onload = function() {
+      window.URL.revokeObjectURL(this.src);
+    }
+  } catch(exn) {
+    // may not support the file APIs sufficiently
+  }
+});

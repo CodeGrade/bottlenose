@@ -1,0 +1,50 @@
+<% content_for :content do %>
+<% cur_reg = current_user.registration_for(@course) %>
+    <div class="page-header">
+        <h1>
+          <%= link_to @course.name, course_path(@course) %>
+          <br/>
+          <small><%= @course.term.name %><% if cur_reg %>, Section <%= cur_reg.section.to_s %><% end %></small>
+        </h1>
+
+
+        <% if cur_reg %>
+            <p>
+                You are a
+                <strong><%= cur_reg.role %></strong>
+                of this course.
+            </p>
+        <% else %>
+            <p>
+                You are not registered for this course.
+            </p>
+        <% end %>
+
+        <div>
+            <%= link_to "Teams", course_teams_path(@course), class: "btn btn-sm btn-default" %>
+            <%= link_to "Assignments", course_assignments_path(@course), class: "btn btn-sm btn-default" %>
+            <% if current_user.site_admin? || (cur_reg && cur_reg.staff?) %>
+                <%= link_to "Registrations", course_registrations_path(@course), class: "btn btn-sm btn-default" %>
+            <% end %>
+            <% if current_user.site_admin? || (cur_reg && cur_reg.professor?) %>
+              <%= link_to "Grader info", stats_course_graders_path(@course), class: "btn btn-sm btn-default" %>
+            <% end %>
+            <% if current_user.site_admin? || (cur_reg && cur_reg.staff?) %>
+              <%= link_to "Student Facebook", facebook_course_path(@course), class: "btn btn-sm btn-default" %>
+            <% end %>
+            <% if current_user.site_admin? || (cur_reg && cur_reg.professor?) %>
+              <%= link_to "Edit Course Settings", edit_course_path(@course), class: "btn btn-sm btn-default" %>
+              <div class="dropdown btn btn-link pull-right">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Export gradesheet... <span class="caret"></span></a>
+                <ul class="dropdown-menu">
+                  <li><%= link_to "As Excel", gradesheet_course_path(@course, format: "xlsx") %></li>
+                </ul>
+              </div>
+            <% end %>
+        </div>
+    </div>
+
+    <%= yield %>
+<% end %>
+
+<%= render template: "layouts/application" %>

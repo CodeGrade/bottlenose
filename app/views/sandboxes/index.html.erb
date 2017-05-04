@@ -1,0 +1,29 @@
+<p id="notice"><%= notice %></p>
+
+<h1>Listing Sandboxes</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Submission</th>
+      <th colspan="3"></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @sandboxes.each do |sandbox| %>
+      <tr>
+        <td><%= sandbox.name %></td>
+        <td><%= sandbox.submission_id %></td>
+        <td><%= link_to 'Show', sandbox %></td>
+        <td><%= link_to 'Edit', edit_sandbox_path(sandbox) %></td>
+        <td><%= link_to 'Destroy', sandbox, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Sandbox', new_sandbox_path %>

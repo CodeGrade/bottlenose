@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+require 'sub_tarball'
+
+unless ARGV[0] =~ /^\d+$/
+  raise Exception.new("Usage: script/assign-tarball ID")
+end
+
+as_id = ARGV[0].to_i
+
+puts "Generating tarball of submissions for assignment #{as_id}..."
+
+assign = Assignment.find(as_id)
+puts "  name = #{assign.name}"
+
+tb = SubTarball.new(as_id)
+tb.update!
+
+puts tb.path

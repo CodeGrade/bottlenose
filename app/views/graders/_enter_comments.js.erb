@@ -1,0 +1,202 @@
+$(function() {
+  var styles = document.getElementById("comment-styles").sheet;
+  var showOurComments = styles.insertRule("div.CodeMirror-linewidget > div.ManualGrader { display: block; }",
+                                          styles.cssRules.length);
+  var hideOtherComments;
+  function hideOthers() {
+    hideOtherComments = styles.insertRule("div.CodeMirror-linewidget > div { display: none; }",
+                                          styles.cssRules.length);
+  }
+  function showOthers() {
+    styles.deleteRule(hideOtherComments);
+  }
+
+  $("#toggle-comments").change(function() {
+    if ($(this).prop("checked"))
+      showOthers();
+    else
+      hideOthers();
+  });
+  hideOthers();
+
+  var maxScore = <%= @grader.out_of %>;
+  function updateScore() {
+    var deductions = 0;
+    for (var i = 0; i < commentObjs.length; i++) {
+      if (commentObjs[i].shouldDelete) continue;
+      deductions += commentObjs[i].deduction;
+    }
+    var ans = Math.max(maxScore - deductions, 0).toFixed(2);
+    $("#score").text(ans);
+    $("input#finalScore").val(ans);
+  }
+  window.updateScore = updateScore;
+
+  $("form").submit(function() {
+    $("#comments").val(JSON.stringify(commentObjs));
+  });
+
+
+  var autosaveHandle = undefined;
+  var commentObjs = [];
+  var commentsById = {};
+  function autosave() {
+    if (autosaveHandle === undefined) {
+      autosaveHandle = window.setTimeout(function() {
+        console.log("Sending:");
+        console.log(commentObjs);
+        $.ajax({
+          type: "PUT",
+          url: "<%= course_assignment_submission_grader_path(@course, @assignment, @submission, @grader) %>",
+          contentType: 'application/json; charset=UTF-8',
+          data: JSON.stringify({comments: commentObjs}, function(k, v) {
+            if (k === "saved") return undefined;
+            return v;
+          }),
+          success: function(data) {
+            console.log("Success: " + data);
+            for (var id in data) {
+              var c = commentsById[id];
+              delete commentsById[id];
+              if (data[id] === "deleted") continue;
+              c.id = data[id];
+              commentsById[c.id] = c;
+            }
+            autosaveHandle = undefined;
+          },
+          error: function(xhr, status, error) {
+            console.error("XHR failed: " + status + ": " + error);
+            console.error(xhr.responseText);
+            autosaveHandle = false; // don't trigger more XHRs
+          }
+        });
+      }, 1000);
+    }
+  }
+
+  var commentID = 0;
+  function insertComment(cm, line, comment) {
+    if (comment === undefined) {
+      comment = {severity: "Error", deduction: 0, comment: "", id: Date.now()};
+
+      comment.line = line + 1;
+      comment.file = $(cm.getTextArea()).data("source");
+      comment.label = "<%= current_user.name %>";
+    }
+    commentObjs.push(comment);
+    commentsById[comment.id] = comment;
+    
+    var i = commentID++;
+    var widget = $("<div>").attr("id", "comment_" + i).addClass("ManualGrader Error form-group");
+    var table = $("<table>").addClass("container-fluid");
+    widget.append(table);
+    widget.on("focusout", autosave);
+    var row = $("<tr>");
+    table.append(row);
+    var td = $("<td>").addClass("nowrap col-sm-2");
+    row.append(td);
+    var categoryInput =
+        $("<select>").attr("id", "severity_" + i)
+        <% InlineComment.severities.each do |s_name, s_val| %>
+        .append($("<option>")
+                .text("<%= s_name.humanize %>").attr({value: "<%= s_name %>", name: "<%= s_name.humanize %>"}))
+        <% end %>;
+    var deductionInput = makeSpinner({val: comment.deduction, klass: "deduction", min: 0, delta: 0.1, precision: 2})
+        .attr("id", "deduction_" + i)
+    categoryInput.on("change", function() {
+      widget.removeClass(widget.data("severity"))
+        .data("severity", $(this).find(":selected").first().attr("name"))
+        .addClass($(this).find(":selected").first().attr("name"));
+      if ($(this).find(":selected").first().attr("name") == "Info") {
+        $(deductionInput).find("input").removeData("min").change();
+      } else {
+        $(deductionInput).find("input").data("min", 0).change();
+      }
+      comment.severity = $(this).val();
+      comment.saved = false;
+    });
+    categoryInput.find("option[name='" + comment.severity + "']").first().prop("selected", true);
+    categoryInput.trigger("change");
+    if (comment.severity)
+      categoryInput.val(comment.severity).change();
+
+    td.append(
+      $("<p>").append($("<label>").attr("for", "severity_" + i)
+                      .text("Severity:")).append(categoryInput));
+    // deductionInput: 
+    td.append(
+      $("<p>").append($("<label>").attr("for", "deduction_" + i).text("Deduction:"))
+        .append($("<span>").css({"display": "inline-block", "vertical-align": "bottom"})
+                .append(deductionInput)));
+    deductionInput.find("input").on("change", function() {
+      comment.deduction = parseFloat($(this).val());
+      comment.saved = false;
+      updateScore();
+    });
+    if (comment.deduction)
+      deductionInput.val(comment.deduction).change();
+    td = $("<td>").addClass("col-sm-10");
+    row.append(td);
+    var delComment = $("<span>").addClass("btn btn-alert pull-right")
+        .append($("<span>").addClass("glyphicon glyphicon-remove"));
+    var commentText = $("<textarea>").attr("id", "message_" + i).addClass("form-control").val(comment.comment);
+    td.append(
+      $("<div>")
+        .append(delComment)
+        .append($("<label>").text("Comment:").attr("for", "message_" + i))
+        .append($("<span>").text(" (by " + comment.label + ")"))
+        .append(commentText));
+    commentText.on("change", function() {
+      comment.comment = $(this).val();
+      comment.saved = false;
+    });
+    if (comment.comment)
+      commentText.val(comment.comment).change();
+    
+    var ret = {cmWidget: cm.addLineWidget(line, widget[0], {coverGutter: false, noHScroll: true}),
+               dom: widget,
+               comment: comment};
+    delComment.on("click", function() { deleteComment(ret); });
+    return ret;
+  }
+  window.insertComment = insertComment;
+  function deleteComment(commData) {
+    commData.cmWidget.clear();
+    commData.comment.shouldDelete = true
+    autosave();
+    updateScore();
+  }
+  updateScore();
+
+  $(".CodeMirror").each(function(i) {
+    this.CodeMirror.on("gutterClick", function(cm, line, gutter, e) { return insertComment(cm, line); });
+  });
+
+  var filesTree = $("#files");
+  filesTree.on("nodeChecked", function(e, data) {
+    if (data.href !== undefined && data.href !== "#") {
+      var cm = $(data.href).find(".CodeMirror");
+      if (cm.length > 0)
+        $(data.$el).addClass("unvisited");
+    } else
+      filesTree.treeview("uncheckNode", data);
+  });
+  filesTree.on("nodeUnchecked", function(e, data) {
+    $(data.$el).removeClass("unvisited");
+    if ($(".unvisited").length === 0) {
+      $("#completed").removeClass("disabled").text("Mark grading as complete");
+    }      
+  })
+  filesTree.treeview("getCollapsed").map(function(item) {
+    filesTree.treeview("checkNode", item);
+  });
+
+  filesTree.on("nodeSelected", function(e, data) {
+    e.preventDefault();
+    e.stopPropagation();
+    filesTree.treeview("uncheckNode", data);
+  });
+  filesTree.treeview("uncheckNode", filesTree.treeview("getCollapsed")[0]);
+  selectTreeviewFileByIndex(0);
+  
+});

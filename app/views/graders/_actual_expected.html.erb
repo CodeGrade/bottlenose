@@ -1,0 +1,48 @@
+<% if actual.is_a?(String) && expected.is_a?(String) %>
+<div class="row">
+<% if actual == "" and expected == "" then
+  actual.shift
+  expected.shift
+end %>
+<% diff = actual.zip(expected).map{|a, e| a == e} %>
+<div class="col-sm-6">
+  <p><b>Actual:</b></p>
+<pre><% actual.zip(diff).each do |a, d| %><% if !d then %><span class='alert-danger'><% else %><span><% end %><%= a %></span>
+<% end %></pre>
+</div>
+<div class="col-sm-6">
+  <p><b>Expected:</b></p>
+<pre><% expected.zip(diff).each do |e, d| %><% if !d then %><span class='alert-danger'><% else %><span><% end %><%= e %></span>
+<% end %></pre>
+</div>
+</div>
+<% else %>
+<% (actual.keys | expected.keys).sort.each do |key| %>
+<div class="row">
+  <% act = actual[key] || []
+     exp = expected[key] || []
+     act = [act] if act.is_a? String
+     exp = [exp] if exp.is_a? String
+     diff = act.zip(exp).map{|a, e|
+       objNew = /(.*new [^:]+:)\d+(\(.*)/
+       aMatch = a.match(objNew)
+       eMatch = e.match(objNew)
+       if (aMatch && eMatch) then
+         (aMatch[1] + aMatch[2]) == (eMatch[1] + eMatch[2])
+       else
+         a == e
+       end
+     } %>
+  <div class="col-sm-6">
+    <p><b>Actual <%= key.titlecase %>:</b></p>
+<pre><% act.zip(diff).each do |a, d| %><% if !d then %><span class='alert-danger'><% else %><span><% end %><%= a %></span>
+<% end %></pre>
+  </div>
+  <div class="col-sm-6">
+    <p><b>Expected <%= key.titlecase %>:</b></p>
+<pre><% exp.zip(diff).each do |e, d| %><% if !d then %><span class='alert-danger'><% else %><span><% end %><%= e %></span>
+<% end %></pre>
+  </div>
+</div>
+<% end %>
+<% end %>

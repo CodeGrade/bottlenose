@@ -1,0 +1,176 @@
+<% cur_reg = current_user.registration_for(@course) %>
+<h3 style="display: inline-block">
+  <%= type[:noun].pluralize(2).capitalize %> (<%= @gradesheet.submissions.count %>)
+</h3>
+<div style="padding-bottom: 0.5em; display: inline-block;">
+  <% if @gradesheet.assignment.due_date <= DateTime.now %>
+     <div class="btn-group" style="white-space: nowrap;">
+       <%= link_to "Download all", 
+           course_assignment_tarball_path(@course, @gradesheet.assignment),
+           class: "btn btn-md btn-default"
+       %><button type="button" class="btn btn-md btn-default dropdown-toggle"
+                 style="float: unset;"
+                 data-toggle="dropdown"
+                 aria-haspopup="true" aria-expanded="false">
+         <span class="caret"></span>
+         <span class="sr-only">Toggle Dropdown</span>
+       </button><% #
+       %><ul class="dropdown-menu">
+         <li><%= link_to "Download zips", 
+                 course_assignment_tarball_path(@course, @gradesheet.assignment),
+                 class: "dropdown-item" %></li>
+         <li><%= link_to "Download for Moss", 
+                 course_assignment_tarball_path(@course, @gradesheet.assignment, :moss => true),
+                 class: "dropdown-item" %></li>
+         <!-- <div class="dropdown-divider"></div> -->
+       </ul>
+     </div>        
+
+    <% if @gradesheet.missing_graders %>
+    <%= link_to "Create missing graders",
+        create_missing_graders_course_assignment_path(@course, @gradesheet.assignment),
+        method: 'post', class: "btn btn-warning",
+        data: { confirm: "This may take a while; please be patient" } %>
+    <% end %>
+    <%= link_to "Publish grades", 
+        course_assignment_publish_path(@course, @gradesheet.assignment), class: "btn btn-default",
+        method: 'patch',
+        data: { confirm: "Are you sure you want to publish all grades?" }%>
+  <% else %>
+    <%= link_to "New #{type[:noun].capitalize}", 
+        new_course_assignment_submission_path(@course, @gradesheet.assignment), class: "btn btn-success" %>
+    <% if @gradesheet.missing_graders %>
+    <%= link_to "Create missing graders",
+        create_missing_graders_course_assignment_path(@course, @gradesheet.assignment),
+        method: 'post', class: "btn btn-warning",
+        data: { confirm: "This may take a while; please be patient" }
+        %>
+    <% end %>
+  <% end %>
+</div>
+
+<% if @gradesheet.submissions.empty? %>
+  <div class="well">
+    No <%= type[:noun].pluralize(2) %> yet.
+  </div>
+<% else %>
+  <table id="submissions" class="table table-striped row-vcenter">
+    <thead>
+      <tr>
+        <th>Submitter</th>
+        <th>Date</th>
+        <th>Status</th>
+
+        <% @gradesheet.grades[:configs].each do |c| %>
+        <th class="text-right">
+          <% if c.autograde? && (cur_reg && cur_reg.professor?) %>
+          <%= link_to rerun_grader_course_assignment_submissions_path(@course, @gradesheet.assignment, c),
+              class: "btn btn-default no-resort",
+              title: "Rerun #{c.display_type} for all used submissions",
+              method: :post do %><i class="glyphicon glyphicon-refresh"></i><% end %>
+          <% elsif cur_reg && (cur_reg.professor? || cur_reg.assistant?) %>
+          <%= link_to course_assignment_grader_allocations_path(@course, @gradesheet.assignment, c),
+              class: "btn btn-default no-resort",
+              title: "Assign graders" do %><i class="glyphicon glyphicon-list-alt"></i><% end %>
+          <% end %>
+          <%= c.display_type %>
+        </th>
+        <% end %>
+        <th class="text-right">Total</th>
+        <th>Grade</th>
+        <th class="text-right" style="width: 6.5em;">Link</th>
+      </tr>
+    </thead>
+    <tbody>
+    <% @gradesheet.grades[:grades].each do |grade| %>
+      <% sub = grade[:sub] %>
+      <% if sub.stale_team? %>
+      <tr class='text-muted'>
+      <% else %>
+      <tr>
+      <% end %>
+        <td><%= link_to sub.user.name, user_path(sub.user) %></td>
+        <td><span class="local-time"><%= sub.created_at %></span></td>
+        <% scores = grade[:staff_scores] %>
+        <td><%= status_image(sub, 100.0 * scores[:raw_score] / @gradesheet.max_score) %></td>
+        <% scores[:scores].each do |s| %>
+        <td class="text-right">
+          <% if s.kind_of?(Array) %>
+          <%= show_score(s[0], @gradesheet.assignment, true) %>&nbsp;/&nbsp;<%= to_fixed(s[1])%>
+          <% else %>
+          <%= s %>
+          <% end %>
+        </td>
+        <% end %>
+        <% if scores[:raw_score] && sub.score %>
+        <td class="text-right">
+          <%= to_fixed(scores[:raw_score])%>&nbsp;/&nbsp;<%= to_fixed(@gradesheet.max_score)%>
+        </td>
+        <td>(<%= to_fixed(sub.score) %>%)</td>
+        <% else %>
+        <td class="text-right"><%= image_tag("question-mark.png", height: 32) %></td>
+        <td>NONE</td>
+        <% end %>
+        <td class="text-right">
+          <form method="link"
+                action="<%= course_assignment_submission_path(@course, @gradesheet.assignment, sub) %>">
+            <div class="btn-group" style="white-space: nowrap;">
+              <%= link_to "View",
+                  course_assignment_submission_path(@course, @gradesheet.assignment, sub),
+                  class: "btn btn-sm btn-default",
+                  style: "float: unset;"%><% #
+              %><button type="button" class="btn btn-sm btn-default dropdown-toggle"
+                      style="float: unset;"
+                      data-toggle="dropdown"
+                      aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+                <span class="sr-only">Toggle Dropdown</span>
+              </button><% #
+              %><ul class="dropdown-menu">
+                <li><%= link_to "View active", 
+                        course_assignment_submission_path(@course, @gradesheet.assignment, sub), 
+                        class: "dropdown-item" %></li>
+                <li><%= link_to "View all", 
+                        course_assignment_user_path(@course, @gradesheet.assignment, sub.user.id), 
+                        class: "dropdown-item" %></li>
+              <!-- <div class="dropdown-divider"></div> -->
+              </ul>
+            </div>        
+          </form>
+        </td>
+      </tr>
+    <% end %>
+    </tbody>
+  </table>
+  <script>
+    $(function() {
+      $.tablesorter.themes.bootstrap = {
+        caption      : 'caption',
+        sortNone     : '',
+        sortAsc      : '',
+        sortDesc     : '',
+        active       : '', // applied when column is sorted
+        hover        : '', // custom css required - a defined bootstrap style may not override other classes
+        // icon class names
+        icons        : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+        iconSortAsc  : 'glyphicon glyphicon-chevron-up', // class name added to icon when column has ascending sort
+        iconSortDesc : 'glyphicon glyphicon-chevron-down', // class name added to icon when column has descending sort
+        filterRow    : '', // filter row class; use widgetOptions.filter_cssFilter for the input/select element
+        footerRow    : '',
+        footerCells  : '',
+        even         : '', // even row zebra striping
+        odd          : ''  // odd row zebra striping
+      };
+      $("#submissions").tablesorter({
+        headerTemplate: "{content} {icon}",
+        headers: {
+          2: { sorter: false },
+          <%= 5 + @gradesheet.grades[:configs].count %>: { sorter: false },
+        },
+        theme: "bootstrap",
+        widgets: ['uitheme']
+      });
+      $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
+    });
+  </script>    
+<% end %>

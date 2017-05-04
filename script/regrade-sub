@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+sub = Submission.find(ARGV[0])
+
+if sub.nil?
+  puts "Must provide valid submisison id."
+  exit(0)
+end
+
+asg = sub.assignment
+
+asg.grader_configs.each do |gc|
+  next unless gc.type == "SandboxGrader"
+  gc.autograde!(asg, sub)
+end

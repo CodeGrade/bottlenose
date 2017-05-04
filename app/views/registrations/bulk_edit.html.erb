@@ -1,0 +1,72 @@
+<% @page_title = "Edit course registrations" %>
+<h2>Edit registrations</h2>
+
+<% roles = Registration.roles.to_a.map{|r| [r[0].humanize, r[0]] }
+   sections = @course.course_sections.to_a.map{|s| [s.to_s, s.crn] } %>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Role</th>
+      <th>Section</th>
+      <th>Re-enroll?</th>
+      <th></th>
+      <!-- <th>Save</th> -->
+    </tr>
+  </thead>
+  <tbody>
+    <% @registrations.each do |r| %>
+    <tr>
+      <td>
+        <form id="reg_<%= r.id %>"><input type="hidden" name="id" value="<%= r.id %>" /></form>
+        <%= r.user.display_name %>
+      </td>
+      <td><%= select_tag "role", options_for_select(roles, r.role), {form: "reg_#{r.id}"} %></td>
+      <td><%= select_tag "section", options_for_select(sections, r.section_id), {form: "reg_#{r.id}"} %></td>
+      <td>
+        <%= noopAction = if r.dropped_date? then "Stay withdrawn" else "Already enrolled" end
+            check_box_tag "reenroll", nil,
+              false,
+              {form: "reg_#{r.id}", id: "reenroll_#{r.id}", disabled: r.dropped_date.nil?,
+              data: {toggle: "toggle", on: "Reenroll", off: noopAction}} %>
+      </td>
+      <td><i id="success_<%= r.id %>" style="font-size: 150%;"
+             class="hidden text-success glyphicon glyphicon-ok"
+             data-toggle="tooltip" title="Registration information saved"
+             ></i></td>
+      <!-- <td><%= submit_tag "Save", {form: "reg_#{r.id}", class: "btn btn-default"} %></td> -->
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+<script>
+  $("form").submit(function() {
+    var $form = $(this);
+    var $check = $("#success_" + $form.find("input[name='id']").val());
+    var valuesToSubmit = $form.serialize();
+    $.ajax({
+        type: "POST",
+        url: "<%= bulk_update_course_registrations_path(@course) %>",
+        data: valuesToSubmit,
+        dataType: "JSON"
+    }).done(function(json){
+      if (json.dropped_date === null) {
+        $form.find("input[type='checkbox']").attr("disabled", true);
+        $form.find(".toggle-off").text("Already enrolled");
+      }
+      $check.removeClass("hidden");
+    });
+    return false; // prevents normal behaviour
+  }).map(function() {
+    var $form = $(this);
+    $form.parents("tr").find("input, select").change(function() {
+      $("#success_" + $form.find("input[name='id']").val()).addClass("hidden");
+    });
+  });
+  $("tr").on("focusout", function(e) {
+    if (e.relatedTarget !== null && $(e.target).parents("tr")[0] !== $(e.relatedTarget).parents("tr")[0]) {
+      $(e.target).parents("tr").find("form").submit();
+    }
+  });
+</script>

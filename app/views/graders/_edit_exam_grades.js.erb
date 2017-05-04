@@ -1,0 +1,210 @@
+function getRow($row, $target, cb) {
+  var $action = $row.find("input[name='grade_action']");
+  $action.val("getGrades");
+  var $valuesToSubmit = $row.find("form");
+  $.ajax({
+    type: "POST",
+    url: "<%= bulk_course_assignment_grader_config_path(@course, @assignment, @assignment.grader_configs.first) %>",
+    data: $valuesToSubmit.serialize(),
+    dataType: "JSON",
+    timeout: 500
+  }).done(function(json) {
+    if (json["grades"]) {
+      var $inputs = $target.find("div.spinner input");
+      var $hidden = $target.find("td.question > input[type='hidden']");
+      $row.find("input[name='timestamp']").val(json.timestamp);
+      $inputs.last().val("");
+      for (var i in Object.keys(json.grades)) {
+        $($inputs[i]).val(json.grades[i]);
+        $($hidden[i]).val(json.grades[i]);
+      }
+      var scores = getGrades($target);
+      $target.find("h4.raw_score").text(scores["raw"]);
+      $target.find("h4.final_score").text(scores["final"]);
+      cb();
+    } else if (json["none found"]) {
+      var $inputs = $target.find("div.spinner input");
+      $inputs.val("");
+      $target.find("h4.raw_score").text("");
+      $inputs.last().val("");
+      $target.find("h4.final_score").text("");
+      cb();
+    } else {
+      alert("Didn't find grades:\n" + JSON.stringify(json, null, "  "));
+    }
+  }).fail(function(jqXHR, status, err) {
+    alert(status + "\n" + err + "\n\n" + jqXHR.responseText);
+  });
+}
+
+function saveRow($row, cb) {
+  var $action = $row.find("input[name='grade_action']");
+  $action.val("setGrades");
+  var $valuesToSubmit = $row.find("form")
+  var $check = $row.find("#success_" + $row[0].id);
+  var $fail  = $row.find("#failure_" + $row[0].id);
+  $.ajax({
+    type: "POST",
+    url: "<%= bulk_course_assignment_grader_config_path(@course, @assignment, @assignment.grader_configs.first) %>",
+    data: $valuesToSubmit.serialize(),
+    dataType: "JSON"
+  }).done(function(json) {
+    if (json["student"] && json["student"][$row[0].id]) {
+      $check.removeClass("hidden");
+      $fail.addClass("hidden");
+      cb(true);
+    } else {
+      $fail.removeClass("hidden").attr("title", "Did not receive data matching this row");
+      $check.addClass("hidden");
+      cb(false);
+    }
+  }).fail(function(jqXHR, status, err) {
+    if (jqXHR.status == 409) {
+      $fail.removeClass("hidden").attr("title", "Conflicting edits to this student");
+      $check.addClass("hidden");
+      cb(false);
+    } else {
+      $fail.removeClass("hidden")
+      $check.addClass("hidden");
+      alert(status + "\n" + err + "\n\n" + jqXHR.responseText);
+      cb(false);
+    }
+  });
+}
+
+function getGrades($table) {
+  var ret = {grades: [], 'curved': undefined, 'raw': 0, 'final': 0};
+  var scores = $table.find("div.spinner input").toArray();
+  var sum = 0;
+  for (var i = 0; i < scores.length - 1; i++) {
+    var val = $(scores[i]).val();
+    if (val && val !== "" && val !== ".") {
+      ret.grades[i] = Number.parseFloat(val);
+      sum += ret.grades[i];
+    }
+  }
+  ret["raw"] = sum;
+  ret["final"] = sum;
+  var curvedText = $(scores[scores.length - 1]).val();
+  var curved = Number.parseFloat(curvedText);
+  if (curvedText !== "" && !Number.isNaN(curved)) {
+    ret["final"] = curved;
+    ret["curved"] = curved;
+  }
+  return ret;
+}  
+
+$(function() {
+  // Select students wtihin a section
+  var prevSection = "";
+  $("#sections").change(function(e) {
+    $("#grades-table").removeClass(prevSection).addClass($(this).val());
+    prevSection = $(this).val();
+  });
+
+  // Handle the modal dialogs
+  $("button.trigger").click(function() {
+    var $target = $("#enter_grades");
+    var $row = $(this).closest("tr");
+    var name = $(this).data("name");
+    getRow($row, $target, function() {
+      $target.find(".modal-title").text("Enter grades for " + name);
+      $target.data("row", $row.attr("id"));
+      $target.modal({backdrop: true, keyboard: true});
+    });
+  });
+  $("div.modal").on("show.bs.modal", function() {
+    $("button.trigger").prop("disabled", true);
+  });
+  $("div.modal").on("shown.bs.modal", function() {
+    $(this).find("div.spinner input")[0].focus();
+  });
+  $("div.modal").on("hidden.bs.modal", function() {
+    $("button.trigger").prop("disabled", false);
+    $("#" + $(this).data("row") + " button.trigger").focus();
+  });
+  $("button.save").click(function() {
+    var $modal = $(this).closest("div.modal");
+    var $row = $("#" + $modal.data("row"));
+    var countBlanks = 0;
+    var $inputs = $modal.find(".spinner input");
+    $inputs.each(function(idx) {
+      if (idx == $inputs.length - 1) return;
+      if ($(this).val() == "" || $(this).val() == ".") {
+        countBlanks++;
+      }
+    });
+    if (countBlanks) {
+      alert("There are missing grades");
+      return;
+    }
+    $modal.modal("hide");
+    var grades = getGrades($modal);
+    var $questions = $row.find(".question span");
+    var $hidden = $row.find("td > input[type='hidden']");
+    for (var i = 0; i < grades.grades.length; i++) {
+      $($hidden[i]).val(grades.grades[i]);
+    }
+    $($hidden[grades.grades.length]).val(grades.curved || "");
+    saveRow($row, function(success) {
+      if (success) {
+        for (var i = 0; i < grades.grades.length; i++) {
+          $($questions[i]).text(grades.grades[i].toFixed(2));
+        }
+        var $curved = $row.find(".curved span");
+        $curved.text("");
+        if (grades.curved !== undefined) {
+          $curved.text(grades.curved.toFixed(2) || "");
+        }
+        $row.find(".final").text(grades['final'].toFixed(2));
+      } else {
+        for (var i = 0; i < grades.grades.length; i++) {
+          $($hidden[i]).val($($questions[i]).text());
+        }
+      }
+    });
+  });
+  $("button.cancel").click(function() {
+    $(this).closest("div.modal").modal("hide");
+  });
+  $('.spinner').each(function() {
+    activateSpinner(this, {precision: 1})
+      .change(function() {
+        var table = $(this).closest("table");
+        var scores = getGrades(table);
+        table.find("h4.raw_score").text(scores["raw"]);
+        table.find("h4.final_score").text(scores["final"]);
+      }).change();
+  });
+
+
+  // Set up the table
+  $.tablesorter.themes.bootstrap = {
+    caption      : 'caption',
+    sortNone     : '',
+    sortAsc      : '',
+    sortDesc     : '',
+    active       : '', // applied when column is sorted
+    hover        : '', // custom css required - a defined bootstrap style may not override other classes
+    // icon class names
+    icons        : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+    iconSortAsc  : 'glyphicon glyphicon-chevron-up', // class name added to icon when column has ascending sort
+    iconSortDesc : 'glyphicon glyphicon-chevron-down', // class name added to icon when column has descending sort
+    filterRow    : '', // filter row class; use widgetOptions.filter_cssFilter for the input/select element
+    footerRow    : '',
+    footerCells  : '',
+    even         : '', // even row zebra striping
+    odd          : ''  // odd row zebra striping
+  };
+  $("#grades-table").tablesorter({
+    headerTemplate: "{content} {icon}",
+    theme: "bootstrap",
+    widgets: ['uitheme'],
+    headers: { 0: {sorter: true},
+               1: {sorter: true},
+               <% (2..4 + col_count).each do |i| %>
+               <%= i %>: {sorter: false},
+               <% end %>
+             }
+  });
+});

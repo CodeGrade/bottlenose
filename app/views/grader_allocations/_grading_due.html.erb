@@ -1,0 +1,40 @@
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Your assigned grading</h3>
+  </div>
+  <div class="panel-body">
+    <% @allocated_grading.each do |assn_id, graders| %>
+    <h4><%= link_to @assignments[assn_id].name,
+            course_assignment_path(@course, assn_id) %>
+      (<%= graders.count %> remaining)
+    </h4>
+    <ul>
+      <% graders.each do |ga| %>
+      <% usernames = ga.submission.submission_user_names %>
+      <li><%= link_to usernames,
+              course_assignment_submission_path(@course, assn_id, ga.submission_id) %></li>
+      <% end %>
+    </ul>
+    <% end %>
+  </div>
+</div>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Your completed grading</h3>
+  </div>
+  <div class="panel-body">
+    <% @completed_grading.each do |assn_id, graders| %>
+    <h4><%= link_to @assignments[assn_id].name,
+            course_assignment_path(@course, assn_id) %>
+      (<%= graders.count %> so far)
+    </h4>
+    <ul>
+      <% graders.each do |ga| %>
+      <% usernames = ga.submission.submission_user_names %>
+      <li><%= link_to usernames,
+              course_assignment_submission_path(@course, assn_id, ga.submission_id) %></li>
+      <% end %>
+    </ul>
+    <% end %>
+  </div>
+</div>

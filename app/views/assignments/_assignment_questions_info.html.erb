@@ -1,0 +1,40 @@
+<div class="row">
+  <div class="col-md-6">
+    <p>
+      <b>Name:</b>
+      <%= gradesheet.assignment.name %>
+    </p>
+
+    <p>
+      <b>Due Date:</b>
+      <span class="local-time"><%= gradesheet.assignment.due_date %></span>
+    </p>
+    <p>
+      <b>Grading Hidden:</b>
+      <%= gradesheet.assignment.hide_grading? ? "Yes" : "No" %>
+    </p>
+    <p>
+      <b>Teams:</b>
+      <%= gradesheet.assignment.team_subs? ? "Yes" : "No" %>
+    </p>
+    <% if (current_user.site_admin? || (cur_reg && cur_reg.professor?)) and !gradesheet.assignment.assignment_file_name.blank? %>
+      <p>
+        <b>Questions Download:</b>
+        <%= link_to gradesheet.assignment.assignment_file_name, gradesheet.assignment.assignment_file_path %>
+      </p>
+    <% end %>
+  </div>
+
+  <div class="col-md-6">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Description</h3>
+      </div>
+      <div class="panel-body">
+        <div class="prose">
+          <%= raw gradesheet.assignment.assignment %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

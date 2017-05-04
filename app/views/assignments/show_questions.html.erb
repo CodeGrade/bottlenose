@@ -1,0 +1,117 @@
+<% @page_title = "#{@course.name} / #{@gradesheet.assignment.name}" %>
+<style>
+  h3 i.glyphicon { font-size: 80%; margin-left: 0.5em; }
+  h3 i.glyphicon-chevron-up { display: none; }
+  h3 i.glyphicon-chevron-down { display: initial; }
+  h3.collapsed i.glyphicon-chevron-up { display: initial; }
+  h3.collapsed i.glyphicon-chevron-down { display: none; }
+</style>
+<% cur_reg = current_user.registration_for(@course) %>
+<% if cur_reg && cur_reg.professor? %>
+<p class="pull-right">
+  <%= link_to "Edit Assignment", 
+      edit_course_assignment_path(@course, @gradesheet.assignment), class: "btn btn-default" %>
+</p>
+<% end %>
+
+<%= render 'assignment_questions_info', gradesheet: @gradesheet,
+    cur_reg: cur_reg %>
+<h3 data-toggle="collapse" class="collapsed" data-target="#questions">
+  Questions
+  <i class="glyphicon glyphicon-chevron-down"></i>
+  <i class="glyphicon glyphicon-chevron-up"></i>
+</h3>
+<div id="questions" class="collapse">
+<% count = 1 %>
+<% @questions.each do |section| %>
+  <% section.each do |name, qs| %>
+  <h4><%= name %></h4>
+  <ol start="<%= count %>">
+    <% qs.each do |question| %>
+    <% question.each do |type, q| %>
+    <li><b><%= type %> </b><small>(<%= pluralize(q["weight"], "point") %>)</small>:
+      <p><%= sanitize(q["prompt"], tags: %w(b strong i em p code pre textarea)) %></p>
+      <% if q["options"] %>
+      <ul>
+        <% q["options"].each do |opt| %>
+        <li><%= sanitize(opt, tags: %w(b strong i em code pre)) %></li>
+        <% end %>
+      </ul>
+      <% end %>
+      <% if q["parts"] %>
+        <% q["parts"].each do |part| %>
+          <% if part["codeTag"] %>
+          <p>(CodeTag) <%= sanitize(part["codeTag"], tags: %w(b strong i em code pre)) %></p>
+          <% elsif part["codeTags"] %>
+          <p>(Multiple CodeTags) <%= sanitize(part["codeTags"], tags: %w(b strong i em code pre)) %></p>
+          <% elsif part["requiredText"] %>
+          <p>(Required text) <%= sanitize(part["requiredText"], tags: %w(b strong i em code pre)) %></p>
+          <% elsif part["text"] %>
+          <p>(Text) <%= sanitize(part["text"], tags: %w(b strong i em code pre)) %></p>
+          <% end %>
+        <% end %>
+      <% end %>
+      <div class="panel panel-info">
+      <div class="panel-heading"><i><b>Rubric:</b></i></div>
+      <div class="panel-body">
+      <% if !q["correctAnswer"].nil? %>
+      <p style="font-style: italic;"><b>Correct answer:</b>
+                    <%= sanitize(
+                        case type
+                        when "YesNo"
+                          if q["correctAnswer"] then "Yes" else "No" end
+                        when "TrueFalse"
+                          q["correctAnswer"].to_s.capitalize
+                        when "MultipleChoice"
+                          q["options"][q["correctAnswer"].to_i]
+                        else
+                          q["correctAnswer"].to_s
+                        end,
+                        tags: %w(b strong i em code pre))
+                        %></p>      
+      <% end %>
+      <% if q["rubric"] %>
+      <ul>
+      <% q["rubric"].each do |entry| %>
+        <% entry.each do |val, hint| %>
+        <li><b><%= val %>:</b> <%= hint %></li>
+        <% end %>
+      <% end %>
+      </ul>
+      <% end %>
+      </div>
+      </div>
+    </li>
+    <% end %>
+    <% end %>
+  </ol>
+  <% count += qs.count %>
+  <% end %>
+<% end %>
+<script>
+  $(function() {
+    $("textarea.sourceCode").each(function(index, code) {
+      if ($(code).data("lang")) {
+        var cm = CodeMirror.fromTextArea(code, {
+          readOnly: true, indentUnit: 2,
+          mode: $(code).data("lang"),
+          theme: 'mdn-like', viewportMargin: Infinity,
+          lineNumbers: true, lineWrapping: false,
+          styleActiveLine: true
+        });
+        cm.setSize(null, 0);
+      }
+      $(code).addClass("cm-s-mdn-like cm-s-default");
+    });
+  });
+  $("#questions").one("shown.bs.collapse", function() {
+    $(".CodeMirror").each(function(index, code) {
+      if (code.CodeMirror) {
+        code.removeAttribute("style");
+        code.CodeMirror.refresh();
+      }
+    });
+  });
+</script>
+</div>
+<%= render 'admin_subs', type: {noun: "response", verb: "respond", gerund: "responding" } %>

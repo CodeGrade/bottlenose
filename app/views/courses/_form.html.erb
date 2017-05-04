@@ -1,0 +1,111 @@
+<%= form_for(@course) do |f| %>
+  <% if @course.errors.any? %>
+    <div id="error_explanation" class="alert alert-danger">
+      <h2><%= pluralize(@course.errors.count, "error") %> prohibited this course from being saved:</h2>
+
+      <ul>
+      <% @course.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= hidden_field_tag :late_options %>
+
+  <div>
+    <div class="form-group">
+      <%= f.label :name %>
+      <%= f.text_field :name, class: 'form-control' %>
+    </div>
+    <div class="form-group">
+      <%= f.label :term_id, "Term" %>
+      <%= select("course", "term_id", (
+        Term.where(archived: false).to_a.map do |tt|
+          [tt.name, tt.id]
+        end
+      ), class: 'form-control') %>
+    </div>
+    <div class="form-group">
+      <%= f.label "Sections" %>
+      <table id="sections" class="table">
+        <tr class='row'>
+          <th class="col-sm-2">CRN</th>
+          <th class="col-sm-4">Instructor CCS Username</th>
+          <th class="col-sm-6">Meeting time</th>
+          <th></th>
+        </tr>
+        <% @sections.each_with_index do |s, i| %>
+        <tr class="form-group row">
+          <%= render "courses/section", f: f, section: s, index: i %>
+        </tr>
+        <% end %>
+      </table>
+      <% section_text = render "courses/section", f: f, section: CourseSection.new, index: "new_section" %>
+      <%= content_tag :span, "Add section", class: 'btn btn-default',
+                      id: "add-section",
+                      data: {on: :click, call: "add_section", args: ["#{section_text}"]} %>
+    </div>
+    <div class="form-group">
+      <p><strong>Late Penalty</strong></p>
+      <%= fields_for "lateness" do |late| %>
+      <tr class="form-inline row">
+        <%= render 'lateness/picker', :within_course => false, :f_late => late, :f_course => f %>
+      </tr>
+      <% end %>
+    </div>
+    <div>
+      <%= f.label :footer, "Course-Wide Footer" %> (HTML Allowed)
+      <%= f.text_area :footer, size: '40x10', class: 'form-control' %>
+      <br>
+    </div>
+    <div class="form-group">
+      <%= f.label :sub_max_size, "Max Submission Size (MB)" %>
+      <%= f.text_field :sub_max_size, class: 'form-control' %>
+    </div>
+    <div class="form-group">
+      <%= f.label :public, "Public Access to Assignments?" %>
+      <%= f.check_box :public %>
+
+      <p>Checking the "public access" box will allow access to the course
+      assignments without logging in to Bottlenose. This can be useful as a
+      reference to other instructors teaching similar courses, for people
+      self-studying the material, and for general reference.</p>
+
+    </div>
+    <div class="form-group">
+      <%= f.submit nil, class: "btn btn-primary" %>
+    </div>
+  </div>
+<% end %>
+<script>
+  $(function() { enableReflectiveCalls(); });
+  function add_section(content) {
+    var new_id = new Date().getTime();
+    var regexp = new RegExp("new_section", "g");
+    var newrow = $("<tr class='form-group row'>").html(content.replace(regexp, new_id));
+    $("#sections").append(newrow);
+    newrow.find("span.findUser").each(function(i) { enableLookupUser($(this)); });
+    newrow.find("input.numeric").on("keypress", validateNumericInput);
+    enableReflectiveCalls();
+  }
+  $("span.findUser").each(function(i) { enableLookupUser($(this)); });
+  function enableLookupUser(foundIt) {
+    var username = foundIt.prev();
+    username.on("blur", function() {
+      $.ajax({
+        type: "GET",
+        url: "<%= lookup_users_path %>",
+        contentType: 'application/json; charset=UTF-8',
+        data: {username: username.val()},
+        success: function(data) {
+          foundIt.text(" (" + data.name + ")");
+        },
+        error: function(xkr, status, error) {
+          foundIt.text(" (error looking up username)");
+        }
+      });
+    });
+  }
+  $("form").submit(ensureValidNumericInputOnSubmit);
+</script>

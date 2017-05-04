@@ -1,0 +1,18 @@
+<table class="table">
+    <thead>
+        <tr>
+            <th>Members</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% teams.each do |team| %>
+            <tr>
+                <td><%= team %></td>
+                <td><%= team.start_date %></td>
+                <td><%= team.end_date || "∞" %></td>
+            </tr>
+        <% end %>
+    </tbody>
+</table>

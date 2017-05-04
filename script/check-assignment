@@ -1,0 +1,61 @@
+#!/usr/bin/perl
+use 5.10.0;
+use warnings FATAL => 'all';
+
+use File::Spec;
+
+my ($GRADING, $STUDENT) = @ARGV;
+
+unless (defined $GRADING && defined $STUDENT) {
+    say "Usage:";
+    say "\t$0 grading.tar.gz student-file-upload.whatever";
+    exit(1);
+}
+
+my $RAILS_ROOT = $ENV{PWD};
+
+$GRADING = File::Spec->rel2abs($GRADING);
+$STUDENT = File::Spec->rel2abs($STUDENT);
+
+my $test_key = `ps aux | md5sum`;
+$test_key =~ s/\W//g;
+
+my $TEST_DIR = "/tmp/check-$test_key";
+
+system(qq{mkdir "$TEST_DIR"});
+chdir $TEST_DIR;
+
+system(qq{tar xzvf "$GRADING"});
+
+if ($STUDENT =~ /\.gz$/) {
+    system(qq{tar xzvf "$STUDENT"});
+}
+else {
+    system(qq{cp "$STUDENT" .});
+}
+
+my $makefile_count = `find . -name "Makefile" | wc -l`;
+
+if ($makefile_count != 1) {
+    say "Warning: Wrong number of Makefiles ($makefile_count != 1).";
+    say "(Hit Enter)";
+    <>;
+}
+
+my $mf = `find . -name "Makefile" | head -n 1`;
+my $md = `dirname "$mf"`;
+chomp $md;
+chdir($md);
+
+system("make");
+
+system(qq{tar xzvf "$GRADING"});
+
+my $output = "/tmp/check-result-$$.txt";
+system(qq{make test | tee "$output"});
+
+chdir($RAILS_ROOT);
+system(qq{script/parse-test-output "$output"});
+unlink $output;
+
+system(qq{rm -rf "$TEST_DIR"});

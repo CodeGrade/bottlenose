@@ -1,0 +1,7 @@
+<div class="form-group">
+  <% if @answers and @answers[index]
+     value = @answers[index]["main"]
+     end %>
+  <textarea name="answers[<%= index %>][main]" id="answer_<%= index %>"
+            disabled rows="5" class="form-control"><%= value %></textarea>
+</div>

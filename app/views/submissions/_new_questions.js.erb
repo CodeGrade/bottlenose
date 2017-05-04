@@ -1,0 +1,91 @@
+$(function() {
+  $('button.btn.answer').click(function() {
+    $('button.btn.answer[data-id="'+$(this).data('id')+'"]').removeClass('active');
+    $(this).addClass('active');
+    $('input#'+$(this).data('id')).val($(this).text());
+  });
+  $('.spinner').each(function() { activateSpinner(this, {precision: 2}) });
+  $('select.pick-file').change(function() {
+    // -1 for the "--select a file--" option, -1 for the "<none>" option
+    selectTreeviewFileByIndex(this.selectedIndex - 2);
+    $(this).next("input").prop('disabled', this.selectedIndex === 1);
+    if (this.selectedIndex === 1)
+      $(this).next("input").removeClass("badAnswer");
+  });
+});
+$(function() {
+  var answered = [];
+  for (var i = 0; i <= <%= count %>; i++) {
+    answered[i] = { 
+      answered: {}, 
+      root: "answers[" + i + "]",
+      subs: {"main": false, "detail": false, "parts": false},
+      ids: []
+    };
+    answered[i].blame = $("[name^='" + answered[i].root + "']");
+    answered[i].ids = answered[i].blame.filter(function() { return this.type === "hidden"; })
+      .map(function() { return this.id; });
+    answered[i].ids.each(function() {
+      answered[i].blame = answered[i].blame.add("[data-id='" + this + "']");
+    });
+    for (var key in answered[i].subs) {
+      answered[i].subs[key] = $("[name^='" + answered[i].root + "[" + key + "]']");
+      var ids = answered[i].subs[key].map(function() { return this.id; });
+      ids.each(function() {
+        answered[i].subs[key] = answered[i].subs[key].add("[data-id='" + this + "']");
+      });
+      if (answered[i].subs[key].length > 0)
+        answered[i].answered[key] = false;
+    }
+
+    (function(idx) {
+      function clean(key) {
+        return function() {
+          if (!(this instanceof HTMLTextAreaElement) || ($(this).val().trim() !== "")) {
+            answered[idx].answered[key] = true;
+            answered[idx].subs[key].removeClass("unanswered");
+          } else {
+            debugger;
+          }          
+        };
+      }
+      for (var key in answered[idx].subs) {
+        answered[idx].subs[key].on("change", clean(key)).on("focus", clean(key));
+      }
+    })(i);
+  }
+  $(".spinner input").each(function() {
+    var pieces = $(this)[0].name.match(/(\[[a-z0-9]+\])/g);
+    answered[pieces[0].slice(1, -1)].answered[pieces[1].slice(1, -1)] = true;
+  });  
+
+  $('select.pick-file').each(function() {
+    // index 1 is the "<none>" option
+    if (this.selectedIndex === 1)
+      $(this).next("input").prop('disabled', true).removeClass("unanswered").removeClass("badAnswer");
+  });
+  
+  $("form").submit(function(e) {
+    try {
+      var unanswered = $(answered).filter(function() {
+        for (var key in this.answered)
+          if (!this.answered[key] && !this.subs[key].prop("disabled"))
+            return true;
+        return false;
+      }).map(function() { 
+        return this.blame; 
+      });
+      if (unanswered.length > 0) {
+        e.preventDefault();
+        alert("There are " + unanswered.length + " questions unanswered");
+        unanswered.each(function() {
+          $(this).addClass("unanswered");
+        });
+        $(".spinner input.unanswered[val!='']").removeClass("unanswered");
+      }
+    } catch (exn) {
+      alert("Something went wrong: " + exn);
+      e.preventDefault();
+    }
+  });
+ });

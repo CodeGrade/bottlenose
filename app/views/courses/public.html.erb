@@ -1,0 +1,21 @@
+<% @page_title = @course.name %>
+
+<% @course.buckets.each do |bb| %>
+  <h2><%= bb.name %></h2>
+
+  <% bb.assignments.each do |aa| %>
+    <h3><%= aa.name %></h3>
+
+    <% unless aa.assignment.blank? %>
+      <div class="panel panel-default" style="padding: 1ex">
+        <%= raw aa.assignment %>
+      </div>
+    <% end %>
+
+    <% unless aa.assignment_file.empty? %>
+      <p><strong>Assignment Download:</strong>
+      <%= link_to aa.assignment_file, aa.assignment_file_path %></p>
+    <% end %>
+
+  <% end %>
+<% end %>
