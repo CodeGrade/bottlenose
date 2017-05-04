@@ -1,7 +1,7 @@
 require 'securerandom'
 require 'audit'
 
-class Assignment < ActiveRecord::Base
+class Assignment < ApplicationRecord
   def self.inheritance_column
     nil # TODO: For now; I might want to subclass this after all
   end

@@ -161,13 +161,13 @@ class AssignmentsController < CoursesController
   protected
 
   def set_lateness_config
-    lateness = params[:lateness]
+    lateness = params.to_unsafe_h[:lateness] # FIXME: Should go away in nested-models refactor.
     if lateness.nil?
       @assignment.errors.add(:lateness, "Lateness parameter is missing")
       return false
     end
 
-    type = lateness[:type]
+    type = lateness["type"]
     if type.nil?
       @assignment.errors.add(:lateness, "Lateness type is missing")
       return false
@@ -175,7 +175,7 @@ class AssignmentsController < CoursesController
     type = type.split("_")[1]
 
     lateness = lateness[type]
-    lateness[:type] = type
+    #lateness["type"] = type
     if type == "UseCourseDefaultConfig"
       @assignment.lateness_config = @course.lateness_config
     elsif type != "reuse"
@@ -207,17 +207,13 @@ class AssignmentsController < CoursesController
   end
 
   def graders_params
-    if params[:graders].nil?
+    graders = params.to_unsafe_h["graders"] # FIXME: Nested models refactor.
+
+    if graders.nil?
       nil
     else
-      params[:graders].map do |k, v|
-        [k, v.permit([:id, :type, :removed,
-                      :JavaStyleGrader => [:avail_score, :upload_file, :params, :type],
-                      :CheckerGrader   => [:avail_score, :upload_file, :params, :type],
-                      :JunitGrader     => [:avail_score, :upload_file, :params, :type],
-                      :ManualGrader    => [:avail_score, :upload_file, :params, :type],
-                      :SandboxGrader   => [:avail_score, :upload_file, :params, :type],
-        ])]
+      graders.map do |k, v|
+        [k, v]
       end.to_h
     end
   end

@@ -9,7 +9,7 @@ class UsersControllerTest < ActionController::TestCase
 
   test "should get index" do
     sign_in @admin
-    get :index, {}
+    get :index
     assert_response :success
     assert_not_nil assigns(:users)
   end
@@ -34,7 +34,7 @@ class UsersControllerTest < ActionController::TestCase
 
     sign_in @admin
     assert_difference('User.count') do
-      post :create, {user: { email: "bob@dole.com", name: "Bob Dole", auth_key: "derp" }}
+      post :create, params: {user: { email: "bob@dole.com", name: "Bob Dole", auth_key: "derp" }}
     end
 
     assert_redirected_to user_path(assigns(:user))
@@ -42,19 +42,19 @@ class UsersControllerTest < ActionController::TestCase
 
   test "should show user" do
     sign_in @admin
-    get :show, {id: @user}
+    get :show, params: {id: @user}
     assert_response :success
   end
 
   test "should get edit" do
     sign_in @admin
-    get :edit, {id: @user}
+    get :edit, params: {id: @user}
     assert_response :success
   end
 
   test "should update user" do
     sign_in @admin
-    put :update, {id: @user, user: { email: @user.email, name: @user.name }}
+    put :update, params: {id: @user, user: { email: @user.email, name: @user.name }}
     assert_redirected_to user_path(assigns(:user))
   end
 
@@ -63,7 +63,7 @@ class UsersControllerTest < ActionController::TestCase
 
     sign_in @admin
     assert_difference('User.count', -1) do
-      delete :destroy, {id: @jack}
+      delete :destroy, params: {id: @jack}
     end
 
     assert_redirected_to users_path

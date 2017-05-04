@@ -1,11 +1,12 @@
 # -*- ruby -*-
 source 'https://rubygems.org'
 
-gem 'rails', '~> 4.2'
+gem 'rails', '~> 5.1'
 gem 'rack'
 gem 'i18n'
 
-gem 'devise'
+gem 'devise', github: 'plataformatec/devise' # FIXME: Remove github when devise updates.
+gem 'erubis'
 gem 'devise_ldap_authenticatable'
 
 gem 'pg'
@@ -30,9 +31,10 @@ gem 'bootstrap-datepicker-rails'
 gem 'momentjs-rails', '>= 2.9.0'
 gem 'bootstrap3-datetimepicker-rails', '~> 4.17.37'
 gem 'font-awesome-rails'
-gem 'zipruby-compat', :require => 'zipruby', :git => "https://github.com/jawspeak/zipruby-compatibility-with-rubyzip-fork.git", :tag => "v0.3.7" # needed instead of zipruby because write_xlsx needs rubyzip, and they conflict
+gem 'zipruby-compat', :require => 'zipruby', :git => "https://github.com/jawspeak/zipruby-compatibility-with-rubyzip-fork.git", :tag => "v0.3.7" # needed instead of zipruby because write_xlsx needs rubyzip, and they conflict ; FIXME: git reference
 
-gem 'delayed_job_active_record'
+gem 'delayed_job', github: 'dsander/delayed_job', branch: 'rails51' # FIXME: github
+gem 'delayed_job_active_record', github: 'gogovan/delayed_job_active_record', branch: 'rails-5.1' # FIXME
 gem 'daemons'
 
 gem 'write_xlsx'
@@ -61,4 +63,5 @@ group :test do
   gem 'capybara-webkit' # Needs qt5-default qt5-qmake libqt5webkit5-dev
   gem 'launchy'
   gem 'factory_girl_rails'
+  gem 'rails-controller-testing'
 end

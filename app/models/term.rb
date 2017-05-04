@@ -1,4 +1,4 @@
-class Term < ActiveRecord::Base
+class Term < ApplicationRecord
   has_many :courses, :dependent => :restrict_with_error
 
   validates :name, :presence => true, :format => { :with => /\d\d/ }

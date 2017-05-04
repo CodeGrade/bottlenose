@@ -1,4 +1,4 @@
-class CourseSection < ActiveRecord::Base
+class CourseSection < ApplicationRecord
   belongs_to :course
   belongs_to :instructor, :class_name => "User", :foreign_key => "instructor_id", :primary_key => "id"
   delegate :term, to: :course

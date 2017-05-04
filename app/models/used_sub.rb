@@ -1,4 +1,4 @@
-class UsedSub < ActiveRecord::Base
+class UsedSub < ApplicationRecord
   belongs_to :submission
   belongs_to :user
   belongs_to :assignment

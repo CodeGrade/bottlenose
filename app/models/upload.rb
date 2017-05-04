@@ -3,7 +3,7 @@ require 'zipruby'
 require 'fileutils'
 require 'zlib'
 
-class Upload < ActiveRecord::Base
+class Upload < ApplicationRecord
   validates :file_name,  :presence => true
   validates :user_id,    :presence => true
   validates :secret_key, :presence => true

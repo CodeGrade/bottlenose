@@ -1,4 +1,4 @@
-class Initial < ActiveRecord::Migration
+class Initial < ActiveRecord::Migration[4.2]
 	def self.up
 	
 	  # These are extensions that must be enabled in order to support this database

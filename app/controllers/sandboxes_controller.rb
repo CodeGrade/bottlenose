@@ -1,5 +1,5 @@
 class SandboxesController < ApplicationController
-  before_filter :require_site_admin
+  before_action :require_site_admin
   before_action :set_sandbox, only: [:show, :edit, :update, :destroy]
 
   # GET /sandboxes

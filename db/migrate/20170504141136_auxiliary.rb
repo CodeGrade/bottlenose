@@ -1,4 +1,4 @@
-class Auxiliary < ActiveRecord::Migration
+class Auxiliary < ActiveRecord::Migration[4.2]
 	def self.up
 		execute "TRUNCATE schema_migrations;"
 		execute "INSERT INTO schema_migrations VALUES ('20170502174648');"

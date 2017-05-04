@@ -7,7 +7,7 @@ require 'simplecov'
 SimpleCov.start
 
 class ActionController::TestCase
-  include Devise::TestHelpers
+  include Devise::Test::ControllerHelpers
 end
 
 class ActiveSupport::TestCase
@@ -96,7 +96,7 @@ class ActionDispatch::IntegrationTest
   include Capybara::DSL
 
   # Stop ActiveRecord from wrapping tests in transactions
-  self.use_transactional_fixtures = false
+  self.use_transactional_tests = false
 
   setup do
     DatabaseCleaner.clean

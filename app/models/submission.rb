@@ -1,7 +1,7 @@
 require 'securerandom'
 require 'audit'
 
-class Submission < ActiveRecord::Base
+class Submission < ApplicationRecord
   def self.inheritance_column
     nil
   end

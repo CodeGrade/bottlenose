@@ -10,19 +10,19 @@ class RegistrationsControllerTest < ActionController::TestCase
 
   test "should get index" do
     sign_in @fred
-    get :index, {:course_id => @cs301.id}
+    get :index, params: {course_id: @cs301.id}
     assert_response :success
   end
 
   test "should not get index unless logged in" do
-    get :index, {:course_id => @cs301.id}
+    get :index, params: {course_id: @cs301.id}
     assert_response :redirect
     assert_match "You need to log in first", flash[:alert]
   end
 
   test "non-teacher should not get index" do
     sign_in @john
-    get :index, {:course_id => @cs301.id}
+    get :index, params: {course_id: @cs301.id}
     assert_response :redirect
     assert_match "Must be an admin or staff", flash[:alert]
   end
@@ -32,8 +32,12 @@ class RegistrationsControllerTest < ActionController::TestCase
 
     sign_in @fred
     assert_difference('Registration.count') do
-      post :create, { course_id: @cs301.id, user_name: @mike.name, user_email: @mike.email,
-        registration: { user_id: @mike.id, course_id: @cs301.id }}
+      post :create, params: {
+             course_id: @cs301.id,
+             user_name: @mike.name,
+             user_email: @mike.email,
+             registration: { user_id: @mike.id, course_id: @cs301.id }
+           }
     end
 
     assert_response :redirect
@@ -43,7 +47,7 @@ class RegistrationsControllerTest < ActionController::TestCase
     skip # no :show action for registrations
 
     sign_in @fred
-    get :show, {:course_id => @cs301.id, id: @john_reg.id}
+    get :show, params: {course_id: @cs301.id, id: @john_reg.id}
     assert_response :success
   end
 
@@ -51,7 +55,7 @@ class RegistrationsControllerTest < ActionController::TestCase
     skip # no :edit action for registrations
 
     sign_in @fred
-    get :edit, {:course_id => @cs301.id, id: @john_reg.id}
+    get :edit, params: {course_id: @cs301.id, id: @john_reg.id}
     assert_response :success
   end
 
@@ -59,8 +63,11 @@ class RegistrationsControllerTest < ActionController::TestCase
     skip # no :update action for registrations
 
     sign_in @fred
-    put :update, {course_id: @cs301.id, id: @john_reg.id,
-      registration: { user_id: @john.id, course_id: @cs301.id, teacher: true }}
+    put :update, params: {
+          course_id: @cs301.id,
+          id: @john_reg.id,
+          registration: { user_id: @john.id, course_id: @cs301.id, teacher: true }
+        }
 
     assert_response :redirect
   end
@@ -69,7 +76,7 @@ class RegistrationsControllerTest < ActionController::TestCase
     skip # no :update action for registrations
 
     sign_in @fred
-    put :update, {course_id: @cs301.id, id: @john_reg.id,
+    put :update, params: {course_id: @cs301.id, id: @john_reg.id,
       registration: { user_id: @john.id, course_id: @cs301.id, teacher: false, tags: "goat; honors" }}
 
     assert_response :redirect
@@ -79,13 +86,13 @@ class RegistrationsControllerTest < ActionController::TestCase
 
   test "should toggle show-in-reports" do
     sign_in @fred
-    post :toggle, { format: 'js', course_id: @cs301.id, id: @john_reg.id }
+    post :toggle, params: { format: 'js', course_id: @cs301.id, id: @john_reg.id }
   end
 
   test "should destroy registration" do
     sign_in @fred
     assert_difference('Registration.count', -1) do
-      delete :destroy, {:course_id => @cs301.id, id: @john_reg.id}
+      delete :destroy, params: {course_id: @cs301.id, id: @john_reg.id}
     end
 
     assert_redirected_to course_registrations_path(@cs301)

@@ -1,4 +1,4 @@
-class Bucket < ActiveRecord::Base
+class Bucket < ApplicationRecord
   belongs_to :course
   has_many   :assignments, dependent: :restrict_with_error
 
