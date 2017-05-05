@@ -45,8 +45,8 @@ class User < ActiveRecord::Base
       nil
     end
   end
-    
-  
+
+
   # Different people with the same name are fine.
   # If someone uses two emails, they get two accounts. So sad.
 
@@ -87,7 +87,7 @@ class User < ActiveRecord::Base
 
   def valid_ldap_authentication?(pwd)
     if !self.new_record? &&
-       self.encrypted_password != "" && 
+       self.encrypted_password != "" &&
        Devise::Encryptor.compare(self.class, self.encrypted_password, pwd)
       Audit.log("DB auth for #{self.name}")
       true
@@ -124,7 +124,7 @@ class User < ActiveRecord::Base
     else
       assn_ids = assignments.pluck(:id)
     end
-    SubsForGrading.where(user: self, assignment_id: assn_ids).joins(:submission)
+    UsedSub.where(user: self, assignment_id: assn_ids).joins(:submission)
   end
 
   def course_staff?(course)

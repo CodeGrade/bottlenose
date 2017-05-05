@@ -38,7 +38,7 @@
       <tbody>
         <%
            assignments = @course.assignments.order(due_date: :desc, available: :desc)
-           stats = Submission.joins(:subs_for_gradings).where(assignment: assignments)
+           stats = Submission.joins(:used_subs).where(assignment: assignments)
                              .select("min(submissions.assignment_id) as a_id")
                              .select("min(score), avg(score), max(score)")
                              .group("submissions.assignment_id").to_a
