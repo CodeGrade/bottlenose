@@ -6,7 +6,6 @@
     </h3>
   </div>
 
-  <% score_sum = 0.0; weight_sum = 0.0 %>
   <table class="table">
     <thead>
       <tr>
@@ -33,7 +32,6 @@
            if used.nil?
              nil
            elsif used.grade_complete?
-             score_sum += (used.score * assignment.points_available) / 100.0
              used.score
            else
              image_tag("question-mark.png", height: 16, title: "Grading is not yet complete")
@@ -42,7 +40,6 @@
         <tr>
           <td><%= link_to assignment.name, course_assignment_path(assignment.course, assignment) %></td>
           <td><span class="local-time"><%= assignment.due_date %></span></td>
-          <% weight_sum += assignment.points_available %>
           <% if show_weight %>
             <td>
               <%= show_score(assignment.points_available, assignment, true) %>
@@ -53,17 +50,17 @@
             <% submissions.limit(5).each do |submission| %>
              <%= link_to course_assignment_submission_path(assignment.course, assignment, submission) do %>
               <% if used and submission.id == used.id %>
-               <span class="label label-success" 
+               <span class="label label-success"
                   data-toggle="tooltip" data-placement="top"
                   title="This submission is used for grading">
                  <%= if submission.grade_complete? then to_fixed(submission.score) else "?" end%>
                </span>
               <% else %>
                <span class="label label-default">
-                 <%= if submission.grade_complete? 
-                       to_fixed(submission.score) 
-                     else 
-                       "?" 
+                 <%= if submission.grade_complete?
+                       to_fixed(submission.score)
+                     else
+                       "?"
                      end
                   %>
                </span>
@@ -73,15 +70,6 @@
           </td>
         </tr>
       <% end %>
-    <tr>
-      <td>Estimated Total</td>
-      <% if show_weight %>
-        <td>-</td>
-      <% end %>
-      <td><%= weight_sum %></td>
-      <td><%= score_sum %></td>
-      <td>-</td>
-    </tr>
     </tbody>
   </table>
 </div>
