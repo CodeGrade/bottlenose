@@ -24,6 +24,8 @@ gem 'uglifier'
 gem 'jquery-rails'
 gem 'jquery-tablesorter'
 
+gem 'vuejs-rails'
+
 gem 'bootstrap-sass', '~> 3.3.5'
 gem 'sass-rails', '>= 3.2'
 gem 'bootstrap-sass-extras'
@@ -49,6 +51,7 @@ group :development do
   #gem "flatten_migrations"
   gem "better_errors"
   gem "binding_of_caller"
+  gem "listen"
 end
 
 group :development, :test do
