@@ -1,5 +1,5 @@
 class SettingsController < ApplicationController
-  before_filter :require_site_admin
+  before_action :require_site_admin
 
   def edit
     @cfg = Settings.load_json

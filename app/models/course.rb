@@ -1,4 +1,4 @@
-class Course < ActiveRecord::Base
+class Course < ApplicationRecord
   belongs_to :term
 
   has_many :course_sections, dependent: :destroy

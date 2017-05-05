@@ -27,5 +27,7 @@ module Bottlenose
     config.active_job.queue_adapter = :delayed_job
 
     config.exceptions_app = self.routes
+
+    config.action_controller.per_form_csrf_tokens = true
   end
 end

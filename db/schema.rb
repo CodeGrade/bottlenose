@@ -1,4 +1,3 @@
-# encoding: UTF-8
 # This file is auto-generated from the current state of the database. Instead
 # of editing this file, please use the migrations feature of Active Record to
 # incrementally modify your database, and then regenerate this schema definition.
@@ -16,285 +15,270 @@ ActiveRecord::Schema.define(version: 20170504141136) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "assignment_graders", force: :cascade do |t|
+  create_table "assignment_graders", id: :serial, force: :cascade do |t|
     t.integer "assignment_id", null: false
-    t.integer "grader_id",     null: false
+    t.integer "grader_id", null: false
     t.integer "order"
+    t.index ["assignment_id", "grader_id"], name: "unique_assignment_graders", unique: true
+    t.index ["assignment_id"], name: "index_assignment_graders_on_assignment_id"
   end
 
-  add_index "assignment_graders", ["assignment_id", "grader_id"], name: "unique_assignment_graders", unique: true, using: :btree
-  add_index "assignment_graders", ["assignment_id"], name: "index_assignment_graders_on_assignment_id", using: :btree
-
-  create_table "assignments", force: :cascade do |t|
-    t.string   "name",                                    null: false
-    t.datetime "due_date",                                null: false
-    t.string   "assignment_file_name"
-    t.text     "assignment"
+  create_table "assignments", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "due_date", null: false
+    t.string "assignment_file_name"
+    t.text "assignment"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "secret_dir"
-    t.boolean  "hide_grading",          default: false
-    t.integer  "assignment_upload_id"
-    t.integer  "blame_id"
-    t.string   "tar_key"
-    t.integer  "course_id",                               null: false
-    t.boolean  "team_subs"
-    t.integer  "max_attempts"
-    t.integer  "rate_per_hour"
-    t.float    "points_available"
-    t.integer  "lateness_config_id"
-    t.datetime "available",                               null: false
-    t.string   "type",                  default: "Files", null: false
-    t.integer  "related_assignment_id"
-    t.boolean  "request_time_taken",    default: false
-    t.integer  "team_set_id"
+    t.string "secret_dir"
+    t.boolean "hide_grading", default: false
+    t.integer "assignment_upload_id"
+    t.integer "blame_id"
+    t.string "tar_key"
+    t.integer "course_id", null: false
+    t.boolean "team_subs"
+    t.integer "max_attempts"
+    t.integer "rate_per_hour"
+    t.float "points_available"
+    t.integer "lateness_config_id"
+    t.datetime "available", null: false
+    t.string "type", default: "Files", null: false
+    t.integer "related_assignment_id"
+    t.boolean "request_time_taken", default: false
+    t.integer "team_set_id"
+    t.index ["course_id"], name: "index_assignments_on_course_id"
   end
 
-  add_index "assignments", ["course_id"], name: "index_assignments_on_course_id", using: :btree
-
-  create_table "course_sections", force: :cascade do |t|
-    t.integer "course_id",     null: false
-    t.integer "crn",           null: false
-    t.string  "meeting_time"
+  create_table "course_sections", id: :serial, force: :cascade do |t|
+    t.integer "course_id", null: false
+    t.integer "crn", null: false
+    t.string "meeting_time"
     t.integer "instructor_id", null: false
+    t.index ["crn"], name: "index_course_sections_on_crn", unique: true
   end
 
-  add_index "course_sections", ["crn"], name: "index_course_sections_on_crn", unique: true, using: :btree
-
-  create_table "courses", force: :cascade do |t|
-    t.string   "name",                               null: false
+  create_table "courses", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.text     "footer"
-    t.integer  "term_id"
-    t.integer  "sub_max_size",       default: 5,     null: false
-    t.boolean  "public",             default: false, null: false
-    t.integer  "team_min"
-    t.integer  "team_max"
-    t.integer  "total_late_days"
-    t.integer  "lateness_config_id", default: 0,     null: false
+    t.text "footer"
+    t.integer "term_id"
+    t.integer "sub_max_size", default: 5, null: false
+    t.boolean "public", default: false, null: false
+    t.integer "team_min"
+    t.integer "team_max"
+    t.integer "total_late_days"
+    t.integer "lateness_config_id", default: 0, null: false
   end
 
-  create_table "delayed_jobs", force: :cascade do |t|
-    t.integer  "priority",   default: 0, null: false
-    t.integer  "attempts",   default: 0, null: false
-    t.text     "handler",                null: false
-    t.text     "last_error"
+  create_table "delayed_jobs", id: :serial, force: :cascade do |t|
+    t.integer "priority", default: 0, null: false
+    t.integer "attempts", default: 0, null: false
+    t.text "handler", null: false
+    t.text "last_error"
     t.datetime "run_at"
     t.datetime "locked_at"
     t.datetime "failed_at"
-    t.string   "locked_by"
-    t.string   "queue"
+    t.string "locked_by"
+    t.string "queue"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.index ["priority", "run_at"], name: "delayed_jobs_priority"
   end
 
-  add_index "delayed_jobs", ["priority", "run_at"], name: "delayed_jobs_priority", using: :btree
-
-  create_table "grader_allocations", force: :cascade do |t|
-    t.integer  "course_id",                         null: false
-    t.integer  "assignment_id",                     null: false
-    t.integer  "submission_id",                     null: false
-    t.integer  "grade_id",                          null: false
-    t.datetime "grading_assigned",                  null: false
-    t.boolean  "abandoned",         default: false, null: false
+  create_table "grader_allocations", id: :serial, force: :cascade do |t|
+    t.integer "course_id", null: false
+    t.integer "assignment_id", null: false
+    t.integer "submission_id", null: false
+    t.integer "grade_id", null: false
+    t.datetime "grading_assigned", null: false
+    t.boolean "abandoned", default: false, null: false
     t.datetime "grading_completed"
+    t.index ["assignment_id"], name: "index_grader_allocations_on_assignment_id"
+    t.index ["course_id"], name: "index_grader_allocations_on_course_id"
+    t.index ["grade_id"], name: "index_grader_allocations_on_grade_id"
+    t.index ["submission_id"], name: "index_grader_allocations_on_submission_id"
   end
 
-  add_index "grader_allocations", ["assignment_id"], name: "index_grader_allocations_on_assignment_id", using: :btree
-  add_index "grader_allocations", ["course_id"], name: "index_grader_allocations_on_course_id", using: :btree
-  add_index "grader_allocations", ["grade_id"], name: "index_grader_allocations_on_grade_id", using: :btree
-  add_index "grader_allocations", ["submission_id"], name: "index_grader_allocations_on_submission_id", using: :btree
-
-  create_table "graders", force: :cascade do |t|
-    t.string  "type"
-    t.float   "avail_score"
-    t.string  "params"
+  create_table "graders", id: :serial, force: :cascade do |t|
+    t.string "type"
+    t.float "avail_score"
+    t.string "params"
     t.integer "upload_id"
   end
 
-  create_table "grades", force: :cascade do |t|
-    t.integer  "grader_id",                      null: false
-    t.integer  "submission_id",                  null: false
-    t.string   "grading_output"
-    t.text     "notes"
-    t.float    "score"
-    t.float    "out_of"
+  create_table "grades", id: :serial, force: :cascade do |t|
+    t.integer "grader_id", null: false
+    t.integer "submission_id", null: false
+    t.string "grading_output"
+    t.text "notes"
+    t.float "score"
+    t.float "out_of"
     t.datetime "updated_at"
-    t.boolean  "available",      default: false
+    t.boolean "available", default: false
+    t.index ["submission_id"], name: "index_grades_on_submission_id"
   end
 
-  add_index "grades", ["submission_id"], name: "index_grades_on_submission_id", using: :btree
-
-  create_table "inline_comments", force: :cascade do |t|
-    t.integer  "submission_id",                 null: false
-    t.string   "title",                         null: false
-    t.string   "filename",                      null: false
-    t.integer  "line",                          null: false
-    t.integer  "grade_id",                      null: false
-    t.integer  "user_id"
-    t.string   "label",                         null: false
-    t.integer  "severity",                      null: false
-    t.string   "comment",       default: "",    null: false
-    t.float    "weight",                        null: false
-    t.boolean  "suppressed",    default: false, null: false
-    t.string   "info"
-    t.datetime "created_at",                    null: false
-    t.datetime "updated_at",                    null: false
+  create_table "inline_comments", id: :serial, force: :cascade do |t|
+    t.integer "submission_id", null: false
+    t.string "title", null: false
+    t.string "filename", null: false
+    t.integer "line", null: false
+    t.integer "grade_id", null: false
+    t.integer "user_id"
+    t.string "label", null: false
+    t.integer "severity", null: false
+    t.string "comment", default: "", null: false
+    t.float "weight", null: false
+    t.boolean "suppressed", default: false, null: false
+    t.string "info"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["filename"], name: "index_inline_comments_on_filename"
+    t.index ["label"], name: "index_inline_comments_on_label"
+    t.index ["submission_id", "grade_id", "line"], name: "index_inline_comments_on_submission_id_and_grade_id_and_line"
   end
 
-  add_index "inline_comments", ["filename"], name: "index_inline_comments_on_filename", using: :btree
-  add_index "inline_comments", ["label"], name: "index_inline_comments_on_label", using: :btree
-  add_index "inline_comments", ["submission_id", "grade_id", "line"], name: "index_inline_comments_on_submission_id_and_grade_id_and_line", using: :btree
-
-  create_table "lateness_configs", force: :cascade do |t|
-    t.string  "type"
+  create_table "lateness_configs", id: :serial, force: :cascade do |t|
+    t.string "type"
     t.integer "days_per_assignment"
     t.integer "percent_off"
     t.integer "frequency"
     t.integer "max_penalty"
   end
 
-  create_table "reg_requests", force: :cascade do |t|
-    t.integer  "course_id"
-    t.text     "notes"
+  create_table "reg_requests", id: :serial, force: :cascade do |t|
+    t.integer "course_id"
+    t.text "notes"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.integer  "user_id"
-    t.integer  "role",       default: 0, null: false
-    t.integer  "section_id",             null: false
+    t.integer "user_id"
+    t.integer "role", default: 0, null: false
+    t.integer "section_id", null: false
   end
 
-  create_table "registrations", force: :cascade do |t|
-    t.integer  "course_id",                  null: false
-    t.integer  "user_id",                    null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.boolean  "show_in_lists"
-    t.string   "tags",          default: ""
-    t.integer  "role",          default: 0,  null: false
-    t.integer  "section_id",                 null: false
-    t.datetime "dropped_date"
-  end
-
-  add_index "registrations", ["course_id"], name: "index_registrations_on_course_id", using: :btree
-  add_index "registrations", ["user_id"], name: "index_registrations_on_user_id", using: :btree
-
-  create_table "sandboxes", force: :cascade do |t|
-    t.string   "name"
-    t.integer  "submission_id"
-    t.datetime "created_at",    null: false
-    t.datetime "updated_at",    null: false
-  end
-
-  create_table "submissions", force: :cascade do |t|
-    t.integer  "assignment_id",                         null: false
-    t.integer  "user_id",                               null: false
-    t.string   "secret_dir"
-    t.string   "file_name"
-    t.text     "student_notes"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-    t.boolean  "ignore_late_penalty", default: false
-    t.integer  "upload_id"
-    t.integer  "upload_size",         default: 0,       null: false
-    t.integer  "team_id"
-    t.integer  "comments_upload_id"
-    t.boolean  "stale_team"
-    t.float    "score"
-    t.string   "type",                default: "Files", null: false
-    t.float    "time_taken"
-  end
-
-  add_index "submissions", ["assignment_id"], name: "index_submissions_on_assignment_id", using: :btree
-  add_index "submissions", ["user_id", "assignment_id"], name: "index_submissions_on_user_id_and_assignment_id", using: :btree
-  add_index "submissions", ["user_id"], name: "index_submissions_on_user_id", using: :btree
-
-  create_table "team_sets", force: :cascade do |t|
+  create_table "registrations", id: :serial, force: :cascade do |t|
     t.integer "course_id", null: false
-    t.string  "name"
+    t.integer "user_id", null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.boolean "show_in_lists"
+    t.string "tags", default: ""
+    t.integer "role", default: 0, null: false
+    t.integer "section_id", null: false
+    t.datetime "dropped_date"
+    t.index ["course_id"], name: "index_registrations_on_course_id"
+    t.index ["user_id"], name: "index_registrations_on_user_id"
   end
 
-  add_index "team_sets", ["course_id"], name: "index_team_sets_on_course_id", using: :btree
-
-  create_table "team_users", force: :cascade do |t|
-    t.integer  "team_id"
-    t.integer  "user_id"
+  create_table "sandboxes", id: :serial, force: :cascade do |t|
+    t.string "name"
+    t.integer "submission_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  add_index "team_users", ["team_id", "user_id"], name: "unique_team_memebers", unique: true, using: :btree
-
-  create_table "teams", force: :cascade do |t|
-    t.integer  "course_id"
-    t.date     "start_date"
-    t.datetime "created_at",  null: false
-    t.datetime "updated_at",  null: false
-    t.date     "end_date"
-    t.integer  "team_set_id"
+  create_table "submissions", id: :serial, force: :cascade do |t|
+    t.integer "assignment_id", null: false
+    t.integer "user_id", null: false
+    t.string "secret_dir"
+    t.string "file_name"
+    t.text "student_notes"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.boolean "ignore_late_penalty", default: false
+    t.integer "upload_id"
+    t.integer "upload_size", default: 0, null: false
+    t.integer "team_id"
+    t.integer "comments_upload_id"
+    t.boolean "stale_team"
+    t.float "score"
+    t.string "type", default: "Files", null: false
+    t.float "time_taken"
+    t.index ["assignment_id"], name: "index_submissions_on_assignment_id"
+    t.index ["user_id", "assignment_id"], name: "index_submissions_on_user_id_and_assignment_id"
+    t.index ["user_id"], name: "index_submissions_on_user_id"
   end
 
-  create_table "terms", force: :cascade do |t|
-    t.string   "name"
-    t.boolean  "archived",   default: false
+  create_table "team_sets", id: :serial, force: :cascade do |t|
+    t.integer "course_id", null: false
+    t.string "name"
+    t.index ["course_id"], name: "index_team_sets_on_course_id"
+  end
+
+  create_table "team_users", id: :serial, force: :cascade do |t|
+    t.integer "team_id"
+    t.integer "user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["team_id", "user_id"], name: "unique_team_memebers", unique: true
+  end
+
+  create_table "teams", id: :serial, force: :cascade do |t|
+    t.integer "course_id"
+    t.date "start_date"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.date "end_date"
+    t.integer "team_set_id"
+  end
+
+  create_table "terms", id: :serial, force: :cascade do |t|
+    t.string "name"
+    t.boolean "archived", default: false
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  create_table "uploads", force: :cascade do |t|
-    t.integer  "user_id"
-    t.string   "file_name"
-    t.string   "secret_key"
+  create_table "uploads", id: :serial, force: :cascade do |t|
+    t.integer "user_id"
+    t.string "file_name"
+    t.string "secret_key"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.index ["secret_key"], name: "index_uploads_on_secret_key", unique: true
   end
 
-  add_index "uploads", ["secret_key"], name: "index_uploads_on_secret_key", unique: true, using: :btree
-
-  create_table "used_subs", force: :cascade do |t|
-    t.integer "user_id",       null: false
+  create_table "used_subs", id: :serial, force: :cascade do |t|
+    t.integer "user_id", null: false
     t.integer "assignment_id", null: false
     t.integer "submission_id", null: false
+    t.index ["user_id", "assignment_id"], name: "unique_sub_per_user_assignment", unique: true
   end
 
-  add_index "used_subs", ["user_id", "assignment_id"], name: "unique_sub_per_user_assignment", unique: true, using: :btree
-
-  create_table "user_submissions", force: :cascade do |t|
+  create_table "user_submissions", id: :serial, force: :cascade do |t|
     t.integer "user_id"
     t.integer "submission_id"
+    t.index ["submission_id"], name: "index_user_submissions_on_submission_id"
+    t.index ["user_id", "submission_id"], name: "index_user_submissions_on_user_id_and_submission_id", unique: true
+    t.index ["user_id"], name: "index_user_submissions_on_user_id"
   end
 
-  add_index "user_submissions", ["submission_id"], name: "index_user_submissions_on_submission_id", using: :btree
-  add_index "user_submissions", ["user_id", "submission_id"], name: "index_user_submissions_on_user_id_and_submission_id", unique: true, using: :btree
-  add_index "user_submissions", ["user_id"], name: "index_user_submissions_on_user_id", using: :btree
-
-  create_table "users", force: :cascade do |t|
-    t.string   "name",                                null: false
-    t.string   "email"
-    t.boolean  "site_admin"
+  create_table "users", id: :serial, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email"
+    t.boolean "site_admin"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "encrypted_password",     default: "", null: false
-    t.string   "reset_password_token"
+    t.string "encrypted_password", default: "", null: false
+    t.string "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
-    t.integer  "sign_in_count",          default: 0,  null: false
+    t.integer "sign_in_count", default: 0, null: false
     t.datetime "current_sign_in_at"
     t.datetime "last_sign_in_at"
-    t.inet     "current_sign_in_ip"
-    t.inet     "last_sign_in_ip"
-    t.string   "username"
-    t.text     "first_name"
-    t.text     "last_name"
-    t.text     "nickname"
-    t.text     "profile"
-    t.integer  "nuid"
+    t.inet "current_sign_in_ip"
+    t.inet "last_sign_in_ip"
+    t.string "username"
+    t.text "first_name"
+    t.text "last_name"
+    t.text "nickname"
+    t.text "profile"
+    t.integer "nuid"
+    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["nuid"], name: "index_users_on_nuid", unique: true
+    t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["username"], name: "index_users_on_username", unique: true
   end
-
-  add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
-  add_index "users", ["nuid"], name: "index_users_on_nuid", unique: true, using: :btree
-  add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
-  add_index "users", ["username"], name: "index_users_on_username", unique: true, using: :btree
 
 end

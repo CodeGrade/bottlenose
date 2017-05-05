@@ -1,5 +1,5 @@
 require 'clamp'
-class LatenessConfig < ActiveRecord::Base
+class LatenessConfig < ApplicationRecord
   belongs_to :lateness_config
 
   def self.unique

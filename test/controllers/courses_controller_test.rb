@@ -20,7 +20,7 @@ class CoursesControllerTest < ActionController::TestCase
 
   test "non-enrolled user should not have access to course main page" do
     sign_in @mike
-    get :show, {id: @course1}
+    get :show, params: {id: @course1}
     assert_response :redirect
   end
 
@@ -35,7 +35,7 @@ class CoursesControllerTest < ActionController::TestCase
 
     sign_in @ken
     assert_difference('Course.count') do
-      post :create, {
+      post :create, params: {
         course: {
           name: "Worst Course Ever", 
           term_id: @term.id,
@@ -59,7 +59,7 @@ class CoursesControllerTest < ActionController::TestCase
 
   test "should show course" do
     sign_in @john
-    get :show, {id: @course1}
+    get :show, params: {id: @course1}
     assert_response :success
   end
 
@@ -74,19 +74,19 @@ class CoursesControllerTest < ActionController::TestCase
                 name: "Dummy assignment",
                 lateness_config: lateness
                )
-    get :show, {id: @course1}
+    get :show, params: {id: @course1}
     assert_response :success
   end
   
   test "should get edit" do
     sign_in @fred
-    get :edit, {id: @course1}
+    get :edit, params: {id: @course1}
     assert_response :success
   end
 
   test "should update course" do
     sign_in @fred
-    put :update, {id: @course1, course: { name: @course1.name, footer: "new footer" }}
+    put :update, params: {id: @course1, course: { name: @course1.name, footer: "new footer" }}
     assert_response :success
   end
 
@@ -97,7 +97,7 @@ class CoursesControllerTest < ActionController::TestCase
     sub = create(:submission, assignment: a1, user: @john, teacher_score: 100)
 
     sign_in @fred
-    put :update, {id: @course1, course: { name: @course1.name, late_options: "5,1,12" }}
+    put :update, params: {id: @course1, course: { name: @course1.name, late_options: "5,1,12" }}
     assert_response :redirect
 
     sub.reload
@@ -108,7 +108,7 @@ class CoursesControllerTest < ActionController::TestCase
 
   test "non-admin should not be able to update course" do
     sign_in @john
-    put :update, {id: @course1, course: { name: @course1.name }}
+    put :update, params: {id: @course1, course: { name: @course1.name }}
     assert_response :redirect
     assert_match "Must be an", flash[:alert]
   end
@@ -118,7 +118,7 @@ class CoursesControllerTest < ActionController::TestCase
 
     sign_in @ken
     assert_difference('Course.count', -1) do
-      delete :destroy, {id: @course2}
+      delete :destroy, params: {id: @course2}
     end
 
     assert_redirected_to courses_path
@@ -129,7 +129,7 @@ class CoursesControllerTest < ActionController::TestCase
 
     sign_in @john
     assert_difference('Course.count', 0) do
-      delete :destroy, {id: @course1}
+      delete :destroy, params: {id: @course1}
     end
 
     assert_response :redirect
@@ -141,19 +141,19 @@ class CoursesControllerTest < ActionController::TestCase
     sub1 = create(:submission, assignment: a1, user: @john, score: 20)
 
     sign_in @fred
-    get :gradesheet, {:id => @course1.id, :format => :xlsx}
+    get :gradesheet, params: {id: @course1.id, format: :xlsx}
     assert_response :ok
   end
 
   test "should get public page if public" do
     skip # the public page still refers to buckets
 
-    get :public, { id: @course1 }
+    get :public, params: { id: @course1 }
     assert_response :ok
   end
 
   test "should not get public page unless public" do
-    get :public, { id: @course2 }
+    get :public, params: { id: @course2 }
     assert_response :redirect
   end
 end

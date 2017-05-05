@@ -16,7 +16,7 @@ class TeamsControllerTest < ActionController::TestCase
 
   test "should get index" do
     sign_in @fred
-    get :index, { course_id: @team.course }
+    get :index, params: { course_id: @team.course }
     assert_response :success
     assert_not_nil assigns(:active_teams)
     assert_not_nil assigns(:inactive_teams)
@@ -24,16 +24,17 @@ class TeamsControllerTest < ActionController::TestCase
 
   test "should get new" do
     sign_in @fred
-    get :new, { course_id: @team.course }
+    get :new, params: { course_id: @team.course }
     assert_response :success
   end
 
   test "should create team" do
     sign_in @fred
     assert_difference('Team.count') do
-      post :create, { course_id: @team.course,
-                      team: { course_id: @team.course.id, start_date: @team.start_date },
-                      users: [ @mark.id, @jane.id, @greg.id ] }
+      post :create, params: {
+             course_id: @team.course,
+             team: { course_id: @team.course.id, start_date: @team.start_date },
+             users: [ @mark.id, @jane.id, @greg.id ] }
     end
 
     assert_response :redirect
@@ -42,7 +43,7 @@ class TeamsControllerTest < ActionController::TestCase
 
   test "should show team" do
     sign_in @fred
-    get :show, { id: @team, course_id: @team.course }
+    get :show, params: { id: @team, course_id: @team.course }
     assert_response :success
   end
 
@@ -50,7 +51,7 @@ class TeamsControllerTest < ActionController::TestCase
     skip
 
     sign_in @fred
-    get :edit, { id: @team, course_id: @team.course }
+    get :edit, params: { id: @team, course_id: @team.course }
     assert_response :success
   end
 
@@ -58,9 +59,10 @@ class TeamsControllerTest < ActionController::TestCase
     skip
 
     sign_in @fred
-    patch :update, { id: @team, course_id: @team.course,
-                     team: { course_id: @team.course_id, start_date: @team.start_date },
-                     users: [ @mark.id ] }
+    patch :update, params: {
+            id: @team, course_id: @team.course,
+            team: { course_id: @team.course_id, start_date: @team.start_date },
+            users: [ @mark.id ] }
     assert_equal assigns(:team).users.count, 1
     assert_redirected_to course_team_path(@team.course, assigns(:team))
   end
@@ -70,7 +72,7 @@ class TeamsControllerTest < ActionController::TestCase
 
     sign_in @fred
     assert_difference('Team.count', -1) do
-      delete :destroy, { id: @team, course_id: @team.course }
+      delete :destroy, params: { id: @team, course_id: @team.course }
     end
 
     assert_redirected_to course_teams_path(@team.course)

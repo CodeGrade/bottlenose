@@ -1,5 +1,5 @@
 # Load the Rails application.
-require File.expand_path('../application', __FILE__)
+require_relative 'application'
 
 def fa_icon(name)
   %Q{<i class="fa fa-#{name}"></i>}.html_safe

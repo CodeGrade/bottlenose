@@ -1,6 +1,6 @@
 require 'container'
 
-class Sandbox < ActiveRecord::Base
+class Sandbox < ApplicationRecord
   belongs_to :submission
   before_destroy :stop_container
 

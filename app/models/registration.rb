@@ -1,4 +1,4 @@
-class Registration < ActiveRecord::Base
+class Registration < ApplicationRecord
   # The role for a registration is a way for Bottlenose to allow a single user
   # to be a staff role for one course, while being a student in another.
   # Professors have extra privileges over assistants.

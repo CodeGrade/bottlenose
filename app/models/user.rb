@@ -1,20 +1,20 @@
 require 'securerandom'
 require 'audit'
 
-class User < ActiveRecord::Base
+class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable
   devise :ldap_authenticatable, :database_authenticatable,
          :recoverable, :rememberable, :trackable, :registerable 
-  has_many :courses, through: :registrations
   has_many :registrations, dependent: :destroy
+  has_many :courses, through: :registrations
 
   has_many :submissions, through: :user_submissions
   has_many :user_submissions, dependent: :destroy
   has_many :reg_requests, dependent: :destroy
 
-  has_many :teams, through: :team_users
   has_many :team_users, dependent: :restrict_with_error
+  has_many :teams, through: :team_users
 
   validates :email, :format => { :with => /\@.*\./ }, :allow_nil => true
 

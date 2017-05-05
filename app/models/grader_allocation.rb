@@ -1,4 +1,4 @@
-class GraderAllocation < ActiveRecord::Base
+class GraderAllocation < ApplicationRecord
   belongs_to :assignment
   belongs_to :course
   belongs_to :submission

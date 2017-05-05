@@ -23,7 +23,7 @@ class SettingsControllerTest < ActionController::TestCase
 
   test "should save_settings" do
     sign_in @admin
-    post :update, { site_email: "somebody@example.com", backup_login: "" }
+    post :update, params: { site_email: "somebody@example.com", backup_login: "" }
 
     assert_response :redirect
     assert_match "Settings Saved", flash[:notice]

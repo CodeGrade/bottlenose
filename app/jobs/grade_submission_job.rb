@@ -1,4 +1,4 @@
-class GradeSubmissionJob < ActiveJob::Base
+class GradeSubmissionJob < ApplicationJob
   queue_as :default
 
   def perform(*args)

@@ -1,6 +1,6 @@
 require 'tap_parser'
 
-class Grade < ActiveRecord::Base
+class Grade < ApplicationRecord
   belongs_to :submission
   belongs_to :grader
   has_many :inline_comments
