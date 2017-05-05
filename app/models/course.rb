@@ -119,7 +119,7 @@ class Course < ApplicationRecord
     end
     assns = self.assignments.where("available < ?", DateTime.current)
     open = assns.where("due_date > ?", DateTime.current)
-    subs = SubsForGrading.where(user: for_students, assignment: assns)
+    subs = UsedSub.where(user: for_students, assignment: assns)
       .joins(:submission)
       .select(:user_id, :assignment_id, :score)
       .to_a

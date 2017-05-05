@@ -37,7 +37,7 @@ class Team < ApplicationRecord
     self.update_attribute(:end_date, as_of)
     stale_subs = self.submissions.joins(:assignment).where('due_date >= ?', as_of)
     stale_subs.update_all(stale_team: true)
-    SubsForGrading.where(submission: stale_subs).delete_all
+    UsedSub.where(submission: stale_subs).delete_all
   end
 
   private
