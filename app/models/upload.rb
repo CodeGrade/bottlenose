@@ -2,6 +2,7 @@ require 'audit'
 require 'zipruby'
 require 'fileutils'
 require 'zlib'
+require 'find'
 
 class Upload < ApplicationRecord
   validates :file_name,  :presence => true
@@ -51,6 +52,7 @@ class Upload < ApplicationRecord
     File.open(submission_path, 'wb') do |file|
       file.write(upload.read)
     end
+    extract_contents!(metadata[:mimetype] || upload.content_type)
   end
 
   def cleanup_extracted!
@@ -66,9 +68,6 @@ class Upload < ApplicationRecord
       upload_path = upload
     else
       upload_path = submission_path.to_s
-    end
-    if meta.nil?
-      meta = read_metadata
     end
     begin
       if meta[:mimetype] == "application/zip" || upload_path.ends_with?(".zip")
@@ -92,21 +91,20 @@ class Upload < ApplicationRecord
     end
   end
 
-  def extract_contents!
+  def extract_contents!(mimetype)
     base = upload_dir
-    return if Dir.exist?(base.join("extracted"))
+    extracted_path = base.join("extracted")
+    return if Dir.exist?(extracted_path)
 
-    meta = read_metadata
-
-    base.join("extracted").mkpath
-    if meta[:mimetype] == "application/zip" ||
+    extracted_path.mkpath
+    if mimetype == "application/zip" ||
        submission_path.to_s.ends_with?(".zip")
       ZipRuby::Archive.open(submission_path.to_s) do |ar|
         ar.each do |zf|
           if zf.directory?
-            FileUtils.mkdir_p(base.join("extracted", zf.name))
+            FileUtils.mkdir_p(extracted_path.join(zf.name))
           else
-            dest = base.join("extracted", zf.name)
+            dest = extracted_path.join(zf.name)
             dirname = File.dirname(dest)
             FileUtils.mkdir_p(dirname) unless File.exist?(dirname)
 
@@ -116,18 +114,18 @@ class Upload < ApplicationRecord
           end
         end
       end
-    elsif meta[:mimetype] == "application/x-tar" ||
+    elsif mimetype == "application/x-tar" ||
           submission_path.to_s.ends_with?(".tar")
-      SubTarball.untar(submission_path, base.join("extracted"))
-    elsif meta[:mimetype] == "application/x-compressed-tar" ||
+      SubTarball.untar(submission_path, extracted_path)
+    elsif mimetype == "application/x-compressed-tar" ||
           submission_path.to_s.ends_with?(".tgz")
-      SubTarball.untar_gz(submission_path, base.join("extracted"))
-    elsif meta[:mimetype] == "application/gzip" ||
+      SubTarball.untar_gz(submission_path, extracted_path)
+    elsif mimetype == "application/gzip" ||
           submission_path.to_s.ends_with?(".gz")
       if submission_path.to_s.ends_with?(".tar.gz")
-        SubTarball.untar_gz(submission_path, base.join("extracted"))
+        SubTarball.untar_gz(submission_path, extracted_path)
       else
-        dest = base.join("extracted", File.basename(file_name, ".gz"))
+        dest = extracted_path.join(File.basename(file_name, ".gz"))
         Zlib::GzipReader.open(submission_path) do |input_stream|
           File.open(dest, "w") do |output_stream|
             IO.copy_stream(input_stream, output_stream)
@@ -135,8 +133,15 @@ class Upload < ApplicationRecord
         end
       end
     else
-      FileUtils.cp(submission_path, base.join("extracted"))
+      FileUtils.cp(submission_path, extracted_path)
     end
+    # TODO (Ben):
+    # File.find(extracted_path) do |f|
+    #   if File.extname(f) == ".rkt" || File.extname(f) == ".ss"
+    #     contents = f.read
+    #     process contents with WXME postprocessor
+    #   end
+    # end
   end
 
   def upload_dir
@@ -182,7 +187,6 @@ class Upload < ApplicationRecord
   end
 
   def extracted_files
-    extract_contents!
     def rec_path(path)
       path.children.sort.collect do |child|
         if child.file?

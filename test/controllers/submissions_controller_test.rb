@@ -44,6 +44,62 @@ class SubmissionsControllerTest < ActionController::TestCase
     assert_redirected_to [@cs101, @hello, assigns(:submission)]
   end
 
+  test "should handle different archives" do
+    ["zip", "tar", "tar.gz", "tgz"].each do |ext|
+      upload_file = fixture_file_upload(
+        "files/HelloWorld/HelloWorld.#{ext}",'application/octet-stream')
+      
+      sign_in @john
+      
+      assert_difference('Submission.count') do
+        post :create, params: {
+               course_id: @cs101.id, assignment_id: @hello.id,
+               submission: {
+                 student_notes: "@@@skip tests@@@",
+                 file_name: "HelloWorld.#{ext}",
+                 upload_file: upload_file },
+             }
+      end
+      
+      assert_redirected_to [@cs101, @hello, assigns(:submission)]
+
+      upload = assigns(:submission).upload
+      assert(Dir.exist?(upload.upload_dir), "Upload directory exists for extension #{ext}")
+      assert(Dir.exist?(upload.upload_dir.join("extracted")),
+             "Upload-extraction directory exists for extension #{ext}")
+      Dir.chdir(upload.upload_dir.join("extracted")) do
+        assert_equal(3, Dir.glob("HelloWorld/*").count,
+                     "There should be three files in the upload-extraction directory for extension #{ext}")
+      end
+    end
+  end
+
+  test "should handle non-archive" do
+    upload_file = fixture_file_upload(
+      "files/HelloSingle/hello.c",'application/octet-stream')
+    
+    sign_in @john
+    
+    assert_difference('Submission.count') do
+      post :create, params: {
+             course_id: @cs101.id, assignment_id: @hello.id,
+             submission: {
+               student_notes: "@@@skip tests@@@",
+               file_name: "hello.c",
+               upload_file: upload_file },
+           }
+    end
+    
+    assert_redirected_to [@cs101, @hello, assigns(:submission)]
+
+    upload = assigns(:submission).upload
+    assert(Dir.exist?(upload.upload_dir), "Upload directory exists for single file")
+    assert(Dir.exist?(upload.upload_dir.join("extracted")), "Upload-extraction directory exists for single file")
+    Dir.chdir(upload.upload_dir.join("extracted")) do
+      assert_equal(1, Dir.glob("**").count, "There should be just the one file in the upload-extraction directory")
+    end
+  end
+
   test "should show submission" do
     sign_in @john
     get :show, params: {id: @john_hello, course_id: @cs101.id, assignment_id: @hello.id }

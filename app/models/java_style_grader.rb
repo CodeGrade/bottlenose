@@ -22,10 +22,8 @@ class JavaStyleGrader < Grader
   protected
   
   def do_grading(assignment, sub)
-    self.upload.extract_contents! if self.upload
     g = self.grader_for sub
     u = sub.upload
-    u.extract_contents!
     files_dir = u.extracted_path
     grader_dir = u.grader_path(g)
 
