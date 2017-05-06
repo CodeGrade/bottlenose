@@ -19,7 +19,7 @@ class LatePerHourConfig < LatenessConfig
     else
       days_allowed = plural(self.days_per_assignment, "late day")
     end
-      
+
     "Allow #{days_allowed}, penalizing #{self.percent_off}% each hour up to #{self.max_penalty}%"
   end
 

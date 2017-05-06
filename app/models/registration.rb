@@ -9,7 +9,7 @@ class Registration < ApplicationRecord
   belongs_to :course
 
   has_one :term, through: :course
-  belongs_to :section, class_name: "CourseSection", :foreign_key => :section_id, :primary_key => "crn"
+  belongs_to :section, :primary_key => "crn"
 
   # Only one registration per user per course is allowed.
   validates :user_id, uniqueness: { scope: :course_id }

@@ -1,7 +1,7 @@
 <% @page_title = @course.name %>
 
 <style>
-  <% @sections.each do |s| %>
+  <% @course.sections.each do |s| %>
   #students.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
   <% end %>
 </style>
@@ -9,11 +9,10 @@
 <h1>Facebook View</h1>
 <h4>Select a section: <select id="sections">
     <option value="show_all">Show all sections</option>
-    <% @sections.each do |s| %>
+    <% @course.sections.each do |s| %>
     <option value="show_one sec_<%= s.crn %>">Section <%= s.crn %></option>
     <% end %>
 </select></h4>
-  
 
 <div id="students" class="row">
   <% @students.each_slice(6) do |row| %>

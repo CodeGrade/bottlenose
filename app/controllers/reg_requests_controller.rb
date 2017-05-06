@@ -85,7 +85,7 @@ class RegRequestsController < CoursesController
 
   def reg_request_params
     ans = params[:reg_request].permit(:notes, :role, :section)
-    ans[:section] = CourseSection.find_by(crn: ans[:section].to_i)
+    ans[:section] = Section.find_by(crn: ans[:section].to_i)
     ans
   end
 end

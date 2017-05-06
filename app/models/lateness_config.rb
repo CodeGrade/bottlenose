@@ -1,9 +1,15 @@
 require 'clamp'
+
 class LatenessConfig < ApplicationRecord
   belongs_to :lateness_config
+  belongs_to :course, polymorphic: true
 
   def self.unique
     select(column_names - ["id"]).distinct
+  end
+
+  def self.default
+    LatePerDayConfig.new(days_per_assignment: 4, frequency: 1, max_penalty: 100, percent_off: 25)
   end
 
   def late?(assignment, submission)
@@ -14,11 +20,11 @@ class LatenessConfig < ApplicationRecord
   def allow_submission?(assignment, submission)
     fail NotImplementedError, "Each lateness config should implement this"
   end
-  
+
   def late_penalty(assignment, submission)
     fail NotImplementedError, "Each lateness config should implement this"
   end
-  
+
   def days_late(assignment, submission, raw = false)
     return 0 unless raw or late?(assignment, submission)
     due_on = assignment.due_date
@@ -40,5 +46,5 @@ class LatenessConfig < ApplicationRecord
     #print "Penalized score is #{ans}\n"
     ans
   end
-
 end
+

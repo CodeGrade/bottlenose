@@ -5,7 +5,7 @@ class RegRequest < ActiveRecord::Base
 
   belongs_to :course
   belongs_to :user
-  belongs_to :section, class_name: "CourseSection", :foreign_key => :section_id, :primary_key => "crn"
+  belongs_to :section, :foreign_key => :section_id, :primary_key => "crn"
 
   validates :user_id, :uniqueness => { :scope => :course_id }
 

@@ -2,6 +2,7 @@ require 'csv'
 
 class RegistrationsController < CoursesController
   prepend_before_action :find_registration, except: [:index, :new, :create, :bulk_enter, :bulk_update, :bulk_edit]
+  before_action :require_valid_course
   before_action :require_admin_or_staff
   
   def index

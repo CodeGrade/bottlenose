@@ -17,6 +17,7 @@
 //= require jquery.keyDecoder
 //= require nicEdit
 //= require moment
+//= require vue
 //= require bootstrap-sprockets
 //= require bootstrap-datetimepicker
 //= require bootstrap.treeview

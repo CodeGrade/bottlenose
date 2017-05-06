@@ -17,6 +17,8 @@ class ApplicationController < ActionController::Base
   end
 
   def find_course
+    return unless @course.nil?
+
     if params[:course_id].nil?
       @course ||= Course.find(params[:id])
     else
@@ -41,6 +43,8 @@ class ApplicationController < ActionController::Base
   end
 
   def require_valid_course
+    find_course
+
     if @course.nil?
       redirect_to back_or_else(courses_path), alert: "No such course"
       return
@@ -50,27 +54,27 @@ class ApplicationController < ActionController::Base
   def current_user_site_admin?
     current_user && current_user.site_admin?
   end
-  
+
   def current_user_prof_ever?
     current_user && current_user.professor_ever?
   end
-  
+
   def current_user_prof_for?(course)
     current_user && (current_user.site_admin? || current_user.registration_for(course).professor?)
   end
-  
+
   def current_user_staff_for?(course)
     current_user && (current_user.site_admin? || current_user.registration_for(course).staff?)
   end
-  
+
   def true_user_prof_for?(course)
     true_user && (true_user.site_admin? || true_user.registration_for(course).professor?)
   end
-  
+
   def true_user_staff_for?(course)
     true_user && (true_user.site_admin? || true_user.registration_for(course).staff?)
   end
-  
+
   def current_user_has_id?(id)
     current_user && current_user.id == id
   end
@@ -107,7 +111,6 @@ class ApplicationController < ActionController::Base
   end
 
 
-  
   def get_submission_files(sub, line_comments = nil, show_deductions = false)
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
     @lineCommentsByFile = line_comments || sub.grade_line_comments(nil, show_hidden)
@@ -193,7 +196,7 @@ class ApplicationController < ActionController::Base
         }
       end
     end
-    
+
     @submission_dirs = sub.upload.extracted_files.map{|i| with_extracted(i)}.compact
 
     @count = @submission_files.count.to_s.length
@@ -208,7 +211,6 @@ class ApplicationController < ActionController::Base
     end
     fix_hrefs({nodes: @submission_dirs})
     fix_hrefs({nodes: @submission_files})
-    
   end
 
 end

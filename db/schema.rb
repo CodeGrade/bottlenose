@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170504141136) do
+ActiveRecord::Schema.define(version: 20170506003128) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -49,14 +49,6 @@ ActiveRecord::Schema.define(version: 20170504141136) do
     t.index ["course_id"], name: "index_assignments_on_course_id"
   end
 
-  create_table "course_sections", id: :serial, force: :cascade do |t|
-    t.integer "course_id", null: false
-    t.integer "crn", null: false
-    t.string "meeting_time"
-    t.integer "instructor_id", null: false
-    t.index ["crn"], name: "index_course_sections_on_crn", unique: true
-  end
-
   create_table "courses", id: :serial, force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at"
@@ -68,7 +60,7 @@ ActiveRecord::Schema.define(version: 20170504141136) do
     t.integer "team_min"
     t.integer "team_max"
     t.integer "total_late_days"
-    t.integer "lateness_config_id", default: 0, null: false
+    t.integer "lateness_config_id", default: 0
   end
 
   create_table "delayed_jobs", id: :serial, force: :cascade do |t|
@@ -145,6 +137,7 @@ ActiveRecord::Schema.define(version: 20170504141136) do
     t.integer "percent_off"
     t.integer "frequency"
     t.integer "max_penalty"
+    t.integer "course_id", null: false
   end
 
   create_table "reg_requests", id: :serial, force: :cascade do |t|
@@ -176,6 +169,14 @@ ActiveRecord::Schema.define(version: 20170504141136) do
     t.integer "submission_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "sections", id: :serial, force: :cascade do |t|
+    t.integer "course_id", null: false
+    t.integer "crn", null: false
+    t.string "meeting_time"
+    t.integer "instructor_id", null: false
+    t.index ["crn"], name: "index_sections_on_crn", unique: true
   end
 
   create_table "submissions", id: :serial, force: :cascade do |t|

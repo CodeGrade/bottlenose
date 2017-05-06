@@ -11,8 +11,6 @@
     </div>
   <% end %>
 
-  <%= hidden_field_tag :late_options %>
-
   <div>
     <div class="form-group">
       <%= f.label :name %>
@@ -32,27 +30,28 @@
         <tr class='row'>
           <th class="col-sm-2">CRN</th>
           <th class="col-sm-4">Instructor CCS Username</th>
-          <th class="col-sm-6">Meeting time</th>
+          <th class="col-sm-5">Meeting time</th>
+          <th class="col-sm-1">Delete</th>
           <th></th>
         </tr>
-        <% @sections.each_with_index do |s, i| %>
-        <tr class="form-group row">
-          <%= render "courses/section", f: f, section: s, index: i %>
-        </tr>
+        <%= f.fields_for :sections do |s| %>
+          <tr class="form-group row section-form">
+            <%= render "courses/section", f: f, f_s: s, section: s.object %>
+          </tr>
         <% end %>
       </table>
-      <% section_text = render "courses/section", f: f, section: CourseSection.new, index: "new_section" %>
-      <%= content_tag :span, "Add section", class: 'btn btn-default',
-                      id: "add-section",
-                      data: {on: :click, call: "add_section", args: ["#{section_text}"]} %>
+
+      <%= f.fields_for :sections, Section.new, index: 'new_section' do |s| %>
+        <% section_text = render "courses/section", f: f, f_s: s, section: s.object %>
+        <script>
+          window.courses_section_template = "<%= j section_text %>";
+        </script>
+        <button class="btn btn-default add-section-button">Add Section</button>
+      <% end %>
     </div>
     <div class="form-group">
       <p><strong>Late Penalty</strong></p>
-      <%= fields_for "lateness" do |late| %>
-      <tr class="form-inline row">
-        <%= render 'lateness/picker', :within_course => false, :f_late => late, :f_course => f %>
-      </tr>
-      <% end %>
+      <%= render 'lateness/picker', within_course: !@course.new_record?, f: f %>
     </div>
     <div>
       <%= f.label :footer, "Course-Wide Footer" %> (HTML Allowed)
@@ -78,34 +77,3 @@
     </div>
   </div>
 <% end %>
-<script>
-  $(function() { enableReflectiveCalls(); });
-  function add_section(content) {
-    var new_id = new Date().getTime();
-    var regexp = new RegExp("new_section", "g");
-    var newrow = $("<tr class='form-group row'>").html(content.replace(regexp, new_id));
-    $("#sections").append(newrow);
-    newrow.find("span.findUser").each(function(i) { enableLookupUser($(this)); });
-    newrow.find("input.numeric").on("keypress", validateNumericInput);
-    enableReflectiveCalls();
-  }
-  $("span.findUser").each(function(i) { enableLookupUser($(this)); });
-  function enableLookupUser(foundIt) {
-    var username = foundIt.prev();
-    username.on("blur", function() {
-      $.ajax({
-        type: "GET",
-        url: "<%= lookup_users_path %>",
-        contentType: 'application/json; charset=UTF-8',
-        data: {username: username.val()},
-        success: function(data) {
-          foundIt.text(" (" + data.name + ")");
-        },
-        error: function(xkr, status, error) {
-          foundIt.text(" (error looking up username)");
-        }
-      });
-    });
-  }
-  $("form").submit(ensureValidNumericInputOnSubmit);
-</script>
