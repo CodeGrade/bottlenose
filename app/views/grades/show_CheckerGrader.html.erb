@@ -30,7 +30,6 @@
 <% if @grading_output.kind_of?(String) %>
 <pre><%= @grading_output %></pre>
 <% else %>
-<% debugger %>
 <div id="tests">
   <% @tests.each do |t| %>
     <% if t[:passed] %>

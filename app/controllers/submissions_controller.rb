@@ -492,7 +492,7 @@ class SubmissionsController < CoursesController
           comments = comments.where(available: true)
         end
         comments = comments.map(&:inline_comments).flatten
-        render :text => GradesController.pretty_print_comments(comments)
+        render plain: GradesController.pretty_print_comments(comments)
       }
     end
   end

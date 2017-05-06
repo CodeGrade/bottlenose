@@ -61,7 +61,7 @@ class GradesController < ApplicationController
     end
     respond_to do |f|
       f.text {
-        render :text => self.send("details_#{@grade.grader.type}")
+        render plain: self.send("details_#{@grade.grader.type}")
       }
     end
   end
@@ -483,7 +483,7 @@ HEADER
       @answers_are_newer = true
     end
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-    pregrades = @submission.inline_comments(current_user)
+    pregrades = @submission.inline_comments
     pregrades = pregrades.select(:line, :name, :weight, :comment).joins(:user).sort_by(&:line).to_a
     @grades = []
     pregrades.each do |g| @grades[g["line"]] = g end

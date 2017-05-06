@@ -8,7 +8,9 @@
           <% index = count + i %>
           <li id="question_<%= index %>">
             <p>
-              <%= sanitize(q["prompt"], tags: %w(b strong i em p textarea pre code)) %>
+              <%= sanitize(q["prompt"],
+                  tags: %w(b strong i em p textarea pre code),
+                  attributes: %w(class data-lang)) %>
               <small>(<%= pluralize(q["weight"], "point") %>)</small>
             </p>
             <% if @show_grades %>
