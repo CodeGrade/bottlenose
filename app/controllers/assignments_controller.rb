@@ -10,6 +10,7 @@ class AssignmentsController < CoursesController
     admin_view = current_user_site_admin? || current_user_staff_for?(@course)
     if admin_view
       submissions = @assignment.used_submissions.includes(:user).order(created_at: :desc).to_a
+      @all_complete = (Grade.where(submission: submissions, score: nil).count == 0)
     elsif @assignment.nil? or @assignment.available > DateTime.now
       redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
       return
@@ -138,9 +139,14 @@ class AssignmentsController < CoursesController
   end
 
   def publish
+    publish_all = (params[:all] == "true")
     used = @assignment.used_submissions
     used.each do |u|
-      u.grades.where(score: nil).each do |g| g.grader.grade(@assignment, u) end
+      ungraded = u.grades.where(score: nil)
+      if !publish_all && ungraded.count > 0
+        next
+      end
+      ungraded.each do |g| g.grader.grade(@assignment, u) end
       u.grades.update_all(:available => true)
       u.compute_grade!
     end

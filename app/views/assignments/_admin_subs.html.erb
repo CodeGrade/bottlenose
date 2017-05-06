@@ -32,11 +32,39 @@
         method: 'post', class: "btn btn-warning",
         data: { confirm: "This may take a while; please be patient" } %>
     <% end %>
+    <% if @all_complete %>
     <%= link_to "Publish grades", 
-        course_assignment_publish_path(@course, @gradesheet.assignment), class: "btn btn-default",
+        course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'), class: "btn btn-default",
         method: 'patch',
-        data: { confirm: "Are you sure you want to publish all grades?" }%>
-  <% else %>
+        data: { confirm: "Are you sure you want to publish all grades?" } %>
+    <% else %>
+    <div class="btn-group" style="white-space: nowrap;">
+    <%= link_to "Publish completed grades", 
+        course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
+        class: "btn btn-default",
+        method: 'patch',
+        data: { confirm: "Are you sure you want to publish all grades?" }
+        %><button type="button" class="btn btn-md btn-default dropdown-toggle"
+                 style="float: unset;"
+                 data-toggle="dropdown"
+                 aria-haspopup="true" aria-expanded="false">
+         <span class="caret"></span>
+         <span class="sr-only">Toggle Dropdown</span>
+       </button><% #
+       %><ul class="dropdown-menu">
+         <li><%= link_to "Publish completed grades", 
+                 course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
+                 method: 'patch',
+                 data: { confirm: "Are you sure you want to publish all grades?" } %></li>
+         <li><%= link_to "Publish ALL grades", 
+                 course_assignment_publish_path(@course, @gradesheet.assignment, all: 'true'),
+                 method: 'patch',
+                 data: { confirm: "Not all assignments have been graded!\n" +
+                                  "Are you sure you want to publish all grades, even the incomplete ones?" } %></li>
+      </ul>
+    </div>
+    <% end %>
+    <% else %>
     <%= link_to "New #{type[:noun].capitalize}", 
         new_course_assignment_submission_path(@course, @gradesheet.assignment), class: "btn btn-success" %>
     <% if @gradesheet.missing_grades %>
