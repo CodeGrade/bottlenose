@@ -250,15 +250,15 @@ class Submission < ApplicationRecord
   end
 
   def create_grades!
-    assignment.grades.each do |c| c.ensure_grade_exists_for!(self) end
+    assignment.graders.each do |gr| gr.ensure_grade_exists_for!(self) end
   end
 
   def autograde!
     complete = true
-    assignment.grades.each do |c|
+    assignment.graders.each do |gr|
       begin
-        complete = complete and c.autograde?
-        c.autograde!(assignment, self) # make sure we create all needed grades
+        complete = complete and gr.autograde?
+        gr.autograde!(assignment, self) # make sure we create all needed grades
       rescue Exception => e
         puts e.inspect
         puts e.backtrace

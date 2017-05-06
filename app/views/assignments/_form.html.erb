@@ -333,14 +333,14 @@
         <% usage_counts = Grade.group(:grader_id).count %>
         <% @assignment.graders.order("assignment_graders.order").each do |conf| %>
         <li class="grader"><%= graders.fields_for "", conf do |g| %>
-          <%= render("graders/picker", f_grader: g, 
+          <%= render("grades/picker", f_grader: g, 
               target: conf, new_grader: "graderconf#{conf.id}",
               unique_configs: unique_configs, usage_counts: usage_counts) %>
           <% end %></li>
         <% end %>
       </ol>
       <% grader_text = fields_for("graders", Grader.new, :index => "new_grader") do |g|
-      render "graders/picker",
+      render "grades/picker",
       f_grader: g, target: g.object, unique_configs: unique_configs, usage_counts: usage_counts
       end %>
       <%= content_tag :span, "Add assignment grader", class: "btn btn-default",
