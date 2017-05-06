@@ -8,8 +8,8 @@ class GradesController < ApplicationController
   before_action :require_current_user
   def edit
     if @grade.grader.autograde?
-      redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
-                  alert: "That grader is automatic; there is nothing to edit"
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "That grader is automatic; there is nothing to edit"
       return
     end
 
@@ -18,8 +18,8 @@ class GradesController < ApplicationController
 
   def show
     if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grade.available
-      redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
-                  alert: "That grader is not yet available"
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "That grader is not yet available"
       return
     end
     self.send("show_#{@grade.grader.type}")
@@ -28,7 +28,7 @@ class GradesController < ApplicationController
   def regrade
     @grade.grader.grade(@assignment, @submission)
     @submission.compute_grade! if @submission.grade_complete?
-    redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission))
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 
   def bulk_edit
@@ -46,8 +46,8 @@ class GradesController < ApplicationController
       respond_to do |f|
         f.json { render :json => {unauthorized: "Must be an admin or staff"} }
         f.html { 
-          redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
-                      alert: "Must be an admin or staff."
+          redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                        alert: "Must be an admin or staff."
         }
       end
     end
@@ -55,8 +55,8 @@ class GradesController < ApplicationController
 
   def details
     if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grade.available
-      redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
-                  alert: "That grader is not yet available"
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "That grader is not yet available"
       return
     end
     respond_to do |f|
@@ -94,15 +94,16 @@ class GradesController < ApplicationController
       if @course
         if @assignment
           if @submission
-            redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)), alert: msg
+            redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                          alert: msg
           else
-            redirect_to back_or_else(course_assignment_path(@course, @assignment)), alert: msg
+            redirect_back fallback_location: course_assignment_path(@course, @assignment), alert: msg
           end
         else
-          redirect_to back_or_else(course_path(@course)), alert: msg
+          redirect_back fallback_location: course_path(@course), alert: msg
         end
       else
-          redirect_to back_or_else(root_path), alert: msg
+          redirect_back fallback_location: root_path, alert: msg
       end        
       return
     end
@@ -112,19 +113,19 @@ class GradesController < ApplicationController
     @course = Course.find_by(id: params[:course_id])
     @assignment = Assignment.find_by(id: params[:assignment_id])
     if @course.nil?
-      redirect_to back_or_else(root_path), alert: "No such course"
+      redirect_back fallback_location: root_path, alert: "No such course"
       return
     end
     if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_to back_or_else(course_path(@course)), alert: "No such assignment for this course"
+      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
       return
     end
   end
   def find_submission
     @submission = Submission.find_by(id: params[:submission_id])
     if @submission.nil? or @submission.assignment_id != @assignment.id
-      redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                  alert: "No such submission for this assignment"
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "No such submission for this assignment"
       return
     end
   end
@@ -132,15 +133,15 @@ class GradesController < ApplicationController
   def find_grade
     @grade = Grade.find_by(id: params[:id])
     if @grade.nil?
-      redirect_to back_or_else(course_assignment_submission_path(params[:course_id],
-                                                                 params[:assignment_id],
-                                                                 params[:submission_id])),
+      redirect_to fallback_location: course_assignment_submission_path(params[:course_id],
+                                                                        params[:assignment_id],
+                                                                        params[:submission_id]),
                   alert: "No such grader"
       return
     elsif @submission and @grade.submission_id != @submission.id
-      redirect_to back_or_else(course_assignment_submission_path(params[:course_id],
-                                                                 params[:assignment_id],
-                                                                 params[:submission_id])),
+      redirect_to fallback_location: course_assignment_submission_path(params[:course_id],
+                                                                       params[:assignment_id],
+                                                                       params[:submission_id]),
                   alert: "No such grader for that submission"
     end
   end
@@ -247,12 +248,12 @@ class GradesController < ApplicationController
     render "edit_#{@assignment.type.underscore}_grades"
   end
   def bulk_edit_Files
-    redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                alert: "Bulk grade editing for that assignment type is not supported"
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade editing for that assignment type is not supported"
   end
   def bulk_edit_Questions
-    redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                alert: "Bulk grade editing for that assignment type is not supported"
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade editing for that assignment type is not supported"
   end
 
   # Bulk updates of grades
@@ -287,12 +288,12 @@ class GradesController < ApplicationController
     end
   end
   def bulk_update_Files
-    redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                alert: "Bulk grade updating for that assignment type is not supported"
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
   end
   def bulk_update_Questions
-    redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                alert: "Bulk grade updating for that assignment type is not supported"
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
   end
 
   # Individual updates, mostly of comments

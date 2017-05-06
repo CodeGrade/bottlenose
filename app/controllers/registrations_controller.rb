@@ -73,8 +73,8 @@ class RegistrationsController < CoursesController
           end
         end
       }
-      f.html { redirect_to back_or_else(course_registrations_path(@course)),
-                           notice: "No such page" }
+      f.html { redirect_back fallback_location: course_registrations_path(@course),
+                             notice: "No such page" }
     end
   end
 
@@ -104,7 +104,7 @@ class RegistrationsController < CoursesController
 
     @show = @registration.show_in_lists? ? "Yes" : "No"
 
-    redirect_to back_or_else(course_registrations_path(@course))
+    redirect_back fallback_location: course_registrations_path(@course)
   end
 
   private
@@ -122,7 +122,7 @@ class RegistrationsController < CoursesController
 
   def require_admin_or_staff
     unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_to back_or_else(root_path), alert: "Must be an admin or staff."
+      redirect_back fallback_location: root_path, alert: "Must be an admin or staff."
       return
     end
   end
