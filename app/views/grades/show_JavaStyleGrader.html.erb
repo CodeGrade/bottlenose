@@ -25,13 +25,13 @@
 <% end %>
 
 <h3>
-  <%= link_to details_course_assignment_submission_grader_path(@course, @assignment, @submission, @grader),
+  <%= link_to details_course_assignment_submission_grade_path(@course, @assignment, @submission, @grade),
       class: "btn btn-default" do %>
   <i class="glyphicon glyphicon-download-alt"></i> Download comments
   <% end %>
   
 <% if cur_reg && cur_reg.staff? && @grading_output.kind_of?(TapParser) %>
-<%= link_to Upload.upload_path_for(@grader.grading_output), class: "btn btn-default" do %>
+<%= link_to Upload.upload_path_for(@grade.grading_output), class: "btn btn-default" do %>
   <i class="glyphicon glyphicon-download-alt"></i> Download raw output
 <% end %>
 

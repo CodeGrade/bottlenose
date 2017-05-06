@@ -76,8 +76,8 @@ class SubmissionsController < CoursesController
   end
 
   def recreate_grader
-    @grader_config = GraderConfig.find(params[:grader_config_id])
-    if @submission.recreate_missing_grader(@grader_config)
+    @grader = Grader.find(params[:grader_id])
+    if @submission.recreate_missing_grade(@grader)
       @submission.compute_grade! if @submission.grade_complete?
       redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission))
     else
@@ -87,14 +87,14 @@ class SubmissionsController < CoursesController
   end
 
   def rerun_grader
-    @grader_config = GraderConfig.find(params[:grader_config_id])
+    @grader = Grader.find(params[:grader_id])
     count = 0
     @assignment.used_submissions.each do |sub|
-      @grader_config.delay.grade(@assignment, sub)
+      @grader.delay.grade(@assignment, sub)
       count += 1
     end
     redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                notice: "Regraded #{@grader_config.display_type} for #{plural(count, 'submission')}"
+                notice: "Regraded #{@grader.display_type} for #{plural(count, 'submission')}"
   end
 
   def use_for_grading
@@ -109,7 +109,7 @@ class SubmissionsController < CoursesController
   end
 
   def edit_plagiarism
-    @max_points = @assignment.grader_configs.map(&:avail_score).sum
+    @max_points = @assignment.graders.map(&:avail_score).sum
   end
 
   def update_plagiarism
@@ -128,7 +128,7 @@ class SubmissionsController < CoursesController
       return
     end
 
-    @max_points = @assignment.grader_configs.map(&:avail_score).sum
+    @max_points = @assignment.graders.map(&:avail_score).sum
     guilty_students.each do |id, penalty|
       penaltyPct = (100.0 * penalty.to_f) / @max_score.to_f
       student = User.find(id)
@@ -169,10 +169,10 @@ class SubmissionsController < CoursesController
         title: "",
         info: nil)
       sub_comment.save
-      # Copy any graders
-      @submission.graders.each do |g|
-        new_g = Grader.new(
-          grader_config_id: g.grader_config_id,
+      # Copy any grades
+      @submission.grades.each do |g|
+        new_g = Grade.new(
+          grader_id: g.grader_id,
           submission_id: sub.id,
           grading_output: g.grading_output,
           score: g.score,
@@ -185,8 +185,8 @@ class SubmissionsController < CoursesController
   end
 
   def publish
-    @submission.graders.where(score: nil).each do |g| g.grade(assignment, used) end
-    @submission.graders.update_all(:available => true)
+    @submission.grades.where(score: nil).each do |g| g.grade(assignment, used) end
+    @submission.grades.update_all(:available => true)
     @submission.compute_grade!
     redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission))
   end
@@ -285,8 +285,8 @@ class SubmissionsController < CoursesController
                   alert: "Must be an admin or staff to enter exam grades."
       return
     end
-    @grader_config = @assignment.grader_configs.first
-    redirect_to bulk_course_assignment_grader_config_path(@course, @assignment, @grader_config)
+    @grader = @assignment.graders.first
+    redirect_to bulk_course_assignment_grader_path(@course, @assignment, @grader)
   end
 
   # CREATE
@@ -307,7 +307,7 @@ class SubmissionsController < CoursesController
     no_problems = (no_problems and @submission.save_upload and @submission.save)
     if no_problems
       @submission.set_used_sub!
-      @submission.create_graders!
+      @submission.create_grades!
       @submission.delay.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)
       redirect_to(path, notice: 'Submission was successfully created.')
@@ -440,15 +440,15 @@ class SubmissionsController < CoursesController
   end
 
   def create_Exam
-    # No graders are created here, because we shouldn't ever get to this code
-    # The graders are configured in the GradersController, in update_exam_grades
+    # No grades are created here, because we shouldn't ever get to this code
+    # The grades are configured in the GradesController, in update_exam_grades
   end
 
 
   # SHOW
   def show_Files
     @gradesheet = Gradesheet.new(@assignment, [@submission])
-    @plagiarized = @submission.grader_submission_comments(false) || {}
+    @plagiarized = @submission.grade_submission_comments(false) || {}
     @plagiarized = @plagiarized[@submission.upload.extracted_path.to_s] || []
     @plagiarized = @plagiarized.any?{|c| c.label == "Plagiarism"}
   end
@@ -473,8 +473,8 @@ class SubmissionsController < CoursesController
   end
   def show_Exam
     @student_info = @course.students.select(:username, :last_name, :first_name, :id)
-    @grader_config = @assignment.grader_configs.first
-    @grader = Grader.find_by(grader_config_id: @grader_config.id, submission_id: @submission.id)
+    @grader = @assignment.graders.first
+    @grade = Grade.find_by(grader_id: @grader.id, submission_id: @submission.id)
     @grade_comments = InlineComment.where(submission_id: @submission.id).order(:line).to_a
   end
 
@@ -487,12 +487,12 @@ class SubmissionsController < CoursesController
       }
       f.text {
         show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-        comments = @submission.graders
+        comments = @submission.grades
         unless show_hidden
           comments = comments.where(available: true)
         end
         comments = comments.map(&:inline_comments).flatten
-        render :text => GradersController.pretty_print_comments(comments)
+        render plain: GradesController.pretty_print_comments(comments)
       }
     end
   end
@@ -505,7 +505,7 @@ class SubmissionsController < CoursesController
       @grades = @submission.visible_inline_comments
     end
 
-    @show_graders = false
+    @show_grades = false
 
     @grades = @grades.select(:line, :name, :weight, :comment).joins(:user).sort_by(&:line).to_a
     @submission_dirs = []

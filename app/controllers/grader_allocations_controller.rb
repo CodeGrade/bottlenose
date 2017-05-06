@@ -23,24 +23,24 @@ class GraderAllocationsController < ApplicationController
       .where(submission_id: params[:submission_id])
       .where.not(abandoned: true)
     if existing.count > 0
-      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @config)),
+      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)),
                   alert: ("This submission is already assigned to #{existing.first.grader.name}.  " +
                           "Please abandon or delete it first.")
       return
     end
     sub = (params[:submission_id] and Submission.find(params[:submission_id]))
     if sub.nil? or sub.assignment_id != @assignment.id
-      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @config)),
+      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)),
                   alert: "This submission does not belong to this assignment."
       return
     end
     grader = (params[:grader_id] and User.find(params[:grader_id]))
     if grader.nil?
-      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @config)),
+      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)),
                   alert: "The specified grader does not exist"
       return
     elsif !grader.course_staff?(@course)
-      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @config)),
+      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)),
                   alert: "#{grader.name} is not registered as staff for this course"
       return
     end
@@ -53,13 +53,13 @@ class GraderAllocationsController < ApplicationController
     alloc.grading_assigned = DateTime.now
     alloc.abandoned = false
     alloc.save
-    redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @config))
+    redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @grader))
   end
 
   def update
     total_weight = params[:weight].values.map(&:to_f).sum
     if total_weight == 0
-      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @config)),
+      redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)),
                   alert: "Total weight for all graders is zero; cannot allocate any work!"
       return
     end
@@ -100,7 +100,7 @@ class GraderAllocationsController < ApplicationController
         alloc.save
       end
     end
-    redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @config))
+    redirect_to back_or_else(edit_course_assignment_grader_allocations_path(@course, @assignment, @grader))
   end
 
   def abandon
@@ -149,7 +149,7 @@ class GraderAllocationsController < ApplicationController
       .joins("INNER JOIN registrations ON used_subs.user_id = registrations.user_id")
       .where("used_subs.assignment_id": @assignment.id)
       .select("graders.*")
-      .where(grader_config: @config)
+      .where(grader: @grader)
       .joins("INNER JOIN users ON used_subs.user_id = users.id")
       .select("users.name AS user_name")
       .where("registrations.role": Registration::roles["student"])
@@ -228,7 +228,7 @@ class GraderAllocationsController < ApplicationController
   def find_course_assignment
     @course = Course.find_by(id: params[:course_id])
     @assignment = Assignment.find_by(id: params[:assignment_id])
-    @config = GraderConfig.find_by(id: params[:grader_config_id])
+    @grader = Grader.find_by(id: params[:grader_id])
     if @course.nil?
       redirect_to back_or_else(root_path), alert: "No such course"
       return

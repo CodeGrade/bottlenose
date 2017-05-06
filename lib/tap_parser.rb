@@ -55,8 +55,8 @@ class TapParser
 
   def parse_test(lines)
     mm = lines[0].match(/^(not )?ok\b\s*(\d+)?([^#]*)(#.*)?$/)
-    lines.shift
     if mm
+      lines.shift
       passed = mm[1].nil?
       num = mm[2]
       comment = mm[3]

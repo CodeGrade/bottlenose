@@ -60,7 +60,7 @@
       <%= f.submit "Assign grader", class: 'btn btn-primary' %>
     </div>
     <div class="col-sm-4">
-      <%= select_tag(:grader_id,
+      <%= select_tag(:grade_id,
           names_for_graders(@course.staff),
           size: 10,
           multiple: false, class: "form-control") %>
@@ -74,8 +74,8 @@
   <% @who_grades[nil].each do |sub| %>
   <p class="col-md-3">
     <%= sub.submission_user_names %>
-    <% if @graders[sub.id].score %>
-    <br>(completed <span class="local-time"><%= @graders[sub.id].updated_at %></span>)
+    <% if @grades[sub.id].score %>
+    <br>(completed <span class="local-time"><%= @grades[sub.id].updated_at %></span>)
     <% end %>
   </p>
   <% end %>
@@ -87,17 +87,17 @@
   <% @who_grades.each do |g, subs| %>
   <% next if g.nil? %>
   <div class="col-md-4">
-    <% grader = @course.staff.find_by(id: g) %>
-    <% next if grader.nil? %>
-    <h4><%= grader.name %></h4>
+    <% grade = @course.staff.find_by(id: g) %>
+    <% next if grade.nil? %>
+    <h4><%= grade.name %></h4>
     <ul>
       <% subs.each do |sub| %>
-      <% grader = @graders[sub.id] %>
-      <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.grader_id == g} %>
+      <% grade = @grades[sub.id] %>
+      <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.grade_id == g} %>
       <li>
         <%= link_to sub.submission_user_names,
-            edit_course_assignment_submission_grader_path(@course, @assignment, sub, grader) %>
-        <% if grader.score.nil? %>
+            edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
+        <% if grade.score.nil? %>
         <% if alloc.abandoned? %>
         <span class="bg-warning text-danger"><br>abandoned</span></span>
         <% else %>
@@ -116,7 +116,7 @@
             <br>
             <span class="btn-group">
             <%= link_to "Delete",
-                delete_course_grader_allocation_path(@course, alloc, :config => @config),
+                delete_course_grade_allocation_path(@course, alloc, :config => @config),
                 class: "abandon btn btn-sm btn-warning",
                 title: "Use this to remove this assignment from this grader, without penalty",
                 method: :patch, data: { confirm: "Are you sure?" } %>
@@ -128,7 +128,7 @@
             </span>
           <% end %>
         <% else %>
-          <span class="text-muted"><br>completed <span class="local-time"><%= grader.updated_at %></span></span>
+          <span class="text-muted"><br>completed <span class="local-time"><%= grade.updated_at %></span></span>
         <% end %>
       </li>
       <% end %>

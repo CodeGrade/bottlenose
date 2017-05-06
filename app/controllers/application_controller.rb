@@ -110,7 +110,7 @@ class ApplicationController < ActionController::Base
   
   def get_submission_files(sub, line_comments = nil, show_deductions = false)
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-    @lineCommentsByFile = line_comments || sub.grader_line_comments(nil, show_hidden)
+    @lineCommentsByFile = line_comments || sub.grade_line_comments(nil, show_hidden)
     @submission_files = []
     @show_deductions = show_deductions
     def with_extracted(item)

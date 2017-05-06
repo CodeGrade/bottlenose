@@ -30,24 +30,34 @@
     <% qs.each do |question| %>
     <% question.each do |type, q| %>
     <li><b><%= type %> </b><small>(<%= pluralize(q["weight"], "point") %>)</small>:
-      <p><%= sanitize(q["prompt"], tags: %w(b strong i em p code pre textarea)) %></p>
+      <p><%= sanitize(q["prompt"],
+             tags: %w(b strong i em p code pre textarea),
+             attributes: %w(class data-lang)) %></p>
       <% if q["options"] %>
       <ul>
         <% q["options"].each do |opt| %>
-        <li><%= sanitize(opt, tags: %w(b strong i em code pre)) %></li>
+        <li><%= sanitize(opt, tags: %w(b strong i em code pre), attributes: %w(class data-lang)) %></li>
         <% end %>
       </ul>
       <% end %>
       <% if q["parts"] %>
         <% q["parts"].each do |part| %>
           <% if part["codeTag"] %>
-          <p>(CodeTag) <%= sanitize(part["codeTag"], tags: %w(b strong i em code pre)) %></p>
+          <p>(CodeTag) <%= sanitize(part["codeTag"], 
+                           tags: %w(b strong i em code pre),
+                           attributes: %w(class data-lang)) %></p>
           <% elsif part["codeTags"] %>
-          <p>(Multiple CodeTags) <%= sanitize(part["codeTags"], tags: %w(b strong i em code pre)) %></p>
+          <p>(Multiple CodeTags) <%= sanitize(part["codeTags"], 
+                                     tags: %w(b strong i em code pre),
+                                     attributes: %w(class data-lang)) %></p>
           <% elsif part["requiredText"] %>
-          <p>(Required text) <%= sanitize(part["requiredText"], tags: %w(b strong i em code pre)) %></p>
+          <p>(Required text) <%= sanitize(part["requiredText"], 
+                                 tags: %w(b strong i em code pre),
+                                 attributes: %w(class data-lang)) %></p>
           <% elsif part["text"] %>
-          <p>(Text) <%= sanitize(part["text"], tags: %w(b strong i em code pre)) %></p>
+          <p>(Text) <%= sanitize(part["text"], 
+                        tags: %w(b strong i em code pre),
+                        attributes: %w(class data-lang)) %></p>
           <% end %>
         <% end %>
       <% end %>

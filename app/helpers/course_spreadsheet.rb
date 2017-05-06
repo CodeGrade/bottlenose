@@ -348,16 +348,16 @@ class CourseSpreadsheet
       subs_for_grading = UsedSub.where(assignment: assn).to_a
       
       sheet.columns.push(Col.new(assn.name, "Number"))
-      grades.configs.each_with_index do |g, i|
+      grades.graders.each_with_index do |g, i|
         sheet.columns.push(Col.new("", "Number")) if i > 0
         labels.push(Cell.new(g.type))
         weight.push(Cell.new(g.avail_score))
       end
       sheet.columns.push(Col.new("", "Number"), Col.new("", "Percent"), Col.new("", "Percent"), Col.new("", "Percent"))
       labels.push(Cell.new("Total"), Cell.new("Lateness"), Cell.new("Computed%"), Cell.new("OnServer%"))
-      tot_weight = grades.configs.map(&:avail_score).sum()
+      tot_weight = grades.graders.map(&:avail_score).sum()
       weight.push(Cell.new(nil, Formula.new(tot_weight, "SUM",
-                                            Range.new(col_name(weight.count - grades.configs.count), true, 3, true,
+                                            Range.new(col_name(weight.count - grades.graders.count), true, 3, true,
                                                       col_name(weight.count - 1), true, 3, true))),
                   Cell.new(""), Cell.new(""), Cell.new(""))
       hw_cols.push [assn, weight.count - 2]
@@ -366,14 +366,14 @@ class CourseSpreadsheet
         sub_id = subs_for_grading.find{|sfg| sfg.user_id == u.id}
         sub = grades.grades[:grades].find{|grade_row| grade_row[:sub].id == sub_id.submission_id} unless sub_id.nil?
         if sub.nil?
-          grades.configs.each do |g| sheet.push_row(i, "") end
+          grades.graders.each do |g| sheet.push_row(i, "") end
           sheet.push_row(i, [0, "No submission", 0, 0])
         else
           sub[:staff_scores][:scores].each do |ss|
             sheet.push_row(i, ss[0] || "<none>")
           end
           sum_grade = Formula.new(sub[:sub].score, "SUM",
-                                  Range.new(col_name(weight.count - grades.configs.count - 4), true,
+                                  Range.new(col_name(weight.count - grades.graders.count - 4), true,
                                             i + sheet.header_rows.length + 2, false,
                                             col_name(weight.count - 5), true,
                                             i + sheet.header_rows.length + 2, false))

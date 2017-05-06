@@ -4,7 +4,7 @@ function getRow($row, $target, cb) {
   var $valuesToSubmit = $row.find("form");
   $.ajax({
     type: "POST",
-    url: "<%= bulk_course_assignment_grader_config_path(@course, @assignment, @assignment.grader_configs.first) %>",
+    url: "<%= bulk_course_assignment_grader_path(@course, @assignment, @assignment.graders.first) %>",
     data: $valuesToSubmit.serialize(),
     dataType: "JSON",
     timeout: 500
@@ -45,7 +45,7 @@ function saveRow($row, cb) {
   var $fail  = $row.find("#failure_" + $row[0].id);
   $.ajax({
     type: "POST",
-    url: "<%= bulk_course_assignment_grader_config_path(@course, @assignment, @assignment.grader_configs.first) %>",
+    url: "<%= bulk_course_assignment_grader_path(@course, @assignment, @assignment.graders.first) %>",
     data: $valuesToSubmit.serialize(),
     dataType: "JSON"
   }).done(function(json) {

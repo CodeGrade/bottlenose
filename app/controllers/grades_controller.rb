@@ -1,32 +1,32 @@
 require 'tap_parser'
 
-class GradersController < ApplicationController
-  prepend_before_action :find_grader
+class GradesController < ApplicationController
+  prepend_before_action :find_grade
   prepend_before_action :find_submission, except: [:bulk_edit, :bulk_update]
   prepend_before_action :find_course_assignment
   before_action :require_admin_or_staff, except: [:show, :update, :details]
   before_action :require_current_user
   def edit
-    if @grader.grader_config.autograde?
+    if @grade.grader.autograde?
       redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
                   alert: "That grader is automatic; there is nothing to edit"
       return
     end
 
-    self.send("edit_#{@grader.grader_config.type}")
+    self.send("edit_#{@grade.grader.type}")
   end
 
   def show
-    if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grader.available
+    if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grade.available
       redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
                   alert: "That grader is not yet available"
       return
     end
-    self.send("show_#{@grader.grader_config.type}")
+    self.send("show_#{@grade.grader.type}")
   end
 
   def regrade
-    @grader.grader_config.grade(@assignment, @submission)
+    @grade.grader.grade(@assignment, @submission)
     @submission.compute_grade! if @submission.grade_complete?
     redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission))
   end
@@ -54,14 +54,14 @@ class GradersController < ApplicationController
   end
 
   def details
-    if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grader.available
+    if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grade.available
       redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
                   alert: "That grader is not yet available"
       return
     end
     respond_to do |f|
       f.text {
-        render :text => self.send("details_#{@grader.grader_config.type}")
+        render plain: self.send("details_#{@grade.grader.type}")
       }
     end
   end
@@ -129,15 +129,15 @@ class GradersController < ApplicationController
     end
   end
   
-  def find_grader
-    @grader = Grader.find_by(id: params[:id])
-    if @grader.nil?
+  def find_grade
+    @grade = Grade.find_by(id: params[:id])
+    if @grade.nil?
       redirect_to back_or_else(course_assignment_submission_path(params[:course_id],
                                                                  params[:assignment_id],
                                                                  params[:submission_id])),
                   alert: "No such grader"
       return
-    elsif @submission and @grader.submission_id != @submission.id
+    elsif @submission and @grade.submission_id != @submission.id
       redirect_to back_or_else(course_assignment_submission_path(params[:course_id],
                                                                  params[:assignment_id],
                                                                  params[:submission_id])),
@@ -169,7 +169,7 @@ class GradersController < ApplicationController
 
   def save_all_comments(cp, cp_to_comment)
     do_save_comments(cp, cp_to_comment)
-    @grader.grader_config.grade(@assignment, @submission)
+    @grade.grader.grade(@assignment, @submission)
     @submission.compute_grade! if @submission.grade_complete?
   end
 
@@ -210,7 +210,7 @@ class GradersController < ApplicationController
                      label: c["label"],
                      filename: Upload.full_path_for(c["file"]),
                      line: c["line"],
-                     grader_id: @grader.id,
+                     grader_id: @grade.id,
                      user_id: current_user.id,
                      severity: c["severity"],
                      comment: c["comment"],
@@ -224,7 +224,7 @@ class GradersController < ApplicationController
 
   def question_to_inlinecomment(c)
     comment = InlineComment.find_or_initialize_by(submission_id: params[:submission_id],
-                                                  grader_id: @grader.id,
+                                                  grader_id: @grade.id,
                                                   line: c["index"])
     comment.update(label: "Graded question",
                    filename: @submission.upload.submission_path,
@@ -270,8 +270,8 @@ class GradersController < ApplicationController
           end
         elsif params[:grade_action] == "setGrades"
           sub = @assignment.used_sub_for(User.find(params[:user_id]))
-          @grader_config = @assignment.grader_configs.first # and only config
-          config = Grader.find_by(grader_config_id: @grader_config.id, submission_id: sub.id) if sub
+          @grader = @assignment.graders.first # and only config
+          config = Grader.find_by(grader_id: @grader.id, submission_id: sub.id) if sub
           if (config && (config.updated_at > Time.parse(params[:timestamp])))
             render :json => {existingTimestamp: config.updated_at, yourTimestamp: params[:timestamp]},
                    :status => 409 # conflicting request
@@ -338,9 +338,9 @@ class GradersController < ApplicationController
   def show_JavaStyleGrader
     get_submission_files(@submission, nil, "JavaStyleGrader")
     @commentType = "JavaStyleGrader"
-    if @grader.grading_output
+    if @grade.grading_output
       begin
-        @grading_output = File.read(@grader.grading_output)
+        @grading_output = File.read(@grade.grading_output)
         begin
           tap = TapParser.new(@grading_output)
           @grading_output = tap
@@ -353,7 +353,7 @@ class GradersController < ApplicationController
         @tests = []
       end
     end
-    num_comments = @grader.inline_comments.where.not(line: 0).count
+    num_comments = @grade.inline_comments.where.not(line: 0).count
     if @tests.nil? or @tests.count != num_comments
       @error_header = <<HEADER.html_safe
 <p>There seems to be a problem displaying the style-checker's feedback on this submission.</p>
@@ -362,7 +362,7 @@ class GradersController < ApplicationController
 <li>Course: #{@course.id}</li>
 <li>Assignment: #{@assignment.id}</li>
 <li>Submission: #{@submission.id}</li>
-<li>Grader: #{@grader.id}</li>
+<li>Grader: #{@grade.id}</li>
 <li>User: #{current_user.name} (#{current_user.id})</li>
 </li>
 HEADER
@@ -375,14 +375,14 @@ HEADER
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
   end
   def details_JavaStyleGrader
-    GradersController.pretty_print_comments(@grader.inline_comments)
+    GradesController.pretty_print_comments(@grade.inline_comments)
   end
 
   # JunitGrader
   def show_JunitGrader
-    if @grader.grading_output
+    if @grade.grading_output
       begin
-        @grading_output = File.read(@grader.grading_output)
+        @grading_output = File.read(@grade.grading_output)
         begin
           tap = TapParser.new(@grading_output)
           @grading_output = tap
@@ -423,9 +423,9 @@ HEADER
 
   # CheckerGrader
   def show_CheckerGrader
-    if @grader.grading_output
+    if @grade.grading_output
       begin
-        @grading_output = File.read(@grader.grading_output)
+        @grading_output = File.read(@grade.grading_output)
         begin
           tap = TapParser.new(@grading_output)
           @grading_output = tap
@@ -460,7 +460,7 @@ HEADER
     render "show_CheckerGrader"
   end
   def details_CheckerGrader
-    GradersController.pretty_print_comments(@grader.inline_comments)
+    GradesController.pretty_print_comments(@grade.inline_comments)
   end
 
   # QuestionsGrader
@@ -483,11 +483,11 @@ HEADER
       @answers_are_newer = true
     end
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-    pregrades = @submission.inline_comments(current_user)
+    pregrades = @submission.inline_comments
     pregrades = pregrades.select(:line, :name, :weight, :comment).joins(:user).sort_by(&:line).to_a
     @grades = []
     pregrades.each do |g| @grades[g["line"]] = g end
-    @show_graders = true
+    @show_grades = true
     render "edit_QuestionsGrader"
   end
   def show_QuestionsGrader
@@ -502,7 +502,7 @@ HEADER
   # ManualGrader
   def edit_ManualGrader
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-    @lineCommentsByFile = @submission.grader_line_comments(current_user, show_hidden)
+    @lineCommentsByFile = @submission.grade_line_comments(current_user, show_hidden)
     get_submission_files(@submission, @lineCommentsByFile)
     render "edit_ManualGrader"
   end
@@ -513,7 +513,7 @@ HEADER
 #    redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
   end
   def details_ManualGrader
-    GradersController.pretty_print_comments(@grader.inline_comments)
+    GradesController.pretty_print_comments(@grade.inline_comments)
   end
 
   # ExamGrader
@@ -535,9 +535,9 @@ HEADER
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
   end
   def show_SandboxGrader
-    if @grader.grading_output
+    if @grade.grading_output
       begin
-        @grading_output = File.read(@grader.grading_output)
+        @grading_output = File.read(@grade.grading_output)
         begin
           tap = TapParser.new(@grading_output)
           @grading_output = tap
@@ -573,7 +573,7 @@ HEADER
     render "show_SandboxGrader"
   end
   def details_SanboxGrader
-    @grader.notes
+    @grade.notes
   end
 
   
@@ -592,7 +592,7 @@ HEADER
     end
     all_grades = array_from_hash(students_with_grades)
     @student_info = @course.students.select(:username, :last_name, :first_name, :id).where(id: students_with_grades.keys)
-    @grader_config = @assignment.grader_configs.first # and only config
+    @grader = @assignment.graders.first # and only config
     # @used_subs = @assignment.used_submissions
     # @grade_comments = InlineComment.where(submission_id: @used_subs.map(&:id)).group_by(&:user_id)
     
@@ -605,14 +605,14 @@ HEADER
                                   created_at: @assignment.due_date - 1.minute)
       end
       @sub.set_used_sub!
-      @grader = Grader.find_or_create_by(grader_config_id: @grader_config.id, submission_id: @sub.id)
-      if @grader.new_record?
-        @grader.out_of = @grader_config.avail_score
+      @grade = Grader.find_or_create_by(grader_id: @grader.id, submission_id: @sub.id)
+      if @grade.new_record?
+        @grade.out_of = @grader.avail_score
       end
       grades = all_grades[student.id]
       flattened = @assignment.flattened_questions
       grades.each_with_index do |g, q_num|
-        comment = InlineComment.find_or_initialize_by(submission_id: @sub.id, grader_id: @grader.id, line: q_num)
+        comment = InlineComment.find_or_initialize_by(submission_id: @sub.id, grader_id: @grade.id, line: q_num)
         if g.to_s.empty?
           if comment.new_record?
             next # no need to save blanks
@@ -631,8 +631,8 @@ HEADER
                          info: nil)
         end
       end
-      @grader_config.expect_num_questions(flattened.count)
-      @grader_config.grade(@assignment, @sub)
+      @grader.expect_num_questions(flattened.count)
+      @grader.grade(@assignment, @sub)
     end
   end
 

@@ -59,7 +59,9 @@
           <% question.each do |type, q| %>
             <li>
               <p>
-                <%= sanitize(q["prompt"], tags: %w(b strong i em p code pre textarea)) %>
+                <%= sanitize(q["prompt"],
+                    tags: %w(b strong i em p code pre textarea)
+                    attributes: %w(class data-lang)) %>
                 <small>(<%= pluralize(q["weight"], "point") %>)</small>
               </p>
               <%= render "enter_answer_#{type.underscore}", q: q, index: i + count %>
@@ -72,14 +74,20 @@
                      part_ans = part_ans["parts"] if part_ans
                      part_ans = part_ans[part_i] if part_ans %>
                   <% if part["codeTag"] %>
-                  <p><%= sanitize(part["codeTag"], tags: %w(b strong i em code pre)) %></p>
+                  <p><%= sanitize(part["codeTag"], 
+                         tags: %w(b strong i em code pre),
+                         attributes: %w(class data-lang)) %></p>
                   <%= render partial: "code_tag", locals: {i: i, count: count, part_ans: part_ans, part_i: part_i} %>
                   <% elsif part["text"] %>
-                  <p><%= sanitize(part["text"], tags: %w(b strong i em code pre)) %></p>
+                  <p><%= sanitize(part["text"], 
+                         tags: %w(b strong i em code pre),
+                         attributes: %w(class data-lang)) %></p>
                   <textarea class="form-control" rows="5"
                             name="answers[<%= i + count %>][parts][<%= part_i %>][info]"><%= if part_ans then part_ans['info'] end %></textarea>
                   <% elsif part["requiredText"] %>
-                  <p><%= sanitize(part["requiredText"], tags: %w(b strong i em code pre)) %></p>
+                  <p><%= sanitize(part["requiredText"], 
+                         tags: %w(b strong i em code pre),
+                         attributes: %w(class data-lang)) %></p>
                   <textarea class="form-control <%= if @answers and (part_ans.nil? or part_ans['info'].to_s.empty?) then 'unanswered' end %>" rows="5"
                             name="answers[<%= i + count %>][parts][<%= part_i %>][info]"><%= if part_ans then part_ans['info'] end %></textarea>
                   <% end %>
