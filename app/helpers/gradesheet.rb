@@ -1,39 +1,39 @@
 class Gradesheet
-  attr_reader :missing_graders
+  attr_reader :missing_grades
   attr_reader :assignment
   attr_reader :submissions
-  attr_reader :configs
   attr_reader :graders
+  attr_reader :raw_grades
   attr_reader :max_score
   attr_reader :grades
   def initialize(assignment, submissions)
-    # A GraderConfig specifies its relative weight compared to the other graders for that assignment
+    # A Grader specifies its relative weight compared to the other graders for that assignment
 
-    # A Grader specifies a score and out_of, both of which are points.
+    # A Grade specifies a score and out_of, both of which are points.
 
     # Therefore, an assignment's grade is
-    # Sum_{g in relevant graders} ((g.score / g.out_of) * g.config.avail_score)
+    # Sum_{g in relevant grades} ((g.score / g.out_of) * g.grader.avail_score)
     # -------------------------------------------------------------------------
-    # Sum_{g in relevant graders} g.config.avail_score
+    # Sum_{g in relevant grades} g.grader.avail_score
 
     # If the score isn't ready yet, or if it's not released to students, then we show the blinded scores
 
     @assignment = assignment
     @submissions = submissions
-    @configs = @assignment.assignment_graders.order(:order).includes(:grader).map{ |c| c.grader }
-    @max_score = @configs.sum(&:avail_score)
+    @graders = @assignment.assignment_graders.order(:order).includes(:grader).map{ |c| c.grader }
+    @max_score = @graders.sum(&:avail_score)
     raw_grades = Grade.where(submission_id: @submissions.map(&:id))
-    @graders = raw_grades.group_by(&:submission_id)
-    @missing_graders = (raw_grades.count < @configs.count * @submissions.count)
+    @raw_grades = raw_grades.group_by(&:submission_id)
+    @missing_graders = (raw_grades.count < @graders.count * @submissions.count)
 
     @raw_score = 0
-    @grades = {configs: @configs, grades: []}
+    @grades = {graders: @graders, grades: []}
     @submissions.each do |s|
       s_scores = {raw_score: 0.0, scores: []}
       b_scores = {raw_score: 0.0, scores: []}
       res = {sub: s, staff_scores: s_scores, blind_scores: b_scores}
-      @configs.each do |c|
-        g = if @graders[s.id].nil? then nil else @graders[s.id].find do |g| g.grader_config_id == c.id end end
+      @graders.each do |c|
+        g = if @raw_grades[s.id].nil? then nil else @raw_grades[s.id].find do |g| g.grader_id == c.id end end
         if g
           if g.out_of.nil?
             scaled = g.score

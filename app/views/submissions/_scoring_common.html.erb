@@ -2,17 +2,17 @@
 <% cur_reg_staff = cur_reg && cur_reg.staff? %>
 
 <table class="table table-striped row-vcenter">
-  <% grades = @gradesheet.grades[:grades].find(sub: @submission).first
-     all_scores = if cur_reg_staff then grades[:staff_scores] else grades[:blind_scores] end
-     graders = @gradesheet.graders[@submission.id]
-     unavailable = (!graders or !(graders.all?(&:available)))
-     complete = (graders and graders.all?(&:complete?))
-     @gradesheet.configs.each_with_index do |c, i|
+  <% all_grades = @gradesheet.grades[:grades].find(sub: @submission).first
+     all_scores = if cur_reg_staff then all_grades[:staff_scores] else all_grades[:blind_scores] end
+     grades = @gradesheet.raw_grades[@submission.id]
+     unavailable = (!grades or !(grades.all?(&:available)))
+     complete = (grades and grades.all?(&:complete?))
+     @gradesheet.graders.each_with_index do |gr, i|
        scores = all_scores[:scores][i]
-       grader = (graders and graders.find{|gr| gr.grader_config_id == c.id})
+       grade = (grades and grades.find{|g| g.grader_id == gr.id})
      %>
   <tr>
-    <td><%= c.display_type %></td>
+    <td><%= gr.display_type %></td>
     <td>
       <% if scores.kind_of?(Array) %>
       <%= show_score(scores[0], @gradesheet.assignment, cur_reg_staff) %>&nbsp;/&nbsp;<%= to_fixed(scores[1]) %>
@@ -23,36 +23,36 @@
     </td>
     <td>
       <% if cur_reg_staff %>
-        <% if grader.nil? %>
+        <% if grade.nil? %>
           Missing
           <%= link_to "Create grader",
-              recreate_grader_course_assignment_submission_path(@course, @assignment, @submission, @gradesheet.configs[i]),
+              recreate_grade_course_assignment_submission_path(@course, @assignment, @submission, @gradesheet.graders[i]),
               method: 'post', class: "btn btn-warning" %>
         <% else %>
           <%= link_to "Grader output", 
-              course_assignment_submission_grader_path(@course, @assignment, @submission, grader) %>
-          <%= if !grader.available then " (unavailable)"
-              elsif !grader.complete? then " (hidden)" end %>
-          <% if c.autograde? %>
+              course_assignment_submission_grade_path(@course, @assignment, @submission, grade) %>
+          <%= if !grade.available then " (unavailable)"
+              elsif !grade.complete? then " (hidden)" end %>
+          <% if gr.autograde? %>
             <%= link_to "Rerun autograder", 
-                regrade_course_assignment_submission_grader_path(@course, @assignment, @submission, grader),
+                regrade_course_assignment_submission_grade_path(@course, @assignment, @submission, grade),
                 method: 'post', class: "btn btn-default", style: "margin-left: 5em;" %>
           <% else %>
-            <% if grader.complete? %>
+            <% if grade.complete? %>
             <%= link_to "Regrade",
-                edit_course_assignment_submission_grader_path(@course, @assignment, @submission, grader),
+                edit_course_assignment_submission_grade_path(@course, @assignment, @submission, grade),
                 class: "btn btn-info", style: "margin-left: 5em;"%>
             <% else %>
             <%= link_to "Grade",
-                edit_course_assignment_submission_grader_path(@course, @assignment, @submission, grader),
+                edit_course_assignment_submission_grade_path(@course, @assignment, @submission, grade),
                 class: "btn btn-success", style: "margin-left: 5em;" %>
             <% end %>
           <% end %>
         <% end %>  
       <% else %>
-        <% if grader && grader.available %>
+        <% if grade && grade.available %>
           <%= link_to "Grader output",
-              course_assignment_submission_grader_path(@course, @assignment, @submission, grader) %>
+              course_assignment_submission_grade_path(@course, @assignment, @submission, grade) %>
         <% else %>
           No grader available
         <% end %>

@@ -192,9 +192,9 @@ class AssignmentsController < CoursesController
 
 
   def do_recreate_grades(assignment)
-    confs = assignment.grader_configs.to_a
+    confs = assignment.graders.to_a
     count = @assignment.used_submissions.reduce(0) do |sum, sub|
-      sum + sub.recreate_missing_graders(confs)
+      sum + sub.recreate_missing_grades(confs)
     end
     count
   end
@@ -307,7 +307,7 @@ class AssignmentsController < CoursesController
         @assignment.errors.add(:graders, "Could not create grader #{c.to_s}")
       else
         AssignmentGrader
-          .find_or_initialize_by(assignment_id: @assignment.id, grader_config_id: c.id)
+          .find_or_initialize_by(assignment_id: @assignment.id, grader_id: c.id)
           .update(order: 1)
       end
     end

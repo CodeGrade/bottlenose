@@ -19,7 +19,7 @@ class InlineComment < ApplicationRecord
         else
           ""
         end,
-      grader: self.grader_id,
+      grade: self.grade_id,
       title: self.title,
       label: self.label,
       severity: self.severity.humanize,

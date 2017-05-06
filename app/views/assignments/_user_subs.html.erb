@@ -13,7 +13,7 @@
       <th>Team</th>
       <th>Date</th>
       <th>Status</th>
-      <% gradesheet.grades[:configs].each do |c| %>
+      <% gradesheet.grades[:graders].each do |c| %>
       <th class="text-right"><%= c.display_type %></th>
       <% end %>
       <th class="text-right">Total</th>

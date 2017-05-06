@@ -22,7 +22,7 @@ Bottlenose::Application.routes.draw do
   resources :terms
 
   resources :courses, except: [:destroy] do
-    resources :graders, only: [] do
+    resources :grades, only: [] do
       collection do
         get 'stats' => 'grader_allocations#stats', as: 'stats'
       end
@@ -55,17 +55,17 @@ Bottlenose::Application.routes.draw do
         post 'weights' => 'assignments#update_weights'
       end
       member do
-        post 'create_missing_graders' => 'assignments#recreate_graders'
+        post 'create_missing_grades' => 'assignments#recreate_grades'
       end
       resources :grader_allocations, only: [] do
         collection do
-          get ':grader_config_id' => 'grader_allocations#index', as: ''
-          get ':grader_config_id/edit' => 'grader_allocations#edit', as: 'edit'
-          patch ':grader_config_id/edit' => 'grader_allocations#patch', as: 'patch'
-          patch ':grader_config_id/update' => 'grader_allocations#update', as: 'update'
+          get ':grader_id' => 'grader_allocations#index', as: ''
+          get ':grader_id/edit' => 'grader_allocations#edit', as: 'edit'
+          patch ':grader_id/edit' => 'grader_allocations#patch', as: 'patch'
+          patch ':grader_id/update' => 'grader_allocations#update', as: 'update'
         end
       end
-      resources :grader_configs, only: [] do
+      resources :graders, only: [] do
         member do
           get 'bulk' => 'graders#bulk_edit'
           post 'bulk' => 'graders#bulk_update'
@@ -73,18 +73,18 @@ Bottlenose::Application.routes.draw do
       end
       resources :submissions, except: [:edit, :update, :destroy] do
         collection do
-          post 'rerun/:grader_config_id', to: 'submissions#rerun_grader', as: 'rerun_grader'
+          post 'rerun/:grader_id', to: 'submissions#rerun_grader', as: 'rerun_grader'
         end
         member do
           get :details
           get :use, to: 'submissions#use_for_grading', as: 'use'
           patch :publish, to: 'submissions#publish', as: 'publish'
           patch :rescind_lateness, to: 'submissions#rescind_lateness', as: 'rescind_lateness'
-          post 'recreate/:grader_config_id', to: 'submissions#recreate_grader', as: 'recreate_grader'
+          post 'recreate/:grader_id', to: 'submissions#recreate_grade', as: 'recreate_grade'
           get 'plagiarism', to: 'submissions#edit_plagiarism', as: 'edit_plagiarism'
           patch 'plagiarism', to: 'submissions#update_plagiarism', as: 'update_plagiarism'
         end
-        resources :graders, only: [:show, :edit, :update] do
+        resources :grades, only: [:show, :edit, :update] do
           member do
             post :regrade
             get :details, defaults: {format: 'text'}

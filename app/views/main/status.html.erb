@@ -14,7 +14,7 @@
     <td><strong>Submissions</strong></td>
     <td>
       <% @backlog.each do |b| %>
-      <% if b[:sub].is_a? GraderConfig %>
+      <% if b[:sub].is_a? Grader %>
       <p>Regrading <%= b[:sub].display_type %> for <%= link_to "#{b[:args][1].user.display_name}",
              course_assignment_submission_path(b[:args][0].course,
              b[:args][0], b[:args][1]) %>,

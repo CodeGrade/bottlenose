@@ -11,7 +11,7 @@
               <%= sanitize(q["prompt"], tags: %w(b strong i em p textarea pre code)) %>
               <small>(<%= pluralize(q["weight"], "point") %>)</small>
             </p>
-            <% if @show_graders %>
+            <% if @show_grades %>
             <div class="panel panel-warning" %>
               <div class="panel-heading" data-toggle="collapse" data-target="#student_ans<%= index %>">Student answer:</div>
               <div class="panel-body collapse in" id="student_ans<%= index %>">
@@ -19,11 +19,11 @@
               <%= render "submissions/show_answer_#{type.underscore}", q: q, index: index %>
               <p></p>
               <%= render "submissions/show_parts", q: q, i: i, count: count %>
-            <% if @show_graders %>
+            <% if @show_grades %>
               </div>
             </div>
             <% end %>
-            <% if @show_graders %>
+            <% if @show_grades %>
             <div class="panel panel-info">
               <div class="panel-heading"><i><b>Rubric:</b></i></div>
               <div class="panel-body">

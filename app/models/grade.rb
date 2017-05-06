@@ -24,8 +24,8 @@ class Grade < ApplicationRecord
         by_file = ans[t[:info]["filename"]] = {} if by_file.nil?
         by_line = by_file[t[:info]["line"]]
         by_line = by_file[t[:info]["line"]] = {} if by_line.nil?
-        by_type = by_line[self.grader_config.type]
-        by_type = by_line[self.grader_config.type] = [] if by_type.nil?
+        by_type = by_line[self.grader.type]
+        by_type = by_line[self.grader.type] = [] if by_type.nil?
         by_type.push t
       end
       ans

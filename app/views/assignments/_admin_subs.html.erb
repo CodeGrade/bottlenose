@@ -26,9 +26,9 @@
        </ul>
      </div>        
 
-    <% if @gradesheet.missing_graders %>
-    <%= link_to "Create missing graders",
-        create_missing_graders_course_assignment_path(@course, @gradesheet.assignment),
+    <% if @gradesheet.missing_grades %>
+    <%= link_to "Create missing grades",
+        create_missing_grades_course_assignment_path(@course, @gradesheet.assignment),
         method: 'post', class: "btn btn-warning",
         data: { confirm: "This may take a while; please be patient" } %>
     <% end %>
@@ -39,9 +39,9 @@
   <% else %>
     <%= link_to "New #{type[:noun].capitalize}", 
         new_course_assignment_submission_path(@course, @gradesheet.assignment), class: "btn btn-success" %>
-    <% if @gradesheet.missing_graders %>
-    <%= link_to "Create missing graders",
-        create_missing_graders_course_assignment_path(@course, @gradesheet.assignment),
+    <% if @gradesheet.missing_grades %>
+    <%= link_to "Create missing grades",
+        create_missing_grades_course_assignment_path(@course, @gradesheet.assignment),
         method: 'post', class: "btn btn-warning",
         data: { confirm: "This may take a while; please be patient" }
         %>
@@ -61,7 +61,7 @@
         <th>Date</th>
         <th>Status</th>
 
-        <% @gradesheet.grades[:configs].each do |c| %>
+        <% @gradesheet.grades[:graders].each do |c| %>
         <th class="text-right">
           <% if c.autograde? && (cur_reg && cur_reg.professor?) %>
           <%= link_to rerun_grader_course_assignment_submissions_path(@course, @gradesheet.assignment, c),
@@ -165,7 +165,7 @@
         headerTemplate: "{content} {icon}",
         headers: {
           2: { sorter: false },
-          <%= 5 + @gradesheet.grades[:configs].count %>: { sorter: false },
+          <%= 5 + @gradesheet.grades[:graders].count %>: { sorter: false },
         },
         theme: "bootstrap",
         widgets: ['uitheme']

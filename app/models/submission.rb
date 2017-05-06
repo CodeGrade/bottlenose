@@ -162,24 +162,24 @@ class Submission < ApplicationRecord
     end
   end
 
-  def grader_line_comments(comment_author_user, show_hidden)
-    config_types = Grader.where(submission_id: self.id).joins(:grader_config).pluck(:id, :type).to_h
+  def grade_line_comments(comment_author_user, show_hidden)
+    config_types = Grade.where(submission_id: self.id).joins(:grader).pluck(:id, :type).to_h
     if show_hidden
       comments = self.inline_comments
     else
       comments = self.visible_inline_comments
     end
     comments.group_by(&:filename).map do |filename, byfile|
-      [Upload.upload_path_for(filename), byfile.group_by(&:grader_id).map do |grader, bygrader|
-         [config_types[grader], bygrader.group_by(&:line).map do |line, byline|
+      [Upload.upload_path_for(filename), byfile.group_by(&:grade_id).map do |grade, bygrade|
+         [config_types[grade], bygrade.group_by(&:line).map do |line, byline|
             [line, byline.map{|c| c.to_editable_json(comment_author_user)}]
           end.to_h]
        end.to_h]
     end.to_h
-    # self.graders.map(&:line_comments).reduce({}, &:merge)
+    # self.gradrs.map(&:line_comments).reduce({}, &:merge)
   end
 
-  def grader_submission_comments(show_hidden)
+  def grade_submission_comments(show_hidden)
     if show_hidden
       self.inline_comments.where(line: 0).group_by(&:filename)
     else
@@ -230,8 +230,8 @@ class Submission < ApplicationRecord
     end
   end
 
-  def recreate_missing_grader(config)
-    if config.grader_exists_for(self)
+  def recreate_missing_grade(config)
+    if config.grade_exists_for(self)
       false
     else
       config.delay.autograde!(assignment, self)
@@ -239,9 +239,9 @@ class Submission < ApplicationRecord
     end
   end
 
-  def recreate_missing_graders(configs)
+  def recreate_missing_grades(configs)
     configs.reduce(0) do |sum, c|
-      if recreate_missing_grader(c)
+      if recreate_missing_grade(c)
         sum + 1
       else
         sum
@@ -249,16 +249,16 @@ class Submission < ApplicationRecord
     end
   end
 
-  def create_graders!
-    assignment.graders.each do |c| c.ensure_grade_exists_for!(self) end
+  def create_grades!
+    assignment.grades.each do |c| c.ensure_grade_exists_for!(self) end
   end
 
   def autograde!
     complete = true
-    assignment.graders.each do |c|
+    assignment.grades.each do |c|
       begin
         complete = complete and c.autograde?
-        c.autograde!(assignment, self) # make sure we create all needed graders
+        c.autograde!(assignment, self) # make sure we create all needed grades
       rescue Exception => e
         puts e.inspect
         puts e.backtrace
@@ -275,9 +275,9 @@ class Submission < ApplicationRecord
     log = ""
     self.grades.each do |g|
       return if g.score.nil?
-      component_weight = g.grader_config.avail_score.to_f
+      component_weight = g.grader.avail_score.to_f
       grade_component = component_weight * (g.score.to_f / g.out_of.to_f)
-      log += "#{g.grader_config.type} => #{grade_component} / #{component_weight}, "
+      log += "#{g.grader.type} => #{grade_component} / #{component_weight}, "
       score += grade_component
       max_score += component_weight
     end
@@ -312,8 +312,8 @@ class Submission < ApplicationRecord
   end
 
   def grade_complete?
-    graders.count == assignment.grader_configs.count &&
-    graders.all?(&:available)
+    grades.count == assignment.graders.count &&
+    grades.all?(&:available)
   end
 
   private
