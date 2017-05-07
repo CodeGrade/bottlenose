@@ -52,14 +52,14 @@ class TeamsController < CoursesController
   def dissolve
     @team = Team.find(params[:id])
     @team.dissolve(DateTime.current)
-    redirect_to back_or_else(course_teams_path(@course))
+    redirect_back fallback_location: course_teams_path(@course)
   end
 
 
   def dissolve_all
     teams = Team.where(course: @course, end_date: nil)
     teams.each do |t| t.dissolve(DateTime.current) end
-    redirect_to back_or_else(course_teams_path(@course)), notice: "#{plural(teams.count, 'team')} dissolved"
+    redirect_back fallback_location: course_teams_path(@course), notice: "#{plural(teams.count, 'team')} dissolved"
   end
 
   def randomize
@@ -72,7 +72,7 @@ class TeamsController < CoursesController
         count += 1
       end
     end
-    redirect_to back_or_else(course_teams_path(@course)), notice: "#{plural(count, 'random team')} created"
+    redirect_back fallback_location: course_teams_path(@course), notice: "#{plural(count, 'random team')} created"
   end
 
   private

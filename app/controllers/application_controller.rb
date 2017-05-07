@@ -42,7 +42,7 @@ class ApplicationController < ActionController::Base
 
   def require_valid_course
     if @course.nil?
-      redirect_to back_or_else(courses_path), alert: "No such course"
+      redirect_back courses_path, alert: "No such course"
       return
     end
   end
@@ -78,14 +78,6 @@ class ApplicationController < ActionController::Base
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_up) do |user|
       user.permit(:name, :email, :username, :password, :password_confirmation)
-    end
-  end
-
-  def back_or_else(target)
-    if request.env["HTTP_REFERER"].present? and request.env["HTTP_REFERER"] != request.env["REQUEST_URI"]
-      :back
-    else
-      target
     end
   end
 

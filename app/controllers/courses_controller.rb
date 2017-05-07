@@ -101,7 +101,7 @@ class CoursesController < ApplicationController
 
   def facebook
     unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_to back_or_else(root_path), alert: "Must be an admin or professor."
+      redirect_back fallback_location: root_path, alert: "Must be an admin or professor."
       return
     end
     prep_sections
@@ -374,7 +374,7 @@ class CoursesController < ApplicationController
 
   def require_admin_or_prof
     unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_to back_or_else(root_path), alert: "Must be an admin or professor."
+      redirect_back fallback_location: root_path, alert: "Must be an admin or professor."
       return
     end
   end

@@ -25,7 +25,7 @@ class ManualGrader < Grader
 
   def do_grading(assignment, sub)
     g = self.grade_for sub
-    comments = InlineComment.where(submission: sub, grader: g, suppressed: false)
+    comments = InlineComment.where(submission: sub, grade: g, suppressed: false)
     deductions = comments.pluck(:weight).reduce(0) do |sum, w| sum + w end
 
     g.out_of = self.avail_score
