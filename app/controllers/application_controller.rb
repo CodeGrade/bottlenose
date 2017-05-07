@@ -213,4 +213,46 @@ class ApplicationController < ActionController::Base
     fix_hrefs({nodes: @submission_files})
   end
 
+  # Course stuff
+
+  def find_course
+    return unless @course.nil?
+
+    @course = Course.find_by(id: params[:course_id] || params[:id])
+    if @course.nil?
+      redirect_to courses_path, alert: "No such course"
+      return
+    end
+  end
+
+  def require_registered_user
+    find_course
+
+    return if current_user_site_admin?
+
+    @registration = current_user.registration_for(@course)
+    if @registration.nil?
+      redirect_to courses_path, alert: "You're not registered for that course."
+      return
+    elsif @registration.dropped_date
+      redirect_to courses_path, alert: "You've already dropped that course."
+      return
+    end
+  end
+
+  def require_admin_or_prof
+    find_course
+
+    unless current_user_site_admin? || current_user_prof_for?(@course)
+      redirect_to back_or_else(root_path), alert: "Must be an admin or professor."
+      return
+    end
+  end
+
+  def require_admin_or_staff
+    unless current_user_site_admin? || current_user_staff_for?(@course)
+      redirect_to back_or_else(root_path), alert: "Must be an admin or staff."
+      return
+    end
+  end
 end

@@ -1,8 +1,23 @@
+(function() {
+    function init_datetime() {
+        $('.datetime-picker').datetimepicker({
+            sideBySide: true,
+            format: "YYYY/MM/DD h:mm A",
+            defaultDate: undefined
+        });
+    }
 
-#run_on_page "assignments/show", () ->
-#  $(document).ajaxError (e, data, xhr) ->
-#    console.log(e, data, xhr)
+    function form_init() {
+        init_datetime();
+    }
 
+    run_on_page("assignments/new", form_init);
+    run_on_page("assignments/create", form_init);
+    run_on_page("assignments/edit", form_init);
+    run_on_page("assignments/update", form_init);
+})();
+
+/*
 run_on_page "assignments/show", () ->
   inputs  = []
   by_user = {}
@@ -53,3 +68,4 @@ run_on_page "assignments/show", () ->
     setup_handlers()
 
   setup_handlers()
+*/

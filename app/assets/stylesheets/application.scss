@@ -1,6 +1,7 @@
 //= require codemirror
 //= require codemirror/themes/mdn-like
 //= require jquery-tablesorter/theme.bootstrap_2
+//= require bootstrap-toggle
 
 // Import the bootstrap overrides *before* bootstrap.
 @import "bootstrap-overrides";
@@ -11,7 +12,6 @@
 @import "font-awesome";
 @import "bootstrap-datetimepicker";
 @import "bootstrap-treeview";
-@import "toggle";
 
 // Internal stylesheets.
 @import "old";  // TODO: Delete me.

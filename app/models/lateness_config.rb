@@ -2,7 +2,7 @@ require 'clamp'
 
 class LatenessConfig < ApplicationRecord
   belongs_to :lateness_config
-  belongs_to :course, polymorphic: true
+  belongs_to :course
 
   def self.unique
     select(column_names - ["id"]).distinct

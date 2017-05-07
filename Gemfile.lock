@@ -17,7 +17,7 @@ GIT
 
 GIT
   remote: git://github.com/plataformatec/devise.git
-  revision: cc6a5824089ed2cbd015a6951ce6d43d00264486
+  revision: a62faa2c8258ba1c35fe84e147f42c35eccccb8a
   specs:
     devise (4.2.1)
       bcrypt (~> 3.0)
@@ -78,7 +78,7 @@ GEM
     addressable (2.5.1)
       public_suffix (~> 2.0, >= 2.0.2)
     arel (8.0.0)
-    autoprefixer-rails (6.7.7.2)
+    autoprefixer-rails (7.0.1)
       execjs
     bcrypt (3.1.11)
     better_errors (2.1.1)
@@ -87,13 +87,12 @@ GEM
       rack (>= 0.9.0)
     binding_of_caller (0.7.2)
       debug_inspector (>= 0.0.1)
-    bootstrap-datepicker-rails (1.6.4.1)
-      railties (>= 3.0)
     bootstrap-sass (3.3.7)
       autoprefixer-rails (>= 5.2.1)
       sass (>= 3.3.4)
     bootstrap-sass-extras (0.0.7)
       rails (>= 3.1.0)
+    bootstrap-toggle-rails (2.2.1.0)
     bootstrap3-datetimepicker-rails (4.17.47)
       momentjs-rails (>= 2.8.1)
     builder (3.2.3)
@@ -277,10 +276,10 @@ DEPENDENCIES
   activerecord-import
   better_errors
   binding_of_caller
-  bootstrap-datepicker-rails
   bootstrap-sass (~> 3.3.5)
   bootstrap-sass-extras
-  bootstrap3-datetimepicker-rails (~> 4.17.37)
+  bootstrap-toggle-rails
+  bootstrap3-datetimepicker-rails
   capybara
   capybara-webkit
   codemirror-rails

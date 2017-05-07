@@ -1,6 +1,9 @@
-class AssignmentsController < CoursesController
-  prepend_before_action :find_assignment, except: [:index, :new, :create, :edit_weights, :update_weights]
-  before_action :require_valid_course
+class AssignmentsController < ApplicationController
+  layout 'course'
+
+  before_action :find_course
+  before_action :require_registered_user
+  before_action :find_assignment, except: [:index, :new, :create, :edit_weights, :update_weights]
   before_action :require_admin_or_prof, only: [:edit, :edit_weights, :update, :update_weights,
                                                :new, :create, :destroy,
                                                :recreate_grades]
@@ -35,6 +38,10 @@ class AssignmentsController < CoursesController
     @assignment = Assignment.new
     @assignment.course_id = @course.id
     @assignment.due_date = (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M")
+    @assignment.available = Time.now.strftime("%Y/%m/%d %H:%M")
+    @assignment.lateness_config = @course.lateness_config.dup
+    @assignment.request_time_taken = true
+
     last_assn = @course.assignments.order(created_at: :desc).first
     if last_assn
       @assignment.points_available = last_assn.points_available
@@ -249,6 +256,8 @@ class AssignmentsController < CoursesController
 
   # setup graders
   def set_exam_graders
+    # FIXME: This is too complicated.
+
     upload = params[:assignment][:assignment_file]
     if upload.nil?
       if @assignment.assignment_upload.nil?
@@ -315,6 +324,8 @@ class AssignmentsController < CoursesController
   end
 
   def set_questions_graders
+    # FIXME: This is way too complicated.
+
     upload = params[:assignment][:assignment_file]
     if upload.nil?
       if @assignment.assignment_upload.nil?
@@ -572,7 +583,6 @@ class AssignmentsController < CoursesController
 
     return no_problems
   end
-
 
   def find_assignment
     @assignment = Assignment.find_by(id: params[:id])

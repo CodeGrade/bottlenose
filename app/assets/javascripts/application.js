@@ -15,12 +15,13 @@
 //= require jquery.matchHeight
 //= require jquery-tablesorter
 //= require jquery.keyDecoder
-//= require nicEdit
+//= require cocoon
 //= require moment
 //= require vue
 //= require bootstrap-sprockets
 //= require bootstrap-datetimepicker
 //= require bootstrap.treeview
+//= require bootstrap-toggle
 //= require codemirror
 //= require codemirror/addons/runmode/runmode
 //= require codemirror/addons/selection/active-line
@@ -30,113 +31,6 @@
 //= require codemirror/modes/javascript
 //= require codemirror/modes/scheme
 //= require_tree .
-
-
-
-// Based on http://www.simple10.com/code/2013/11/15/css-only-input-toggle-switch/
-(function($) {
-  'use strict';
-
-  var Toggle = function(element, options) {
-    this.$element = $(element);
-    this.options = $.extend({}, this.defaults(), options);
-    this.render();
-  }
-  Toggle.VERSION = '2017.1.10';
-  Toggle.DEFAULTS = {
-    on: 'On',
-    off: 'Off',
-    onstyle: 'primary',
-    offstyle: 'default',
-    size: 'normal',
-    style: '',
-    width: null,
-    width: null
-  }
-
-  Toggle.prototype.defaults = function() {
-    return {
-      on: this.$element.attr('data-on') || Toggle.DEFAULTS.on,
-      off: this.$element.attr('data-off') || Toggle.DEFAULTS.off,
-      onstyle: this.$element.attr('data-onstyle') || Toggle.DEFAULTS.onstyle,
-      offstyle: this.$element.attr('data-offstyle') || Toggle.DEFAULTS.offstyle,
-      size: this.$element.attr('data-size') || Toggle.DEFAULTS.size,
-      style: this.$element.attr('data-style') || Toggle.DEFAULTS.style,
-      width: this.$element.attr('data-width') || Toggle.DEFAULTS.width,
-      height: this.$element.attr('data-height') || Toggle.DEFAULTS.height
-    }
-  }
-
-  Toggle.prototype.render = function() {
-    var name = this.$element.attr("id") || this.$element.attr("name");
-    this._onstyle = 'btn-' + this.options.onstyle;
-    this._offstyle = 'btn-' + this.options.offstyle;
-    var size = this.options.size === 'large' ? 'btn-lg'
-	: this.options.size === 'small' ? 'btn-sm'
-	: this.options.size === 'mini' ? 'btn-xs'
-	: '';
-    var $toggle = $("<div class='toggle'>");
-    var $hidden = $("<input>").attr("name", name).attr("type", "hidden").val(0);
-    var $toggleOn = $('<div class="toggle-on btn">').html(this.options.on)
-	.addClass(this._onstyle + ' ' + size);
-    var $toggleHandle = $('<div class="toggle-handle btn btn-default">')
-	.addClass(size);
-    var $toggleOff = $('<div class="toggle-off btn">').html(this.options.off)
-	.addClass(this._offstyle + ' ' + size + ' active');
-    
-    var $btn =
-        $("<div class='btn'>").append($("<label>")
-                                      .attr("for", name)
-                                      .append($toggleOn, $toggleHandle, $toggleOff));
-    this.$element.wrap($toggle);
-    this.$element.before($hidden);
-    this.$element.after($btn);
-  }
-
-
-  // TOGGLE PLUGIN DEFINITION
-  // ========================
-
-  function Plugin(option) {
-    return this.each(function () {
-      var $this   = $(this);
-      var data    = $this.data('bs.toggle');
-      var options = typeof option == 'object' && option;
-
-      if (!data) $this.data('bs.toggle', (data = new Toggle(this, options)));
-      if (typeof option == 'string' && data[option]) data[option]();
-    });
-  }
-
-  var old = $.fn.bootstrapToggle;
-
-  $.fn.bootstrapToggle             = Plugin;
-  $.fn.bootstrapToggle.Constructor = Toggle;
-
-  // TOGGLE NO CONFLICT
-  // ==================
-
-  $.fn.toggle.noConflict = function () {
-    $.fn.bootstrapToggle = old;
-    return this;
-  }
-
-  // TOGGLE DATA-API
-  // ===============
-
-  $(function() {
-    $('input[type=checkbox][data-toggle^=toggle]').bootstrapToggle();
-  })
-
-  $(document).on('click.bs.toggle', 'div[data-toggle^=toggle]', function(e) {
-    var $checkbox = $(this).find('input[type=checkbox]');
-    $checkbox.bootstrapToggle('toggle');
-    e.preventDefault();
-  });
-  
-})(jQuery);
-
-
 
 // Based on https://stackoverflow.com/questions/14324919/status-of-rails-link-to-function-deprecation
 function enableReflectiveCalls() {
@@ -237,11 +131,11 @@ function ensureFilesPresentOnSubmit(e, sel) {
 
 $(function() {
   $('[data-toggle="tooltip"]').tooltip()
-  
+
   $('.local-time').each(function(_) {
     var dd = moment(Date.parse($(this).text()));
     if (!dd.isValid()) { dd = moment($(this).text()); }
-    
+
     if (dd.isValid()) {
       var today = moment().startOf('day');
       var tomorrow = moment(today).add(1, 'days');
@@ -254,7 +148,7 @@ $(function() {
         $(this).text(dd.format("MMM D YYYY, h:mm:ssa"));
     }
   });
-  
+
   $("input.numeric").on("keydown", validateNumericInput);
 })
 
@@ -319,7 +213,7 @@ function activateSpinner(obj, options) {
     if (max !== undefined && newVal > max) { e.preventDefault(); }
     if (min !== undefined && newVal < min) { e.preventDefault(); }
   });
-  
+
   $(upArrow).on('mousedown', function() {
     upInterval = setInterval(increment, 200);
     increment();

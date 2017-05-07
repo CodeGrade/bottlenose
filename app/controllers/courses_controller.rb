@@ -4,8 +4,9 @@ require 'course_spreadsheet'
 class CoursesController < ApplicationController
   layout 'course'
 
+  before_action :find_course, except: [:index, :new, :create]
   before_action :require_current_user, except: [:public]
-  before_action :load_and_verify_course_registration, except: [:public, :index, :new, :create]
+  before_action :require_registered_user, except: [:public, :index, :new, :create]
   before_action :require_admin_or_prof, except: [:index, :show, :public, :withdraw]
 
   def index
@@ -138,27 +139,6 @@ class CoursesController < ApplicationController
     CourseSpreadsheet.new(@course)
   end
 
-  def load_and_verify_course_registration
-    @course = Course.find_by(id: params[:course_id] || params[:id])
-    if @course.nil?
-      redirect_to courses_url, alert: "No such course"
-      return
-    end
-
-    if current_user_site_admin?
-      return
-    end
-
-    @registration = current_user.registration_for(@course)
-    if @registration.nil?
-      redirect_to courses_url, alert: "You're not registered for that course."
-      return
-    elsif @registration.dropped_date
-      redirect_to courses_url, alert: "You've already dropped that course."
-      return
-    end
-  end
-
   def course_params
     params[:course].permit(:name, :footer, :total_late_days, :private,
                            :public, :sections, :term_id, :sub_max_size,
@@ -172,12 +152,5 @@ class CoursesController < ApplicationController
                              :course_id, :crn, :meeting_time, :instructor_id,
                              :id, :prof_name, :_destroy
                            ])
-  end
-
-  def require_admin_or_prof
-    unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_to back_or_else(root_path), alert: "Must be an admin or professor."
-      return
-    end
   end
 end

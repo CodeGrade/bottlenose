@@ -1,10 +1,14 @@
 require 'csv'
 
-class RegistrationsController < CoursesController
-  prepend_before_action :find_registration, except: [:index, :new, :create, :bulk_enter, :bulk_update, :bulk_edit]
-  before_action :require_valid_course
+class RegistrationsController < ApplicationController
+  layout 'course'
+
+  before_action :find_course
+  before_action :find_registration, except: [:index, :new, :create, :bulk_enter, :bulk_update, :bulk_edit]
+  before_action :require_current_user, except: [:public]
+  before_action :require_registered_user, except: [:public, :index, :new, :create]
   before_action :require_admin_or_staff
-  
+
   def index
     @students = @course.students
     @staff = @course.staff
@@ -119,12 +123,5 @@ class RegistrationsController < CoursesController
   def registration_params
     params.require(:registration)
           .permit(:course_id, :section, :role, :user_id, :show_in_lists, :tags)
-  end
-
-  def require_admin_or_staff
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_to back_or_else(root_path), alert: "Must be an admin or staff."
-      return
-    end
   end
 end

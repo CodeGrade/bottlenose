@@ -1,8 +1,10 @@
-class TeamsController < CoursesController
+class TeamsController < ApplicationController
+  before_action :find_course
+  before_action :require_registered_user
   before_action :require_admin_or_staff, only: [:new, :create, :dissolve, :dissolve_all, :randomize]
+
   # GET /staff/courses/:course_id/teams
   def index
-    @course = Course.find(params[:course_id])
     if current_user_site_admin? || current_user_staff_for?(@course)
       @active_teams = @course.teams.select(&:active?)
       @inactive_teams = @course.teams.reject(&:active?)
@@ -14,7 +16,6 @@ class TeamsController < CoursesController
 
   # GET /staff/course/:course_id/teams/new
   def new
-    @course = Course.find(params[:course_id])
     @team = Team.new
     @team.course_id = @course.id
     @teams = @course.teams.select(&:active?)
@@ -23,7 +24,6 @@ class TeamsController < CoursesController
 
   # POST /staff/course/:course_id/teams
   def create
-    @course = Course.find(params[:course_id])
     @team = Team.new(team_params)
 
     users = params["users"] || []
@@ -41,7 +41,6 @@ class TeamsController < CoursesController
 
   # GET /courses/:course_id/teams/:id
   def show
-    @course = Course.find(params[:course_id])
     @team = Team.find(params[:id])
 
     if !(current_user_site_admin? or current_user_staff_for?(@course)) and @team.users.exclude?(current_user)
@@ -87,11 +86,4 @@ class TeamsController < CoursesController
   def team_params
     params.require(:team).permit(:course_id, :start_date, :end_date)
   end
-
-  def require_admin_or_staff
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_to course_teams_path, alert: "Must be an admin or staff."
-      return
-    end
-  end    
 end
