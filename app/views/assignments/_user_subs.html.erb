@@ -1,6 +1,18 @@
 <% cur_reg = current_user.registration_for(@course)
    cur_reg_staff = cur_reg && cur_reg.staff? %>
-
+<% def maybe_link_to(which, user)
+   tt = {
+       toggle: "tooltip",
+       delay: {show:0, hide: 250},
+       title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
+                        alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+     }
+   if which
+     link_to(user.name, user_path(user), data: tt)
+   else
+     span_tag(user.name, data: tt)
+   end
+   end %>
 <% if gradesheet.submissions.empty? %>
   <div class="well">
     No submissions yet.
@@ -41,7 +53,7 @@
               title="This submission is used for grading"></span>
         <% end %>
       </td>
-      <td><%= if cur_reg_staff then link_to sub.user.name, user_path(sub.user) else sub.user.name end %></td>
+      <td><%= maybe_link_to(cur_reg_staff, sub.user.name) %></td>
       <td><%= sub.team %></td>
       <td><span class="local-time"><%= sub.created_at %></span></td>
       <% scores = if cur_reg_staff then grade[:staff_scores] else grade[:blind_scores] end %>
@@ -109,4 +121,11 @@
   <% end %>
 
   </table>
+  <script>
+    $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
+      animated: 'fade',
+      placement: 'right',
+      html: true
+    });
+  </script>
 <% end %>
