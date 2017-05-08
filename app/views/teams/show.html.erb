@@ -1,6 +1,6 @@
 <% cur_reg = current_user.registration_for(@course) %>
-<% cur_user_site_admin = current_user_site_admin? %>
-<% cur_user_prof_ever = current_user_prof_ever? %>
+<% cur_user_site_admin = current_user.site_admin? %>
+<% cur_user_prof_ever = current_user.professor_ever? %>
 <% @page_title = "#{@course.name} - Team ##{@team.id}" %>
 
 <p>
