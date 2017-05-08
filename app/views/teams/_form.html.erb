@@ -1,3 +1,25 @@
+<% def show_user(user)
+     tt = {
+         toggle: "tooltip",
+         delay: {show:0, hide: 250},
+         title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
+                          alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+       }
+     link_to(user.name, user_path(user), data: tt)
+   end %>
+<% def show_team(team)
+   content_tag(:span, [
+     "Team #{team.id} - ",
+     team.users.sort_by(&:sort_name).map do |u|
+        tt = {
+          toggle: "tooltip",
+          delay: {show:0, hide: 250},
+          title: "#{image_tag(Upload.upload_path_for(u.profile || 'silhouette.jpg'), 
+                           alt: u.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+        }
+        link_to(u.name, user_path(u), data: tt).html_safe
+     end.join(", ")].flatten.join("\n").html_safe)
+   end %>
 <div class="row">
   <% if @team.errors.any? %>
   <div id="error_explanation" class="alert alert-danger">
@@ -129,7 +151,7 @@
       <tbody>
         <% @teams.each do |team| %>
         <tr>
-          <td><%= team %></td>
+          <td><%= show_team team %></td>
           <td>
             <%= link_to "Dissolve", dissolve_course_team_path(@course, team), class: "btn btn-danger btn-xs pull-right", method: :patch, data: { confirm: "Are you sure?" } %>
           </td>
@@ -141,8 +163,13 @@
   </div>
 
   <div class="col-md-6">
-    <h3>Students Without Teams (<%= @others.length %> remaining)</h3>
-
+    <h3>
+      <% all_emails = @others.sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>"} %>
+      <%= mail_to "#{current_user.name} <#{current_user.email}>", "@",
+                  bcc: all_emails.join(","), title: "Email all unpartnered students (bcc)" %>
+      Students Without Teams (<%= @others.length %> remaining)
+    </h3>
+    
     <div class="long-table">
     <table id="users" class="table table-striped">
       <thead>
@@ -154,7 +181,7 @@
       <tbody>
 	<% @others.sort_by(&:sort_name).each do |user| %>
 	<%= content_tag("tr", class: "user", data: { id: user.id, name: user.name }) do %>
-	<td><%= user.sort_name %></td>
+	<td><%= show_user user %></td>
         <td><div class="add-user-btn btn btn-success btn-xs pull-right">Add</div></td>
 	<% end %>
 	<% end %>
@@ -163,3 +190,10 @@
     </div>
   </div>
 </div>
+<script>
+  $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
+    animated: 'fade',
+    placement: 'right',
+    html: true
+  });
+</script>
