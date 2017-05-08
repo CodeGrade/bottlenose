@@ -13,8 +13,9 @@ class AssignmentsController < ApplicationController
     admin_view = current_user_site_admin? || current_user_staff_for?(@course)
     if admin_view
       submissions = @assignment.used_submissions.includes(:user).order(created_at: :desc).to_a
+      @all_complete = (Grade.where(submission: submissions, score: nil).count == 0)
     elsif @assignment.nil? or @assignment.available > DateTime.now
-      redirect_to back_or_else(course_assignments_path), alert: "No such assignment exists or is available"
+      redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
       return
     else
       submissions = current_user.submissions_for(@assignment).includes(:user).order(created_at: :desc).to_a
@@ -123,13 +124,13 @@ class AssignmentsController < ApplicationController
   def show_user
     assignment = Assignment.find(params[:id])
     if !current_user
-      redirect_to back_or_else(root_path), alert: "Must be logged in"
+      redirect_back fallback_location: root_path, alert: "Must be logged in"
       return
     elsif current_user_site_admin? || current_user_prof_for?(@course)
       # nothing --- but should this be current_user_staff_for instead?
     elsif current_user.id != params[:user_id].to_i
-      redirect_to back_or_else(course_assignment_path(@course, assignment)),
-                  alert: "Not permitted to see submissions for other students"
+      redirect_back fallback_location: course_assignment_path(@course, assignment),
+                    alert: "Not permitted to see submissions for other students"
       return
     end
 
@@ -151,21 +152,26 @@ class AssignmentsController < ApplicationController
   end
 
   def publish
+    publish_all = (params[:all] == "true")
     used = @assignment.used_submissions
     used.each do |u|
-      u.grades.where(score: nil).each do |g| g.grader.grade(@assignment, u) end
+      ungraded = u.grades.where(score: nil)
+      if !publish_all && ungraded.count > 0
+        next
+      end
+      ungraded.each do |g| g.grader.grade(@assignment, u) end
       u.grades.update_all(:available => true)
       u.compute_grade!
     end
 
-    redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                notice: 'Grades successfully published'
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  notice: 'Grades successfully published'
   end
 
   def recreate_grades
     count = do_recreate_grades @assignment
-    redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                notice: "#{plural(count, 'grade')} created"
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  notice: "#{plural(count, 'grade')} created"
   end
 
 
@@ -218,7 +224,7 @@ class AssignmentsController < ApplicationController
 
   def require_admin_or_prof
     unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_to back_or_else(course_assignments_path), alert: "Must be an admin or professor."
+      redirect_back fallback_location: course_assignments_path, alert: "Must be an admin or professor."
       return
     end
   end
@@ -578,11 +584,11 @@ class AssignmentsController < ApplicationController
   def find_assignment
     @assignment = Assignment.find_by(id: params[:id])
     if @assignment.nil?
-      redirect_to back_or_else(course_assignments_path), alert: "No such assignment"
+      redirect_back fallback_location: course_assignments_path, alert: "No such assignment"
       return
     end
     if @assignment.course_id != params[:course_id].to_i
-      redirect_to back_or_else(course_assignments_path), alert: "No such assignment for this course"
+      redirect_back fallback_location: course_assignments_path, alert: "No such assignment for this course"
       return
     end
   end

@@ -79,10 +79,10 @@ class SubmissionsController < CoursesController
     @grader = Grader.find(params[:grader_id])
     if @submission.recreate_missing_grade(@grader)
       @submission.compute_grade! if @submission.grade_complete?
-      redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission))
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
     else
-      redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
-                  alert: "Grader already exists; use Regrade to modify it instead"
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "Grader already exists; use Regrade to modify it instead"
     end
   end
 
@@ -93,19 +93,19 @@ class SubmissionsController < CoursesController
       @grader.delay.grade(@assignment, sub)
       count += 1
     end
-    redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                notice: "Regraded #{@grader.display_type} for #{plural(count, 'submission')}"
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  notice: "Regraded #{@grader.display_type} for #{plural(count, 'submission')}"
   end
 
   def use_for_grading
     @submission.set_used_sub!
-    redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission))
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 
   def rescind_lateness
     @submission.update_attribute(:ignore_late_penalty, true)
     @submission.compute_grade!
-    redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission))
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 
   def edit_plagiarism
@@ -117,14 +117,14 @@ class SubmissionsController < CoursesController
     guilty_students = guilty_students[:penalty] || {}
     guilty_students = guilty_students.map{|k, v| [k.to_i, v.to_f]}.to_h
     if guilty_students.empty?
-      redirect_to back_or_else(edit_plagiarism_course_assignment_submission_path(@course, @assignment, @submission)),
-                  alert: "You haven't selected any students as being involved"
+      redirect_back fallback_location: edit_plagiarism_course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "You haven't selected any students as being involved"
       return
     end
     comment = params[:comment]
     if comment.to_s.empty?
-      redirect_to back_or_else(edit_plagiarism_course_assignment_submission_path(@course, @assignment, @submission)),
-                  alert: "Must leave some explanatory comment for the students"
+      redirect_back fallback_location: edit_plagiarism_course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "Must leave some explanatory comment for the students"
       return
     end
 
@@ -188,7 +188,7 @@ class SubmissionsController < CoursesController
     @submission.grades.where(score: nil).each do |g| g.grade(assignment, used) end
     @submission.grades.update_all(:available => true)
     @submission.compute_grade!
-    redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission))
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 
 
@@ -214,16 +214,16 @@ class SubmissionsController < CoursesController
 
   def require_admin_or_staff
     unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
-                  alert: "Must be an admin or staff."
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "Must be an admin or staff."
       return
     end
   end
 
   def require_admin_or_prof
     unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_to back_or_else(course_assignment_submission_path(@course, @assignment, @submission)),
-                  alert: "Must be an admin or professor."
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "Must be an admin or professor."
       return
     end
   end
@@ -232,11 +232,11 @@ class SubmissionsController < CoursesController
     @course = Course.find_by(id: params[:course_id])
     @assignment = Assignment.find_by(id: params[:assignment_id])
     if @course.nil?
-      redirect_to back_or_else(root_path), alert: "No such course"
+      redirect_back fallback_location: root_path, alert: "No such course"
       return
     end
     if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_to back_or_else(course_path(@course)), alert: "No such assignment for this course"
+      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
       return
     end
   end
@@ -244,12 +244,12 @@ class SubmissionsController < CoursesController
   def find_submission
     @submission = Submission.find_by(id: params[:id])
     if @submission.nil?
-      redirect_to back_or_else(course_assignment_path(params[:course_id], params[:assignment_id])),
-                  alert: "No such submission"
+      redirect_back fallback_location: course_assignment_path(params[:course_id], params[:assignment_id]),
+                    alert: "No such submission"
       return
     end
     if @submission.assignment_id != @assignment.id
-      redirect_to back_or_else(course_assignment_path(@course, @assignment)), alert: "No such submission for this assignment"
+      redirect_back fallback_location: course_assignment_path(@course, @assignment), alert: "No such submission for this assignment"
       return
     end
   end
@@ -281,8 +281,8 @@ class SubmissionsController < CoursesController
 
   def new_Exam
     unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_to back_or_else(course_assignment_path(@course, @assignment)),
-                  alert: "Must be an admin or staff to enter exam grades."
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "Must be an admin or staff to enter exam grades."
       return
     end
     @grader = @assignment.graders.first

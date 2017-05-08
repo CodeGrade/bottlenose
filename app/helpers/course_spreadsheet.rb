@@ -242,15 +242,20 @@ class CourseSpreadsheet
       questions = exam.flattened_questions
       questions.each_with_index do |q, i|
         sheet.columns.push(Col.new("", "Number")) if i > 0
-        labels.push(Cell.new(q["name"]))
+        labels.push(Cell.new(q["name"] + (if q["extra"] then " (E.C.)" else "" end)))
         weight.push(Cell.new(q["weight"]))
       end
       sheet.columns.push(Col.new("", "Number"), Col.new("", "Percent"), Col.new("", "Percent"), Col.new("", "Percent"))
       labels.push(Cell.new("Total"), Cell.new("Computed%"), Cell.new("Curved"), Cell.new("OnServer%"))
-      tot_weight = questions.map{|q| q["weight"]}.sum()
+      normal_questions_and_indices = questions.zip(0..(questions.count - 1)).delete_if do |q, idx| q["extra"] end
+      tot_weight = normal_questions_and_indices.map{|q, idx| q["weight"]}.sum()
       weight.push(Cell.new(nil, Formula.new(tot_weight, "SUM",
-                                            Range.new(col_name(weight.count - questions.count), true, 3, true,
-                                                      col_name(weight.count - 1), true, 3, true))),
+                                            *(normal_questions_and_indices.map do |q, idx|
+                                                CellRef.new(nil,
+                                                            col_name(weight.count - questions.count + idx), true,
+                                                            3, true,
+                                                            q["weight"])
+                                              end))),
                   Cell.new(""), Cell.new(""), Cell.new(""))
       exam_cols.push [exam, weight.count - 2]
 

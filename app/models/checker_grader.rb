@@ -53,10 +53,8 @@ class CheckerGrader < Grader
   end
 
   def do_grading(assignment, sub)
-    self.upload.extract_contents! if self.upload
     g = self.grader_for sub
     u = sub.upload
-    u.extract_contents!
     grader_dir = u.grader_path(g)
 
     grader_dir.mkpath

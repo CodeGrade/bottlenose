@@ -1,4 +1,4 @@
-<%= @page_title = "Edit Assignment" %>
+<% @page_title = "Edit Assignment" %>
 
 <p>
   <%= link_to "Back to Course: #{@course.name}", course_path(@course) %>
@@ -9,5 +9,6 @@
 </p>
 
 <p><strong>Edit Existing Assignment</strong></p>
+<p>Type: <%= @assignment.type %></p>
 
-<%= render 'form' %>
+<%= render "#{@assignment.type}_form", asgn: @assignment %>

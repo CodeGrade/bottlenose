@@ -130,7 +130,7 @@ function ensureFilesPresentOnSubmit(e, sel) {
 }
 
 $(function() {
-  $('[data-toggle="tooltip"]').tooltip()
+  $('[data-toggle="tooltip"]').tooltip();
 
   $('.local-time').each(function(_) {
     var dd = moment(Date.parse($(this).text()));
@@ -150,7 +150,7 @@ $(function() {
   });
 
   $("input.numeric").on("keydown", validateNumericInput);
-})
+});
 
 
 function activateSpinner(obj, options) {

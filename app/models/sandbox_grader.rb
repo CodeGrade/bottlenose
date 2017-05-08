@@ -23,7 +23,6 @@ class SandboxGrader < Grader
   protected
 
   def do_grading(assignment, sub)
-    self.upload.extract_contents! if self.upload
     g = self.grader_for sub
 
     sandbox = Sandbox.create(name: "Manual grader", submission: sub)
@@ -80,7 +79,6 @@ class SandboxGrader < Grader
     g.save!
 
     u = sub.upload
-    u.extract_contents! ## Make sure the submission is extracted
 
     grader_dir = u.grader_path(g)
     grader_dir.mkpath

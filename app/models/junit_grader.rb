@@ -53,10 +53,8 @@ class JunitGrader < Grader
   end
   
   def do_grading(assignment, sub)
-    self.upload.extract_contents! if self.upload
     g = self.grader_for sub
     u = sub.upload
-    u.extract_contents! ## Make sure the submission is extracted
     
     grader_dir = u.grader_path(g)
 

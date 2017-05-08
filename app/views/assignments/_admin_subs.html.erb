@@ -1,4 +1,18 @@
 <% cur_reg = current_user.registration_for(@course) %>
+<% cur_user_prof_ever = current_user.professor_ever? %>
+<% def maybe_link_to(which, user)
+   tt = {
+       toggle: "tooltip",
+       delay: {show:0, hide: 250},
+       title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
+                        alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+     }
+   if which
+     link_to(user.name, user_path(user), data: tt)
+   else
+     span_tag(user.name, data: tt)
+   end
+   end %>
 <h3 style="display: inline-block">
   <%= type[:noun].pluralize(2).capitalize %> (<%= @gradesheet.submissions.count %>)
 </h3>
@@ -32,11 +46,39 @@
         method: 'post', class: "btn btn-warning",
         data: { confirm: "This may take a while; please be patient" } %>
     <% end %>
+    <% if @all_complete %>
     <%= link_to "Publish grades", 
-        course_assignment_publish_path(@course, @gradesheet.assignment), class: "btn btn-default",
+        course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'), class: "btn btn-default",
         method: 'patch',
-        data: { confirm: "Are you sure you want to publish all grades?" }%>
-  <% else %>
+        data: { confirm: "Are you sure you want to publish all grades?" } %>
+    <% else %>
+    <div class="btn-group" style="white-space: nowrap;">
+    <%= link_to "Publish completed grades", 
+        course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
+        class: "btn btn-default",
+        method: 'patch',
+        data: { confirm: "Are you sure you want to publish all grades?" }
+        %><button type="button" class="btn btn-md btn-default dropdown-toggle"
+                 style="float: unset;"
+                 data-toggle="dropdown"
+                 aria-haspopup="true" aria-expanded="false">
+         <span class="caret"></span>
+         <span class="sr-only">Toggle Dropdown</span>
+       </button><% #
+       %><ul class="dropdown-menu">
+         <li><%= link_to "Publish completed grades", 
+                 course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
+                 method: 'patch',
+                 data: { confirm: "Are you sure you want to publish all grades?" } %></li>
+         <li><%= link_to "Publish ALL grades", 
+                 course_assignment_publish_path(@course, @gradesheet.assignment, all: 'true'),
+                 method: 'patch',
+                 data: { confirm: "Not all assignments have been graded!\n" +
+                                  "Are you sure you want to publish all grades, even the incomplete ones?" } %></li>
+      </ul>
+    </div>
+    <% end %>
+    <% else %>
     <%= link_to "New #{type[:noun].capitalize}", 
         new_course_assignment_submission_path(@course, @gradesheet.assignment), class: "btn btn-success" %>
     <% if @gradesheet.missing_grades %>
@@ -89,7 +131,8 @@
       <% else %>
       <tr>
       <% end %>
-        <td><%= link_to sub.user.name, user_path(sub.user) %></td>
+      <td><%= maybe_link_to(current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
+                            sub.user) %></td>
         <td><span class="local-time"><%= sub.created_at %></span></td>
         <% scores = grade[:staff_scores] %>
         <td><%= status_image(sub, 100.0 * scores[:raw_score] / @gradesheet.max_score) %></td>
@@ -172,5 +215,12 @@
       });
       $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
     });
-  </script>    
+  </script>
+  <script>
+    $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
+      animated: 'fade',
+      placement: 'right',
+      html: true
+    });
+  </script>
 <% end %>
