@@ -3,16 +3,38 @@
 <style>
   <% @sections.each do |s| %>
   #students.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
+  #emails.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
+  #emails.show_all .sec_<%= s.crn %> { display: none; }
   <% end %>
+  #emails.show_one .show_all { display: none; }
 </style>
 
 <h1>Facebook View</h1>
 <h4>Select a section: <select id="sections">
     <option value="show_all">Show all sections</option>
     <% @sections.each do |s| %>
-    <option value="show_one sec_<%= s.crn %>">Section <%= s.crn %></option>
+    <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
     <% end %>
-</select></h4>
+  </select>
+  <span id="emails" class="pull-right show_all">
+    <% all_emails = @students.map{|u| "#{u.name} <#{u.email}>" } %>
+    <span class="btn btn-default btn-large show_all">
+      <%= mail_to "#{current_user.name} <#{current_user.email}>",
+                  "Email all sections",
+                  bcc: all_emails.join(","), title: "Email everyone (bcc)" %>
+    </span>
+    <% by_section = @students.group_by(&:section_id) %>
+    <% @sections.each do |s| 
+       all_emails = by_section[s.crn].sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>" } %>
+    <span class="btn btn-default btn-large sec_<%= s.crn %>">
+      <%= mail_to "#{current_user.name} <#{current_user.email}>",
+                  "Email section #{s.crn}",
+                  bcc: all_emails.join(","), title: "Email everyone in this section (bcc)" %>
+    </span>
+    <% end %>
+  </span>
+</h4>
+<br/>
   
 
 <div id="students" class="row">
@@ -32,9 +54,10 @@
 
 <script>
   $(function() {
-    var prevSection = "";
+    var prevSection = "show_all";
     $("#sections").change(function(e) {
       $("#students").removeClass(prevSection).addClass($(this).val());
+      $("#emails").removeClass(prevSection).addClass($(this).val());
       prevSection = $(this).val();
     });
   });
