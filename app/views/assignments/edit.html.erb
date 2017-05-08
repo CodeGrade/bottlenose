@@ -11,4 +11,4 @@
 <p><strong>Edit Existing Assignment</strong></p>
 <p>Type: <%= @assignment.type %></p>
 
-<%= render "#{@assignment.type}_form", asgn: @assignment %>
+<%= render "#{@assignment.type.underscore}_form", asgn: @assignment %>

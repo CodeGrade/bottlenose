@@ -14,13 +14,14 @@ class Course < ApplicationRecord
   belongs_to :lateness_config
 
   validates :term_id, presence: true
+  validates :lateness_config, presence: true
   validates :name, length: { minimum: 2 }, uniqueness: { scope: :term_id }
   validate  :has_sections
 
   accepts_nested_attributes_for :sections, allow_destroy: true
   accepts_nested_attributes_for :lateness_config
 
-  after_create :fixup_lateness_and_profs
+  after_create :register_profs
 
   def has_sections
     if sections.empty?
@@ -28,17 +29,7 @@ class Course < ApplicationRecord
     end
   end
 
-  def fixup_lateness_and_profs
-    if lateness_config.nil?
-      if self.lateness_configs.empty?
-        self.lateness_config = LatenessConfig.default
-        self.lateness_config.course_id = self.id
-      else
-        self.lateness_config_id = lateness_configs[0].id
-      end
-      self.save!
-    end
-
+  def register_profs
     if registrations.empty?
       sections.each do |sec|
         Registration.create!(

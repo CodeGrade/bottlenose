@@ -18,28 +18,29 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     assert_difference('Assignment.count') do
       post :create, params: {
-        course_id: @cs101.id,
-        assignment: { assignment: "Dance a jig.",
-                      points_available: 100,
-                      name: "Useful Work",
-                      due_date: '2019-05-22',
-                      available: '2011-05-22',
-                      type: "files",
-        },
-        lateness: {
-          "type" => "lateness_UseCourseDefaultConfig",
-        },
-        graders: {
-          "1477181088065"=> {
-            "type"=>"1477181088065_ManualGrader",
-            "id"=>"",
-            "removed"=>"false",
-            "JavaStyleGrader"=>{"avail_score"=>"50"},
-            "CheckerGrader"=>{"avail_score"=>"50", "params"=>""},
-            "JunitGrader"=>{"avail_score"=>"50", "params"=>""},
-            "ManualGrader"=>{"avail_score"=>"50"}},
-        }
-      }
+             course_id: @cs101.id,
+             assignment: {
+               assignment: "Dance a jig.",
+               points_available: 100,
+               name: "Useful Work",
+               due_date: '2019-05-22',
+               available: '2011-05-22',
+               type: "files",
+               graders_attributes: {
+                 "1477181088065"=> {
+                   "type"=>"ManualGrader",
+                   "avail_score"=>"50",
+                 }
+               },
+               lateness_config_attributes: {
+                 "type"=>"LatePerHourConfig",
+                 "frequency"=>"1",
+                 "percent_off"=>"25",
+                 "max_penalty"=>"100",
+                 "days_per_assignment"=>"22"
+               },
+             }
+           }
     end
 
     assert_redirected_to [@cs101, assigns(:assignment)]

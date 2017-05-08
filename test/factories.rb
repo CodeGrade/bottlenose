@@ -28,6 +28,7 @@ FactoryGirl.define do
     term
     sequence(:name) {|n| "Computing #{n}" }
     footer "Link to Piazza: *Link*"
+    lateness_config
 
     after(:build) do |course|
       sec = build(:section, course: course)
@@ -36,8 +37,6 @@ FactoryGirl.define do
   end
 
   factory :lateness_config do
-    course
-
     type "LatePerDayConfig"
     days_per_assignment 365
     percent_off 50

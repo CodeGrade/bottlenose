@@ -51,7 +51,7 @@ class CoursesController < ApplicationController
 
   def facebook
     unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_to back_or_else(root_path), alert: "Must be an admin or professor."
+      redirect_back root_path, alert: "Must be an admin or professor."
       return
     end
     @students = @course.students
@@ -143,7 +143,7 @@ class CoursesController < ApplicationController
     params[:course].permit(:name, :footer, :total_late_days, :private,
                            :public, :sections, :term_id, :sub_max_size,
                            :lateness_config_id,
-                           lateness_configs_attributes: [
+                           lateness_config_attributes: [
                              :type, :percent_off, :frequency,
                              :max_penalty, :days_per_assignment,
                              :id, :_destroy

@@ -78,8 +78,9 @@ class RegistrationsController < ApplicationController
           end
         end
       }
-      f.html { redirect_to back_or_else(course_registrations_path(@course)),
-                           notice: "No such page" }
+      f.html do
+        redirect_back(fallback_location: course_registrations_path(@course), notice: "No such page")
+      end
     end
   end
 
@@ -109,7 +110,7 @@ class RegistrationsController < ApplicationController
 
     @show = @registration.show_in_lists? ? "Yes" : "No"
 
-    redirect_to back_or_else(course_registrations_path(@course))
+    redirect_back(fallback_location: course_registrations_path(@course))
   end
 
   private

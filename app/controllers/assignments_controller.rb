@@ -201,7 +201,7 @@ class AssignmentsController < ApplicationController
                                lateness_config_attributes: [
                                  :type, :percent_off, :frequency,
                                  :max_penalty, :days_per_assignment,
-                                 :id, :_destroy
+                                 :_destroy
                                ],
                                graders_attributes: [
                                  :avail_score, :upload_file, :params,
