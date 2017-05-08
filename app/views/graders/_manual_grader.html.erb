@@ -1,0 +1,6 @@
+<%= f.hidden_field :type, value: "ManualGrader" %>
+
+<div class="form-inline">
+  <%= f.label "avail_score", "Points available:" %>
+  <%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %>
+</div>

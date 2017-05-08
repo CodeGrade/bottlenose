@@ -1,7 +1,7 @@
 class Course < ApplicationRecord
   belongs_to :term
 
-  has_many :sections, dependent: :destroy
+  has_many :sections, dependent: :destroy, inverse_of: :course
   has_many :registrations, dependent: :destroy
   has_many :users, through: :registrations
 
@@ -11,7 +11,6 @@ class Course < ApplicationRecord
   has_many :submissions, through: :assignments
   has_many :teams,       dependent: :destroy
 
-  has_many :lateness_configs
   belongs_to :lateness_config
 
   validates :term_id, presence: true
@@ -19,7 +18,7 @@ class Course < ApplicationRecord
   validate  :has_sections
 
   accepts_nested_attributes_for :sections, allow_destroy: true
-  accepts_nested_attributes_for :lateness_configs, allow_destroy: true
+  accepts_nested_attributes_for :lateness_config
 
   after_create :fixup_lateness_and_profs
 

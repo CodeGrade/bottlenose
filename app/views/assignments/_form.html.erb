@@ -7,13 +7,13 @@
 
   <div class="tab-content">
     <div id="type-files" class="tab-pane active">
-      <%= render 'files_form' %>
+      <%= render 'files_form', asgn: @files || @assignment %>
     </div>
     <div id="type-exam" class="tab-pane">
-      <p>2</p>
+      <%= render 'exam_form', asgn: @exam || @assignment %>
     </div>
     <div id="type-questions" class="tab-pane">
-      <p>3</p>
+      <%= render 'questions_form', asgn: @quest || @assignment %>
     </div>
   </div>
 </div>

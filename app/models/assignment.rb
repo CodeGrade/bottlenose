@@ -8,11 +8,14 @@ class Assignment < ApplicationRecord
   enum assignment_kind: [:files, :questions, :exam]
   enum question_kind: [:yes_no, :true_false, :multiple_choice, :numeric, :text]
 
+  attr_accessor :removefile
+
   belongs_to :blame, :class_name => "User", :foreign_key => "blame_id"
 
   belongs_to :course
 
   belongs_to :lateness_config
+  accepts_nested_attributes_for :lateness_config
 
   belongs_to :related_assignment, :class_name => "Assignment", :foreign_key => "related_assignment_id"
 
@@ -21,6 +24,7 @@ class Assignment < ApplicationRecord
 
   has_many :assignment_graders, :dependent => :destroy
   has_many :graders, through: :assignment_graders
+  accepts_nested_attributes_for :graders, allow_destroy: true
 
   validates :name,      :uniqueness => { :scope => :course_id }
   validates :name,      :presence => true
@@ -30,15 +34,6 @@ class Assignment < ApplicationRecord
   validates :blame_id,  :presence => true
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
-  validate  :valid_lateness_config
-
-  def valid_lateness_config
-    if !self.lateness_config.valid?
-      self.lateness_config.errors.full_messages.each do |m|
-        @errors[:base] << m
-      end
-    end
-  end
 
   def sub_late?(sub)
     self.lateness_config.late?(self, sub)
@@ -194,6 +189,10 @@ class Assignment < ApplicationRecord
     used_subs.map do |sfg|
       sfg.submission
     end
+  end
+
+  def graders_ordered
+    graders.order("assignment_graders.order").to_a
   end
 
   def questions

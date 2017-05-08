@@ -35,16 +35,25 @@ class AssignmentsController < ApplicationController
   end
 
   def new
-    @assignment = Assignment.new
-    @assignment.course_id = @course.id
-    @assignment.due_date = (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M")
-    @assignment.available = Time.now.strftime("%Y/%m/%d %H:%M")
-    @assignment.lateness_config = @course.lateness_config.dup
-    @assignment.request_time_taken = true
+    @files = Assignment.new
+    @files.course_id = @course.id
+    @files.due_date = (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M")
+    @files.available = Time.now.strftime("%Y/%m/%d %H:%M")
+    @files.lateness_config_id = @course.lateness_config_id
+    @files.request_time_taken = true
+
+    @exam = @files.dup
+    @exam.graders = [ExamGrader.new]
+    @exam.request_time_taken = false
+
+    @quest = @files.dup
+    @quest.request_time_taken = false
 
     last_assn = @course.assignments.order(created_at: :desc).first
     if last_assn
-      @assignment.points_available = last_assn.points_available
+      @files.points_available = last_assn.points_available
+      @exam.points_available  = last_assn.points_available
+      @quest.points_available = last_assn.points_available
     end
   end
 
@@ -80,7 +89,7 @@ class AssignmentsController < ApplicationController
       @assignment.available = @assignment.due_date
     end
 
-    if set_lateness_config and @assignment.save and set_grader
+    if @assignment.save
       @assignment.save_uploads! if params[:assignment][:assignment_file]
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully created.'
     else
@@ -90,18 +99,15 @@ class AssignmentsController < ApplicationController
   end
 
   def update
-    unless set_lateness_config and set_grader
-      render action: "edit"
-      return
-    end
-
     ap = assignment_params
     if params[:assignment][:removefile] == "remove"
       ap[:assignment_file] = nil
       @assignment.assignment_upload_id = nil
     end
 
-    if @assignment.update_attributes(ap)
+    @assignment.assign_attributes(ap)
+
+    if @assignment.save
       @assignment.save_uploads! if ap[:assignment_file]
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully updated.'
     else
@@ -167,32 +173,6 @@ class AssignmentsController < ApplicationController
 
   protected
 
-  def set_lateness_config
-    lateness = params.to_unsafe_h[:lateness] # FIXME: Should go away in nested-models refactor.
-    if lateness.nil?
-      @assignment.errors.add(:lateness, "Lateness parameter is missing")
-      return false
-    end
-
-    type = lateness["type"]
-    if type.nil?
-      @assignment.errors.add(:lateness, "Lateness type is missing")
-      return false
-    end
-    type = type.split("_")[1]
-
-    lateness = lateness[type]
-    #lateness["type"] = type
-    if type == "UseCourseDefaultConfig"
-      @assignment.lateness_config = @course.lateness_config
-    elsif type != "reuse"
-      late_config = LatenessConfig.new(lateness.permit(LatenessConfig.attribute_names - ["id"]))
-      @assignment.lateness_config = late_config
-      late_config.save
-    end
-    return true
-  end
-
   def set_grader
     return self.send("set_#{params[:assignment][:type]}_graders")
   end
@@ -210,7 +190,18 @@ class AssignmentsController < ApplicationController
     params[:assignment].permit(:name, :assignment, :due_date, :available,
                                :points_available, :hide_grading, :blame_id,
                                :assignment_file,  :type, :related_assignment_id,
-                               :course_id, :team_subs, :request_time_taken)
+                               :course_id, :team_subs, :request_time_taken,
+                               :lateness_config_id, :removefile,
+                               lateness_config_attributes: [
+                                 :type, :percent_off, :frequency,
+                                 :max_penalty, :days_per_assignment,
+                                 :id, :_destroy
+                               ],
+                               graders_attributes: [
+                                 :avail_score, :upload_file, :params,
+                                 :type, :id, :_destroy
+                               ]
+                              )
   end
 
   def graders_params

@@ -19,7 +19,7 @@
     <% if within_course %>
       <div v-if="type == 'default'">
         <%= f.hidden_field :lateness_config_id %>
-        <div class="tab-pane equal-height-group form-group">
+        <div class="tab-pane equal-height-group lateness-pane form-group">
           <p>Use course-default lateness policy:</p>
           <p><%= @course.lateness_config.to_s %></p>
         </div>
@@ -27,7 +27,7 @@
     <% end %>
 
     <div v-if="type == 'LatePerDayConfig'">
-      <%= f.fields_for :lateness_configs, @course.lateness_config do |lpd| %>
+      <%= f.fields_for :lateness_config do |lpd| %>
         <%  cfg = lpd.object %>
         <%= lpd.hidden_field :type, value: "LatePerDayConfig" %>
         <div class="tab-pane lateness-pane form-group">
@@ -51,7 +51,7 @@
     </div>
 
     <div v-if="type == 'LatePerHourConfig'">
-      <%= f.fields_for :lateness_configs, @course.lateness_config do |lph| %>
+      <%= f.fields_for :lateness_config do |lph| %>
         <%  cfg = lph.object %>
         <%= lph.hidden_field :type, value: "LatePerHourConfig" %>
         <div class="tab-pane lateness-pane form-group">
@@ -74,7 +74,7 @@
     </div>
 
     <div v-if="type == 'FixedDaysConfig'">
-      <%= f.fields_for :lateness_configs, @course.lateness_config do |fd| %>
+      <%= f.fields_for :lateness_config do |fd| %>
         <div class="tab-pane lateness-pane form-group">
           <%  cfg = fd.object %>
           <%= fd.hidden_field :type, value: "FixedDaysConfig" %>
@@ -91,20 +91,16 @@
 
     <% if within_course %>
       <div v-if="type == 'copy'">
-        <div class="tab-pane equal-height-group form-group">
+        <div class="tab-pane equal-height-group lateness-pane form-group">
           <label for="sel1">Select existing lateness policy:</label>
-          <select class="form-control">
-            <% @course.lateness_configs.each do |c| %>
+          <%= f.select :lateness_config_id, class: 'form-control' do %>
+            <% LatenessConfig.all.each do |c| %>
               <%  attribs = c.attributes.map do |k, v| ["data-" + k, v || ""] end.to_h %>
+              <%  attribs["value"] = attribs["data-id"] %>
               <%= content_tag :option, attribs do c.to_s end %>
             <% end %>
-          </select>
+          <% end %>
           <br>
-          <div class="text-right">
-            <button id="<%= f.object_name %>_select-lateness-config" class="btn btn-info">
-              Use this configuration
-            </button>
-          </div>
         </div>
       </div>
     <% end %>

@@ -7,8 +7,14 @@
         });
     }
 
+    function on_add_grader(evt, el) {
+        form_tabs_init(el);
+    }
+
     function form_init() {
         init_datetime();
+
+        $('.graders-list').on('cocoon:after-insert', on_add_grader);
     }
 
     run_on_page("assignments/new", form_init);

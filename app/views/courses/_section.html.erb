@@ -1,15 +1,17 @@
-<td>
-  <%= f_s.hidden_field :id %>
-  <%= f_s.text_field :crn, class: 'form-control numeric' %>
-</td>
-<td class="form-inline"><%= f_s.text_field :prof_name, class: 'form-control' %>
-  <span class="findUser pull-right">
-    (<%= section.instructor&.name || "no one" %>)
-  </span>
-</td>
-<td class="col-sm-4">
-  <%= f_s.text_field :meeting_time, class: 'form-control' %>
-</td>
-<td>
-  <%= f_s.check_box :_destroy, class: 'form-control' %>
-</td>
+<tr class="form-group row section-form nested-fields">
+  <td>
+    <%= f.hidden_field :id %>
+    <%= f.text_field :crn, class: 'form-control numeric' %>
+  </td>
+  <td class="form-inline"><%= f.text_field :prof_name, class: 'form-control' %>
+    <span class="findUser pull-right">
+      (<%= f.object.instructor&.name || "no one" %>)
+    </span>
+  </td>
+  <td class="col-sm-4">
+    <%= f.text_field :meeting_time, class: 'form-control' %>
+  </td>
+  <td>
+    <%= link_to_remove_association "Remove", f, class: 'btn btn-danger' %>
+  </td>
+</tr>

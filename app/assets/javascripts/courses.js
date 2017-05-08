@@ -19,6 +19,11 @@
         enableReflectiveCalls();
     }
 
+    function on_add_section(evt, row) {
+        $(row).find("span.findUser").each(function(i) { enableLookupUser($(this)); });
+        $(row).find("input.numeric").on("keypress", validateNumericInput);
+    }
+
     function enableLookupUser(foundIt) {
         var username = foundIt.prev();
         username.on("blur", function() {
@@ -46,6 +51,8 @@
         var last_sec = $('.section-form').last();
         section_template = last_sec.html();
         last_sec.remove();
+
+        $('#sections').on('cocoon:after-insert', on_add_section);
     }
 
     run_on_page("courses/new", init);

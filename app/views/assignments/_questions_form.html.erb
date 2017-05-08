@@ -1,11 +1,13 @@
-<%= form_for [@course, @assignment] do |f| %>
-  <% if @assignment.errors.any? %>
+<%= form_for [@course, asgn] do |f| %>
+  <%= f.hidden_field :type, value: "questions" %>
+
+  <% if asgn.errors.any? %>
     <div id="error_explanation" class="alert alert-danger">
-      <h2><%= pluralize(@assignment.errors.count, "error") %> prohibited this
+      <h2><%= pluralize(asgn.errors.count, "error") %> prohibited this
         assignment from being saved:</h2>
 
       <ul>
-      <% @assignment.errors.full_messages.each do |msg| %>
+      <% asgn.errors.full_messages.each do |msg| %>
         <li><%= msg %></li>
       <% end %>
       </ul>
@@ -23,53 +25,27 @@
       a link to the assignment itself.  HTML markup is allowed here.</p>
     <%= f.text_area :assignment, class: "form-control rich-text" %>
   </div>
-  <div id="choose-type" class="form-group">
-    <%= f.label :type, "Assignment Type" %>
-    <p>Choose what form of assignment this is.  Your choice will
-      affect the configuration options below.</p>
-    <% if @assignment.new_record? %>
-    <%= f.select :type,
-        Assignment.assignment_kinds.to_a.map { |type_name, type_val| [type_name.humanize, type_name] } %>
-    <% else %>
-    <%= f.select :type,
-        Assignment.assignment_kinds.to_a.map { |type_name, type_val| [type_name.humanize, type_name] },
-        {}, {disabled: true, data: {toggle: "tooltip", placement:
-      "right"}, title: "You cannot change assignment types once they've
-      been created"}%>
-    <%= f.hidden_field :type %>
-    <% end %>
-  </div>
   <div class="for-type row">
     <div class="form-group col-sm-6">
       <p>
-      <%= f.label :assignment_file, "Assignment starter files", class: "files-type" %>
       <%= f.label :assignment_file, "Assignment questions", class: "questions-type" %>
-      <%= f.label :assignment_file, "Exam questions", class: "exam-type" %>
       </p>
-      <p class="files-type">This file will be available for students
-        to download as starter code for this
-        assignment.</p>
       <p class="questions-type">This file contains the questions for
         this assignment, in YAML format.
         <span class="btn btn-info btn-sm" data-toggle="collapse"
               data-target="#questions-schema">See schema</span>
-      </p>
-      <p class="exam-type">This file contains a skeleton of the exam
-        questions, in YAML format.
-        <span class="btn btn-info btn-sm" data-toggle="collapse"
-              data-target="#exam-schema">See schema</span>
       </p>
       <p class="form-inline">
         <label class="btn btn-default btn-file">
           Browse <%= f.file_field :assignment_file, id: "assignment-file", style: "display: none;" %>
         </label>
         <span id="current_file" class="btn">Current file:
-          <%= @assignment.assignment_file.empty? ? "nothing" :
-              link_to(@assignment.assignment_file,
-              Upload.upload_path_for(@assignment.assignment_full_path)) %></span>
+          <%= asgn.assignment_file.empty? ? "nothing" :
+              link_to(asgn.assignment_file,
+              Upload.upload_path_for(asgn.assignment_full_path)) %></span>
         <%= f.hidden_field "removefile", value: "" %>
         <button type="button"
-                <% if @assignment.assignment_file.empty? %>
+                <% if asgn.assignment_file.empty? %>
                 disabled  class="btn btn-default pull-right"
                 <% else %>
                 class="btn btn-warning pull-right"
@@ -97,7 +73,7 @@
       <p>If this assignment is a reflection on a previous one, please
         select it</p>
       <% related_assns = @course.assignments
-                                .where(type: "files").where.not(id: @assignment.id)
+                                .where(type: "files").where.not(id: asgn.id)
                                 .order(due_date: :desc) %>
       <%= f.select :related_assignment_id,
           [["<none>", nil]] + (related_assns.to_a.map do |a| [a.name, a.id] end) %>
@@ -129,40 +105,27 @@
     <div class="form-group col-sm-6">
       <%= f.label :due_date do %>
       <span class="files-type questions-type">Due date</span>
-      <span class="exam-type">Exam date</span>
       <% end %>
       <p>Assignment should not be submitted after this time. Default: one week from today.</p>
       <div>
-        <%= f.text_field :due_date,
-            value: ((@assignment and @assignment.due_date) or (DateTime.current.end_of_day + 1.week))
-                    .strftime("%Y-%m-%d %H:%M %Z"),
-            class: 'form-control' %>
+        <%= f.text_field :due_date, class: 'form-control' %>
       </div>
     </div>
     <div class="form-group col-sm-6 files-type questions-type">
       <%= f.label :available_date %>
       <p>Assignment will not be visible until this time. Default: today.</p>
       <div>
-        <%= f.text_field :available,
-            value: ((@assignment and @assignment.available) or DateTime.current.beginning_of_day)
-                    .strftime("%Y-%m-%d %H:%M %Z"),
-            class: 'form-control' %>
+        <%= f.text_field :available, class: 'form-control' %>
       </div>
     </div>
   </div>
 
   <div class="for-type row">
     <div class="form-group col-sm-6 files-type questions-type">
-      <%= f.label :hide_grading, "Hide Grading?" %>
-      <p>If selected, assignment scores and teacher notes are hidden.</p>
-      <%= f.check_box :hide_grading, checked: @assignment.hide_grading,
-          data: {toggle: "toggle", on: "Yes", off: "No"} %>
-    </div>
-    <div class="form-group col-sm-6 files-type questions-type">
       <%= f.label :request_time_taken, "Request time taken?" %>
       <p>If selected, ask students on each submission how long they've
         worked on the assignment.</p>
-      <%= f.check_box :request_time_taken, checked: @assignment.request_time_taken,
+      <%= f.check_box :request_time_taken, checked: asgn.request_time_taken,
           data: {toggle: "toggle", on: "Yes", off: "No"} %>
     </div>
   </div>
@@ -172,102 +135,7 @@
       <%= render 'lateness/picker', within_course: true, f: f %>
     </div>
   </div>
-  <div class="for-type form-group">
-    <div id="create-graders" class="files-type">
-      <p><strong>Graders</strong></p>
-      <%= fields_for "graders[]", Grader.new do |graders| %>
-      <ol id="grader-defns">
-        <% unique_configs = Grader.unique %>
-        <% usage_counts = Grade.group(:grader_id).count %>
-        <% @assignment.graders.order("assignment_graders.order").each do |conf| %>
-        <li class="grader"><%= graders.fields_for "", conf do |g| %>
-          <%= render("grades/picker", f_grader: g, 
-              target: conf, new_grader: "graderconf#{conf.id}",
-              unique_configs: unique_configs, usage_counts: usage_counts) %>
-          <% end %></li>
-        <% end %>
-      </ol>
-      <% grader_text = fields_for("graders", Grader.new, :index => "new_grader") do |g|
-      render "grades/picker",
-      f_grader: g, target: g.object, unique_configs: unique_configs, usage_counts: usage_counts
-      end %>
-      <%= content_tag :span, "Add assignment grader", class: "btn btn-default",
-          id: "add-grader",
-          data: {on: :click, call: "add_grader", args: ["#{grader_text}"]} %>
-      <% end %>
-    </div>
-  </div>
   <div class="form-group">
   <%= f.submit nil, class: 'btn btn-primary' %>
   </div>
 <% end %>
-<script>
-  $(function() {
-    $("#assignment_type").change(function(e) {
-      var values = $(this).find("option").map(function() { return this.value + "-type"; }).get();
-      $(".for-type").removeClass(values.join(" ")).addClass($(this).val() + "-type");
-    });
-    $("#assignment_type").change();
-    $('#assignment_available').datetimepicker({
-      sideBySide: true,
-      format: "YYYY/MM/DD h:mm A",
-      minDate: "<%= @course.created_at.strftime("%Y-%m-%d") %>",
-      <% if @assignment.available.nil? %>
-      defaultDate: "<%= DateTime.current.beginning_of_day.strftime("%Y-%m-%d %H:%M %Z") %>"
-      <% elsif @course.created_at < @assignment.available %>
-      defaultDate: "<%= @assignment.available.strftime("%Y-%m-%d %H:%M %Z") %>"
-      <% else %>
-      defaultDate: undefined
-      <% end %>
-    });
-    $('#assignment_due_date').datetimepicker({
-      sideBySide: true,
-      format: "YYYY/MM/DD h:mm A",
-      minDate: "<%= @course.created_at.strftime("%Y-%m-%d") %>",
-      <% if @assignment.due_date.nil? %>
-      defaultDate: "<%= (DateTime.current.end_of_day + 1.week).strftime("%Y-%m-%d %H:%M %Z") %>"
-      <% elsif @course.created_at < @assignment.due_date %>
-      defaultDate: "<%= @assignment.due_date.strftime("%Y-%m-%d %H:%M %Z") %>"
-      <% else %>
-      defaultDate: undefined
-      <% end %>
-    });
-  });
-</script>
-<script>
-  $(function() { enableReflectiveCalls(); });
-  function add_grader(content) {
-    var new_id = new Date().getTime();
-    var regexp = new RegExp("new_grader", "g");
-    $("#grader-defns").append($("<li class='grader'>").html(content.replace(regexp, new_id)));
-    $("[href='#" + new_id + "_JavaStyleGrader']").tab('show');
-    enableReflectiveCalls();
-  }
-  function remove_grader(e) {
-    var defns = $(this).closest("li.grader");
-    var removed = defns.find("input[id$='removed']");
-    removed.val(true).appendTo($("#grader-defns").parent());
-    defns.remove();
-    e.stopPropagation();
-    e.preventDefault();
-  }
-  $("form").submit(function(e) {
-    var graderTypeInputs = $("input[id^='graders_'][id$='_type']");
-    var graderTypes = graderTypeInputs.map(function() { return $(this).val().replace(/^.*_/, ""); });
-    var asHash = Object.create(null);
-    graderTypes.map(function() { asHash[this] = (asHash[this] || 0) + 1; });
-    var prompt = "";
-    for (var type in asHash) {
-      if (asHash[type] > 1) {
-        prompt += "\t" + asHash[type] + " of " + type + "\n";
-      }
-    }
-    if (prompt !== "") {
-      if (!confirm("Are you sure you intended to have multiple graders of the same type?\n" + prompt)) {
-        e.preventDefault();
-        return false;
-      }
-    }
-    return true;
-  });
-</script>

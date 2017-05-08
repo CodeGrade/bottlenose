@@ -35,19 +35,14 @@
           <th></th>
         </tr>
         <%= f.fields_for :sections do |s| %>
-          <tr class="form-group row section-form">
-            <%= render "courses/section", f: f, f_s: s, section: s.object %>
-          </tr>
+          <%= render "courses/section", f: s %>
         <% end %>
       </table>
 
-      <%= f.fields_for :sections, Section.new, index: 'new_section' do |s| %>
-        <% section_text = render "courses/section", f: f, f_s: s, section: s.object %>
-        <script>
-          window.courses_section_template = "<%= j section_text %>";
-        </script>
-        <button class="btn btn-default add-section-button">Add Section</button>
-      <% end %>
+      <%= link_to_add_association("Add Section", f, :sections, partial: 'section',
+                                  "data-association-insertion-node" => '#sections',
+                                  "data-association-insertion-method" => 'append',
+                                  class: 'btn btn-default' ) %>
     </div>
     <div class="form-group">
       <p><strong>Late Penalty</strong></p>

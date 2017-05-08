@@ -137,7 +137,6 @@ ActiveRecord::Schema.define(version: 20170506003128) do
     t.integer "percent_off"
     t.integer "frequency"
     t.integer "max_penalty"
-    t.integer "course_id", null: false
   end
 
   create_table "reg_requests", id: :serial, force: :cascade do |t|

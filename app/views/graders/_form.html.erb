@@ -1,0 +1,29 @@
+<div class="form-tabs-pane" data-type="<%= f.object.type %>">
+  <ul class="nav nav-tabs">
+    <li><a href="#" class="lateness-tab" data-type="JavaStyleGrader">Java Style</a></li>
+    <li><a href="#" class="lateness-tab" data-type="CheckerGrader">Checker Tests</a></li>
+    <li><a href="#" class="lateness-tab" data-type="JunitGrader">JUnit Tests</a></li>
+    <li><a href="#" class="lateness-tab" data-type="ManualGrader">Manual Grading</a></li>
+    <li><a href="#" class="lateness-tab" data-type="SandboxGrader">Sandboxed Tests</a></li>
+  </ul>
+  <div class="form-tabs-content">
+    <div class="tab-pane graders-pane">
+      <div v-if="type == 'JavaStyleGrader'">
+        <%= render 'graders/java_style_grader', f: f %>
+      </div>
+      <div v-if="type == 'CheckerGrader'">
+        <%= render 'graders/checker_grader', f: f %>
+      </div>
+      <div v-if="type == 'JunitGrader'">
+        <%= render 'graders/junit_grader', f: f %>
+      </div>
+      <div v-if="type == 'ManualGrader'">
+        <%= render 'graders/manual_grader', f: f %>
+      </div>
+      <div v-if="type == 'SandboxGrader'">
+        <%= render 'graders/sandbox_grader', f: f %>
+      </div>
+    </div>
+  </div>
+</div>
+

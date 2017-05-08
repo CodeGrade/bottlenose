@@ -60,6 +60,7 @@ class ApplicationController < ActionController::Base
   end
 
   def current_user_prof_for?(course)
+    return false if course.nil?
     current_user && (current_user.site_admin? || current_user.registration_for(course).professor?)
   end
 
@@ -241,8 +242,6 @@ class ApplicationController < ActionController::Base
   end
 
   def require_admin_or_prof
-    find_course
-
     unless current_user_site_admin? || current_user_prof_for?(@course)
       redirect_to back_or_else(root_path), alert: "Must be an admin or professor."
       return
