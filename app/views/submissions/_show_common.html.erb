@@ -1,5 +1,33 @@
-<% def maybe_link_to(which, text, link)
-     if which then link_to(text, link) else text end
+<% def maybe_link_user(which, user)
+   tt = {
+       toggle: "tooltip",
+       delay: {show:0, hide: 250},
+       title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
+                        alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+     }
+   if which
+     link_to(user.name, user_path(user), data: tt)
+   else
+     content_tag :span, user.name, data: tt
+   end
+   end %>
+<% def maybe_link_team(which, team)
+   content_tag(:span, [
+     link_to("Team #{team.id}", course_team_path(@course, team)),
+     " - ",
+     team.users.sort_by(&:sort_name).map do |u|
+        tt = {
+          toggle: "tooltip",
+          delay: {show:0, hide: 250},
+          title: "#{image_tag(Upload.upload_path_for(u.profile || 'silhouette.jpg'), 
+                           alt: u.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+        }
+        if which || current_user.id == u.id then 
+          link_to(u.name, user_path(u), data: tt).html_safe
+        else
+          content_tag(:span, u.name, data: tt).html_safe
+        end
+     end.join(", ")].flatten.join("\n").html_safe)
    end %>
 <% cur_reg_staff = cur_reg && cur_reg.staff? %>
 
@@ -17,13 +45,13 @@
   <% if @submission.team.nil? %>
     <tr>
       <td><strong>Student</strong></td>
-      <td><%= maybe_link_to cur_reg_staff, @submission.user.name, user_path(@submission.user) %></td>
+      <td><%= maybe_link_user cur_reg_staff, @submission.user %></td>
     </tr>
   <% else %>
     <tr>
       <td><strong>Team</strong></td>
-      <td><%= maybe_link_to cur_reg_staff, @submission.team, course_team_path(@course, @submission.team) %>
-        (submitted by <%= maybe_link_to cur_reg_staff, @submission.user.name, user_path(@submission.user) %>)</td>
+      <td><%= maybe_link_team cur_reg_staff, @submission.team %>
+        (submitted by <%= @submission.user.name %>)</td>
     </tr>
   <% end %>
   <tr>
@@ -55,3 +83,10 @@
     </td>
   </tr>
 </table>
+<script>
+  $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
+    animated: 'fade',
+    placement: 'right',
+    html: true
+  });
+</script>

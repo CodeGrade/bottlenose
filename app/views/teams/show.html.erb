@@ -1,4 +1,6 @@
 <% cur_reg = current_user.registration_for(@course) %>
+<% cur_user_site_admin = current_user.site_admin? %>
+<% cur_user_prof_ever = current_user.professor_ever? %>
 <% @page_title = "#{@course.name} - Team ##{@team.id}" %>
 
 <p>
@@ -18,6 +20,10 @@
 <h4>Members</h4>
 <ul>
     <% @team.users.each do |uu| %>
-        <li><%= if current_user.site_admin? || (cur_reg && cur_reg.staff?) then link_to uu.name, user_path(uu) else uu.name end %></li>
+        <li><%= if cur_user_site_admin || cur_user_prof_ever || current_user.id == uu.id then
+                  link_to uu.name, user_path(uu)
+                else
+                  uu.name
+                end %></li>
     <% end %>
 </ul>
