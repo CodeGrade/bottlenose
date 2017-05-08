@@ -1,4 +1,6 @@
 class RegRequestsController < ApplicationController
+  layout 'course'
+
   before_action :require_current_user
   before_action :find_course
   before_action :require_admin_or_prof, only: [:accept, :accept_all, :reject, :reject_all]

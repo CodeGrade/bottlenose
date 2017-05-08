@@ -192,7 +192,7 @@ class Assignment < ApplicationRecord
   end
 
   def graders_ordered
-    graders.order("assignment_graders.order").to_a
+    graders.order("assignment_graders.order")
   end
 
   def questions

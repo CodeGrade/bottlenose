@@ -51,7 +51,7 @@ class CoursesController < ApplicationController
 
   def facebook
     unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_back root_path, alert: "Must be an admin or professor."
+      redirect_back fallback_location: root_path, alert: "Must be an admin or professor."
       return
     end
     @students = @course.students
@@ -65,7 +65,6 @@ class CoursesController < ApplicationController
     if @course.save
       redirect_to course_path(@course), notice: 'Course was successfully created.'
     else
-      @course.sections << Section.new
       render :new, layout: 'application'
     end
   end
@@ -76,7 +75,6 @@ class CoursesController < ApplicationController
     if @course.save
       redirect_to course_path(@course), notice: 'Course was successfully updated.'
     else
-      @course.sections << Section.new
       render :edit
     end
   end

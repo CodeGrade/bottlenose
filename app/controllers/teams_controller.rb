@@ -1,4 +1,6 @@
 class TeamsController < ApplicationController
+  layout 'course'
+
   before_action :find_course
   before_action :require_registered_user
   before_action :require_admin_or_staff, only: [:new, :create, :dissolve, :dissolve_all, :randomize]

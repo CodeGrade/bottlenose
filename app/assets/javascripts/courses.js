@@ -5,7 +5,6 @@
         evt.preventDefault();
 
         content = section_template;
-        console.log("click!", content);
         var new_id = new Date().getTime();
         var ids_rx = /course_sections_attributes_\d+/g;
         var nam_rx = /course\[sections_attributes\]\[\d+\]/g;
