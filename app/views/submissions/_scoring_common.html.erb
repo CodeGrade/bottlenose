@@ -142,12 +142,16 @@
       <% end %>
       <% end %>
       <% if @submission.users.count != 1 %>
+      <% if @split %>
+      <span class="btn btn-warning disabled">Already-split submission</span>
+      <% else %>
       <%= link_to split_course_assignment_submission_path(@course, @assignment, @submission),
           class: "btn btn-warning",
           title: "Use this to give individualized grades to the members of this team",
           method: 'patch',
           data: {confirm: "Are you sure you want to split this team submission into individual ones?"} do %>
       <i class="glyphicon glyphicon-duplicate"></i> Split team submission
+      <% end %>
       <% end %>
       <% end %>
       <% end %>

@@ -139,7 +139,7 @@ class SubmissionsController < CoursesController
         label: "Plagiarism",
         line: 0,
         filename: sub.upload.extracted_path,
-        grader_id: current_user.id,
+        grade_id: current_user.id,
         severity: "error",
         comment: comment,
         weight: penalty,
@@ -159,8 +159,36 @@ class SubmissionsController < CoursesController
       return
     end
     @submission.users.each do |student|
-      split_sub(@submission, student)
+      sub = split_sub(@submission, student)
+      # Add a comment explaining the split
+      sub_comment = InlineComment.new(
+        submission: sub,
+        label: "Split submission",
+        line: 0,
+        filename: sub.upload.extracted_path,
+        grade_id: current_user.id,
+        severity: "info",
+        comment: "This is copied from a previous team submission, for individual grading",
+        weight: 0,
+        suppressed: false,
+        title: "",
+        info: nil)
+      sub_comment.save
     end
+    # Add a comment explaining the split
+    sub_comment = InlineComment.new(
+      submission: @submission,
+      label: "Split submission",
+      line: 0,
+      filename: @submission.upload.extracted_path,
+      grade_id: current_user.id,
+      severity: "info",
+      comment: "This submission was split, to allow for individual grading",
+      weight: 0,
+      suppressed: false,
+      title: "",
+      info: nil)
+    sub_comment.save
     redirect_to course_assignment_path(@course, @assignment),
                 notice: "Group submission split for #{@submission.users.map(&:name).join(', ')}"
   end
@@ -191,13 +219,8 @@ class SubmissionsController < CoursesController
     sub.set_used_sub!
     # Copy any grades
     orig_sub.grades.each do |g|
-      new_g = Grade.new(
-        grader_id: g.grader_id,
-        submission_id: sub.id,
-        grading_output: g.grading_output,
-        score: g.score,
-        out_of: g.out_of,
-        available: g.available)
+      new_g = g.dup
+      new_g.submission = sub
       new_g.save
     end
     sub
@@ -467,9 +490,10 @@ class SubmissionsController < CoursesController
   # SHOW
   def show_Files
     @gradesheet = Gradesheet.new(@assignment, [@submission])
-    @plagiarized = @submission.grade_submission_comments(true) || {}
-    @plagiarized = @plagiarized[@submission.upload.extracted_path.to_s] || []
-    @plagiarized = @plagiarized.any?{|c| c.label == "Plagiarism"}
+    comments = @submission.grade_submission_comments(true) || {}
+    comments = comments[@submission.upload.extracted_path.to_s] || []
+    @plagiarized = comments.any?{|c| c.label == "Plagiarism"}
+    @split = comments.any?{|c| c.label == "Split submission"}
   end
   def show_Questions
     @gradesheet = Gradesheet.new(@assignment, [@submission])
