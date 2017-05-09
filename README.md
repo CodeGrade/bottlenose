@@ -93,7 +93,7 @@ ActiveRecord::NoDatabaseError: FATAL:  role "bottlenose" does not exist
 
 You will need to create the user (AKA "role") inside PostgreSQL using psql.exe:
 
-```
+```sh
 # Start psql.exe
 $ psql -d postgres
 
@@ -106,7 +106,7 @@ postgres=# \q
 
 Expect terminal to return:
 
-```
+```sh
 Created database 'bottlenose_development'
 Created database 'bottlenose_test'
 ```
