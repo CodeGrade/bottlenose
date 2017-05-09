@@ -1,0 +1,34 @@
+<div class="row">
+  <div class="col-sm-12">
+    <div id="exam-schema" class="well-sm collapse">
+      <h5>YAML Exam schema:</h5>
+      <ul>
+        <li>An exam file has a list of questions.</li>
+        <li>A question has a <code>weight</code>, an
+          optional <code>name</code>, and an
+          optional <code>description</code>.</li>
+        <li>A question can contain a list of questions as
+          <code>parts</code>.  If sub-parts are present, the weight of the
+          question is the sum of the sub-parts' <code>weight</code>s, and its own
+          <code>weight</code> field is ignored.</li>
+        <li>A question can be marked as <code>extra</code>, to count
+          as extra credit</li>
+      </ul>
+      <p>Here is a short example exam file:</p>
+      <pre>
+---
+- weight: 6
+- weight: 6
+  name: "Question 2!"
+- parts:
+  - weight: 3
+    name: "Problem 3a"
+  - weight: 5
+    name: "Problem 3b"
+- weight: 3
+  extra: true
+...
+      </pre>
+    </div>
+  </div>
+</div>

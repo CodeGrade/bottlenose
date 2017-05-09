@@ -25,12 +25,12 @@
       a link to the assignment itself.  HTML markup is allowed here.</p>
     <%= f.text_area :assignment, class: "form-control rich-text" %>
   </div>
-  <div class="for-type row">
+  <div class="row">
     <div class="form-group col-sm-6">
       <p>
       <%= f.label :assignment_file, "Exam questions", class: "exam-type" %>
       </p>
-      <p class="exam-type">This file contains a skeleton of the exam
+      <p>This file contains a skeleton of the exam
         questions, in YAML format.
         <span class="btn btn-info btn-sm" data-toggle="collapse"
               data-target="#exam-schema">See schema</span>
@@ -70,6 +70,8 @@
     </div>
   </div>
 
+  <%= render 'exam_schema' %>
+
   <div class="for-type row">
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>
@@ -81,8 +83,6 @@
       <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
     </div>
   </div>
-
-  <%= render 'schema_examples' %>
 
   <div class="for-type row">
     <div class="form-group col-sm-6">

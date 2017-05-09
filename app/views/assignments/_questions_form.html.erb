@@ -68,6 +68,9 @@
         </script>
       </p>
     </div>
+
+    <%= render 'questions_schema' %>
+
     <div class="questions-type form-group col-sm-6">
       <%= f.label :related_assignment_id %>
       <p>If this assignment is a reflection on a previous one, please
@@ -98,8 +101,6 @@
       <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
     </div>
   </div>
-
-  <%= render 'schema_examples' %>
 
   <div class="for-type row">
     <div class="form-group col-sm-6">
