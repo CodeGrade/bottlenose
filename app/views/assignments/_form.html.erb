@@ -285,7 +285,7 @@
       <div>
         <%= f.text_field :due_date,
             value: ((@assignment and @assignment.due_date) or (DateTime.current.end_of_day + 1.week))
-                    .strftime("%Y-%m-%d %H:%M %Z"),
+                    .to_formatted_s(:iso8601),
             class: 'form-control' %>
       </div>
     </div>
@@ -295,7 +295,7 @@
       <div>
         <%= f.text_field :available,
             value: ((@assignment and @assignment.available) or DateTime.current.beginning_of_day)
-                    .strftime("%Y-%m-%d %H:%M %Z"),
+                    .to_formatted_s(:iso8601),
             class: 'form-control' %>
       </div>
     </div>
@@ -365,9 +365,9 @@
       format: "YYYY/MM/DD h:mm A",
       minDate: "<%= @course.created_at.strftime("%Y-%m-%d") %>",
       <% if @assignment.available.nil? %>
-      defaultDate: "<%= DateTime.current.beginning_of_day.strftime("%Y-%m-%d %H:%M %Z") %>"
+      defaultDate: "<%= DateTime.current.beginning_of_day.to_formatted_s(:iso8601) %>"
       <% elsif @course.created_at < @assignment.available %>
-      defaultDate: "<%= @assignment.available.strftime("%Y-%m-%d %H:%M %Z") %>"
+      defaultDate: "<%= @assignment.available.to_formatted_s(:iso8601) %>"
       <% else %>
       defaultDate: undefined
       <% end %>
@@ -377,9 +377,9 @@
       format: "YYYY/MM/DD h:mm A",
       minDate: "<%= @course.created_at.strftime("%Y-%m-%d") %>",
       <% if @assignment.due_date.nil? %>
-      defaultDate: "<%= (DateTime.current.end_of_day + 1.week).strftime("%Y-%m-%d %H:%M %Z") %>"
+      defaultDate: "<%= (DateTime.current.end_of_day + 1.week).to_formatted_s(:iso8601) %>"
       <% elsif @course.created_at < @assignment.due_date %>
-      defaultDate: "<%= @assignment.due_date.strftime("%Y-%m-%d %H:%M %Z") %>"
+      defaultDate: "<%= @assignment.due_date.to_formatted_s(:iso8601) %>"
       <% else %>
       defaultDate: undefined
       <% end %>

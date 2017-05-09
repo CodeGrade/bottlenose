@@ -5,8 +5,8 @@ class SubmissionsController < CoursesController
   prepend_before_action :find_submission, except: [:index, :new, :create, :rerun_grader]
   prepend_before_action :find_course_assignment
   before_action :require_current_user, only: [:show, :files, :new, :create]
-  before_action :require_admin_or_staff, only: [:recreate_grader, :rerun_grader, :use_for_grading, :publish]
-  before_action :require_admin_or_prof, only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism]
+  before_action :require_admin_or_staff, only: [:recreate_grade, :rerun_grader, :use_for_grading, :publish]
+  before_action :require_admin_or_prof, only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
   def show
     unless @submission.visible_to?(current_user)
       redirect_to course_assignment_path(@course, @assignment), alert: "That's not your submission."
@@ -75,7 +75,7 @@ class SubmissionsController < CoursesController
     self.send("create_#{@assignment.type.capitalize}")
   end
 
-  def recreate_grader
+  def recreate_grade
     @grader = Grader.find(params[:grader_id])
     if @submission.recreate_missing_grade(@grader)
       @submission.compute_grade! if @submission.grade_complete?
@@ -132,30 +132,8 @@ class SubmissionsController < CoursesController
     guilty_students.each do |id, penalty|
       penaltyPct = (100.0 * penalty.to_f) / @max_score.to_f
       student = User.find(id)
-      team = @submission.team
-      if team
-        # Construct a one-use team, so that this student can be penalized in isolation
-        team = Team.new(
-          course: @course,
-          start_date: @submission.created_at,
-          end_date: @submission.created_at)
-        team.users = [student]
-        team.save
-      end
-      # Create the new submission, reusing the prior submitted file
-      sub = Submission.new(
-        assignment: @assignment,
-        user: student,
-        time_taken: @submission.time_taken,
-        created_at: @submission.created_at,
-        ignore_late_penalty: false,
-        score: [@submission.score.to_f - penaltyPct, 0].max,
-        team: team,
-        upload_id: @submission.upload_id,
-        type: @submission.type)
-      sub.save
-      sub.set_used_sub!
-      # Add the penalty
+      sub = split_sub(@submission, student, [@submission.score.to_f - penaltyPct, 0].max)
+      # Add the penalty comment
       sub_comment = InlineComment.new(
         submission: sub,
         label: "Plagiarism",
@@ -169,19 +147,60 @@ class SubmissionsController < CoursesController
         title: "",
         info: nil)
       sub_comment.save
-      # Copy any grades
-      @submission.grades.each do |g|
-        new_g = Grade.new(
-          grader_id: g.grader_id,
-          submission_id: sub.id,
-          grading_output: g.grading_output,
-          score: g.score,
-          out_of: g.out_of,
-          available: g.available)
-        new_g.save
-      end
     end
-    redirect_to course_assignment_path(@course, @assignment)
+    redirect_to course_assignment_path(@course, @assignment),
+                notice: "Submission marked as plagiarized for #{guilty_students.map{|u| User.find(u).name}.join(', ')}"
+  end
+
+  def split_submission
+    if @submission.users.count == 1
+      redirect_back course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "Submission is not a team-submission; no need to split it"
+      return
+    end
+    @submission.users.each do |student|
+      split_sub(@submission, student)
+    end
+    redirect_to course_assignment_path(@course, @assignment),
+                notice: "Group submission split for #{@submission.users.map(&:name).join(', ')}"
+  end
+
+  def split_sub(orig_sub, for_user, score = nil)
+    team = orig_sub.team
+    if team
+      # Construct a one-use team, so that this student can be graded in isolation
+      team = Team.new(
+        course: @course,
+        start_date: orig_sub.created_at,
+        end_date: orig_sub.created_at)
+      team.users = [for_user]
+      team.save
+    end
+    # Create the new submission, reusing the prior submitted file
+    sub = Submission.new(
+      assignment: @assignment,
+      user: for_user,
+      time_taken: orig_sub.time_taken,
+      created_at: orig_sub.created_at,
+      ignore_late_penalty: false,
+      score: score || orig_sub.score,
+      team: team,
+      upload_id: @submission.upload_id,
+      type: @submission.type)
+    sub.save
+    sub.set_used_sub!
+    # Copy any grades
+    orig_sub.grades.each do |g|
+      new_g = Grade.new(
+        grader_id: g.grader_id,
+        submission_id: sub.id,
+        grading_output: g.grading_output,
+        score: g.score,
+        out_of: g.out_of,
+        available: g.available)
+      new_g.save
+    end
+    sub
   end
 
   def publish
@@ -448,7 +467,7 @@ class SubmissionsController < CoursesController
   # SHOW
   def show_Files
     @gradesheet = Gradesheet.new(@assignment, [@submission])
-    @plagiarized = @submission.grade_submission_comments(false) || {}
+    @plagiarized = @submission.grade_submission_comments(true) || {}
     @plagiarized = @plagiarized[@submission.upload.extracted_path.to_s] || []
     @plagiarized = @plagiarized.any?{|c| c.label == "Plagiarism"}
   end

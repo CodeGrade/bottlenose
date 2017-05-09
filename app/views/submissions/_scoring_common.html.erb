@@ -136,8 +136,18 @@
       <% else %>
       <%= link_to edit_plagiarism_course_assignment_submission_path(@course, @gradesheet.assignment, @submission),
           class: "btn btn-danger",
+          title: "Use this to split the team and individually penalize its members for plagiarism",
           data: {confirm: "Are you sure you want to mark this submission as plagiarized?"} do %>
       <i class="glyphicon glyphicon-bullhorn"></i> Penalize for plagiarism
+      <% end %>
+      <% end %>
+      <% if @submission.users.count != 1 %>
+      <%= link_to split_course_assignment_submission_path(@course, @assignment, @submission),
+          class: "btn btn-warning",
+          title: "Use this to give individualized grades to the members of this team",
+          method: 'patch',
+          data: {confirm: "Are you sure you want to split this team submission into individual ones?"} do %>
+      <i class="glyphicon glyphicon-duplicate"></i> Split team submission
       <% end %>
       <% end %>
       <% end %>

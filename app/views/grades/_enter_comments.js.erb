@@ -19,7 +19,7 @@ $(function() {
   });
   hideOthers();
 
-  var maxScore = <%= @grader.out_of %>;
+  var maxScore = <%= @grade.out_of %>;
   function updateScore() {
     var deductions = 0;
     for (var i = 0; i < commentObjs.length; i++) {
@@ -47,7 +47,7 @@ $(function() {
         console.log(commentObjs);
         $.ajax({
           type: "PUT",
-          url: "<%= course_assignment_submission_grader_path(@course, @assignment, @submission, @grader) %>",
+          url: "<%= course_assignment_submission_grade_path(@course, @assignment, @submission, @grade) %>",
           contentType: 'application/json; charset=UTF-8',
           data: JSON.stringify({comments: commentObjs}, function(k, v) {
             if (k === "saved") return undefined;
