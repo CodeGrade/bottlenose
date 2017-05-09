@@ -68,8 +68,8 @@ Currently the bigest weirdness is the use of delayed job.
 
 ```sh
 # Get a fresh database
-rake db:create
-rake db:migrate
+rails db:create
+rails db:migrate
 
 # Start delayed job worker.
 bin/delayed_job start
@@ -80,3 +80,35 @@ rails s
 # App should be at localhost:3000, as per usual.
 ```
 
+### Troubleshooting
+
+When you run `rake db:create`, and if you get the following error message:
+
+```sh
+FATAL:  role "bottlenose" does not exist
+Couldn't create database for {"adapter"=>"postgresql", "encoding"=>"unicode", "database"=>"bottlenose_development", "pool"=>5, "username"=>"bottlenose", "password"=>nil}
+rake aborted!
+ActiveRecord::NoDatabaseError: FATAL:  role "bottlenose" does not exist
+```
+
+You will need to create the user (AKA "role") inside PostgreSQL using psql.exe:
+
+```
+# Start psql.exe
+$ psql -d postgres
+
+# Create the user: bottlenose (this should be the application name)
+postgres=# create role bottlenose login createdb;
+
+# Quit psql.exe
+postgres=# \q
+```
+
+Expect terminal to return:
+
+```
+Created database 'bottlenose_development'
+Created database 'bottlenose_test'
+```
+
+Then continue by running `rake db:create`.
