@@ -53,7 +53,7 @@
               title="This submission is used for grading"></span>
         <% end %>
       </td>
-      <td><%= maybe_link_to(cur_reg_staff, sub.user.name) %></td>
+      <td><%= maybe_link_to(cur_reg_staff, sub.user) %></td>
       <td><%= sub.team %></td>
       <td><span class="local-time"><%= sub.created_at %></span></td>
       <% scores = if cur_reg_staff then grade[:staff_scores] else grade[:blind_scores] end %>

@@ -211,7 +211,7 @@ class GradesController < ApplicationController
                      label: c["label"],
                      filename: Upload.full_path_for(c["file"]),
                      line: c["line"],
-                     grader_id: @grade.id,
+                     grade_id: @grade.id,
                      user_id: current_user.id,
                      severity: c["severity"],
                      comment: c["comment"],

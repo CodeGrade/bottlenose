@@ -70,9 +70,10 @@ class Grader < ApplicationRecord
   end
 
   def grade_for(sub)
-    g = Grade.find_or_create_by(grader_id: self.id, submission_id: sub.id)
+    g = Grade.find_or_initialize_by(grader_id: self.id, submission_id: sub.id)
     if g.new_record?
       g.out_of = self.avail_score
+      g.save
     end
     g
   end
