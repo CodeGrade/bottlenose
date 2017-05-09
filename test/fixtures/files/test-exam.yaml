@@ -1,0 +1,11 @@
+---
+- weight: 6
+- weight: 6
+  name: "Question 2!"
+- parts:
+  - weight: 3
+    name: "Problem 3a"
+  - weight: 5
+    name: "Problem 3b"
+- weight: 3
+  extra: true

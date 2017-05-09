@@ -1,0 +1,68 @@
+---
+- Design:
+  - YesNo:
+      weight: 1
+      prompt: >-
+        Does your code make a distinction between public interfaces and private implementation?
+      correctAnswer: Yes
+      parts:
+        - codeTag: "Tag the line defining the interface"
+        - codeTag: "Tag the line implementing that interface."
+      rubric:
+        - 1: if Yes, and their code is correctly tagged
+        - 0.75: if they answered No, but their code is actually correct
+        - 0.25: if Yes, but their code is wrong
+        - 0.1: if they answered No and their code is wrong
+  - Numeric:
+      weight: 3
+      correctAnswer: 1
+      prompt: >-
+        On a scale of 0 (worst) to 1 (best), how well do you think your
+        model is designed?  This question is where the TAs will assess
+        your overall design.
+      min: 0
+      max: 1
+      parts:
+        - text: Describe what you might change in the future.
+      rubric:
+        - 1: flawless
+        - 0.8: well-separated concepts, but some oddly-tight coupling between them
+        - 0.5: "it works, but it's not well designed"
+        - 0.1: "it doesn't appear to work, but something was submitted"
+  - MultipleChoice:
+      weight: 1
+      correctAnswer: 0
+      prompt: >-
+        Eventually, views will need to process all the data in your
+        model.  Some views will care about all the data; others will
+        need just some portion of it.  How easy is it to
+        retrieve data from your model?
+      options:
+        - >-
+          Easy: there is a single method a client can use to retrieve
+          exactly the data it wishes.
+        - >-
+          Medium: there is a method a client can use to retrieve all
+          data, and the client can then select what it needs.
+        - "Impossible: clients cannot retrieve the data at all"
+        - other
+      parts:
+        - codeTag: >-
+            Tag the first line in the interface that declare the methods that
+            accomplish this.
+      rubric:
+        - 1: if Easy, and it is in fact easy
+        - 0.5: if Medium, and it is in fact medium
+        - 0: if Impossible, and it is in fact impossible
+- Testing:
+  - YesNo:
+      weight: 1
+      correctAnswer: Yes
+      prompt: Do you have a test for the empty model?
+      parts:
+        - codeTag: Tag it.
+      rubric:
+        - 1: "Yes"
+        - 0.5: Maybe -- they might have something that incidentally tests an empty model
+        - 0: "No"
+ 

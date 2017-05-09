@@ -33,7 +33,7 @@ Bottlenose::Application.routes.draw do
         patch :delete
       end
     end
-    
+
     resources :registrations, except: [:show, :edit, :update] do
       collection do
         get :bulk_edit
@@ -67,8 +67,8 @@ Bottlenose::Application.routes.draw do
       end
       resources :graders, only: [] do
         member do
-          get 'bulk' => 'graders#bulk_edit'
-          post 'bulk' => 'graders#bulk_update'
+          get 'bulk' => 'grades#bulk_edit'
+          post 'bulk' => 'grades#bulk_update'
         end
       end
       resources :submissions, except: [:edit, :update, :destroy] do

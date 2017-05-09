@@ -45,9 +45,11 @@ class AssignmentsController < ApplicationController
 
     @exam = @files.dup
     @exam.graders = [ExamGrader.new]
+    @files.lateness_config_id = @course.lateness_config_id
     @exam.request_time_taken = false
 
     @quest = @files.dup
+    @files.lateness_config_id = @course.lateness_config_id
     @quest.request_time_taken = false
 
     last_assn = @course.assignments.order(created_at: :desc).first
@@ -252,74 +254,6 @@ class AssignmentsController < ApplicationController
   end
 
   # setup graders
-  def set_exam_graders
-    # FIXME: This is too complicated.
-
-    upload = params[:assignment][:assignment_file]
-    if upload.nil?
-      if @assignment.assignment_upload.nil?
-        @assignment.errors.add(:base, "Exam questions file is missing")
-        return false
-      else
-        return true
-      end
-    else
-      begin
-        questions = YAML.load(upload.tempfile)
-        upload.rewind
-      rescue Psych::SyntaxError => e
-        @assignment.errors.add(:base, "Could not parse the supplied file")
-        return false
-      end
-    end
-    if !questions.is_a? Array
-      @assignment.errors.add(:base, "Supplied file does not contain a list of questions")
-      return false
-    else
-      @no_problems = true
-      @total_weight = 0
-      def make_err(msg)
-        @assignment.errors.add(:base, msg)
-        @no_problems = false
-      end
-      def is_float(val)
-        Float(val) rescue false
-      end
-      def is_int(val)
-        Integer(val) rescue false
-      end
-      questions.each_with_index do |q, q_num|
-        if q["parts"].is_a? Array
-          q["parts"].each_with_index do |part, p_num|
-            if !is_float(part["weight"])
-              make_err "Question #{part['name']} has an invalid weight"
-              next
-            elsif !part["extra"]
-              @total_weight += Float(part["weight"])
-            end
-          end
-        elsif !is_float(q["weight"])
-          make_err "Question #{q['name']} has an invalid weight"
-          next
-        elsif !q["extra"]
-          @total_weight += Float(q["weight"])
-        end
-      end
-    end
-    if @no_problems
-      c = Grader.new(type: "ExamGrader", avail_score: @total_weight)
-      if c.invalid? or !c.save
-        no_problems = false
-        @assignment.errors.add(:graders, "Could not create grader #{c.to_s}")
-      else
-        AssignmentGrader
-          .find_or_initialize_by(assignment_id: @assignment.id, grader_id: c.id)
-          .update(order: 1)
-      end
-    end
-    return @no_problems
-  end
-
   def set_questions_graders
     # FIXME: This is way too complicated.
 
