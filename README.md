@@ -82,7 +82,7 @@ rails s
 
 ### Troubleshooting
 
-When you run `rake db:create`, and if you get the following error message:
+When you run `rails db:create`, and if you get the following error message:
 
 ```sh
 FATAL:  role "bottlenose" does not exist
@@ -111,4 +111,4 @@ Created database 'bottlenose_development'
 Created database 'bottlenose_test'
 ```
 
-Then continue by running `rake db:create`.
+Then continue by running `rails db:create`.
