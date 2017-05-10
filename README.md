@@ -82,6 +82,8 @@ rails s
 
 ### Troubleshooting
 
+**Problem 1**: 
+
 When you run `rails db:create`, and if you get the following error message:
 
 ```sh
@@ -113,6 +115,8 @@ Created database 'bottlenose_test'
 
 Then continue by running `rails db:create`.
 
+
+**Problem 2**: 
 
 If you have successfully started rails server, but recevied this message when you type `localhost:3000` in your browser:
 
