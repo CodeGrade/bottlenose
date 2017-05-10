@@ -112,3 +112,23 @@ Created database 'bottlenose_test'
 ```
 
 Then continue by running `rails db:create`.
+
+
+If you have successfully started rails server, but recevied this message when you type `localhost:3000` in your browser:
+
+```sh
+PG::ConnectionBad at /users/sign_in
+could not connect to server: No such file or directory
+	Is the server running locally and accepting
+	connections on Unix domain socket "/tmp/.s.PGSQL.5432"?
+```
+
+You need to start postgres server manually, type the following in your terminal:
+```
+pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
+```
+
+For stoping the server manually, type:
+```
+pg_ctl -D /usr/local/var/postgres stop -s -m fast
+```
