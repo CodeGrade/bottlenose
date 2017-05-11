@@ -47,11 +47,11 @@
         $(".add-section-button").click(add_section);
         $("input.numeric").on("keypress", validateNumericInput);
 
-        var last_sec = $('.section-form').last();
-        section_template = last_sec.html();
-        last_sec.remove();
-
         $('#sections').on('cocoon:after-insert', on_add_section);
+        $('.spinner').each(function (_ii, div) {
+            // FIXME: Doesn't seem to make a spinner.
+            activateSpinner(div);
+        });
     }
 
     run_on_page("courses/new", init);

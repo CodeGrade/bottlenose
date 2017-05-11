@@ -41,12 +41,11 @@ class CoursesController < ApplicationController
   def new
     @course = Course.new
     @course.lateness_config = LatenessConfig.default
-    @course.sections = [Section.new(instructor: current_user), Section.new]
+    @course.sections = [Section.new(instructor: current_user)]
     render :new, layout: 'application'
   end
 
   def edit
-    @course.sections << Section.new
   end
 
   def facebook

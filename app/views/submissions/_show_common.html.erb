@@ -56,7 +56,7 @@
   <% end %>
   <tr>
     <td><strong>Submission Time</strong></td>
-    <td><span class="local-time"><%= @submission.created_at %></span></td>
+    <td><span class="local-time"><%= @submission.created_at.iso8601 %></span></td>
   </tr>
   <tr>
     <td><strong>Submission Details</strong></td>

@@ -109,14 +109,14 @@
       <% end %>
       <p>Assignment should not be submitted after this time. Default: one week from today.</p>
       <div>
-        <%= f.text_field :due_date, class: 'form-control' %>
+        <%= f.text_field :due_date, class: 'form-control datetime-picker' %>
       </div>
     </div>
     <div class="form-group col-sm-6 files-type questions-type">
       <%= f.label :available_date %>
       <p>Assignment will not be visible until this time. Default: today.</p>
       <div>
-        <%= f.text_field :available, class: 'form-control' %>
+        <%= f.text_field :available, class: 'form-control datetime-picker' %>
       </div>
     </div>
   </div>

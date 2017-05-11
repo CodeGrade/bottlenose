@@ -124,24 +124,26 @@
   <div class="form-group">
     <div>
       <p><strong>Graders</strong></p>
-      <div id="files-graders" class="graders-list">
+      <ol id="files-graders" class="graders-list grader-defns">
         <%= f.fields_for :graders, asgn.graders_ordered do |gr| %>
-          <div class="panel panel-default nested-fields">
-            <div class="panel-heading">
-              <% if gr.object.grades.empty? %>
-                <div class="pull-right">
-                  <%= link_to_remove_association "Remove", gr, class: 'btn btn-danger' %>
-                </div>
-              <% end %>
-              <p><strong><%= gr.object.type %></strong></p>
-              <div class="clearfix"></div>
+          <li class="grader">
+            <div class="panel panel-default nested-fields">
+              <div class="panel-heading">
+                <% if gr.object.grades.empty? %>
+                  <div class="pull-right">
+                    <%= link_to_remove_association "Remove", gr, class: 'btn btn-danger' %>
+                  </div>
+                <% end %>
+                <p><strong><%= gr.object.type %></strong></p>
+                <div class="clearfix"></div>
+              </div>
+              <div class="panel-body">
+                <%= render "graders/#{gr.object.type.underscore}.html.erb", f: gr %>
+              </div>
             </div>
-            <div class="panel-body">
-              <%= render "graders/#{gr.object.type.underscore}.html.erb", f: gr %>
-            </div>
-          </div>
+          </li>
         <% end %>
-      </div>
+      </ol>
 
       <%= link_to_add_association("Add Grader", f, :graders, partial: 'graders/form',
                                   "data-association-insertion-node" => '#files-graders',

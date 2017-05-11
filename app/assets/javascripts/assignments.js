@@ -15,6 +15,9 @@
         init_datetime();
 
         $('.graders-list').on('cocoon:after-insert', on_add_grader);
+        $('.spinner').each(function (_ii, div) {
+            activateSpinner(div);
+        });
     }
 
     run_on_page("assignments/new", form_init);
