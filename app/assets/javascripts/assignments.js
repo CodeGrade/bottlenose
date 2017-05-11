@@ -8,8 +8,15 @@
     }
 
     function on_add_grader(evt, el) {
+        el.find(".spinner").each(function(_ii, div) {
+            // FIXME: Doesn't actually find spinners.
+            activateSpinner(div);
+        });
+ 
         form_tabs_init(el);
-    }
+
+        console.log(el);
+   }
 
     function form_init() {
         init_datetime();
