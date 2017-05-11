@@ -1,38 +1,56 @@
 window.form_tabs_init = (function () {
-    function form_tabs_init(tabs_div) {
-        var vu = new Vue({
-            el: $(tabs_div).find('.form-tabs-content')[0],
-            data: {
-                type: $(tabs_div).data('type'),
-            }
-        });
+    var tabs = {};
 
-        function click_tab(evt) {
-            evt.preventDefault();
+    function hide_tab(tlnk) {
+        var tp = $($(tlnk).data('target'))[0];
+        console.log("hide", tp);
 
-            var lnk  = $(evt.target);
-            var tab  = lnk.closest('li');
-            var tabs = tab.closest('.nav-tabs').find('li');
-            tabs.each(function (_ii, el) {
-                $(el).removeClass('active');
-            });
+        var uuid = $(tp).closest(".form-tabs-pane").data("uuid");
+        tabs[uuid] = tabs[uuid] || {};
 
-            tab.addClass('active');
-
-            vu.type = $(lnk).data('type');
+        var pid = tp.id;
+        var fmg = $(tp).find(".form-group")[0];
+        if (fmg) {
+            console.log("Storing to", uuid, pid);
+            tabs[uuid][pid] = fmg;
+            $(fmg).detach();
         }
+    }
 
-        $(tabs_div).find('.nav-tabs li a').each(function (_ii, lnk) {
-            $(lnk).on("click", click_tab);
-        });
+    function show_tab(tlnk) {
+        var tp = $($(tlnk).data('target'))[0];
+        console.log("show", tp);
 
-        var lnk0 = $(tabs_div).find('.nav-tabs li a')[0];
-        $(lnk0).click();
+        var uuid = $(tp).closest(".form-tabs-pane").data("uuid");
+        tabs[uuid] = tabs[uuid] || {};
 
-        $(tabs_div).find('.nav-tabs li a').each(function (_ii, lnk) {
-            if ($(lnk).data('type') == $(tabs_div).data('type')) {
+        var pid = tp.id;
+        var fmg = tabs[uuid][pid];
+        $(tp).append(fmg);
+    }
+
+    function form_tabs_init(tabs_div) {
+        var top  = $(tabs_div);
+        var val0 = top.data('type');
+        var uuid = top.data('uuid');
+
+        top.find(".nav-tabs a").each(function(_ii, lnk) {
+            if (val0 == $(lnk).data('type')) {
                 $(lnk).click();
             }
+        });
+
+        top.find(".nav-tabs a").each(function(_ii, lnk) {
+            if (val0 != $(lnk).data('type')) {
+                hide_tab(lnk);
+            }
+
+            $(lnk).on("show.bs.tab", function(evt) {
+                show_tab(evt.target);
+            });
+            $(lnk).on("hide.bs.tab", function(evt) {
+                hide_tab(evt.target);
+            });
         });
     }
 

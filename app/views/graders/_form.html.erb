@@ -1,30 +1,45 @@
+<% uuid = make_uuid %>
 <li class="grader">
-  <div class="form-tabs-pane" data-type="<%= f.object.type %>">
+  <div class="form-tabs-pane" data-uuid="<% uuid %>"
+       data-type="<%= f.object.type || 'JavaStyleGrader' %>">
     <div class="pull-right">
       <%= link_to_remove_association "Remove", f, class: 'btn btn-danger' %>
     </div>
     <ul class="nav nav-tabs">
-      <li><a href="#" class="lateness-tab" data-type="JavaStyleGrader">Java Style</a></li>
-      <li><a href="#" class="lateness-tab" data-type="CheckerGrader">Checker Tests</a></li>
-      <li><a href="#" class="lateness-tab" data-type="JunitGrader">JUnit Tests</a></li>
-      <li><a href="#" class="lateness-tab" data-type="ManualGrader">Manual Grading</a></li>
-      <li><a href="#" class="lateness-tab" data-type="SandboxGrader">Sandboxed Tests</a></li>
+      <li><a href="#" data-target="#js-<%= uuid %>" data-toggle="tab"
+             data-type="JavaStyleGrader">Java Style</a></li>
+      <li><a href="#" data-target="#cg-<%= uuid %>" data-toggle="tab"
+             data-type="CheckerGrader">Checker Tests</a></li>
+      <li><a href="#" data-target="#ju-<%= uuid %>" data-toggle="tab"
+             data-type="JunitGrader">JUnit Tests</a></li>
+      <li><a href="#" data-target="#mg-<%= uuid %>" data-toggle="tab"
+             data-type="ManualGrader">Manual Grading</a></li>
+      <li><a href="#" data-target="#sg-<%= uuid %>" data-toggle="tab"
+             data-type="SandboxGrader">Sandboxed Tests</a></li>
     </ul>
-    <div class="form-tabs-content">
-      <div class="tab-pane graders-pane">
-        <div v-if="type == 'JavaStyleGrader'">
+      <div class="form-tabs-content">
+      <div id="js-<%= uuid %>" class="tab-pane active">
+        <div class="form-group">
           <%= render 'graders/java_style_grader', f: f %>
         </div>
-        <div v-if="type == 'CheckerGrader'">
+      </div>
+      <div id="cg-<%= uuid %>" class="tab-pane">
+        <div class="form-group">
           <%= render 'graders/checker_grader', f: f %>
         </div>
-        <div v-if="type == 'JunitGrader'">
+      </div>
+      <div id="ju-<%= uuid %>" class="tab-pane">
+        <div class="form-group">
           <%= render 'graders/junit_grader', f: f %>
         </div>
-        <div v-if="type == 'ManualGrader'">
+      </div>
+      <div id="mg-<%= uuid %>" class="tab-pane">
+        <div class="form-group">
           <%= render 'graders/manual_grader', f: f %>
         </div>
-        <div v-if="type == 'SandboxGrader'">
+      </div>
+      <div id="sg-<%= uuid %>" class="tab-pane">
+        <div class="form-group">
           <%= render 'graders/sandbox_grader', f: f %>
         </div>
       </div>
