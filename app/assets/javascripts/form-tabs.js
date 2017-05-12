@@ -17,11 +17,9 @@ window.form_tabs_init = function (tabs_div) {
     var tabs = {};
 
     function show_tab(tab) {
-        console.log("show", tab);
-
         top.find('.nav-tabs a').each(function (_ii, lnk) {
             var this_tab = $(lnk).data('tab');
-            var item = $($(lnk).closest('li'));
+            var item = $(lnk).closest('li');
 
             if (tab == this_tab) {
                 item.addClass('active');
@@ -33,24 +31,23 @@ window.form_tabs_init = function (tabs_div) {
 
         top.find('.tab-pane').each(function (_ii, div) {
             var this_tab = $(div).data('tab');
+            var $div = $(div);
 
             if (tab == this_tab) {
-                $(div).addClass('active');
-                $(div).show();
+                $div.addClass('active');
+                $div.show();
                 if (tabs[this_tab]) {
-                    console.log("restored", tabs[tab]);
-                    $(div).append(tabs[tab]);
+                    $div.append(tabs[tab]);
                 }
             }
             else {
-                var fg = $(div).find('.form-group');
+                var fg = $div.find('.form-group');
                 if (fg[0]) {
-                    console.log("saved", fg[0]);
                     tabs[this_tab] = fg[0];
                     $(fg[0]).detach();
                 }
-                $(div).removeClass('active');
-                $(div).hide();
+                $div.removeClass('active');
+                $div.hide();
             }
         });
     }
