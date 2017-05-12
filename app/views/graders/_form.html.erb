@@ -1,38 +1,37 @@
 <li class="grader">
-  <div class="form-tabs-pane"
-       data-type="<%= f.object.type || 'JavaStyleGrader' %>">
+  <div class="form-tabs" data-init-tab="<%= f.object.type || 'JavaStyleGrader' %>">
     <div class="pull-right">
       <%= link_to_remove_association "Remove", f, class: 'btn btn-danger' %>
     </div>
     <ul class="nav nav-tabs">
-      <li><a href="#" data-type="JavaStyleGrader">Java Style</a></li>
-      <li><a href="#" data-type="CheckerGrader">Checker Tests</a></li>
-      <li><a href="#" data-type="JunitGrader">JUnit Tests</a></li>
-      <li><a href="#" data-type="ManualGrader">Manual Grading</a></li>
-      <li><a href="#" data-type="SandboxGrader">Sandboxed Tests</a></li>
+      <li><a href="#" data-tab="JavaStyleGrader">Java Style</a></li>
+      <li><a href="#" data-tab="CheckerGrader">Checker Tests</a></li>
+      <li><a href="#" data-tab="JunitGrader">JUnit Tests</a></li>
+      <li><a href="#" data-tab="ManualGrader">Manual Grading</a></li>
+      <li><a href="#" data-tab="SandboxGrader">Sandboxed Tests</a></li>
     </ul>
     <div class="form-tabs-content">
-      <div data-type="JavaStyleGrader" class="tab-pane active">
+      <div data-tab="JavaStyleGrader" class="tab-pane">
         <div class="form-group">
           <%= render 'graders/java_style_grader', f: f %>
         </div>
       </div>
-      <div data-type="CheckerGrader" class="tab-pane">
+      <div data-tab="CheckerGrader" class="tab-pane">
         <div class="form-group">
           <%= render 'graders/checker_grader', f: f %>
         </div>
       </div>
-      <div data-type="JunitGrader" class="tab-pane">
+      <div data-tab="JunitGrader" class="tab-pane">
         <div class="form-group">
           <%= render 'graders/junit_grader', f: f %>
         </div>
       </div>
-      <div data-type="ManualGrader" class="tab-pane">
+      <div data-tab="ManualGrader" class="tab-pane">
         <div class="form-group">
           <%= render 'graders/manual_grader', f: f %>
         </div>
       </div>
-      <div data-type="SandboxGrader" class="tab-pane">
+      <div data-tab="SandboxGrader" class="tab-pane">
         <div class="form-group">
           <%= render 'graders/sandbox_grader', f: f %>
         </div>

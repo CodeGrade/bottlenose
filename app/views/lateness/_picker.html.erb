@@ -1,6 +1,4 @@
-<% uuid = make_uuid %>
-<div class="form-tabs-pane" data-type="<%= f.object.lateness_config&.type %>"
-     data-uuid="<%= uuid %>">
+<div class="form-tabs" data-init-tab="<%= f.object.lateness_config&.type || 'default' %>">
   <% if !within_course %>
   <p class="col-sm-12">(This is the default late policy for all
     assignments in this course.)</p>
@@ -9,35 +7,29 @@
   <ul class="nav nav-tabs">
     <% if within_course %>
       <li class="active">
-        <a href="#" data-target="#default-<%= uuid %>"
-           data-toggle="tab" data-type="">
+        <a href="#" data-tab="default">
           Course default
         </a>
       </li>
     <% end %>
     <li>
-      <a href="#" data-target="#perday-<%= uuid %>" data-toggle="tab"
-         data-type="LatePerDayConfig">Late-per-day</a>
+      <a href="#" data-tab="LatePerDayConfig">Late-per-day</a>
     </li>
     <li>
-      <a href="#" data-target="#perhour-<%= uuid %>" data-toggle="tab"
-         data-type="LatePerHourConfig">Late-per-hour</a>
+      <a href="#" data-tab="LatePerHourConfig">Late-per-hour</a>
     </li>
     <li>
-      <a href="#" data-target="#fixed-<%= uuid %>" data-toggle="tab"
-         data-type="FixedDaysConfig">Limited number</a>
+      <a href="#" data-tab="FixedDaysConfig">Limited number</a>
     </li>
     <% if within_course %>
       <li>
-        <a href="#" data-target="#copy-<%= uuid %>" data-toggle="tab">
-          Use existing settings
-        </a>
+        <a href="#" data-tab="copy">Use existing settings</a>
       </li>
     <% end %>
   </ul>
   <div class="form-tabs-content tab-content">
     <% if within_course %>
-      <div id="default-<%= uuid %>" class="tab-pane active">
+      <div class="tab-pane" data-tab="default">
         <div class="form-group">
           <%= f.hidden_field :lateness_config_id %>
           <p>Use course-default lateness policy:</p>
@@ -46,7 +38,7 @@
       </div>
     <% end %>
 
-    <div id="perday-<%= uuid %>" class="tab-pane">
+    <div class="tab-pane" data-tab="LatePerDayConfig">
       <div class="form-group">
         <%= f.fields_for :lateness_config do |lpd| %>
           <%  cfg = lpd.object %>
@@ -73,11 +65,11 @@
       </div>
     </div>
 
-    <div id="perhour-<%= uuid %>" class="tab-pane">
+    <div class="tab-pane" data-tab="LatePerHourConfig">
       <%= f.fields_for :lateness_config do |lph| %>
-        <%  cfg = lph.object %>
-        <%= lph.hidden_field :type, value: "LatePerHourConfig" %>
         <div class="form-group">
+          <%  cfg = lph.object %>
+          <%= lph.hidden_field :type, value: "LatePerHourConfig" %>
           <div class="form-inline">
             <%= lph.hidden_field "frequency", value: "1" %>
             Deduct
@@ -96,7 +88,7 @@
       <% end %>
     </div>
 
-    <div id="fixed-<%= uuid %>" class="tab-pane">
+    <div class="tab-pane" data-tab="FixedDaysConfig">
       <%= f.fields_for :lateness_config do |fd| %>
         <div class="form-group">
           <%  cfg = fd.object %>
@@ -113,7 +105,7 @@
     </div>
 
     <% if within_course %>
-      <div id="copy-<%= uuid %>" class="tab-pane">
+      <div class="tab-pane" data-tab="copy">
         <div class="form-group">
           <label for="sel1">Select existing lateness policy:</label>
           <%= f.select :lateness_config_id, class: 'form-control' do %>

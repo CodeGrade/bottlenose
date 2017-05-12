@@ -46,7 +46,7 @@
     </div>
     <div class="form-group">
       <p><strong>Late Penalty</strong></p>
-      <%= render 'lateness/picker', within_course: !@course.new_record?, f: f %>
+      <%= render 'lateness/picker', within_course: false, f: f %>
     </div>
     <div>
       <%= f.label :footer, "Course-Wide Footer" %> (HTML Allowed)

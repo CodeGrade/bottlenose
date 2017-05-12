@@ -56,6 +56,7 @@ group :development do
 end
 
 group :development, :test do
+  gem 'puma'
   gem 'pry'
   gem 'pry-rails'
 end

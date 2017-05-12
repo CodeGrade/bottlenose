@@ -183,6 +183,7 @@ GEM
     pry-rails (0.3.6)
       pry (>= 0.10.4)
     public_suffix (2.0.5)
+    puma (3.8.2)
     rack (2.0.1)
     rack-test (0.6.3)
       rack (>= 1.0)
@@ -306,6 +307,7 @@ DEPENDENCIES
   pretender
   pry
   pry-rails
+  puma
   rack
   rails (~> 5.1)
   rails-controller-testing

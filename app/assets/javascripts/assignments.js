@@ -9,13 +9,10 @@
 
     function on_add_grader(evt, el) {
         el.find(".spinner").each(function(_ii, div) {
-            // FIXME: Doesn't actually find spinners.
             activateSpinner(div);
         });
  
-        form_tabs_init(el);
-
-        console.log(el);
+        form_tabs_init_all(el);
    }
 
     function form_init() {

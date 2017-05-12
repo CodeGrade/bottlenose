@@ -1,71 +1,85 @@
+/*
+
+.form-tabs        <- data-init-tab = default tab
+  .nav-tabs
+     .li a ...    <- click this
+  .tab-pane ...   <- to find these
+     .form-group  <- and swap these, so only one exists at at a time
+
+Both "a" and ".tab-pane" should be marked with matching data-tab attrs.
+
+*/
+
+
 window.form_tabs_init = function (tabs_div) {
     var top  = $(tabs_div);
-    var val0 = top.data('type');
+    var val0 = top.data('init-tab');
     var tabs = {};
 
-    function show_tab(ty) {
+    function show_tab(tab) {
+        console.log("show", tab);
+
         top.find('.nav-tabs a').each(function (_ii, lnk) {
-            if (ty == $(lnk).data('type')) {
-                $(lnk).addClass('active');
+            var this_tab = $(lnk).data('tab');
+            var item = $($(lnk).closest('li'));
+
+            if (tab == this_tab) {
+                item.addClass('active');
             }
             else {
-                $(lnk).removeClass('active');
+                item.removeClass('active');
             }
         });
 
-        FIXME: Finish this plan.
-        top.find('.tab-pane')
+        top.find('.tab-pane').each(function (_ii, div) {
+            var this_tab = $(div).data('tab');
 
-        var tp = $($(tlnk).data('target'))[0];
-        console.log("hide", tp);
-
-        var uuid = $(tp).closest(".form-tabs-pane").data("uuid");
-        tabs[uuid] = tabs[uuid] || {};
-
-        var pid = tp.id;
-        var fmg = $(tp).find(".form-group")[0];
-        if (fmg) {
-            console.log("Storing to", uuid, pid);
-            tabs[uuid][pid] = fmg;
-            $(fmg).detach();
-        }
+            if (tab == this_tab) {
+                $(div).addClass('active');
+                $(div).show();
+                if (tabs[this_tab]) {
+                    console.log("restored", tabs[tab]);
+                    $(div).append(tabs[tab]);
+                }
+            }
+            else {
+                var fg = $(div).find('.form-group');
+                if (fg[0]) {
+                    console.log("saved", fg[0]);
+                    tabs[this_tab] = fg[0];
+                    $(fg[0]).detach();
+                }
+                $(div).removeClass('active');
+                $(div).hide();
+            }
+        });
     }
 
-    function show_tab(tlnk) {
-        var tp = $($(tlnk).data('target'))[0];
-        console.log("show", tp);
-
-        var uuid = $(tp).closest(".form-tabs-pane").data("uuid");
-        tabs[uuid] = tabs[uuid] || {};
-
-        var pid = tp.id;
-        var fmg = tabs[uuid][pid];
-        $(tp).append(fmg);
-    }
+    // Match height before we hide anything.
+    var panes = top.find('.tab-pane');
+    panes.matchHeight({byRow: false, property: 'height'});
 
     top.find(".nav-tabs a").each(function(_ii, lnk) {
-        if (val0 == $(lnk).data('type')) {
-            $(lnk).click();
+        var tab = $(lnk).data('tab');
+        if (tab == val0) {
+            show_tab(tab);
         }
+
+        $(lnk).on("click", function(evt) {
+            evt.preventDefault();
+            show_tab(tab);
+        });
     });
 
-    top.find(".nav-tabs a").each(function(_ii, lnk) {
-        if (val0 != $(lnk).data('type')) {
-            hide_tab(lnk);
-        }
+};
 
-        $(lnk).on("show.bs.tab", function(evt) {
-            show_tab(evt.target);
-        });
-        $(lnk).on("hide.bs.tab", function(evt) {
-            hide_tab(evt.target);
-        });
+window.form_tabs_init_all = function (thing) {
+    $(thing).find('.form-tabs').each(function (_ii, el) {
+        form_tabs_init(el);
     });
 };
 
 $(function() {
-    $('.form-tabs-pane').each(function (_ii, el) {
-        form_tabs_init(el);
-    });
+    form_tabs_init_all('body');
 });
 
