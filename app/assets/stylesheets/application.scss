@@ -1,6 +1,7 @@
 //= require codemirror
 //= require codemirror/themes/mdn-like
 //= require jquery-tablesorter/theme.bootstrap_2
+//= require bootstrap-toggle
 
 // Import the bootstrap overrides *before* bootstrap.
 @import "bootstrap-overrides";
@@ -11,7 +12,6 @@
 @import "font-awesome";
 @import "bootstrap-datetimepicker";
 @import "bootstrap-treeview";
-@import "toggle";
 
 // Internal stylesheets.
 @import "old";  // TODO: Delete me.
@@ -42,7 +42,7 @@ div.CodeMirror .highlightLine {
 .gradeF { color: darkred; }
 
 
-ol#grader-defns {
+ol.grader-defns {
    list-style: none;
 }
 li.grader {
@@ -254,4 +254,12 @@ li.list-group-item.unvisited {
 .long-table {
    max-height: 500px;
    overflow-y: auto;
+}
+
+.lateness-pane {
+    height: 8em;
+}
+
+.graders-pane {
+    height: 12em;
 }

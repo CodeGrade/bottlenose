@@ -1,6 +1,9 @@
-class AssignmentsController < CoursesController
-  prepend_before_action :find_assignment, except: [:index, :new, :create, :edit_weights, :update_weights]
-  before_action :require_valid_course
+class AssignmentsController < ApplicationController
+  layout 'course'
+
+  before_action :find_course
+  before_action :require_registered_user
+  before_action :find_assignment, except: [:index, :new, :create, :edit_weights, :update_weights]
   before_action :require_admin_or_prof, only: [:edit, :edit_weights, :update, :update_weights,
                                                :new, :create, :destroy,
                                                :recreate_grades]
@@ -33,12 +36,27 @@ class AssignmentsController < CoursesController
   end
 
   def new
-    @assignment = Assignment.new
-    @assignment.course_id = @course.id
-    @assignment.due_date = (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M")
+    @files = Assignment.new
+    @files.course_id = @course.id
+    @files.due_date = (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M")
+    @files.available = Time.now.strftime("%Y/%m/%d %H:%M")
+    @files.lateness_config_id = @course.lateness_config_id
+    @files.request_time_taken = true
+
+    @exam = @files.dup
+    @exam.graders = [ExamGrader.new]
+    @files.lateness_config_id = @course.lateness_config_id
+    @exam.request_time_taken = false
+
+    @quest = @files.dup
+    @files.lateness_config_id = @course.lateness_config_id
+    @quest.request_time_taken = false
+
     last_assn = @course.assignments.order(created_at: :desc).first
     if last_assn
-      @assignment.points_available = last_assn.points_available
+      @files.points_available = last_assn.points_available
+      @exam.points_available  = last_assn.points_available
+      @quest.points_available = last_assn.points_available
     end
   end
 
@@ -74,7 +92,7 @@ class AssignmentsController < CoursesController
       @assignment.available = @assignment.due_date
     end
 
-    if set_lateness_config and @assignment.save and set_grader
+    if @assignment.save
       @assignment.save_uploads! if params[:assignment][:assignment_file]
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully created.'
     else
@@ -84,18 +102,15 @@ class AssignmentsController < CoursesController
   end
 
   def update
-    unless set_lateness_config and set_grader
-      render action: "edit"
-      return
-    end
-
     ap = assignment_params
     if params[:assignment][:removefile] == "remove"
       ap[:assignment_file] = nil
       @assignment.assignment_upload_id = nil
     end
 
-    if @assignment.update_attributes(ap)
+    @assignment.assign_attributes(ap)
+
+    if @assignment.save
       @assignment.save_uploads! if ap[:assignment_file]
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully updated.'
     else
@@ -166,32 +181,6 @@ class AssignmentsController < CoursesController
 
   protected
 
-  def set_lateness_config
-    lateness = params.to_unsafe_h[:lateness] # FIXME: Should go away in nested-models refactor.
-    if lateness.nil?
-      @assignment.errors.add(:lateness, "Lateness parameter is missing")
-      return false
-    end
-
-    type = lateness["type"]
-    if type.nil?
-      @assignment.errors.add(:lateness, "Lateness type is missing")
-      return false
-    end
-    type = type.split("_")[1]
-
-    lateness = lateness[type]
-    #lateness["type"] = type
-    if type == "UseCourseDefaultConfig"
-      @assignment.lateness_config = @course.lateness_config
-    elsif type != "reuse"
-      late_config = LatenessConfig.new(lateness.permit(LatenessConfig.attribute_names - ["id"]))
-      @assignment.lateness_config = late_config
-      late_config.save
-    end
-    return true
-  end
-
   def set_grader
     return self.send("set_#{params[:assignment][:type]}_graders")
   end
@@ -209,7 +198,18 @@ class AssignmentsController < CoursesController
     params[:assignment].permit(:name, :assignment, :due_date, :available,
                                :points_available, :hide_grading, :blame_id,
                                :assignment_file,  :type, :related_assignment_id,
-                               :course_id, :team_subs, :request_time_taken)
+                               :course_id, :team_subs, :request_time_taken,
+                               :lateness_config_id, :removefile,
+                               lateness_config_attributes: [
+                                 :type, :percent_off, :frequency,
+                                 :max_penalty, :days_per_assignment,
+                                 :_destroy
+                               ],
+                               graders_attributes: [
+                                 :avail_score, :upload_file, :params,
+                                 :type, :id, :_destroy
+                               ]
+                              )
   end
 
   def graders_params
@@ -251,234 +251,6 @@ class AssignmentsController < CoursesController
   def show_Exam
     @questions = @assignment.questions
     @grader = @assignment.graders.first
-  end
-
-  # setup graders
-  def set_exam_graders
-    upload = params[:assignment][:assignment_file]
-    if upload.nil?
-      if @assignment.assignment_upload.nil?
-        @assignment.errors.add(:base, "Exam questions file is missing")
-        return false
-      else
-        return true
-      end
-    else
-      begin
-        questions = YAML.load(upload.tempfile)
-        upload.rewind
-      rescue Psych::SyntaxError => e
-        @assignment.errors.add(:base, "Could not parse the supplied file")
-        return false
-      end
-    end
-    if !questions.is_a? Array
-      @assignment.errors.add(:base, "Supplied file does not contain a list of questions")
-      return false
-    else
-      @no_problems = true
-      @total_weight = 0
-      def make_err(msg)
-        @assignment.errors.add(:base, msg)
-        @no_problems = false
-      end
-      def is_float(val)
-        Float(val) rescue false
-      end
-      def is_int(val)
-        Integer(val) rescue false
-      end
-      questions.each_with_index do |q, q_num|
-        if q["parts"].is_a? Array
-          q["parts"].each_with_index do |part, p_num|
-            if !is_float(part["weight"])
-              make_err "Question #{part['name']} has an invalid weight"
-              next
-            elsif !part["extra"]
-              @total_weight += Float(part["weight"])
-            end
-          end
-        elsif !is_float(q["weight"])
-          make_err "Question #{q['name']} has an invalid weight"
-          next
-        elsif !q["extra"]
-          @total_weight += Float(q["weight"])
-        end
-      end
-    end
-    if @no_problems
-      c = Grader.new(type: "ExamGrader", avail_score: @total_weight)
-      if c.invalid? or !c.save
-        no_problems = false
-        @assignment.errors.add(:graders, "Could not create grader #{c.to_s}")
-      else
-        AssignmentGrader
-          .find_or_initialize_by(assignment_id: @assignment.id, grader_id: c.id)
-          .update(order: 1)
-      end
-    end
-    return @no_problems
-  end
-
-  def set_questions_graders
-    upload = params[:assignment][:assignment_file]
-    if upload.nil?
-      if @assignment.assignment_upload.nil?
-        @assignment.errors.add(:base, "Assignment questions file is missing")
-        return false
-      else
-        return true
-      end
-    else
-      begin
-        questions = YAML.load(upload.tempfile)
-        upload.rewind
-      rescue Psych::SyntaxError => e
-        @assignment.errors.add(:base, "Could not parse the supplied file")
-        return false
-      end
-    end
-    if !questions.is_a? Array
-      @assignment.errors.add(:base, "Supplied file does not contain a list of sections")
-      return false
-    else
-      @question_count = 0
-      @total_weight = 0
-      question_kinds = Assignment.question_kinds.keys
-      @no_problems = true
-      def make_err(msg)
-        @assignment.errors.add(:base, msg)
-        @no_problems = false
-      end
-      def is_float(val)
-        Float(val) rescue false
-      end
-      def is_int(val)
-        Integer(val) rescue false
-      end
-      questions.each_with_index do |section, index|
-        if !(section.is_a? Object) || !(section.keys.is_a? Array) || section.keys.count > 1
-          make_err "Section #{index} is malformed"
-          next
-        else
-          section.each do |secName, sec_questions|
-            sec_questions.each do |question|
-              question.each do |type, q|
-                @question_count += 1
-                begin
-                  if !(type.is_a? String)
-                    make_err "Question #{@question_count} (in section #{secName}) has unknown type #{type}"
-                    next
-                  elsif !question_kinds.member?(type.underscore)
-                    make_err "Question #{@question_count} (in section #{secName}) has unknown type #{type}"
-                    next
-                  else
-                    if q["weight"].nil? or !(Float(q["weight"]) rescue false)
-                      make_err "Question #{@question_count} has missing or invalid weight"
-                    end
-                    @total_weight += Float(q["weight"])
-                    ans = q["correctAnswer"]
-                    if ans.nil?
-                      make_err "Question #{@question_count} is missing a correctAnswer"
-                    end
-                    if q["rubric"].nil?
-                      make_err "Question #{@question_count} is missing a rubric"
-                    elsif !(q["rubric"].is_a? Array)
-                      make_err "Question #{@question_count} has an invalid rubric"
-                    else
-                      q["rubric"].each_with_index do |guide, i|
-                        if !(guide.is_a? Object) or guide.keys.count != 1
-                          make_err "Question #{@question_count}, rubric entry #{i} is ill-formed"
-                        else
-                          guide.each do |weight, hint|
-                            if !(Float(weight) rescue false)
-                              make_err "Question #{@question_count}, rubric entry #{i} has non-numeric weight"
-                            elsif Float(weight) < 0 or Float(weight) > 1
-                              make_err "Question #{@question_count}, rubric entry #{i} has out-of-bounds weight"
-                            end
-                          end
-                        end
-                      end
-                    end
-                    if q["prompt"].nil?
-                      make_err "Question #{@question_count} is missing a prompt"
-                    end
-                    case type
-                    when "YesNo", "TrueFalse"
-                      if ![true, false].member?(q["correctAnswer"])
-                        make_err "Boolean question #{@question_count} has a non-boolean correctAnswer"
-                      end
-                    when "Numeric"
-                      min = q["min"]
-                      max = q["max"]
-                      if max.nil? or !is_float(min)
-                        make_err "Numeric question #{@question_count} has a non-numeric max"
-                      else
-                        max = max.to_f
-                      end
-                      if min.nil? or !is_float(min)
-                        make_err "Numeric question #{@question_count} has a non-numeric min"
-                      else
-                        min = min.to_f
-                      end
-                      if ans.nil? or !is_float(ans)
-                        make_err "Numeric question #{@question_count} has a non-numeric ans"
-                      else
-                        ans = ans.to_f
-                      end
-                      if is_float(min) and is_float(max) and is_float(ans) and !(min <= ans and ans <= max)
-                        make_err "Numeric question #{@question_count} has a correctAnswer outside the specified range"
-                      end
-                    when "MultipleChoice"
-                      if q["options"].nil? or !q["options"].is_a? Array
-                        make_err "MultipleChoice question #{@question_count} is missing an array of choices"
-                      end
-                      if !is_int(ans)
-                        make_err "MultipleChoice question #{@question_count} has a non-numeric correctAnswer"
-                      else
-                        ans = ans.to_i
-                      end
-                      if is_int(ans) and (ans < 0 or ans >= q["options"].count)
-                        make_err "MultipleChoice question #{@question_count} has a correctAnswer not in the available choices"
-                      end
-                    end
-                    if q["parts"]
-                      if !q["parts"].is_a? Array
-                        make_err "Question #{@question_count} has a non-list of parts"
-                      else
-                        q["parts"].each_with_index do |part, part_i|
-                          if !part.is_a? Object
-                            make_err "Question #{@question_count} has a non-object part ##{part_i + 1}"
-                          elsif part.keys.count > 1
-                            make_err "Question #{@question_count} part ##{part_i + 1} has too many keys"
-                          elsif !["codeTag", "codeTags", "requiredText", "text"].member?(part.keys[0])
-                            make_err "Question #{@question_count} part ##{part_i + 1} has an invalid type #{part.keys[0]}"
-                          end
-                        end
-                      end
-                    end
-                  end
-                rescue Exception => e
-                  make_err "Question #{@question_count} in section #{secName} could not be parsed: #{e}"
-                end
-              end
-            end
-          end
-        end
-      end
-    end
-    if @no_problems
-      c = Grader.new(type: "QuestionsGrader", avail_score: @total_weight)
-      if c.invalid? or !c.save
-        no_problems = false
-        @assignment.errors.add(:graders, "Could not create grader #{c.to_s}")
-      else
-        AssignmentGrader
-          .find_or_initialize_by(assignment_id: @assignment.id)
-          .update(order: 1, grader_id: c.id)
-      end
-    end
-    return @no_problems
   end
 
   def set_files_graders
@@ -578,7 +350,6 @@ class AssignmentsController < CoursesController
 
     return no_problems
   end
-
 
   def find_assignment
     @assignment = Assignment.find_by(id: params[:id])

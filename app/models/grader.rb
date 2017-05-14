@@ -2,6 +2,7 @@ class Grader < ApplicationRecord
   belongs_to :submission
   belongs_to :grader
   belongs_to :upload
+  has_many :grades
 
   def self.unique
     select(column_names - ["id"]).distinct
@@ -50,8 +51,16 @@ class Grader < ApplicationRecord
       errors[:base] << "You need to submit a file."
       return
     end
+
+    up = Upload.new
+    up.store_upload!(data, {
+                       type: "#{type} Configuration",
+                       date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+                       mimetype: data.content_type
+                     })
+
     self.upload_id_will_change! if self.upload.nil? or (self.upload.id != data.id)
-    self.upload = data
+    self.upload = up
   end
 
   protected

@@ -1,0 +1,102 @@
+<%= form_for [@course, asgn] do |f| %>
+  <%= f.hidden_field :type, value: "exam" %>
+
+  <% if asgn.errors.any? %>
+    <div id="error_explanation" class="alert alert-danger">
+      <h2><%= pluralize(asgn.errors.count, "error") %> prohibited this
+        assignment from being saved:</h2>
+
+      <ul>
+      <% asgn.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :name %>
+    <%= f.text_field :name, class: 'form-control' %>
+  </div>
+  <div class="form-group">
+    <%= f.label :assignment, "Assignment Text" %>
+    <p>This description will appear on the homework-submission page,
+    and may be useful to remind students which files are expected, or
+      a link to the assignment itself.  HTML markup is allowed here.</p>
+    <%= f.text_area :assignment, class: "form-control rich-text" %>
+  </div>
+  <div class="row">
+    <div class="form-group col-sm-6">
+      <p>
+      <%= f.label :assignment_file, "Exam questions", class: "exam-type" %>
+      </p>
+      <p>This file contains a skeleton of the exam
+        questions, in YAML format.
+        <span class="btn btn-info btn-sm" data-toggle="collapse"
+              data-target="#exam-schema">See schema</span>
+      </p>
+      <p class="form-inline">
+        <label class="btn btn-default btn-file">
+          Browse <%= f.file_field :assignment_file, id: "assignment-file", style: "display: none;" %>
+        </label>
+        <span id="current_file" class="btn">Current file:
+          <%= asgn.assignment_file.empty? ? "nothing" :
+              link_to(asgn.assignment_file,
+              Upload.upload_path_for(asgn.assignment_full_path)) %></span>
+        <%= f.hidden_field "removefile", value: "" %>
+        <button type="button"
+                <% if asgn.assignment_file.empty? %>
+                disabled  class="btn btn-default pull-right"
+                <% else %>
+                class="btn btn-warning pull-right"
+                <% end %>
+                id="remove-assignment-file">Clear assignment file</button>
+        <script>
+          $("#assignment-file").change(function() {
+            var label = $(this).val().replace(/\\/g, '/').replace(/.*\//, '');
+            $("#current_file").text("New file: " + label);
+            $("#remove-assignment-file").prop('disabled', false).removeClass("btn-default").addClass("btn-warning");
+            $("input#assignment_removefile").val('');
+          });
+          $("#remove-assignment-file").click(function() {
+            $("input[name='assignment_file']").replaceWith(
+              $("input[name='assignment_file']").val("<nothing>").clone(true));
+            $(this).prop('disabled', true).addClass("btn-default").removeClass("btn-warning");
+            $("#current_file").text("New file: <nothing>");
+            $("input#assignment_removefile").val('remove');
+          });
+        </script>
+      </p>
+    </div>
+  </div>
+
+  <%= render 'exam_schema' %>
+
+  <div class="for-type row">
+    <div class="form-group col-sm-6">
+      <%= f.label :points_available %>
+      <p>
+        <span class="files-type questions-type">This is the percentage of the final grade that this
+          assignment is worth.  Default: same as previous assignment.</span>
+        <span class="exam-type">This is the percentage of the final grade
+          that this exam is worth.</span></p>
+      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+    </div>
+  </div>
+
+  <div class="for-type row">
+    <div class="form-group col-sm-6">
+      <%= f.label :due_date do %>
+      <span class="exam-type">Exam date</span>
+      <% end %>
+      <div>
+        <%= f.text_field :due_date, class: 'form-control datetime-picker' %>
+      </div>
+    </div>
+  </div>
+
+  <%= f.hidden_field :lateness_config_id %>
+  <div class="form-group">
+  <%= f.submit nil, class: 'btn btn-primary' %>
+  </div>
+<% end %>

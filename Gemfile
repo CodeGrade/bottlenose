@@ -23,15 +23,16 @@ gem 'coffee-rails-source-maps'
 gem 'uglifier'
 gem 'jquery-rails'
 gem 'jquery-tablesorter'
-
-gem 'vuejs-rails'
+gem 'cocoon'
 
 gem 'bootstrap-sass', '~> 3.3.5'
 gem 'sass-rails', '>= 3.2'
 gem 'bootstrap-sass-extras'
-gem 'bootstrap-datepicker-rails'
+#gem 'bootstrap-datepicker-rails'
+gem 'bootstrap3-datetimepicker-rails'
+gem 'bootstrap-toggle-rails'
+
 gem 'momentjs-rails', '>= 2.9.0'
-gem 'bootstrap3-datetimepicker-rails', '~> 4.17.37'
 gem 'font-awesome-rails'
 gem 'zipruby-compat', :require => 'zipruby', :git => "https://github.com/jawspeak/zipruby-compatibility-with-rubyzip-fork.git", :tag => "v0.3.7" # needed instead of zipruby because write_xlsx needs rubyzip, and they conflict ; FIXME: git reference
 
@@ -55,6 +56,7 @@ group :development do
 end
 
 group :development, :test do
+  gem 'puma'
   gem 'pry'
   gem 'pry-rails'
 end

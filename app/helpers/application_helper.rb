@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
+require 'securerandom'
+
 module ApplicationHelper
+  def make_uuid
+    SecureRandom.hex
+  end
+
   def select_user_hash(users = nil)
     users ||= User.all
     hash = {}

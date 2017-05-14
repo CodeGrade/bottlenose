@@ -1,8 +1,36 @@
+(function() {
+    function init_datetime() {
+        $('.datetime-picker').datetimepicker({
+            sideBySide: true,
+            format: "YYYY/MM/DD h:mm A",
+            defaultDate: undefined
+        });
+    }
 
-#run_on_page "assignments/show", () ->
-#  $(document).ajaxError (e, data, xhr) ->
-#    console.log(e, data, xhr)
+    function on_add_grader(evt, el) {
+        el.find(".spinner").each(function(_ii, div) {
+            activateSpinner(div);
+        });
+ 
+        form_tabs_init_all(el);
+   }
 
+    function form_init() {
+        init_datetime();
+
+        $('.graders-list').on('cocoon:after-insert', on_add_grader);
+        $('.spinner').each(function (_ii, div) {
+            activateSpinner(div);
+        });
+    }
+
+    run_on_page("assignments/new", form_init);
+    run_on_page("assignments/create", form_init);
+    run_on_page("assignments/edit", form_init);
+    run_on_page("assignments/update", form_init);
+})();
+
+/*
 run_on_page "assignments/show", () ->
   inputs  = []
   by_user = {}
@@ -53,3 +81,4 @@ run_on_page "assignments/show", () ->
     setup_handlers()
 
   setup_handlers()
+*/

@@ -38,7 +38,7 @@
                  class: "dropdown-item" %></li>
          <!-- <div class="dropdown-divider"></div> -->
        </ul>
-     </div>        
+     </div>
 
     <% if @gradesheet.missing_grades %>
     <%= link_to "Create missing grades",
@@ -133,7 +133,7 @@
       <% end %>
       <td><%= maybe_link_to(current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
                             sub.user) %></td>
-        <td><span class="local-time"><%= sub.created_at %></span></td>
+        <td><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
         <% scores = grade[:staff_scores] %>
         <td><%= status_image(sub, 100.0 * scores[:raw_score] / @gradesheet.max_score) %></td>
         <% scores[:scores].each do |s| %>

@@ -36,22 +36,22 @@ class CoursesControllerTest < ActionController::TestCase
     sign_in @ken
     assert_difference('Course.count') do
       post :create, params: {
-        course: {
-          name: "Worst Course Ever", 
-          term_id: @term.id,
-          course_section: {values: {
-            instructor: @fred.username,
-            crn: "999",
-            meeting_time: "TBD",
-          }},
-        },
-        lateness: {
-          type: "_FixedDaysConfig",
-          FixedDaysConfig: {
-            days_per_assignment: 1,
-          }
-        }
-      }
+             course: {
+               name: "Worst Course Ever", 
+               term_id: @term.id,
+               sections_attributes: {
+                 "0" => {
+                   prof_name: @fred.username,
+                   crn: "999",
+                   meeting_time: "TBD",
+                 }
+               },
+               lateness_config_attributes: {
+                 type: "FixedDaysConfig",
+                 days_per_assignment: 1,
+               }
+             }
+           }
     end
 
     assert_redirected_to course_path(assigns(:course))
@@ -77,7 +77,7 @@ class CoursesControllerTest < ActionController::TestCase
     get :show, params: {id: @course1}
     assert_response :success
   end
-  
+
   test "should get edit" do
     sign_in @fred
     get :edit, params: {id: @course1}
@@ -87,7 +87,7 @@ class CoursesControllerTest < ActionController::TestCase
   test "should update course" do
     sign_in @fred
     put :update, params: {id: @course1, course: { name: @course1.name, footer: "new footer" }}
-    assert_response :success
+    assert_response :redirect
   end
 
   test "updating late penalties should change scores" do

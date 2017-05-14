@@ -34,7 +34,7 @@ class GradesController < ApplicationController
   def bulk_edit
     self.send("bulk_edit_#{@assignment.type.capitalize}")
   end
-  
+
   def bulk_update
     self.send("bulk_update_#{@assignment.type.capitalize}")
   end
@@ -45,7 +45,7 @@ class GradesController < ApplicationController
     else
       respond_to do |f|
         f.json { render :json => {unauthorized: "Must be an admin or staff"} }
-        f.html { 
+        f.html {
           redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                         alert: "Must be an admin or staff."
         }
@@ -65,18 +65,19 @@ class GradesController < ApplicationController
       }
     end
   end
-  
+
   def self.pretty_print_comments(comments)
     by_file = comments.group_by(&:upload_filename)
     ans = by_file.map do |fn, cs|
       fn.gsub(Regexp.new(".*extracted/?"), "") + ":\n" + cs.sort_by(&:line).map do |c|
         c.to_s(true, false)
-      end.join("\n")        
+      end.join("\n")
     end
     ans.join("\n==================================================\n")
   end
-  
-  protected 
+
+  protected
+
   def comments_params
     if params[:comments].is_a? String
       JSON.parse(params[:comments])
@@ -104,7 +105,7 @@ class GradesController < ApplicationController
         end
       else
           redirect_back fallback_location: root_path, alert: msg
-      end        
+      end
       return
     end
   end
@@ -129,7 +130,7 @@ class GradesController < ApplicationController
       return
     end
   end
-  
+
   def find_grade
     @grade = Grade.find_by(id: params[:id])
     if @grade.nil?
@@ -163,7 +164,7 @@ class GradesController < ApplicationController
     newdata = commentable.zip(comments).map do |c, comm| [c["id"], comm.id] end.to_h
     newdata.merge(deleted)
   end
-  
+
   def autosave_comments(cp, cp_to_comment)
     render :json => do_save_comments(cp, cp_to_comment)
   end
@@ -477,7 +478,7 @@ HEADER
         @answers_are_newer = true
       else
         get_submission_files(related_sub)
-        @answers_are_newer = (related_sub.created_at < @submission.created_at)        
+        @answers_are_newer = (related_sub.created_at < @submission.created_at)
       end
     else
       @submission_files = []
@@ -577,7 +578,6 @@ HEADER
     @grade.notes
   end
 
-  
 
   ##############################
   def edit_exam_grades_for(students)
@@ -596,7 +596,7 @@ HEADER
     @grader = @assignment.graders.first # and only config
     # @used_subs = @assignment.used_submissions
     # @grade_comments = InlineComment.where(submission_id: @used_subs.map(&:id)).group_by(&:user_id)
-    
+
     @student_info.each do |student|
       @sub = @assignment.used_sub_for(student)
       if @sub.nil?

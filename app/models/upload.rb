@@ -157,9 +157,11 @@ class Upload < ApplicationRecord
   def store_upload!(upload, metadata)
     self.file_name = upload.original_filename
 
-    if user_id.nil?
-      raise Exception.new("Must set user before storing uploaded file.")
-    end
+    # Can't set user id in grader upload.
+    # Graders don't know *anything*, so it's hard to fake.
+    #if user_id.nil?
+    #  raise Exception.new("Must set user before storing uploaded file.")
+    #end
 
     if Dir.exist?(upload_dir)
       raise Exception.new("Duplicate secret key (1). That's unpossible!")

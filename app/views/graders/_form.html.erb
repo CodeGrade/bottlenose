@@ -1,0 +1,41 @@
+<li class="grader nested-fields">
+  <div class="form-tabs" data-init-tab="<%= f.object.type || 'JavaStyleGrader' %>">
+    <div class="pull-right">
+      <%= link_to_remove_association "Remove", f, class: 'btn btn-danger' %>
+    </div>
+    <ul class="nav nav-tabs">
+      <li><a href="#" data-tab="JavaStyleGrader">Java Style</a></li>
+      <li><a href="#" data-tab="CheckerGrader">Checker Tests</a></li>
+      <li><a href="#" data-tab="JunitGrader">JUnit Tests</a></li>
+      <li><a href="#" data-tab="ManualGrader">Manual Grading</a></li>
+      <li><a href="#" data-tab="SandboxGrader">Sandboxed Tests</a></li>
+    </ul>
+    <div class="form-tabs-content">
+      <div data-tab="JavaStyleGrader" class="tab-pane">
+        <div class="form-group">
+          <%= render 'graders/java_style_grader', f: f %>
+        </div>
+      </div>
+      <div data-tab="CheckerGrader" class="tab-pane">
+        <div class="form-group">
+          <%= render 'graders/checker_grader', f: f %>
+        </div>
+      </div>
+      <div data-tab="JunitGrader" class="tab-pane">
+        <div class="form-group">
+          <%= render 'graders/junit_grader', f: f %>
+        </div>
+      </div>
+      <div data-tab="ManualGrader" class="tab-pane">
+        <div class="form-group">
+          <%= render 'graders/manual_grader', f: f %>
+        </div>
+      </div>
+      <div data-tab="SandboxGrader" class="tab-pane">
+        <div class="form-group">
+          <%= render 'graders/sandbox_grader', f: f %>
+        </div>
+      </div>
+    </div>
+  </div>
+</li>

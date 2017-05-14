@@ -1,7 +1,7 @@
 class Course < ApplicationRecord
   belongs_to :term
 
-  has_many :course_sections, dependent: :destroy
+  has_many :sections, dependent: :destroy, inverse_of: :course
   has_many :registrations, dependent: :destroy
   has_many :users, through: :registrations
 
@@ -12,18 +12,32 @@ class Course < ApplicationRecord
   has_many :teams,       dependent: :destroy
 
   belongs_to :lateness_config
-  validates :lateness_config, presence: true
-  validate :valid_lateness_config
-
-  validates :name,    :length      => { :minimum => 2 },
-                      :uniqueness  => true
 
   validates :term_id, presence: true
+  validates :lateness_config, presence: true
+  validates :name, length: { minimum: 2 }, uniqueness: { scope: :term_id }
+  validate  :has_sections
 
-  def valid_lateness_config
-    if !self.lateness_config.nil? && !self.lateness_config.valid?
-      self.lateness_config.errors.full_messages.each do |m|
-        @errors[:base] << m
+  accepts_nested_attributes_for :sections, allow_destroy: true
+  accepts_nested_attributes_for :lateness_config
+
+  after_create :register_profs
+
+  def has_sections
+    if sections.empty?
+      errors.add(:sections, "can't be empty")
+    end
+  end
+
+  def register_profs
+    if registrations.empty?
+      sections.each do |sec|
+        Registration.create!(
+          course_id: self.id,
+          user_id: sec.instructor_id,
+          section_id: sec.id,
+          role: :professor
+        )
       end
     end
   end
@@ -99,7 +113,7 @@ class Course < ApplicationRecord
     if uu.nil?
       return nil
     end
-    section = CourseSection.find_by(crn: crn)
+    section = Section.find_by(crn: crn)
     if section.nil?
       return nil
     end
@@ -111,6 +125,10 @@ class Course < ApplicationRecord
                                   section: section,
                                   role: role,
                                   show_in_lists: role == 'student')
+  end
+
+  def assignments_sorted
+    self.assignments.to_a.sort_by(&:due_date)
   end
 
   def score_summary(for_students = nil)
@@ -162,5 +180,76 @@ class Course < ApplicationRecord
                  remaining: remaining})
     end
     ans
+  end
+
+  def grading_assigned_for(user)
+    GraderAllocation
+      .where(grade_id: user.id)
+      .where(course: self)
+      .where(grading_completed: nil)
+      .group_by(&:assignment_id)
+  end
+
+  def grading_done_for(user)
+    GraderAllocation
+      .where(grade_id: user.id)
+      .where(course: self)
+      .where.not(grading_completed: nil)
+      .joins(:submission)
+      .where("submissions.score": nil)
+      .group_by(&:assignment_id)
+  end
+
+  def pending_grading
+    # only use submissions that are being used for grading, but this may produce
+    # duplicates for team submissions only pick submissions from this course
+    # only pick non-staff submissions hang on to the assignment id only keep
+    # unfinished graders sort the assignments
+    Grade
+      .joins("INNER JOIN used_subs ON grades.submission_id = used_subs.submission_id")
+      .joins("INNER JOIN assignments ON used_subs.assignment_id = assignments.id")
+      .joins("INNER JOIN registrations ON used_subs.user_id = registrations.user_id")
+      .where("assignments.course_id": self.id)
+      .select("grades.*", "used_subs.assignment_id", "assignments.due_date")
+      .joins("INNER JOIN users ON used_subs.user_id = users.id")
+      .distinct.select("users.name AS user_name")
+      .where(score: nil)
+      .where("registrations.role": Registration::roles["student"])
+      .order("assignments.due_date", "users.name")
+      .group_by{|r| r.assignment_id}
+  end
+
+  def abnormal_subs
+    abnormals = {}
+    people = self.users_with_drop_info.where("registrations.dropped_date IS ?", nil).to_a
+    assns = self.assignments_sorted
+    all_subs = Assignment.submissions_for(people, assns).group_by(&:assignment_id)
+    used_subs = UsedSub.where(assignment_id: assns.map(&:id)).group_by(&:assignment_id)
+    assns.each do |a|
+      next unless all_subs[a.id]
+      a_subs = all_subs[a.id].group_by(&:for_user)
+      used = used_subs[a.id]
+      people.each do |p|
+        subs = a_subs[p.id]
+        if (subs and subs.count > 0) and (used.nil? or used.find{|us| us.user_id == p.id}.nil?)
+          abnormals[a] = [] unless abnormals[a]
+          abnormals[a].push p
+        end
+      end
+    end
+
+    abnormals
+  end
+
+  def unpublished_grades
+    Submission
+      .joins("INNER JOIN used_subs ON submissions.id = used_subs.submission_id")
+      .where("used_subs.assignment_id": assignments_sorted.map(&:id))
+      .joins("INNER JOIN grades ON grades.submission_id = submissions.id")
+      .where.not("grades.score": nil)
+      .where("grades.available": false)
+      .joins("INNER JOIN users ON used_subs.user_id = users.id")
+      .order("users.name")
+      .select("DISTINCT submissions.*", "users.name AS user_name")
   end
 end

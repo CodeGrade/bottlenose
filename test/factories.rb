@@ -24,6 +24,18 @@ FactoryGirl.define do
     archived false
   end
 
+  factory :course do
+    term
+    sequence(:name) {|n| "Computing #{n}" }
+    footer "Link to Piazza: *Link*"
+    lateness_config
+
+    after(:build) do |course|
+      sec = build(:section, course: course)
+      course.sections = [sec]
+    end
+  end
+
   factory :lateness_config do
     type "LatePerDayConfig"
     days_per_assignment 365
@@ -32,15 +44,7 @@ FactoryGirl.define do
     max_penalty 100
   end
 
-  factory :course do
-    term
-    lateness_config
-
-    sequence(:name) {|n| "Computing #{n}" }
-    footer "Link to Piazza: *Link*"
-  end
-
-  factory :course_section do
+  factory :section do
     course
     sequence(:crn) {|n| 1000 + n }
     sequence(:meeting_time) {|n| "Tuesday #{n}:00" }
@@ -96,7 +100,7 @@ FactoryGirl.define do
   factory :registration do
     user
     course
-    association :section, factory: :course_section
+    section
 
     role 0
     show_in_lists true
@@ -105,7 +109,7 @@ FactoryGirl.define do
   factory :reg_request do
     user
     course
-    association :section, factory: :course_section
+    section
 
     notes "Let me in!"
   end
