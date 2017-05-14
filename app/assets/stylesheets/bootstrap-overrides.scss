@@ -1,2 +1,8 @@
 $navbar-inverse-link-color: #bbb;
 $navbar-inverse-link-active-color: #fff;
+
+table.no-first-row > thead > tr:first-child > td,
+table.no-first-row > tbody > tr:first-child > td,
+table.no-first-row > tfoot > tr:first-child > td {
+   border-top: 0px solid white;
+   }
