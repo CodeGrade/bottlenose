@@ -1,6 +1,6 @@
 <%= f.hidden_field :type, value: "JunitGrader" %>
 
-<table class="table" style="margin-bottom: 0px;">
+<table class="table no-first-row" style="margin-bottom: 0px;">
   <tr class="form-group">
     <td><%= f.label "avail_score", "Points available:" %></td>
     <td><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>

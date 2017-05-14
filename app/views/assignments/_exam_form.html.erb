@@ -28,7 +28,7 @@
   <div class="row">
     <div class="form-group col-sm-6">
       <p>
-      <%= f.label :assignment_file, "Exam questions", class: "exam-type" %>
+      <%= f.label :assignment_file, "Exam questions" %>
       </p>
       <p>This file contains a skeleton of the exam
         questions, in YAML format.
@@ -68,26 +68,19 @@
         </script>
       </p>
     </div>
+    <div class="form-group col-sm-6">
+      <%= f.label :points_available %>
+      <p>This is the percentage of the final grade that this exam is worth.</p>
+      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+    </div>
   </div>
 
   <%= render 'exam_schema' %>
 
   <div class="for-type row">
     <div class="form-group col-sm-6">
-      <%= f.label :points_available %>
-      <p>
-        <span class="files-type questions-type">This is the percentage of the final grade that this
-          assignment is worth.  Default: same as previous assignment.</span>
-        <span class="exam-type">This is the percentage of the final grade
-          that this exam is worth.</span></p>
-      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
-    </div>
-  </div>
-
-  <div class="for-type row">
-    <div class="form-group col-sm-6">
       <%= f.label :due_date do %>
-      <span class="exam-type">Exam date</span>
+      Exam date
       <% end %>
       <div>
         <%= f.text_field :due_date, class: 'form-control datetime-picker' %>

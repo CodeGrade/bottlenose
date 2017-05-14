@@ -28,9 +28,9 @@
   <div class="row">
     <div class="form-group col-sm-6">
       <p>
-        <%= f.label :assignment_file, "Assignment starter files", class: "files-type" %>
+        <%= f.label :assignment_file, "Assignment starter files" %>
       </p>
-      <p class="files-type">This file will be available for students
+      <p>This file will be available for students
         to download as starter code for this
         assignment.</p>
       <p class="form-inline">
@@ -66,23 +66,11 @@
         </script>
       </p>
     </div>
-  </div>
-
-  <div class="row">
-    <div class="form-group col-sm-6 files-type questions-type">
-      <%= f.label :team_subs, "Team Submissions?" %>
-      <p>If selected, submissions count as a member of a team.  If
-        not, submissions are individual even if student is a memeber of
-        a team.</p>
-      <%= f.check_box :team_subs, data: {toggle: "toggle", on: "Yes", off: "No"} %>
-    </div>
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>
       <p>
-        <span class="files-type questions-type">This is the percentage of the final grade that this
-          assignment is worth.  Default: same as previous assignment.</span>
-        <span class="exam-type">This is the percentage of the final grade
-          that this exam is worth.</span></p>
+        This is the percentage of the final grade that this
+        assignment is worth.  Default: same as previous assignment.</p>
       <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
     </div>
   </div>
@@ -90,14 +78,14 @@
   <div class="row">
     <div class="form-group col-sm-6">
       <%= f.label :due_date do %>
-      <span class="files-type questions-type">Due date</span>
+      Due date
       <% end %>
       <p>Assignment should not be submitted after this time. Default: one week from today.</p>
       <div>
         <%= f.text_field :due_date, class: 'form-control datetime-picker' %>
       </div>
     </div>
-    <div class="form-group col-sm-6 files-type questions-type">
+    <div class="form-group col-sm-6">
       <%= f.label :available_date %>
       <p>Assignment will not be visible until this time. Default: today.</p>
       <div>
@@ -106,8 +94,15 @@
     </div>
   </div>
 
-  <div class="for-type row">
-    <div class="form-group col-sm-6 files-type questions-type">
+  <div class="row">
+    <div class="form-group col-sm-6">
+      <%= f.label :team_subs, "Team Submissions?" %>
+      <p>If selected, submissions count as a member of a team.  If
+        not, submissions are individual even if student is a memeber of
+        a team.</p>
+      <%= f.check_box :team_subs, data: {toggle: "toggle", on: "Yes", off: "No"} %>
+    </div>
+    <div class="form-group col-sm-6">
       <%= f.label :request_time_taken, "Request time taken?" %>
       <p>If selected, ask students on each submission how long they've
         worked on the assignment.</p>
@@ -115,8 +110,9 @@
           data: {toggle: "toggle", on: "Yes", off: "No"} %>
     </div>
   </div>
+
   <div class="form-group for-type">
-    <div class="files-type questions-type">
+    <div>
       <p><strong>Late Penalty</strong></p>
       <%= render 'lateness/picker', within_course: true, f: f %>
     </div>
@@ -134,8 +130,7 @@
                     <%= link_to_remove_association "Remove", gr, class: 'btn btn-danger' %>
                   </div>
                 <% end %>
-                <p><strong><%= gr.object.type %></strong></p>
-                <div class="clearfix"></div>
+                <strong><%= gr.object.display_type %></strong>
               </div>
               <div class="panel-body">
                 <%= render "graders/#{gr.object.type.underscore}.html.erb", f: gr %>

@@ -11,7 +11,7 @@ class CheckerGrader < Grader
   end
 
   def display_type
-    "Checker tests"
+    "Checker Tests"
   end
   
   def to_s

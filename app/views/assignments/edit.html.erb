@@ -8,7 +8,6 @@
   | <%= link_to "View Assignment", course_assignment_path(@course, @assignment) %>
 </p>
 
-<p><strong>Edit Existing Assignment</strong></p>
-<p>Type: <%= @assignment.type %></p>
+<p><strong>Edit Existing <%= @assignment.type.titlecase %> Assignment</strong></p>
 
 <%= render "#{@assignment.type.underscore}_form", asgn: @assignment %>
