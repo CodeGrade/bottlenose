@@ -8,9 +8,9 @@
                         alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
      }
    if which
-     link_to(user.name, user_path(user), data: tt)
+     link_to(user.name, user_path(user), class: "user-link", data: tt)
    else
-     span_tag(user.name, data: tt)
+     span_tag(user.name, clas: "user-link", data: tt)
    end
    end %>
 <h3 style="display: inline-block">
