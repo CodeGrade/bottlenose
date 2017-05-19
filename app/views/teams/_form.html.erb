@@ -5,7 +5,7 @@
          title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
                           alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
        }
-     link_to(user.name, user_path(user), data: tt)
+     link_to(user.name, user_path(user), class: "user-link", data: tt)
    end %>
 <% def show_team(team)
    content_tag(:span, [
@@ -17,7 +17,7 @@
           title: "#{image_tag(Upload.upload_path_for(u.profile || 'silhouette.jpg'), 
                            alt: u.display_name, style: 'max-height: 300px; max-width: 300px;')}"
         }
-        link_to(u.name, user_path(u), data: tt).html_safe
+        link_to(u.name, user_path(u), class: "user-link", data: tt).html_safe
      end.join(", ")].flatten.join("\n").html_safe)
    end %>
 <div class="row">

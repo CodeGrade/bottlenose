@@ -11,9 +11,9 @@
                         alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
      }
    if which
-     link_to(user.name, user_path(user), data: tt)
+     link_to(user.name, user_path(user), class: "user-link", data: tt)
    else
-     content_tag :span, user.name, data: tt
+     content_tag :span, user.name, class: "user-link", data: tt
    end
    end %>
 <% def maybe_link_team(which, team)

@@ -35,6 +35,13 @@ div.CodeMirror .highlightLine {
    background-color: #FAFAD2;
 }
 
+.user-link + .tooltip.in {
+   opacity: 1
+}
+.user-link + .tooltip > .tooltip-inner {
+   max-width: unset;
+}
+
 .gradeA { color: darkgreen; }
 .gradeB { color: green; }
 .gradeC { color: darkgoldenrod; }

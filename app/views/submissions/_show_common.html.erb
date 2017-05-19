@@ -6,9 +6,9 @@
                         alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
      }
    if which
-     link_to(user.name, user_path(user), data: tt)
+     link_to(user.name, user_path(user), class: "user-link", data: tt)
    else
-     content_tag :span, user.name, data: tt
+     content_tag :span, user.name, class: "user-link", data: tt
    end
    end %>
 <% def maybe_link_team(which, team)
@@ -23,9 +23,9 @@
                            alt: u.display_name, style: 'max-height: 300px; max-width: 300px;')}"
         }
         if which || current_user.id == u.id then 
-          link_to(u.name, user_path(u), data: tt).html_safe
+          link_to(u.name, user_path(u), class: "user-link", data: tt).html_safe
         else
-          content_tag(:span, u.name, data: tt).html_safe
+          content_tag(:span, u.name, class: "user-link", data: tt).html_safe
         end
      end.join(", ")].flatten.join("\n").html_safe)
    end %>
