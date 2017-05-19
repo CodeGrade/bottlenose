@@ -8,7 +8,7 @@ of programming assignments.
 
 Bottlenose is built expecting the following environment:
 
- * Ubuntu 16.04
+ * Ubuntu 16.04 (Note: for settingup Bottlenose on Ubuntu, please go here: [setup mac](doc/setup-mac.md)
  * A BTRFS (or ZFS) filesystem for /var
  * PostgreSQL
  * Ruby + Bundler
@@ -49,7 +49,7 @@ the pg_hba.conf in /etc/postgres/.../ to allow local ident auth.
 ### Ruby
 
 Best practice for Ruby in development is to use a version manager like
-[rvm](http://rvm.io) or rbenv. Once you have the correct version installed, 
+[rvm](http://rvm.io) or rbenv. Once you have the correct version installed,
 
 ```sh
 # Install Ruby's package manager "Bundler".
@@ -82,7 +82,7 @@ rails s
 
 ### Troubleshooting
 
-**Problem 1**: 
+**Problem 1**:
 
 When you run `rails db:create`, and if you get the following error message:
 
@@ -116,7 +116,7 @@ Created database 'bottlenose_test'
 Then continue by running `rails db:create`.
 
 
-**Problem 2**: 
+**Problem 2**:
 
 If you have successfully started rails server, but recevied this message when you type `localhost:3000` in your browser:
 
