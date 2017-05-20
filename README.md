@@ -46,10 +46,10 @@ exit
 If you run into authentication trouble later, you may need to modify
 the pg_hba.conf in /etc/postgres/.../ to allow local ident auth.
 
-###Database startup for a dev env is:
+### Database startup for a dev env is:
 
 * As user "postgres":
-   ```
+  ```
    createuser -d bottlenose
   ```
  * As the dev user:
@@ -61,7 +61,7 @@ the pg_hba.conf in /etc/postgres/.../ to allow local ident auth.
 
 * If you want to start clean on an existing Bottlenose, there's a helper to drop/create/load/seed:
   ```
-  rake db:nuke
+   rake db:nuke
   ```
 
 ### Ruby
