@@ -1,7 +1,6 @@
 # Setup Bottlenose on mac
 
-Note: for settingup Bottlenose on *Ubuntu*, please go here: [README.md](bottlenose/blob/master/README.md)
-https://github.com/CodeGrade/bottlenose/blob/master/README.md
+Note: for settingup Bottlenose on *Ubuntu*, please go here: [README.md](https://github.com/CodeGrade/bottlenose/blob/master/README.md)
 
 ## Development Environment
 
