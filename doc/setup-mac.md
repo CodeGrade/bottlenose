@@ -1,34 +1,15 @@
-# Bottlenose
+# Setup Bottlenose on mac
 
-Bottlenose is a web app for managing assignment submission and grading in
-computer science courses. It provides a flexible mechanism for automatic grading
-of programming assignments.
+Note: for settingup Bottlenose on *Ubuntu*, please go here: [README.md](https://github.com/CodeGrade/bottlenose/blob/master/README.md)
 
 ## Development Environment
 
 Bottlenose is built expecting the following environment:
 
- * Ubuntu 16.04 (Note: for settingup Bottlenose on Ubuntu, please go here: [setup_mac](../master/doc/setup-mac.md)
- * A BTRFS (or ZFS) filesystem for /var
- * PostgreSQL
- * Ruby + Bundler
-
-For deployment, Phusion Passenger + Nginx is recommended.
-
-## Bottlenose Setup
-
-The goal of this section is to have a working web-server running Bottlenose and
-all of it's dependencies. All scripts in this sections start in the
-`$BOTTLENOSE` directory unless explicitly stated otherwise.
-
-### Basics
-
-Some packages are generally good to have, and needed by many future steps in
-the setup process.
-
-```sh
-sudo apt-get install build-essential git postgresql libpq-dev
-```
+  * macOS
+  * A BTRFS (or ZFS) filesystem for /var
+  * PostgreSQL
+  * Ruby + Bundler
 
 ### Postgres
 
@@ -45,24 +26,6 @@ exit
 
 If you run into authentication trouble later, you may need to modify
 the pg_hba.conf in /etc/postgres/.../ to allow local ident auth.
-
-### Database startup for a dev env is:
-
-* As user "postgres":
-  ```
-   createuser -d bottlenose
-  ```
- * As the dev user:
-  ```
-   rake db:create
-   rake db:schema:load
-   rake db:seed
-  ```
-
-* If you want to start clean on an existing Bottlenose, there's a helper to drop/create/load/seed:
-  ```
-   rake db:nuke
-  ```
 
 ### Ruby
 
@@ -100,8 +63,6 @@ rails s
 
 ### Troubleshooting
 
-**Problem 1**:
-
 When you run `rails db:create`, and if you get the following error message:
 
 ```sh
@@ -132,3 +93,31 @@ Created database 'bottlenose_test'
 ```
 
 Then continue by running `rails db:create`.
+
+
+
+**Problem 2**:
+
+If you have successfully started rails server, but recevied this message when you type `localhost:3000` in your browser:
+
+```sh
+PG::ConnectionBad at /users/sign_in
+could not connect to server: No such file or directory
+Is the server running locally and accepting
+connections on Unix domain socket "/tmp/.s.PGSQL.5432"?
+```
+
+You need to start postgres server manually, type the following in your terminal:
+
+```
+pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
+
+```
+
+For stoping the server manually, type:
+
+```
+pg_ctl -D /usr/local/var/postgres stop -s -m fast
+
+```
+
