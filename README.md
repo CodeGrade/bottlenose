@@ -8,7 +8,7 @@ of programming assignments.
 
 Bottlenose is built expecting the following environment:
 
- * Ubuntu 16.04 (Note: for settingup Bottlenose on Ubuntu, please go here: [setup_mac](../doc/setup-mac.md)
+ * Ubuntu 16.04 (Note: for settingup Bottlenose on Ubuntu, please go here: [setup_mac](../pr-45/doc/setup-mac.md)
  * A BTRFS (or ZFS) filesystem for /var
  * PostgreSQL
  * Ruby + Bundler
