@@ -110,14 +110,14 @@ connections on Unix domain socket "/tmp/.s.PGSQL.5432"?
 You need to start postgres server manually, type the following in your terminal:
 
 ```
-    pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
+pg_ctl -D /usr/local/var/postgres -l /usr/local/var/postgres/server.log start
 
 ```
 
 For stoping the server manually, type:
 
 ```
-    pg_ctl -D /usr/local/var/postgres stop -s -m fast
+pg_ctl -D /usr/local/var/postgres stop -s -m fast
 
 ```
 
