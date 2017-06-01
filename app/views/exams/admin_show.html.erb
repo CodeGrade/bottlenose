@@ -1,0 +1,63 @@
+<% @page_title = "#{@course.name} / #{@gradesheet.assignment.name}" %>
+<style>
+  h3 i.glyphicon { font-size: 80%; margin-left: 0.5em; }
+  h3 i.glyphicon-chevron-up { display: none; }
+  h3 i.glyphicon-chevron-down { display: initial; }
+  h3.collapsed i.glyphicon-chevron-up { display: initial; }
+  h3.collapsed i.glyphicon-chevron-down { display: none; }
+</style>
+
+<% cur_reg = current_user.registration_for(@course) %>
+<% if cur_reg && cur_reg.professor? %>
+<p class="pull-right">
+  <%= link_to "Edit Exam",
+      edit_course_exam_path(@course, @gradesheet.assignment), class: "btn btn-default" %>
+</p>
+<% end %>
+
+<%= render 'assignments/assignment_questions_info', gradesheet: @gradesheet, cur_reg: cur_reg %>
+<div>
+<div class="pull-right">
+<%#= link_to "Enter all grades",
+    bulk_course_assignment_grader_path(@course, @exam, @grader),
+    class: "btn btn-success" %>
+</div>
+<h3 data-toggle="collapse" class="collapsed" data-target="#questions">
+  Questions
+  <i class="glyphicon glyphicon-chevron-down"></i>
+  <i class="glyphicon glyphicon-chevron-up"></i>
+</h3>
+<div id="questions" class="collapse">
+<% count = 1 %>
+<ol>
+  <% @questions.each_with_index do |q, q_num| %>
+  <% if q["parts"] %>
+  <li><b><%= q["name"] %></b>
+    (<%= q["weight"] %> points<% if q["extra"] %> <b>Extra Credit</b><% end %>)
+    <ol type="a">
+    <% q["parts"].each_with_index do |part, j| %>
+      <li>
+        <p>
+          <b><%= part["name"] %></b>
+          (<%= part["weight"] %> points<% if part["extra"] %> <b>Extra Credit</b><% end %>)
+        </p>
+        <% if part["description"] %><p><%= part["description"] %></p><% end %>
+      </li>
+    <% end %>
+    </ol>
+  </li>
+  <% else %>
+  <li>
+    <p>
+      <b><%= q["name"] %></b>
+      (<%= q["weight"] %> points<% if q["extra"] %> <b>Extra Credit</b><% end %>)
+    </p>
+    <% if q["description"] %><p><%= q["description"] %></p><% end %>
+  </li>
+  <% end %>
+  <% end %>
+</ol>
+</div>
+</div>
+<%= render "assignments/admin_subs", type: {noun: "exam", verb: "answer", gerund: "answering"} %>
+

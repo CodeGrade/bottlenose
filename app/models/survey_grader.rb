@@ -1,5 +1,5 @@
 require 'clamp'
-class QuestionsGrader < Grader
+class SurveyGrader < Grader
   def autograde!(assignment, sub)
     g = self.grader_for sub
 

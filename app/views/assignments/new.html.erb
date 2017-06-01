@@ -2,4 +2,22 @@
 
 <p><strong>Create New Assignment</strong></p>
 
-<%= render 'form' %>
+<div>
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#type-files" data-toggle="tab">Files</a></li>
+    <li><a href="#type-exam" data-toggle="tab">Exam</a></li>
+    <li><a href="#type-questions" data-toggle="tab">Questions</a></li>
+  </ul>
+
+  <div class="tab-content">
+    <div id="type-files" class="tab-pane active">
+      <%= render 'psets/form', asgn: @pset %>
+    </div>
+    <div id="type-exam" class="tab-pane">
+      <%= render 'exams/form', asgn: @exam %>
+    </div>
+    <div id="type-questions" class="tab-pane">
+      <%= render 'surveys/form', asgn: @surv %>
+    </div>
+  </div>
+</div>

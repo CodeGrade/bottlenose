@@ -36,27 +36,28 @@ class AssignmentsController < ApplicationController
   end
 
   def new
-    @files = Assignment.new
-    @files.course_id = @course.id
-    @files.due_date = (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M")
-    @files.available = Time.now.strftime("%Y/%m/%d %H:%M")
-    @files.lateness_config_id = @course.lateness_config_id
-    @files.request_time_taken = true
+    @pset = Pset.new
+    @pset.course_id = @course.id
+    @pset.due_date = (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M")
+    @pset.available = Time.now.strftime("%Y/%m/%d %H:%M")
+    @pset.lateness_config_id = @course.lateness_config_id
+    @pset.request_time_taken = true
 
-    @exam = @files.dup
+    @exam = Exam.new
     @exam.graders = [ExamGrader.new]
-    @files.lateness_config_id = @course.lateness_config_id
+    @exam.lateness_config_id = @course.lateness_config_id
     @exam.request_time_taken = false
 
-    @quest = @files.dup
-    @files.lateness_config_id = @course.lateness_config_id
-    @quest.request_time_taken = false
+    @surv = Survey.new
+    @surv.graders = [SurveyGrader.new]
+    @surv.lateness_config_id = @course.lateness_config_id
+    @surv.request_time_taken = false
 
     last_assn = @course.assignments.order(created_at: :desc).first
     if last_assn
-      @files.points_available = last_assn.points_available
+      @pset.points_available = last_assn.points_available
       @exam.points_available  = last_assn.points_available
-      @quest.points_available = last_assn.points_available
+      @surv.points_available = last_assn.points_available
     end
   end
 

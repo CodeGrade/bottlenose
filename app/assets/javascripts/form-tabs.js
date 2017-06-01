@@ -72,7 +72,12 @@ window.form_tabs_init = function (tabs_div) {
 
 window.form_tabs_init_all = function (thing) {
     $(thing).find('.form-tabs').each(function (_ii, el) {
+        if ($(el).data('form-tabs-init') == 'done') {
+            return;
+        }
         form_tabs_init(el);
+
+        $(el).data('form-tabs-init', 'done');
     });
 };
 
