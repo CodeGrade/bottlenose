@@ -1,4 +1,7 @@
 Bottlenose::Application.routes.draw do
+  resources :psets
+  resources :surveys
+  resources :exams
   resources :sandboxes
 
   # Using devise for user auth.
@@ -49,6 +52,10 @@ Bottlenose::Application.routes.draw do
     delete 'reg_requests/:id/reject', to: 'reg_requests#reject', as: 'reg_request_reject'
     delete 'reg_requests/:course_id/accept_all', to: 'reg_requests#accept_all', as: 'reg_request_accept_all'
     delete 'reg_requests/:course_id/reject_all', to: 'reg_requests#reject_all', as: 'reg_request_reject_all'
+
+    resources :psets
+    resources :surveys
+    resources :exams
     resources :assignments do
       collection do
         get 'weights' => 'assignments#edit_weights'

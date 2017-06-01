@@ -24,10 +24,11 @@
         });
     }
 
-    run_on_page("assignments/new", form_init);
-    run_on_page("assignments/create", form_init);
-    run_on_page("assignments/edit", form_init);
-    run_on_page("assignments/update", form_init);
+    ["assignments", "psets", "exams", "surveys"].forEach(function (con) {
+        ["new", "edit", "create", "update"].forEach(function (act) {
+            run_on_page(con + "/" + act, form_init);
+        });
+    });
 })();
 
 /*

@@ -38,7 +38,7 @@
            end
           %>
         <tr>
-          <td><%= link_to assignment.name, course_assignment_path(assignment.course, assignment) %></td>
+          <td><%= link_to assignment.name, [assignment.course, assignment] %></td>
           <td><span class="local-time"><%= assignment.due_date %></span></td>
           <% if show_weight %>
             <td>

@@ -1,5 +1,5 @@
 <%= form_for [@course, asgn] do |f| %>
-  <%= f.hidden_field :type, value: "files" %>
+  <%= f.hidden_field :type, value: "exam" %>
 
   <% if asgn.errors.any? %>
     <div id="error_explanation" class="alert alert-danger">
@@ -28,11 +28,13 @@
   <div class="row">
     <div class="form-group col-sm-6">
       <p>
-        <%= f.label :assignment_file, "Assignment starter files" %>
+      <%= f.label :assignment_file, "Exam questions" %>
       </p>
-      <p>This file will be available for students
-        to download as starter code for this
-        assignment.</p>
+      <p>This file contains a skeleton of the exam
+        questions, in YAML format.
+        <span class="btn btn-info btn-sm" data-toggle="collapse"
+              data-target="#exam-schema">See schema</span>
+      </p>
       <p class="form-inline">
         <label class="btn btn-default btn-file">
           Browse <%= f.file_field :assignment_file, id: "assignment-file", style: "display: none;" %>
@@ -68,84 +70,25 @@
     </div>
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>
-      <p>
-        This is the percentage of the final grade that this
-        assignment is worth.  Default: same as previous assignment.</p>
+      <p>This is the percentage of the final grade that this exam is worth.</p>
       <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
     </div>
   </div>
 
-  <div class="row">
+  <%= render 'exams/exam_schema' %>
+
+  <div class="for-type row">
     <div class="form-group col-sm-6">
       <%= f.label :due_date do %>
-      Due date
+      Exam date
       <% end %>
-      <p>Assignment should not be submitted after this time. Default: one week from today.</p>
       <div>
         <%= f.text_field :due_date, class: 'form-control datetime-picker' %>
       </div>
     </div>
-    <div class="form-group col-sm-6">
-      <%= f.label :available_date %>
-      <p>Assignment will not be visible until this time. Default: today.</p>
-      <div>
-        <%= f.text_field :available, class: 'form-control datetime-picker' %>
-      </div>
-    </div>
   </div>
 
-  <div class="row">
-    <div class="form-group col-sm-6">
-      <%= f.label :team_subs, "Team Submissions?" %>
-      <p>If selected, submissions count as a member of a team.  If
-        not, submissions are individual even if student is a memeber of
-        a team.</p>
-      <%= f.check_box :team_subs, data: {toggle: "toggle", on: "Yes", off: "No"} %>
-    </div>
-    <div class="form-group col-sm-6">
-      <%= f.label :request_time_taken, "Request time taken?" %>
-      <p>If selected, ask students on each submission how long they've
-        worked on the assignment.</p>
-      <%= f.check_box :request_time_taken, checked: asgn.request_time_taken,
-          data: {toggle: "toggle", on: "Yes", off: "No"} %>
-    </div>
-  </div>
-
-  <div class="form-group for-type">
-    <div>
-      <p><strong>Late Penalty</strong></p>
-      <%= render 'lateness/picker', within_course: true, f: f %>
-    </div>
-  </div>
-  <div class="form-group">
-    <div>
-      <p><strong>Graders</strong></p>
-      <ol id="files-graders" class="graders-list grader-defns">
-        <%= f.fields_for :graders, asgn.graders_ordered do |gr| %>
-          <li class="grader nested-fields">
-            <div class="panel panel-default">
-              <div class="panel-heading">
-                <% if gr.object.grades.empty? %>
-                  <div class="pull-right">
-                    <%= link_to_remove_association "Remove", gr, class: 'btn btn-danger' %>
-                  </div>
-                <% end %>
-                <strong><%= gr.object.display_type %></strong>
-              </div>
-              <div class="panel-body">
-                <%= render "graders/#{gr.object.type.underscore}.html.erb", f: gr %>
-              </div>
-            </div>
-          </li>
-        <% end %>
-      </ol>
-
-      <%= link_to_add_association("Add Grader", f, :graders, partial: 'graders/form',
-                                  "data-association-insertion-node" => '#files-graders',
-                                  "data-association-insertion-method" => 'append',
-                                  class: 'btn btn-default' ) %>
-    </div>
-  </div>
+  <%= f.hidden_field :lateness_config_id %>
   <div class="form-group">
   <%= f.submit nil, class: 'btn btn-primary' %>
   </div>
