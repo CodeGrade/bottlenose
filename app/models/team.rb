@@ -1,5 +1,6 @@
 class Team < ApplicationRecord
   belongs_to :course
+  belongs_to :teamset
   has_many   :team_users, dependent: :destroy
   has_many   :users, through: :team_users
   has_many   :submissions

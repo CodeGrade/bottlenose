@@ -21,18 +21,18 @@
         <% end %>
 
         <div>
-            <%= link_to "Teams", course_teams_path(@course), class: "btn btn-sm btn-default" %>
+            <%= link_to "Teams", course_teamsets_path(@course), class: "btn btn-sm btn-default" %>
             <%= link_to "Assignments", course_assignments_path(@course), class: "btn btn-sm btn-default" %>
-            <% if current_user.site_admin? || (cur_reg && cur_reg.staff?) %>
+            <% if current_user.site_admin? || cur_reg&.staff? %>
                 <%= link_to "Registrations", course_registrations_path(@course), class: "btn btn-sm btn-default" %>
             <% end %>
-            <% if current_user.site_admin? || (cur_reg && cur_reg.professor?) %>
+            <% if current_user.site_admin? || cur_reg&.professor? %>
               <%= link_to "Grader info", stats_course_grades_path(@course), class: "btn btn-sm btn-default" %>
             <% end %>
-            <% if current_user.site_admin? || (cur_reg && cur_reg.staff?) %>
+            <% if current_user.site_admin? || cur_reg&.staff? %>
               <%= link_to "Student Facebook", facebook_course_path(@course), class: "btn btn-sm btn-default" %>
             <% end %>
-            <% if current_user.site_admin? || (cur_reg && cur_reg.professor?) %>
+            <% if current_user.site_admin? || cur_reg&.professor? %>
               <%= link_to "Edit Course Settings", edit_course_path(@course), class: "btn btn-sm btn-default" %>
               <div class="dropdown btn btn-link pull-right">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Export gradesheet... <span class="caret"></span></a>

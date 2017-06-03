@@ -93,13 +93,16 @@ Bottlenose::Application.routes.draw do
         end
       end
     end
-    resources :teams, except: [:edit, :update, :destroy] do
+    resources :teamsets, only: [:index, :edit, :update] do
       member do
-        patch :dissolve
-      end
-      collection do
-        patch :dissolve_all
+        patch :clone
         patch :randomize
+        patch :dissolve_all
+      end
+      resources :teams, only: [:show] do
+        member do
+          patch :dissolve
+        end
       end
     end
     member do

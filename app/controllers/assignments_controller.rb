@@ -58,9 +58,12 @@ class AssignmentsController < ApplicationController
       @exam.points_available  = last_assn.points_available
       @quest.points_available = last_assn.points_available
     end
+
+    @existing_subs = false
   end
 
   def edit
+    @existing_subs = !@assignment.submissions.empty?
   end
 
   def edit_weights
@@ -92,7 +95,35 @@ class AssignmentsController < ApplicationController
       @assignment.available = @assignment.due_date
     end
 
-    if @assignment.save
+    # Options are:
+    # None -- create a (unique, ignored) teamset
+    # New -- create a new teamset with initially no teams
+    # Use -- share an existing teamset with another assignment
+    # Copy -- duplicate an existing teamset
+    
+    @assignment.team_subs = (params["teamset"] != "none")
+    @errors = false
+    if params["teamset"] == "new" || params["teamset"] == "none"
+      @assignment.teamset = Teamset.new(course: @course, name: "Team set for #{@assignment.name}")
+    elsif params["teamset"] == "copy"
+      if params["teamset_source"].empty?
+        @assignment.errors.add(:base, "The teamset to be copied was not specified")
+        @errors = true
+      else
+        ts = Teamset.find(params["teamset_source"].to_i)
+        @assignment.teamset = ts&.dup
+      end
+    elsif params["teamset"] == "use"
+      if params["teamset_source"].empty?
+        @assignment.errors.add(:base, "The reference teamset was not specified")
+        @errors = true
+      else
+        ts = Teamset.find(params["teamset_source"].to_i)
+        @assignment.teamset = ts
+      end
+    end
+    
+    if !@errors && @assignment.save
       @assignment.save_uploads! if params[:assignment][:assignment_file]
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully created.'
     else
@@ -110,7 +141,43 @@ class AssignmentsController < ApplicationController
 
     @assignment.assign_attributes(ap)
 
-    if @assignment.save
+
+    # Options are:
+    # None -- leave the (unique, ignored) teamset alone
+    # New -- create solo teams for everyone who's already submitted
+    # Copy -- copy an existing teamset, and create solo teams for anyone who's already submitted
+    # Unique -- nothing to be done; it's already a unique teamset
+    # Use -- nothing to be done; continue to share teamset with another assignment
+    # Clone -- duplicate the teamset and transfer over any submissions
+    
+    @assignment.team_subs = (params["teamset"] != "none")
+    @errors = false
+    if params["teamset"] == "new"
+      @assignment.teamset.make_solo_teams_for(@assignment)
+    elsif params["teamset"] == "use"
+      if params["teamset_source"].empty?
+        @assignment.errors.add(:base, "The teamset to be used was not specified")
+        @errors = true
+      else
+        ts = Teamset.find(params["teamset_source"].to_i)
+        @assignment.teamset = ts
+      end
+    elsif params["teamset"] == "copy"
+      if params["teamset_source"].empty?
+        @assignment.errors.add(:base, "The teamset to be copied was not specified")
+        render action: "edit"
+        return
+      end
+      ts = Teamset.find(params["teamset_source"].to_i)
+      @assignment.teamset = ts&.dup
+      @assignment.teamset&.make_solo_teams_for(@assignment)
+    elsif params["teamset"] == "clone"
+      @assignment.teamset = @assignment.teamset.dup(@assignment)
+    else
+      debugger
+    end
+
+    if !@errors && @assignment.save
       @assignment.save_uploads! if ap[:assignment_file]
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully updated.'
     else

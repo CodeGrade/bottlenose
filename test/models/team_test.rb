@@ -5,7 +5,7 @@ class TeamTest < ActiveSupport::TestCase
     make_standard_course
     @jane = create(:user, name: "Jane von Classenstein", first_name: "Jane", last_name: "von Classenstein")
     @jane_reg = create(:registration, course: @cs101, user: @jane, section_id: @section.crn)
-    @team = create(:team, course: @cs101, start_date: Date.today)
+    @team = create(:team, teamset: @ts1, course: @cs101, start_date: Date.today)
     @team.users = [@jane, @john]
     @team.save
   end

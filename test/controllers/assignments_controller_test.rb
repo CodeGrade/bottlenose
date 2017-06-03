@@ -4,8 +4,8 @@ class AssignmentsControllerTest < ActionController::TestCase
   setup do
     make_standard_course
 
-    @hello = create(:assignment, course: @cs101)
-    @bad   = create(:assignment, course: @cs101)
+    @hello = create(:assignment, course: @cs101, teamset: @ts1)
+    @bad   = create(:assignment, course: @cs101, teamset: @ts2)
   end
 
   test "should get new" do
@@ -19,6 +19,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
+             teamset: "none",
              assignment: {
                assignment: "Dance a jig.",
                points_available: 100,
@@ -62,6 +63,8 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     put :update, params: {
       id: @hello, course_id: @cs101,
+      teamset: "use",
+      teamset_source: @ts1,
       assignment: { 
         assignment: @hello.assignment,
         name: "Something different",

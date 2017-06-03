@@ -1,4 +1,5 @@
 <% show_weight = false if show_weight.nil? %>
+<% is_admin = current_user&.course_staff?(@course) %>
 <div class="panel panel-default">
   <div class="panel-heading">
     <h3 class="panel-title">
@@ -24,30 +25,32 @@
          else
            assns = assignments.where("available <= ?", DateTime.current)
          end %>
+      <% used_subs_for_user = for_user.used_submissions_for(assns).to_a %>
+      <% subs_for_user = Assignment.submissions_for([for_user], assns).group_by(&:assignment_id) %>
       <% assns.order(due_date: :desc, available: :desc).each do |assignment| %>
         <%
-          submissions = for_user.submissions_for(assignment)
-          used = assignment.used_sub_for(for_user)
-          score =
-           if used.nil?
-             nil
-           elsif used.grade_complete?
-             used.score
-           else
-             image_tag("question-mark.png", height: 16, title: "Grading is not yet complete")
-           end
+           submissions = subs_for_user[assignment.id] || []
+           used = used_subs_for_user.find{|a| a.assignment_id == assignment.id}&.submission
+           score =
+             if used.nil?
+               nil
+             elsif used.grade_complete?
+               used.score
+             else
+               image_tag("question-mark.png", height: 16, title: "Grading is not yet complete")
+             end
           %>
         <tr>
           <td><%= link_to assignment.name, course_assignment_path(assignment.course, assignment) %></td>
-          <td><span class="local-time"><%= assignment.due_date %></span></td>
+          <td><span class="local-time"><%= assignment.due_date.iso8601 %></span></td>
           <% if show_weight %>
             <td>
               <%= show_score(assignment.points_available, assignment, true) %>
             </td>
           <% end %>
-          <td><%= show_score(score, assignment) %></td>
+          <td><%= show_score(score, assignment, is_admin) %></td>
           <td style="white-space: nowrap;">
-            <% submissions.limit(5).each do |submission| %>
+            <% submissions.take(5).each do |submission| %>
              <%= link_to course_assignment_submission_path(assignment.course, assignment, submission) do %>
               <% if used and submission.id == used.id %>
                <span class="label label-success"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170506003128) do
+ActiveRecord::Schema.define(version: 20170602143559) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -45,7 +45,7 @@ ActiveRecord::Schema.define(version: 20170506003128) do
     t.string "type", default: "Files", null: false
     t.integer "related_assignment_id"
     t.boolean "request_time_taken", default: false
-    t.integer "team_set_id"
+    t.integer "teamset_id", null: false
     t.index ["course_id"], name: "index_assignments_on_course_id"
   end
 
@@ -200,12 +200,6 @@ ActiveRecord::Schema.define(version: 20170506003128) do
     t.index ["user_id"], name: "index_submissions_on_user_id"
   end
 
-  create_table "team_sets", id: :serial, force: :cascade do |t|
-    t.integer "course_id", null: false
-    t.string "name"
-    t.index ["course_id"], name: "index_team_sets_on_course_id"
-  end
-
   create_table "team_users", id: :serial, force: :cascade do |t|
     t.integer "team_id"
     t.integer "user_id"
@@ -220,7 +214,13 @@ ActiveRecord::Schema.define(version: 20170506003128) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.date "end_date"
-    t.integer "team_set_id"
+    t.integer "teamset_id", null: false
+  end
+
+  create_table "teamsets", id: :serial, force: :cascade do |t|
+    t.integer "course_id", null: false
+    t.string "name"
+    t.index ["course_id"], name: "index_teamsets_on_course_id"
   end
 
   create_table "terms", id: :serial, force: :cascade do |t|

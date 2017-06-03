@@ -21,11 +21,11 @@
      end.join(", ")].flatten.join("\n").html_safe)
    end %>
 <div class="row">
-  <% if @team.errors.any? %>
+  <% if @teamset.errors.any? %>
   <div id="error_explanation" class="alert alert-danger">
-    <h3><%= pluralize(@team.errors.count, "error") %> prohibited this team from being saved:</h3>
+    <h3><%= pluralize(@teamset.errors.count, "error") %> prohibited this team from being saved:</h3>
     <ul>
-      <% @team.errors.full_messages.each do |message| %>
+      <% @teamset.errors.full_messages.each do |message| %>
       <li><%= message %></li>
       <% end %>
     </ul>
@@ -39,7 +39,7 @@
   <div class="col-md-4">
     <div class="form-group">
       <%= label_tag :start_date %><br>
-      <div class='input-group date', data-default="<%= Date.current.strftime("%Y/%m/%d") %>" >
+      <div class='input-group date' data-default="<%= DateTime.now.iso8601 %>" >
         <%= text_field_tag :start_date, "", class: 'form-control' %>
         <span class="input-group-addon">
           <span class="glyphicon glyphicon-calendar"></span>
@@ -65,7 +65,7 @@
           target.datetimepicker({
             sideBySide: true,
             format: "MMMM Do, YYYY",
-            minDate: "<%= Date.current.strftime("%Y/%m/%d") %>",
+            minDate: "<%= DateTime.now.iso8601 %>",
             defaultDate: target.data("default"),
             allowInputToggle: true
           });
@@ -75,12 +75,12 @@
         start.on("dp.change", function(e) {
           var v = $("#start_date").val();
           $("#random_start_date").val(v);
-          $("#team_start_date").val(v);
+          $("#single_start_date").val(v);
         });
         end.on("dp.change", function(e) {
           var v = $("#end_date").val()
           $("#random_end_date").val(v);
-          $("#team_end_date").val(v);
+          $("#single_end_date").val(v);
         });
         start.trigger("dp.change");
         end.trigger("dp.change");
@@ -95,47 +95,75 @@
 </div>
 
 <div class="well">
-  <%= form_for(@course, :url => { action: :randomize, method: :patch }) do |f| %>
+  <%= form_for([@course, @teamset], :url => { action: :randomize, method: :patch }) do |f| %>
   <h3>Randomize all teams</h3>
   <%= fields_for "random" do |rand| %>
   <div class="row">
-    <div class="col-sm-12 form-inline">
+    <div class="col-sm-12 form-inline" style="margin: 0 0 10px;">
       <%= rand.hidden_field "start_date" %>
       <%= rand.hidden_field "end_date" %>
       Generate random teams of size <%= rand.spinner "size", 2, :min => 2, :max => 10 %>
     </div>
     <p class="col-sm-12">
-      <%= f.submit "Generate random teams", id: "submit-random",
-          class: 'btn btn-primary', method: :patch %>
+      <%= f.submit "Generate random teams", method: :patch, id: "submit-random",
+          class: "btn btn-primary col-sm-3", style: "float: none;" %>
     </p>
   </div>
   <% end %>
   <% end %>
-
+  
   <h3 class="middle-separator">OR</h3>
 
-  <%= form_for([@course, @team]) do |f| %>
+  <%= form_for([@course, @teamset], :url => { action: :clone, method: :post }) do |f| %>
   <%= f.hidden_field :course_id %>
-  <%= f.hidden_field :start_date %>
-  <%= f.hidden_field :end_date %>
-  <h3>Select Team Members</h3>
+  <h3>Copy existing teamset</h3>
+  <div class="form-group">
+    <%= select_tag(:teamset,
+                   names_for_select(@course.teamsets.reject{|ts| ts.id == @teamset.id}),
+                   id: "existingTS", class: "col-sm-12") %>
+    <% @course.teamsets.each do |ts| %>
+    <div class="teamset-div" id="ts_<%= ts.id %>"
+       style="height: 15em; overflow-y: scroll; border: 1px solid #ccc; border-radius: 4px;">
+      <%= render "table", teams: ts.teams.includes(:users).order(end_date: :desc, id: :asc), id: "" %>
+    </div>
+    <% end %>
+  </div>
+  <p class="form-group">
+    <%= f.submit "Copy teamset", id: "submit-copy",
+        class: "btn btn-primary col-sm-3", style: "float: none;" %>
+  </p>
+  <% end %>
+  
+  <h3 class="middle-separator">OR</h3>
+
+  <%= form_for([@course, @teamset]) do |f| %>
+  <%= fields_for "single" do |single| %>
+  <%= single.hidden_field :course_id %>
+  <%= single.hidden_field :teamset_id %>
+  <%= single.hidden_field "start_date" %>
+  <%= single.hidden_field "end_date" %>
+  <h3>Select team members</h3>
   <div class="row form-group">
     <div class="col-sm-10">
-      <%= select_tag(:users, names_for_select(@team.users), multiple: true, class: "form-control") %>
+      <%= select_tag(:users, [], multiple: true, class: "form-control") %>
     </div>
     <span class="remove-users-btn btn btn-default col-sm-2">Remove Selected</span>
   </div>
   <p class="form-group">
-    <%= f.submit "Create single team", id: "submit-btn", class: 'btn btn-primary' %>
+    <%= f.submit "Create single team", id: "submit-btn",
+        class: "btn btn-primary col-sm-3", style: "float: none;" %>
   </p>
   <% end %>
+  <% end %>
+
+
 </div>
 
 <div class="row">
   <div class="col-md-6">
     <h3>Active Teams
       <%= link_to "Dissolve all",
-          dissolve_all_course_teams_path(@course),
+          dissolve_all_course_teamset_path(@course, @teamset),
           class: "btn btn-danger pull-right", 
           method: :patch, data: { confirm: "Are you sure you want to dissolve all teams?" } %>
     </h3>
@@ -153,7 +181,10 @@
         <tr>
           <td><%= show_team team %></td>
           <td>
-            <%= link_to "Dissolve", dissolve_course_team_path(@course, team), class: "btn btn-danger btn-xs pull-right", method: :patch, data: { confirm: "Are you sure?" } %>
+            <%= link_to "Dissolve",
+                dissolve_course_teamset_team_path(@course, @teamset, team),
+                class: "btn btn-danger btn-xs pull-right", method: :patch,
+                data: { confirm: "Are you sure?" } %>
           </td>
         </tr>
         <% end %>
@@ -190,10 +221,3 @@
     </div>
   </div>
 </div>
-<script>
-  $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
-    animated: 'fade',
-    placement: 'right',
-    html: true
-  });
-</script>

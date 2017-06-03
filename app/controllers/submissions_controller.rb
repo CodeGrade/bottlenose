@@ -36,10 +36,10 @@ class SubmissionsController < CoursesController
     @submission.user_id = current_user.id
 
     if @assignment.team_subs?
-      @team = current_user.active_team_for(@course)
+      @team = current_user.active_team_for(@course, @assignment)
 
       if @team.nil? && current_user.course_staff?(@course)
-        @team = Team.new(course: @course, start_date: DateTime.now)
+        @team = Team.new(course: @course, start_date: DateTime.now, teamset: @assignment.teamset)
         @team.users = [current_user]
         @team.save
       end
@@ -54,7 +54,7 @@ class SubmissionsController < CoursesController
     @submission = Submission.new(submission_params)
     @submission.assignment_id = @assignment.id
     if @assignment.team_subs?
-      @team = current_user.active_team_for(@course)
+      @team = current_user.active_team_for(@course, @assignment)
       @submission.team = @team
     end
 

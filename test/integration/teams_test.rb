@@ -12,7 +12,7 @@ class TeamsTest < ActionDispatch::IntegrationTest
     @mary = create(:registration, course: @cs101).user
     @greg = create(:registration, course: @cs101).user
 
-    @pset = create(:assignment, course: @cs101, team_subs: true)
+    @pset = create(:assignment, course: @cs101, team_subs: true, teamset: @ts1)
   end
 
   def test_create_team_submit_and_grade

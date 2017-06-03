@@ -37,7 +37,7 @@
     <% if staff_override %>
     <p>You need to 
       <%= link_to "enroll the student in a team",
-          new_course_team_path(@course) %>
+          new_course_teamset_team_path(@course, @assignment.teamset) %>
       before submitting.</p>
     <% else %>
     <p>Contact a professor to join a team.</p>
@@ -84,9 +84,9 @@
           $('#submission_created_at').datetimepicker({
             sideBySide: true,
             format: "YYYY/MM/DD h:mm A",
-            minDate: "<%= @course.created_at.strftime("%Y-%m-%d") %>",
+            minDate: "<%= @course.created_at.beginning_of_day.iso8601 %>",
             <% if @course.created_at < DateTime.current %>
-            defaultDate: "<%= DateTime.current.strftime("%Y-%m-%d %H:%M %Z") %>"
+            defaultDate: "<%= DateTime.current.iso8601 %>"
             <% else %>
             defaultDate: undefined
             <% end %>

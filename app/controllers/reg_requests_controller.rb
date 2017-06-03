@@ -47,7 +47,8 @@ class RegRequestsController < ApplicationController
       end
       count = count + 1
     end
-    redirect_back fallback_location: course_registrations_path(@course), notice: "#{plural(count, 'registration')} added"
+    redirect_back fallback_location: course_registrations_path(@course),
+                  notice: "#{pluralize(count, 'registration')} added"
   end
 
   def accept_help(request)

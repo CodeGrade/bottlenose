@@ -1,7 +1,15 @@
 <% cur_reg = current_user.registration_for(@course)  %>
-<% show_all = current_user.site_admin? || (cur_reg && cur_reg.professor?) %>
-<% show_grading = current_user.site_admin? || (cur_reg && cur_reg.staff?) %>
+<% show_all = current_user.site_admin? || cur_reg&.professor? %>
+<% show_grading = current_user.site_admin? || cur_reg&.staff? %>
 <% @page_title = @course.name %>
+<style>
+  h4 i.glyphicon { font-size: 80%; margin-left: 0.5em; }
+  h4 i.glyphicon-chevron-up { display: none; }
+  h4 i.glyphicon-chevron-down { display: initial; }
+  h4.collapsed i.glyphicon-chevron-up { display: initial; }
+  h4.collapsed i.glyphicon-chevron-down { display: none; }
+  .team-heading { margin: 10px 15px; font-size: 16px; }
+</style>
 
 <div class="row">
   <div class="col-md-6">
@@ -16,16 +24,12 @@
   <div class="col-md-6">
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h3 class="panel-title">Current Team</h3>
+        <h3 class="panel-title">Current Teams</h3>
       </div>
-      <% active_team = current_user.active_team_for(@course) %>
-      <% if active_team %>
-      <%= link_to course_team_path(@course, active_team) do %>
-      <div class="panel-body"><span><%= active_team %></span></div>
-      <% end %>
-      <% else %>
-      <div class="panel-body">No active team.</div>
-      <% end %>
+      <%= render "teamsets/all",
+          admin: current_user.course_staff?(@course),
+          course: @course, tag: "h4", editable: false
+          %>
     </div>
     <% unless @allocated_grading.empty? and @completed_grading.empty? %>
     <%= render "grader_allocations/grading_due", course: @course %>

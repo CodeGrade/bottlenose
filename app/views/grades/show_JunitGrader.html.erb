@@ -1,6 +1,6 @@
 <% @page_title = "JUnit Grader" %>
 <% cur_reg = current_user.registration_for(@course)
-   cur_reg_staff = cur_reg && cur_reg.staff? %>
+   cur_reg_staff = cur_reg&.staff? %>
 
 <p>
   <%= link_to "Back to submission",

@@ -63,8 +63,14 @@ FactoryGirl.define do
     order 0
   end
 
+  factory :teamset do
+    course
+    sequence(:name) {|n| "Default teamset #{n}"}
+  end
+  
   factory :assignment do
     course
+    teamset
     association :blame, factory: :user
     lateness_config
     available (Time.now - 10.days)
@@ -116,6 +122,7 @@ FactoryGirl.define do
 
   factory :team do
     course
+    teamset
 
     after(:build) do |team|
       u1 = create(:user)

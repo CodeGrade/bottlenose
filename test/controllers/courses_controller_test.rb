@@ -68,11 +68,13 @@ class CoursesControllerTest < ActionController::TestCase
 
     lateness = create(:lateness_config, type: "FixedDaysConfig", days_per_assignment: 1)
     gc = create(:grader, type: "ManualGrader", avail_score: 50)
+    ts = create(:teamset, name: "Teamset for dummy assignment")
     a1 = create(:assignment,
                 course: @course1,
                 due_date: (Time.now + 5.days),
                 name: "Dummy assignment",
-                lateness_config: lateness
+                lateness_config: lateness,
+                teamset: ts
                )
     get :show, params: {id: @course1}
     assert_response :success
@@ -93,7 +95,7 @@ class CoursesControllerTest < ActionController::TestCase
   test "updating late penalties should change scores" do
     skip # refers to teacher_scores, rather than the newer score model
 
-    a1  = create(:assignment, course: @course1, due_date: (Time.now - 5.days))
+    a1  = create(:assignment, course: @course1, due_date: (Time.now - 5.days), teamset: @ts1)
     sub = create(:submission, assignment: a1, user: @john, teacher_score: 100)
 
     sign_in @fred
@@ -137,7 +139,7 @@ class CoursesControllerTest < ActionController::TestCase
   end
 
   test "should export gradesheet" do
-    a1 = create(:assignment, course: @course1, name: "Assignment 1")
+    a1 = create(:assignment, course: @course1, name: "Assignment 1", teamset: @ts1)
     sub1 = create(:submission, assignment: a1, user: @john, score: 20)
 
     sign_in @fred

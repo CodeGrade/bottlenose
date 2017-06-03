@@ -1,5 +1,5 @@
 <h1>Scoring Details</h1>
-<% cur_reg_staff = cur_reg && cur_reg.staff? %>
+<% cur_reg_staff = cur_reg&.staff? %>
 
 <table class="table table-striped row-vcenter">
   <% all_grades = @gradesheet.grades[:grades].find(sub: @submission).first
@@ -50,7 +50,7 @@
           <% end %>
         <% end %>  
       <% else %>
-        <% if grade && grade.available %>
+        <% if grade&.available %>
           <%= link_to "Grader output",
               course_assignment_submission_grade_path(@course, @assignment, @submission, grade) %>
         <% else %>
@@ -96,7 +96,7 @@
     <td>
       <%= if @submission.ignore_late_penalty
             "(penalty ignored)"
-          elsif @submission.days_late > 0 && cur_reg && cur_reg.professor?
+          elsif @submission.days_late > 0 && cur_reg&.professor?
             link_to("Rescind lateness penalty",
               rescind_lateness_course_assignment_submission_path(@course, @assignment, @submission),
               class: "btn btn-default", method: "patch")
@@ -130,7 +130,7 @@
         <span class="btn btn-default disabled">Finish grading before publishing score</span>
         <% end %>
       <% end %>
-      <% if cur_reg && cur_reg.professor? %>
+      <% if cur_reg&.professor? %>
       <% if @plagiarized %>
       <span class="btn btn-danger disabled">Plagiarized submission</span>
       <% else %>

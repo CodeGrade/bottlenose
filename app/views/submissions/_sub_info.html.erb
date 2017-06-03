@@ -1,5 +1,5 @@
 <% cur_reg = current_user.registration_for(@course) %>
-<% cur_reg_staff = cur_reg && cur_reg.staff? %>
+<% cur_reg_staff = cur_reg&.staff? %>
 <style>
   #subinfo .tooltip.in { opacity: 1; filter: alpha(opacity=100); }
 </style>
@@ -18,7 +18,7 @@
    end %>
 <% def maybe_link_team(which, team)
    content_tag(:span, [
-     link_to("Team #{team.id}", course_team_path(@course, team)),
+     link_to("Team #{team.id}", course_teamset_team_path(@course, team.teamset, team)),
      " - ",
      team.users.sort_by(&:sort_name).map do |u|
         tt = {

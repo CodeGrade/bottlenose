@@ -14,6 +14,8 @@ class Assignment < ApplicationRecord
 
   belongs_to :course
 
+  belongs_to :teamset
+
   belongs_to :lateness_config
   accepts_nested_attributes_for :lateness_config
 
@@ -178,12 +180,7 @@ class Assignment < ApplicationRecord
   end
 
   def used_sub_for(user)
-    ans = UsedSub.find_by(user_id: user.id, assignment_id: self.id)
-    if ans.nil?
-      ans
-    else
-      ans.submission
-    end
+    UsedSub.find_by(user_id: user.id, assignment_id: self.id)&.submission
   end
 
   def main_submissions

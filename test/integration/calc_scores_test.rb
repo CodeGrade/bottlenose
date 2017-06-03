@@ -35,10 +35,10 @@ class CalcScoresTest < ActionDispatch::IntegrationTest
     @john101 = create(:registration, course: @cs101, user: @john)
     @mark101 = create(:registration, course: @cs101, user: @mark)
 
-    @cs101hw1 = create(:assignment, name: "cs1hw1", course: @cs101, bucket: @hw101)
-    @cs101hw2 = create(:assignment, name: "cs1hw2", course: @cs101, bucket: @hw101, team_subs: true)
-    @cs101qz1 = create(:assignment, name: "cs1qz1", course: @cs101, bucket: @qz101)
-    @cs101qz2 = create(:assignment, name: "cs1qz2", course: @cs101, bucket: @qz101)
+    @cs101hw1 = create(:assignment, name: "cs1hw1", course: @cs101, bucket: @hw101, teamset: @ts1)
+    @cs101hw2 = create(:assignment, name: "cs1hw2", course: @cs101, bucket: @hw101, teamset: @ts1, team_subs: true)
+    @cs101qz1 = create(:assignment, name: "cs1qz1", course: @cs101, bucket: @qz101, teamset: @ts1)
+    @cs101qz2 = create(:assignment, name: "cs1qz2", course: @cs101, bucket: @qz101, teamset: @ts1)
 
     # Course 2
     @cs102   = create(:course, name: "CS 102", public: false)
@@ -50,10 +50,10 @@ class CalcScoresTest < ActionDispatch::IntegrationTest
     @john102 = create(:registration, course: @cs102, user: @john)
     @mark102 = create(:registration, course: @cs102, user: @mark)
 
-    @cs102hw1 = create(:assignment, name: "cs2hw1", course: @cs102, bucket: @hw102)
-    @cs102hw2 = create(:assignment, name: "cs2hw2", course: @cs102, bucket: @hw102, team_subs: true)
-    @cs102qz1 = create(:assignment, name: "cs2qz1", course: @cs102, bucket: @qz102)
-    @cs102qz2 = create(:assignment, name: "cs2qz2", course: @cs102, bucket: @qz102)
+    @cs102hw1 = create(:assignment, name: "cs2hw1", course: @cs102, bucket: @hw102, teamset: @ts2)
+    @cs102hw2 = create(:assignment, name: "cs2hw2", course: @cs102, bucket: @hw102, teamset: @ts2, team_subs: true)
+    @cs102qz1 = create(:assignment, name: "cs2qz1", course: @cs102, bucket: @qz102, teamset: @ts2)
+    @cs102qz2 = create(:assignment, name: "cs2qz2", course: @cs102, bucket: @qz102, teamset: @ts2)
 
 
     @tars_dir = Rails.root.join('test', 'fixtures', 'files')

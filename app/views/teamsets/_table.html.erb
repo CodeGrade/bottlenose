@@ -1,0 +1,25 @@
+<table class="table teamset-table" id="<%= id %>">
+  <thead>
+    <tr>
+      <th style="width: 0px;"></th>
+      <th>Members</th>
+      <th>Start Date</th>
+      <th>End Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% teams.each do |team| %>
+      <% if team.active? %>
+      <tr class="success">
+        <td><span class="glyphicon glyphicon-chevron-right" title="Active team"></span></td>
+      <% else %>
+      <tr class="inactive">
+        <td></td>
+      <% end %>
+        <td><%= team %></td>
+        <td><%= team.start_date %></td>
+        <td><%= team.end_date || "∞" %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

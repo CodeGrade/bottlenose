@@ -10,6 +10,7 @@ class Course < ApplicationRecord
   has_many :assignments, dependent: :restrict_with_error
   has_many :submissions, through: :assignments
   has_many :teams,       dependent: :destroy
+  has_many :teamsets, dependent: :destroy
 
   belongs_to :lateness_config
 
@@ -66,7 +67,7 @@ class Course < ApplicationRecord
     if for_users
       look_for = look_for.where(id: for_users.map(&:id))
     end
-    look_for.select("users.*", "registrations.dropped_date")
+    look_for.select("users.*", "registrations.dropped_date as dropped_date")
   end
 
   def students_with_drop_info(for_users = nil)
@@ -167,7 +168,7 @@ class Course < ApplicationRecord
       max = min + remaining
       unsub_names = []
       unsubs = open.reduce(0.0) do |tot, o|
-        if used.find{|u| u.assignment == o}.nil?
+        if used.find{|u| u.assignment_id == o.id}.nil?
           unsub_names.push o.name
           tot + o.points_available
         else

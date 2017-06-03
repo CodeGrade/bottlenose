@@ -8,7 +8,7 @@
     <div class="panel-title" id="assignments" data-toggle="collapse" data-target="#assignments-table">
       Assignments
 
-      <% if @course && @course.registered_by?(current_user) %>
+      <% if @course&.registered_by?(current_user) %>
       <div class="pull-right">
         <%= link_to "New", new_course_assignment_path(@course), class: 'btn btn-xs btn-success' %>
       </div>
@@ -47,8 +47,8 @@
         <% if assn.available > DateTime.current %>
         <tr class="text-muted">
           <td><%= link_to assn.name, course_assignment_path(@course, assn) %></td>
-          <td><span class="local-time"><%= assn.available %></span></td>
-          <td><span class="local-time"><%= assn.due_date %></span></td>
+          <td><span class="local-time"><%= assn.available.iso8601 %></span></td>
+          <td><span class="local-time"><%= assn.due_date.iso8601 %></span></td>
           <td><%= show_score(assn.points_available, assn, true) %>
           <td>N/A</td>
           <td>N/A</td>
@@ -56,8 +56,8 @@
         <% else %>
         <tr>
           <td><%= link_to assn.name, course_assignment_path(@course, assn) %></td>
-          <td><span class="local-time"><%= assn.available %></span></td>
-          <td><span class="local-time"><%= assn.due_date %></span></td>
+          <td><span class="local-time"><%= assn.available.iso8601 %></span></td>
+          <td><span class="local-time"><%= assn.due_date.iso8601 %></span></td>
           <td><%= show_score(assn.points_available, assn, true) %>
           <% if assn.due_date > DateTime.current %>
           <td class="text-muted">N/A</td>
@@ -65,9 +65,9 @@
           <td class="text-muted">N/A</td>
           <% else %>
           <% stat = stats.find{|r| r.a_id == assn.id} %>
-          <td><%= show_score(stat && stat.min, assn, true) %>%</td>
-          <td><%= show_score(stat && stat.avg, assn, true) %>%</td>
-          <td><%= show_score(stat && stat.max, assn, true) %>%</td>
+          <td><%= show_score(stat&.min, assn, true) %>%</td>
+          <td><%= show_score(stat&.avg, assn, true) %>%</td>
+          <td><%= show_score(stat&.max, assn, true) %>%</td>
           <% end %>
         <% end %>
         </tr>

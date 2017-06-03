@@ -10,7 +10,7 @@
    if which
      link_to(user.name, user_path(user), class: "user-link", data: tt)
    else
-     span_tag(user.name, class: "user-link", data: tt)
+     content_tag(:span, user.name, class: "user-link", data: tt)
    end
    end %>
 <h3 style="display: inline-block">
@@ -105,7 +105,7 @@
 
         <% @gradesheet.grades[:graders].each do |c| %>
         <th class="text-right">
-          <% if c.autograde? && (cur_reg && cur_reg.professor?) %>
+          <% if c.autograde? && cur_reg&.professor? %>
           <%= link_to rerun_grader_course_assignment_submissions_path(@course, @gradesheet.assignment, c),
               class: "btn btn-default no-resort",
               title: "Rerun #{c.display_type} for all used submissions",
