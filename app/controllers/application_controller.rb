@@ -24,16 +24,6 @@ class ApplicationController < ActionController::Base
     ActionMailer::Base.default_url_options[:protocol] = request.protocol
   end
 
-  def find_course
-    return unless @course.nil?
-
-    if params[:course_id].nil?
-      @course ||= Course.find(params[:id])
-    else
-      @course ||= Course.find(params[:course_id])
-    end
-  end
-
   def require_site_admin
     unless current_user_site_admin?
       redirect_to root_path, alert: "Must be an admin."
