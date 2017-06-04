@@ -4,7 +4,8 @@ class TeamsControllerTest < ActionController::TestCase
   setup do
     @team = create(:team)
     @fred = create(:user)
-    create(:registration, user: @fred, course: @team.course, role:  Registration::roles[:professor])
+    create(:registration, user: @fred, course: @team.course, section: @team.course.sections.first,
+           role:  Registration::roles[:professor])
 
     mreg = create(:registration, course: @team.course)
     @mark = mreg.user

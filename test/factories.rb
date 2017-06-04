@@ -69,7 +69,6 @@ FactoryGirl.define do
   end
   
   factory :assignment do
-    course
     teamset
     association :blame, factory: :user
     lateness_config
@@ -78,6 +77,9 @@ FactoryGirl.define do
 
     sequence(:name) {|n| "Homework #{n}" }
     due_date (Time.now + 7.days)
+    after(:build) do |assn|
+      assn.course = assn.teamset.course
+    end
   end
 
   factory :upload do
@@ -94,7 +96,7 @@ FactoryGirl.define do
 
     after(:build) do |sub|
       unless sub.user.registration_for(sub.course)
-        create(:registration, user: sub.user, course: sub.course)
+        create(:registration, user: sub.user, course: sub.course, section: sub.course.sections.first)
       end
 
       if sub.upload
@@ -105,31 +107,36 @@ FactoryGirl.define do
 
   factory :registration do
     user
-    course
     section
 
     role 0
     show_in_lists true
+    after(:build) do |reg|
+      reg.course = reg.section.course
+    end
   end
 
   factory :reg_request do
     user
-    course
     section
 
     notes "Let me in!"
+    after(:build) do |rr|
+      rr.course = rr.section.course
+    end
   end
 
   factory :team do
-    course
     teamset
 
     after(:build) do |team|
+      team.course = team.teamset.course
+      
       u1 = create(:user)
       u2 = create(:user)
 
-      r1 = create(:registration, user: u1, course: team.course)
-      r2 = create(:registration, user: u2, course: team.course)
+      r1 = create(:registration, user: u1, course: team.course, section: team.course.sections.first)
+      r2 = create(:registration, user: u2, course: team.course, section: team.course.sections.first)
 
       team.users = [u1, u2]
       team.start_date = Time.now - 2.days
