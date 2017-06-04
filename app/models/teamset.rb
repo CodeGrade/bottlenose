@@ -25,6 +25,25 @@ class Teamset < ActiveRecord::Base
     return new_ts
   end
 
+  def randomize(size, start_date, end_date = nil)
+    # This method randomly allocates the un-teamed students in this teamset
+    # into new teams of the given size
+    count = 0
+    students_without_active_team.to_a.shuffle.each_slice(size).each do |t|
+      @team = Team.new(course: self.course,
+                       start_date: start_date,
+                       end_date: end_date,
+                       teamset: self
+                      )
+      @team.users = t
+
+      if @team.save
+        count += 1
+      end
+    end
+    return count
+  end
+
   def copy_from(src, revise_subs_for_assn)
     self.dissolve_all
     count = 0
@@ -62,7 +81,19 @@ class Teamset < ActiveRecord::Base
   def active_teams
     self.teams.select(&:active?)
   end
-  
+
+  def students_without_active_team
+    @swdi = self.course.students_with_drop_info
+    @relevant_teams = Team
+                      .joins(:team_users)
+                      .select("teams.*", "team_users.user_id as uid")
+                      .where("team_users.user_id IN (?)", @swdi.pluck(:id))
+                      .group_by(&:uid)
+    @swdi.where("registrations.dropped_date": nil).reject do |student|
+      @relevant_teams[student.id]&.any? do |t| t.teamset_id == self.id && t.active? end
+    end
+  end
+
   def make_solo_teams_for(assn)
     # This creates singleton teams for everyone who's submitted to the assignment already,
     # and updates all those submissions to point to these new teams.  This method should be used
