@@ -31,8 +31,8 @@ class RequestRegTest < ActionDispatch::IntegrationTest
 
     # Verify that the request exists
     req = RegRequest.find_by_user_id(user.id)
-    assert_equal req.name, "Napoleon Bonaparte"
-    assert_equal req.course_id, @cs101.id
+    assert_equal "Napoleon Bonaparte", req.name
+    assert_equal @cs101.id, req.course_id
 
     # As a professor, accept the request.
     visit "http://test.host/main/auth?email=#{@fred.email}&key=#{@fred.auth_key}"
@@ -46,7 +46,7 @@ class RequestRegTest < ActionDispatch::IntegrationTest
 
     # Verify that the registration has been created.
     user = User.find_by_email("napolean@example.com")
-    assert_equal user.name, "Napoleon Bonaparte"
+    assert_equal "Napoleon Bonaparte", user.name
 
     reg  = Registration.find_by_user_id_and_course_id(user.id, @cs101.id)
     assert_not_nil reg

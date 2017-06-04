@@ -14,20 +14,20 @@ class TeamTest < ActiveSupport::TestCase
     assert @team.end_date.nil?
     @when = DateTime.now
     @team.dissolve(@when)
-    assert_equal @team.end_date, @when.to_date
+    assert_equal @when.to_date, @team.end_date
   end
   test "Dissolve team with future end_date" do
     @when = DateTime.now
     @team.end_date = @when + 1.day
     assert !@team.end_date.nil?
     @team.dissolve(@when)
-    assert_equal @team.end_date, @when.to_date
+    assert_equal @when.to_date, @team.end_date
   end
   test "Dissolve team with expired end_date" do
     @when = DateTime.now
     @team.end_date = @when - 1.day
     assert !@team.end_date.nil?
     @team.dissolve(@when)
-    assert_equal @team.end_date, @when.to_date - 1.day
+    assert_equal @when.to_date - 1.day, @team.end_date
   end
 end

@@ -104,8 +104,8 @@ class CoursesControllerTest < ActionController::TestCase
 
     sub.reload
 
-    assert_equal sub.assignment_id, a1.id
-    assert_equal sub.score, 88
+    assert_equal a1.id, sub.assignment_id
+    assert_equal 88, sub.score
   end
 
   test "non-admin should not be able to update course" do

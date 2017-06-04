@@ -69,4 +69,5 @@ group :test do
   gem 'launchy'
   gem 'factory_girl_rails'
   gem 'rails-controller-testing'
+  gem 'single_test'
 end

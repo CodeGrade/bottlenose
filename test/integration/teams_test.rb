@@ -68,6 +68,6 @@ class TeamsTest < ActionDispatch::IntegrationTest
 
     mreg = @mary.registration_for(@cs101)
     greg = @greg.registration_for(@cs101)
-    assert_equal mreg.total_score, greg.total_score
+    assert_equal greg.total_score, mreg.total_score
   end
 end

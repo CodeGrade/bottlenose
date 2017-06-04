@@ -46,8 +46,8 @@ class GradeSubmissionTest < ActionDispatch::IntegrationTest
     click_button 'Save Grade'
 
     sub = Submission.find_by_teacher_notes('manually entered grade')
-    assert_equal @john.id, sub.user_id
-    assert_equal sub.score, 85
+    assert_equal sub.user_id, @john.id
+    assert_equal 85, sub.score
 
     # Make sure score summary updates properly.
     assert_not_equal(@john_reg.reload.total_score, score0, "Updated summary")
@@ -93,7 +93,7 @@ class GradeSubmissionTest < ActionDispatch::IntegrationTest
     click_link pset.name
     click_link 'Tarball of Submissions'
 
-    assert_equal page.response_headers["Content-Type"], "application/x-gzip"
+    assert_equal "application/x-gzip", page.response_headers["Content-Type"]
   end
 
   test "grade an assignment with no submission" do

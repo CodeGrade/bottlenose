@@ -242,6 +242,8 @@ GEM
       json (>= 1.8, < 3)
       simplecov-html (~> 0.10.0)
     simplecov-html (0.10.0)
+    single_test (0.6.0)
+      rake
     slop (3.6.0)
     sprockets (3.7.1)
       concurrent-ruby (~> 1.0)
@@ -319,6 +321,7 @@ DEPENDENCIES
   rails-controller-testing
   sass-rails (>= 3.2)
   simplecov
+  single_test
   therubyracer
   uglifier
   whenever

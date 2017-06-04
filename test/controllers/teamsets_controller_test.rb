@@ -32,7 +32,7 @@ class TeamsetsControllerTest < ActionController::TestCase
     end
 
     assert_response :redirect
-    assert_equal assigns(:team).users.count, 3
+    assert_equal 3, assigns(:team).users.count
   end
 
 
@@ -52,7 +52,7 @@ class TeamsetsControllerTest < ActionController::TestCase
             id: @team, course_id: @team.course,
             team: { course_id: @team.course_id, start_date: @team.start_date },
             users: [ @mark.id ] }
-    assert_equal assigns(:team).users.count, 1
+    assert_equal 1, assigns(:team).users.count
     assert_redirected_to course_team_path(@team.course, assigns(:team))
   end
 end
