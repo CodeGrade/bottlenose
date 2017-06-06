@@ -5,6 +5,7 @@ require 'zlib'
 require 'find'
 
 class Upload < ApplicationRecord
+  include UploadsHelper
   validates :file_name,  :presence => true
   validates :user_id,    :presence => true
   validates :secret_key, :presence => true
@@ -135,13 +136,11 @@ class Upload < ApplicationRecord
     else
       FileUtils.cp(submission_path, extracted_path)
     end
-    # TODO (Ben):
-    # File.find(extracted_path) do |f|
-    #   if File.extname(f) == ".rkt" || File.extname(f) == ".ss"
-    #     contents = f.read
-    #     process contents with WXME postprocessor
-    #   end
-    # end
+    Find.find(extracted_path) do |f|
+      next unless File.file? f
+      next if File.extname(f).empty?
+      Postprocessor.process(f)
+    end
   end
 
   def upload_dir

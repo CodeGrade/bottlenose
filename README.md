@@ -30,6 +30,13 @@ the setup process.
 sudo apt-get install build-essential git postgresql libpq-dev
 ```
 
+Some of the autograders require a synthetic X connection; for that,
+Bottlenose uses xvfb:
+
+```sh
+sudo apt-get install xvfb
+```
+
 ### Postgres
 
 ```sh
@@ -90,7 +97,7 @@ rails db:create
 rails db:migrate
 
 # Start delayed job worker.
-bin/delayed_job start
+bin/delayed_job start [-n #of workers]
 
 # Start the server
 rails s
