@@ -19,8 +19,8 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
-             teamset: "none",
              assignment: {
+               teamset_plan: "none",
                assignment: "Dance a jig.",
                points_available: 100,
                name: "Useful Work",

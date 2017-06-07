@@ -1,14 +1,14 @@
 <label>Team Submissions</label>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_none" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_none" type="radio"
            value="none" checked>
     <strong>No teams:</strong> this assignment will be submitted individually
   </label>
 </div>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_new" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_new" type="radio"
            value="new">
     <strong>New teamset:</strong> after creating this assignment, go to the Teams
     page to create a new set of teams
@@ -16,11 +16,11 @@
 </div>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_use" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_use" type="radio"
            value="use">
     <strong>Use existing teamset:</strong> this assignment shares a teamset with
     another one, and changes to this teamset will affect both assignments<br>
-    <%= select_tag "teamset_source",
+    <%= select_tag "assignment[teamset_source_use]",
         options_from_collection_for_select(course.teamsets, "id", "name"),
         prompt: "Choose an existing teamset",
         class: "col-sm-12" %>
@@ -28,13 +28,13 @@
 </div>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_copy" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_copy" type="radio"
            value="copy">
     <strong>Copy existing teamset:</strong> clones the teams from an existing
     teamset, so changes to one set will not affect the other.  Any
     teams that cannot be cloned (because some students have dropped)
     will be ignored.<br>
-    <%= select_tag "teamset_source",
+    <%= select_tag "assignment[teamset_source_copy]",
         options_from_collection_for_select(course.teamsets, "id", "name"),
         prompt: "Choose an existing teamset",
         class: "col-sm-12" %>
@@ -42,7 +42,7 @@
 </div>
 <script>
   $(function() {
-    $("select[name='teamset_source']").on("focus",
+    $("select[name^='assignment[teamset_source']").on("focus",
       function() { $(this).parents(".radio").find("input[type='radio']").prop('checked', true).change(); });
   });
 </script>

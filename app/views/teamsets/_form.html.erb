@@ -114,6 +114,8 @@
   
   <h3 class="middle-separator">OR</h3>
 
+  <% other_teamsets = @course.teamsets.reject{|ts| ts.id == @teamset.id} %>
+  <% if other_teamsets.count > 0 %>
   <%= form_for([@course, @teamset], :url => { action: :clone, method: :post }) do |f| %>
   <%= f.hidden_field :course_id %>
   <h3>Copy existing teamset</h3>
@@ -132,6 +134,12 @@
     <%= f.submit "Copy teamset", id: "submit-copy",
         class: "btn btn-primary col-sm-3", style: "float: none;" %>
   </p>
+  <% end %>
+  <% else %>
+  <h3>Copy existing teamset</h3>
+  <div class="form-group">
+    <p>There are no other teamsets to copy from yet in this course.</p>
+  </div>
   <% end %>
   
   <h3 class="middle-separator">OR</h3>

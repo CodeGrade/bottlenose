@@ -8,14 +8,14 @@
    %>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_none" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_none" type="radio"
            value="none" checked>
     <strong>No teams:</strong> this assignment will be submitted individually
   </label>
 </div>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_new" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_new" type="radio"
            value="new">
     <strong>New teamset:</strong> after creating this assignment, go to the Teams
     page to create a new set of teams.  Since some students have
@@ -25,7 +25,7 @@
 </div>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_copy" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_copy" type="radio"
            value="copy">
     <strong>Copy existing teamset:</strong> clones the teams from an existing
     teamset, so changes to one set will not affect the other.  As with
@@ -35,7 +35,7 @@
     teams that cannot be cloned (because some students have dropped)
     will be ignored.
     <br>
-    <%= select_tag "teamset_source",
+    <%= select_tag "assignment[teamset_source_copy]",
         options_from_collection_for_select(course.teamsets, "id", "name"),
         prompt: "Choose an existing teamset",
         class: "col-sm-12" %>
@@ -48,7 +48,7 @@
    %>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_unique" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_unique" type="radio"
            value="unique" checked>
     <strong>Using existing teamset:</strong> this assignment has its
     own unique teamset already, and cannot be changed<br>
@@ -62,7 +62,7 @@
    %>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_use" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_use" type="radio"
            value="use" checked>
     <strong>Use existing teamset:</strong> this assignment shares a teamset with
     another one, and changes to this teamset will affect both assignments<br>
@@ -71,7 +71,7 @@
 </div>
 <div class="radio">
   <label>
-    <input name="teamset" id="teamset_clone" type="radio"
+    <input name="assignment[teamset_plan]" id="teamset_clone" type="radio"
            value="clone">
     <strong>Clone existing teamset:</strong> clone the teamset that
     this assignment currently shares with another one, so that changes
@@ -82,3 +82,9 @@
   </label>
 </div>
 <% end %>
+<script>
+  $(function() {
+    $("select[name^='assignment[teamset_source']").on("focus",
+      function() { $(this).parents(".radio").find("input[type='radio']").prop('checked', true).change(); });
+  });
+</script>
