@@ -12,7 +12,7 @@ class TeamsTest < ActionDispatch::IntegrationTest
     @mary = create(:registration, course: @cs101).user
     @greg = create(:registration, course: @cs101).user
 
-    @pset = create(:assignment, course: @cs101, team_subs: true)
+    @pset = create(:assignment, course: @cs101, team_subs: true, teamset: @ts1)
   end
 
   def test_create_team_submit_and_grade
@@ -68,6 +68,6 @@ class TeamsTest < ActionDispatch::IntegrationTest
 
     mreg = @mary.registration_for(@cs101)
     greg = @greg.registration_for(@cs101)
-    assert_equal mreg.total_score, greg.total_score
+    assert_equal greg.total_score, mreg.total_score
   end
 end

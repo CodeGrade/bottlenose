@@ -27,6 +27,16 @@ GIT
       warden (~> 1.2.3)
 
 GIT
+  remote: https://github.com/charliesome/better_errors.git
+  revision: 40cb4e6f6a4cdd0bc67a21a45bfadf9d325d1305
+  branch: master
+  specs:
+    better_errors (2.1.1)
+      coderay (>= 1.0.0)
+      erubis (>= 2.6.6)
+      rack (>= 0.9.0)
+
+GIT
   remote: https://github.com/jawspeak/zipruby-compatibility-with-rubyzip-fork.git
   revision: f0e0668599cd95adb5d5024773a7b9eb16869a79
   tag: v0.3.7
@@ -81,10 +91,6 @@ GEM
     autoprefixer-rails (7.0.1)
       execjs
     bcrypt (3.1.11)
-    better_errors (2.1.1)
-      coderay (>= 1.0.0)
-      erubis (>= 2.6.6)
-      rack (>= 0.9.0)
     binding_of_caller (0.7.2)
       debug_inspector (>= 0.0.1)
     bootstrap-sass (3.3.7)
@@ -236,6 +242,8 @@ GEM
       json (>= 1.8, < 3)
       simplecov-html (~> 0.10.0)
     simplecov-html (0.10.0)
+    single_test (0.6.0)
+      rake
     slop (3.6.0)
     sprockets (3.7.1)
       concurrent-ruby (~> 1.0)
@@ -275,7 +283,7 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord-import
-  better_errors
+  better_errors!
   binding_of_caller
   bootstrap-sass (~> 3.3.5)
   bootstrap-sass-extras
@@ -313,6 +321,7 @@ DEPENDENCIES
   rails-controller-testing
   sass-rails (>= 3.2)
   simplecov
+  single_test
   therubyracer
   uglifier
   whenever

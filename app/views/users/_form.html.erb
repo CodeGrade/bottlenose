@@ -48,7 +48,7 @@
           <td><%= f.text_field :nuid, class: 'form-control numeric' %></td>
         </tr>
 
-        <% if current_user && current_user.site_admin? %>
+        <% if current_user&.site_admin? %>
         <tr class="form-group">
           <td><%= f.label :site_admin %></td>
           <td><%= f.check_box :site_admin %></td>

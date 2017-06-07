@@ -1,0 +1,12 @@
+<% cur_reg = current_user.registration_for(@course) %>
+<% @page_title = "#{@course.name}: Teams" %>
+<style>
+  h3 i.glyphicon { font-size: 80%; margin-left: 0.5em; }
+  h3 i.glyphicon-chevron-up { display: none; }
+  h3 i.glyphicon-chevron-down { display: initial; }
+  h3.collapsed i.glyphicon-chevron-up { display: initial; }
+  h3.collapsed i.glyphicon-chevron-down { display: none; }
+</style>
+
+<%= render "teamsets/all", admin: cur_reg&.staff?, course: @course, tag:
+    "h3", editable: true %>

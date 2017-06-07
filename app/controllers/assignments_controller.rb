@@ -58,9 +58,12 @@ class AssignmentsController < ApplicationController
       @exam.points_available  = last_assn.points_available
       @quest.points_available = last_assn.points_available
     end
+
+    @existing_subs = false
   end
 
   def edit
+    @existing_subs = !@assignment.submissions.empty?
   end
 
   def edit_weights
@@ -200,6 +203,7 @@ class AssignmentsController < ApplicationController
                                :assignment_file,  :type, :related_assignment_id,
                                :course_id, :team_subs, :request_time_taken,
                                :lateness_config_id, :removefile,
+                               :teamset_plan, :teamset_source_use, :teamset_source_copy,
                                lateness_config_attributes: [
                                  :type, :percent_off, :frequency,
                                  :max_penalty, :days_per_assignment,

@@ -27,6 +27,6 @@ class SettingsControllerTest < ActionController::TestCase
 
     assert_response :redirect
     assert_match "Settings Saved", flash[:notice]
-    assert_equal Settings['site_email'], "somebody@example.com"
+    assert_equal "somebody@example.com", Settings['site_email']
   end
 end

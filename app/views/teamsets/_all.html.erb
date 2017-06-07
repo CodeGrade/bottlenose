@@ -1,0 +1,34 @@
+<% no_active = true %>
+<% course.assignments.order(due_date: :desc, available: :desc).each do |a| %>
+<% next unless a.team_subs? %>
+<% expired = !a.due_date&.future? %>
+<% teams = (@teams && @teams[course.id] && @teams[course.id][a.teamset_id]) ||
+   [] %>
+<% next unless (!expired) || (@teams[course.id] && teams.length != 0) %>
+<% no_active = false %>
+<<%= tag %>
+     <% if expired %>
+     class="team-heading collapsed" data-toggle="collapse" data-target="#assn_<%= a.id %>"
+     <% else %>
+     class="team-heading"
+     <% end %>>
+    Teams for <%= a.name %>
+    <% if expired %>
+    <i class="glyphicon glyphicon-chevron-down"></i>
+    <i class="glyphicon glyphicon-chevron-up"></i>
+    <% end %>
+<% if admin && editable %>
+  <%= link_to "Edit Teams", edit_course_teamset_path(course, a.teamset),
+      class: "pull-right btn btn-success" %>
+<% end %>
+</<%= tag %>>
+<div id="assn_<%= a.id %>" <% if expired %>class="collapse"<% end %>>
+<%= render "teamsets/table", teams: teams, id: "assn_#{a.id}_#{a.teamset_id}" %>
+</div>
+<% end %>
+<% if no_active %>
+<<%= tag %> class="team-heading">No active teams</<%= tag %>>
+<% end %>
+<script>
+  $(".team-heading a.btn").on("click", function(e) { e.stopPropagation(); });
+</script>

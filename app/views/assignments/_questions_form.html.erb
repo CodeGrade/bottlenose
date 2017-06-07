@@ -113,11 +113,11 @@
 
   <div class="for-type row">
     <div class="form-group col-sm-6">
-      <%= f.label :team_subs, "Team Submissions?" %>
-      <p>If selected, submissions count as a member of a team.  If
-        not, submissions are individual even if student is a memeber of
-        a team.</p>
-      <%= f.check_box :team_subs, data: {toggle: "toggle", on: "Yes", off: "No"} %>
+      <% if asgn.new_record? || !@existing_subs %>
+      <%= render "new_teamset", course: @course %>
+      <% else %>
+      <%= render "edit_teamset", course: @course, asgn: asgn %>
+      <% end %>
     </div>
     <div class="form-group col-sm-6">
       <%= f.label :request_time_taken, "Request time taken?" %>

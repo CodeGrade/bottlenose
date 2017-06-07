@@ -23,7 +23,7 @@
       <% end %>
 
       <ul class="nav navbar-nav pull-right">
-        <% if current_user && current_user.site_admin? %>
+        <% if current_user&.site_admin? %>
           <li><%= link_to "Status", server_status_path %></li>
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Manage <span class="caret"></span></a>
@@ -47,7 +47,7 @@
     </div>
   </div>
 
-  <% if current_user && current_user.site_admin? %>
+  <% if current_user&.site_admin? %>
     <!-- Site Admin Bar (currently just for a visual que) -->
     <div style="height: 2px; background-color: #222;"></div>
   <% end %>

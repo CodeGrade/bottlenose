@@ -17,16 +17,16 @@ class MainControllerTest < ActionController::TestCase
     ken_email = "ken@example.com"
 
     User.delete_all
-    assert_equal User.count, 0, "should start with no users"
+    assert_equal 0, User.count, "should start with no users"
 
     num_deliveries = ActionMailer::Base.deliveries.size
 
     post :resend_auth, :email => ken_email
 
-    assert_equal ActionMailer::Base.deliveries.size, num_deliveries + 1,
+    assert_equal num_deliveries + 1, ActionMailer::Base.deliveries.size,
       "email should be sent"
 
-    assert_equal User.count, 1, "new user should be created"
+    assert_equal 1, User.count, "new user should be created"
 
     ken = User.find_by_email(ken_email)
     assert ken.site_admin?, "new user should be site admin"
@@ -41,7 +41,7 @@ class MainControllerTest < ActionController::TestCase
 
     post :resend_auth, :email => @alan.email
 
-    assert_equal ActionMailer::Base.deliveries.size, num_deliveries + 1,
+    assert_equal num_deliveries + 1, ActionMailer::Base.deliveries.size,
       "email should be sent"
 
     assert_redirected_to root_url
@@ -52,7 +52,7 @@ class MainControllerTest < ActionController::TestCase
 
     post :auth, {:email => @alan.email, :key => @alan.auth_key}
     assert_match "Logged in", flash[:notice]
-    assert_equal session[:user_id], @alan.id
+    assert_equal @alan.id, session[:user_id]
 
     assert_response(:success)
   end

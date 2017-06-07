@@ -27,33 +27,35 @@ class CalcScoresTest < ActionDispatch::IntegrationTest
 
     # Course 1
     @cs101   = create(:course, name: "CS 101", public: true)
+    @sec101  = @cs101.sections.first
     @hw101   = create(:bucket, name: "Homework", course: @cs101, weight: 0.5)
     @qz101   = create(:bucket, name: "Quizzes", course: @cs101, weight: 0.5)
-    @fred101 = create(:registration, course: @cs101, user: @fred, teacher: true)
-    @jane101 = create(:registration, course: @cs101, user: @jane)
-    @mary101 = create(:registration, course: @cs101, user: @mary)
-    @john101 = create(:registration, course: @cs101, user: @john)
-    @mark101 = create(:registration, course: @cs101, user: @mark)
+    @fred101 = create(:registration, course: @cs101, user: @fred, teacher: true, section: @sec101)
+    @jane101 = create(:registration, course: @cs101, user: @jane, section: @sec101)
+    @mary101 = create(:registration, course: @cs101, user: @mary, section: @sec101)
+    @john101 = create(:registration, course: @cs101, user: @john, section: @sec101)
+    @mark101 = create(:registration, course: @cs101, user: @mark, section: @sec101)
 
-    @cs101hw1 = create(:assignment, name: "cs1hw1", course: @cs101, bucket: @hw101)
-    @cs101hw2 = create(:assignment, name: "cs1hw2", course: @cs101, bucket: @hw101, team_subs: true)
-    @cs101qz1 = create(:assignment, name: "cs1qz1", course: @cs101, bucket: @qz101)
-    @cs101qz2 = create(:assignment, name: "cs1qz2", course: @cs101, bucket: @qz101)
+    @cs101hw1 = create(:assignment, name: "cs1hw1", course: @cs101, bucket: @hw101, teamset: @ts1)
+    @cs101hw2 = create(:assignment, name: "cs1hw2", course: @cs101, bucket: @hw101, teamset: @ts1, team_subs: true)
+    @cs101qz1 = create(:assignment, name: "cs1qz1", course: @cs101, bucket: @qz101, teamset: @ts1)
+    @cs101qz2 = create(:assignment, name: "cs1qz2", course: @cs101, bucket: @qz101, teamset: @ts1)
 
     # Course 2
     @cs102   = create(:course, name: "CS 102", public: false)
+    @sec102  = @cs102.sections.first
     @hw102   = create(:bucket, name: "Homework", course: @cs102, weight: 0.5)
     @qz102   = create(:bucket, name: "Quizzes", course: @cs102, weight: 0.5)
-    @fred102 = create(:registration, course: @cs102, user: @fred, teacher: true)
-    @jane102 = create(:registration, course: @cs102, user: @jane)
-    @mary102 = create(:registration, course: @cs102, user: @mary)
-    @john102 = create(:registration, course: @cs102, user: @john)
-    @mark102 = create(:registration, course: @cs102, user: @mark)
+    @fred102 = create(:registration, course: @cs102, user: @fred, teacher: true, section: @sec102)
+    @jane102 = create(:registration, course: @cs102, user: @jane, section: @sec102)
+    @mary102 = create(:registration, course: @cs102, user: @mary, section: @sec102)
+    @john102 = create(:registration, course: @cs102, user: @john, section: @sec102)
+    @mark102 = create(:registration, course: @cs102, user: @mark, section: @sec102)
 
-    @cs102hw1 = create(:assignment, name: "cs2hw1", course: @cs102, bucket: @hw102)
-    @cs102hw2 = create(:assignment, name: "cs2hw2", course: @cs102, bucket: @hw102, team_subs: true)
-    @cs102qz1 = create(:assignment, name: "cs2qz1", course: @cs102, bucket: @qz102)
-    @cs102qz2 = create(:assignment, name: "cs2qz2", course: @cs102, bucket: @qz102)
+    @cs102hw1 = create(:assignment, name: "cs2hw1", course: @cs102, bucket: @hw102, teamset: @ts2)
+    @cs102hw2 = create(:assignment, name: "cs2hw2", course: @cs102, bucket: @hw102, teamset: @ts2, team_subs: true)
+    @cs102qz1 = create(:assignment, name: "cs2qz1", course: @cs102, bucket: @qz102, teamset: @ts2)
+    @cs102qz2 = create(:assignment, name: "cs2qz2", course: @cs102, bucket: @qz102, teamset: @ts2)
 
 
     @tars_dir = Rails.root.join('test', 'fixtures', 'files')

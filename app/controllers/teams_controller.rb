@@ -2,44 +2,9 @@ class TeamsController < ApplicationController
   layout 'course'
 
   before_action :find_course
+  before_action :find_teamset
   before_action :require_registered_user
-  before_action :require_admin_or_staff, only: [:new, :create, :dissolve, :dissolve_all, :randomize]
-
-  # GET /staff/courses/:course_id/teams
-  def index
-    if current_user_site_admin? || current_user_staff_for?(@course)
-      @active_teams = @course.teams.select(&:active?)
-      @inactive_teams = @course.teams.reject(&:active?)
-    else
-      @active_teams = current_user.teams.select(&:active?)
-      @inactive_teams = current_user.teams.reject(&:active?)
-    end
-  end
-
-  # GET /staff/course/:course_id/teams/new
-  def new
-    @team = Team.new
-    @team.course_id = @course.id
-    @teams = @course.teams.select(&:active?)
-    @others = students_without_active_team
-  end
-
-  # POST /staff/course/:course_id/teams
-  def create
-    @team = Team.new(team_params)
-
-    users = params["users"] || []
-    @team.users = users.map { |user_id| User.find(user_id.to_i) }
-
-    if @team.save
-      redirect_to new_course_team_path(@course),
-        notice: 'Team was successfully created.'
-    else
-      @teams = @course.teams.select(&:active?)
-      @others = students_without_active_team
-      render :new
-    end
-  end
+  before_action :require_admin_or_staff, only: [:dissolve]
 
   # GET /courses/:course_id/teams/:id
   def show
@@ -53,39 +18,13 @@ class TeamsController < ApplicationController
   def dissolve
     @team = Team.find(params[:id])
     @team.dissolve(DateTime.current)
-    redirect_back fallback_location: course_teams_path(@course)
-  end
-
-
-  def dissolve_all
-    teams = Team.where(course: @course, end_date: nil)
-    teams.each do |t| t.dissolve(DateTime.current) end
-    redirect_back fallback_location: course_teams_path(@course), notice: "#{plural(teams.count, 'team')} dissolved"
-  end
-
-  def randomize
-    count = 0
-    students_without_active_team.to_a.shuffle.each_slice(params[:random][:size].to_i).each do |t|
-      @team = Team.new(course: @course, start_date: params[:random][:start_date], end_date: params[:random][:end_date])
-      @team.users = t
-
-      if @team.save
-        count += 1
-      end
-    end
-    redirect_back fallback_location: course_teams_path(@course), notice: "#{plural(count, 'random team')} created"
+    redirect_back fallback_location: course_teamsets_path(@course, @teamset),
+                  notice: "Team was successfully dissolved"
   end
 
   private
 
-  def students_without_active_team
-    # TODO: Optimize.
-    @course.students_with_drop_info.where("registrations.dropped_date": nil).reject do |student|
-      student.teams.where(course: @course).any? { |t| t.active? }
-    end
-  end
-
-  def team_params
-    params.require(:team).permit(:course_id, :start_date, :end_date)
+  def find_teamset
+    @teamset = Teamset.find(params[:teamset_id])
   end
 end

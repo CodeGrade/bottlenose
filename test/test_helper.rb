@@ -25,6 +25,8 @@ class ActiveSupport::TestCase
     @fred     = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher")
     @john     = create(:user, name: "John McStudent", first_name: "John", last_name: "McStudent")
     @cs101    = create(:course, public: true)
+    @ts1      = create(:teamset, course: @cs101, name: "Default teamset 1")
+    @ts2      = create(:teamset, course: @cs101, name: "Default teamset 2")
     @section  = create(:section, course: @cs101, instructor: @fred, crn: 12345)
     @fred_reg = create(:registration, course: @cs101, user: @fred, section_id: @section.crn,
                        role: Registration::roles[:professor])
@@ -47,7 +49,8 @@ class ActiveSupport::TestCase
   end
 
   def make_assignment(bb, name)
-    aa = build(:assignment, bucket: bb, course: bb.course, name: name)
+    ts.save!
+    aa = build(:assignment, bucket: bb, course: bb.course, name: name, teamset: ts1)
     aa.assignment_file = assign_upload_obj(name, 'assign.tar.gz')
     aa.grading_file    = assign_upload_obj(name, 'grading.tar.gz')
     aa.save_uploads!

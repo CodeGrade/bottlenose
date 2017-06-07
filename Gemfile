@@ -50,7 +50,7 @@ gem 'codemirror-rails'
 
 group :development do
   #gem "flatten_migrations"
-  gem "better_errors"
+  gem "better_errors", git: 'https://github.com/charliesome/better_errors.git', branch: 'master'
   gem "binding_of_caller"
   gem "listen"
 end
@@ -69,4 +69,5 @@ group :test do
   gem 'launchy'
   gem 'factory_girl_rails'
   gem 'rails-controller-testing'
+  gem 'single_test'
 end

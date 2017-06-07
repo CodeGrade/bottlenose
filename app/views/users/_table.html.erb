@@ -10,7 +10,7 @@
    if which
      link_to(user.name, user_path(user), class: "user-link", data: tt)
    else
-     span_tag(user.name, class: "user-link", data: tt)
+     content_tag(:span, user.name, class: "user-link", data: tt)
    end
    end %>
 <div class="panel panel-default">

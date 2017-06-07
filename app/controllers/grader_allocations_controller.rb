@@ -217,7 +217,7 @@ class GraderAllocationsController < ApplicationController
 
   def require_ta_for_course
     return if current_user_site_admin?
-    reg = current_user && current_user.registration_for(@course)
+    reg = current_user&.registration_for(@course)
     unless reg && (reg.professor? || reg.assistant?)
       redirect_back fallback_location: course_assignment_path(@course, @assignment),
                     alert: "Must be an admin or professor."

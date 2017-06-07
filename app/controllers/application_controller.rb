@@ -11,19 +11,17 @@ class ApplicationController < ActionController::Base
 
   protected
 
+  def multi_group_by(hash, keys, index = 0)
+    if index >= keys.count || hash.nil?
+      hash
+    else
+      Hash[hash.group_by(&(keys[index])).map {|k, v| [k, multi_group_by(v, keys, index + 1)]}]
+    end
+  end
+
   def set_mailer_host
     ActionMailer::Base.default_url_options[:host] = request.host_with_port
     ActionMailer::Base.default_url_options[:protocol] = request.protocol
-  end
-
-  def find_course
-    return unless @course.nil?
-
-    if params[:course_id].nil?
-      @course ||= Course.find(params[:id])
-    else
-      @course ||= Course.find(params[:course_id])
-    end
   end
 
   def require_site_admin
@@ -52,11 +50,11 @@ class ApplicationController < ActionController::Base
   end
 
   def current_user_site_admin?
-    current_user && current_user.site_admin?
+    current_user&.site_admin?
   end
 
   def current_user_prof_ever?
-    current_user && current_user.professor_ever?
+    current_user&.professor_ever?
   end
 
   def current_user_prof_for?(course)
@@ -77,7 +75,7 @@ class ApplicationController < ActionController::Base
   end
 
   def current_user_has_id?(id)
-    current_user && current_user.id == id
+    current_user&.id == id
   end
 
   def configure_permitted_parameters
@@ -245,5 +243,9 @@ class ApplicationController < ActionController::Base
       redirect_back fallback_location: root_path, alert: "Must be an admin or staff."
       return
     end
+  end
+
+  def pluralize(count, word, plural = nil)
+    ActionController::Base.helpers.pluralize(count, word, plural)
   end
 end

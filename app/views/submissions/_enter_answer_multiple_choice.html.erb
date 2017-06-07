@@ -9,8 +9,8 @@
     <% if opt == "other" %>
     <label>
       <input name="answers[<%= index %>][main]" id="answer_<%= index %>_<%= opt_idx %>"
-             type="radio" value="<%= opt_idx %>" class="other" <%= if value == opt_idx then 'checked' end %>
-             <% if @answers and value.to_s.empty? %>class="unanswered"<% end %>>
+             type="radio" value="<%= opt_idx %>" <%= if value == opt_idx then 'checked' end %>
+             class="other <% if @answers and value.to_s.empty? %>unanswered<% end %>">
       Other:
     </label>
     <input name="answers[<%= index %>][detail]" type="text" id="answer_<%= index %>_other"

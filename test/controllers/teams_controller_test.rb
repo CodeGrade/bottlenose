@@ -4,7 +4,8 @@ class TeamsControllerTest < ActionController::TestCase
   setup do
     @team = create(:team)
     @fred = create(:user)
-    create(:registration, user: @fred, course: @team.course, role:  Registration::roles[:professor])
+    create(:registration, user: @fred, course: @team.course, section: @team.course.sections.first,
+           role:  Registration::roles[:professor])
 
     mreg = create(:registration, course: @team.course)
     @mark = mreg.user
@@ -14,57 +15,10 @@ class TeamsControllerTest < ActionController::TestCase
     @greg = greg.user
   end
 
-  test "should get index" do
-    sign_in @fred
-    get :index, params: { course_id: @team.course }
-    assert_response :success
-    assert_not_nil assigns(:active_teams)
-    assert_not_nil assigns(:inactive_teams)
-  end
-
-  test "should get new" do
-    sign_in @fred
-    get :new, params: { course_id: @team.course }
-    assert_response :success
-  end
-
-  test "should create team" do
-    sign_in @fred
-    assert_difference('Team.count') do
-      post :create, params: {
-             course_id: @team.course,
-             team: { course_id: @team.course.id, start_date: @team.start_date },
-             users: [ @mark.id, @jane.id, @greg.id ] }
-    end
-
-    assert_response :redirect
-    assert_equal assigns(:team).users.count, 3
-  end
-
   test "should show team" do
     sign_in @fred
-    get :show, params: { id: @team, course_id: @team.course }
+    get :show, params: { id: @team, course_id: @team.course, teamset_id: @team.teamset_id }
     assert_response :success
-  end
-
-  test "should get edit" do
-    skip
-
-    sign_in @fred
-    get :edit, params: { id: @team, course_id: @team.course }
-    assert_response :success
-  end
-
-  test "should update team" do
-    skip
-
-    sign_in @fred
-    patch :update, params: {
-            id: @team, course_id: @team.course,
-            team: { course_id: @team.course_id, start_date: @team.start_date },
-            users: [ @mark.id ] }
-    assert_equal assigns(:team).users.count, 1
-    assert_redirected_to course_team_path(@team.course, assigns(:team))
   end
 
   test "should destroy team" do

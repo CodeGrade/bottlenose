@@ -9,10 +9,15 @@ class Assignment < ApplicationRecord
   enum question_kind: [:yes_no, :true_false, :multiple_choice, :numeric, :text]
 
   attr_accessor :removefile
+  attr_accessor :teamset_plan
+  attr_accessor :teamset_source_use
+  attr_accessor :teamset_source_copy
 
   belongs_to :blame, :class_name => "User", :foreign_key => "blame_id"
 
   belongs_to :course
+
+  belongs_to :teamset
 
   belongs_to :lateness_config
   accepts_nested_attributes_for :lateness_config
@@ -36,6 +41,77 @@ class Assignment < ApplicationRecord
   validates :lateness_config, :presence => true
   before_create :fixup_graders
 
+  before_create :setup_teamsets
+  before_update :update_teamsets
+
+
+  def setup_teamsets
+    # Options are:
+    # None -- create a (unique, ignored) teamset
+    # New -- create a new teamset with initially no teams
+    # Use -- share an existing teamset with another assignment
+    # Copy -- duplicate an existing teamset
+    
+    return true if (!self.teamset.nil?) && @teamset_plan.nil?
+    
+    self.team_subs = (@teamset_plan != "none")
+    if @teamset_plan == "new" || @teamset_plan == "none"
+      self.teamset = Teamset.create(course: self.course, name: "Team set for #{self.name}")
+    elsif @teamset_plan == "copy"
+      if @teamset_source_copy.empty?
+        self.errors.add(:base, "The teamset to be copied was not specified")
+        return false
+      else
+        ts = Teamset.find(@teamset_source_copy.to_i)
+        self.teamset = ts&.dup
+      end
+    elsif @teamset_plan == "use"
+      if @teamset_source_use.empty?
+        self.errors.add(:base, "The reference teamset was not specified")
+        return false
+      else
+        ts = Teamset.find(@teamset_source_use.to_i)
+        self.teamset = ts
+      end
+    end
+    return true
+  end
+
+  def update_teamsets
+    # Options are:
+    # None -- leave the (unique, ignored) teamset alone
+    # New -- create solo teams for everyone who's already submitted
+    # Copy -- copy an existing teamset, and create solo teams for anyone who's already submitted
+    # Unique -- nothing to be done; it's already a unique teamset
+    # Use -- nothing to be done; continue to share teamset with another assignment
+    # Clone -- duplicate the teamset and transfer over any submissions
+    
+    return true if (!self.teamset.nil?) && @teamset_plan.nil?
+    
+    self.team_subs = (@teamset_plan != "none")
+    if @teamset_plan == "new"
+      self.teamset.make_solo_teams_for(self)
+    elsif @teamset_plan == "use"
+      if @teamset_source_use.empty?
+        self.errors.add(:base, "The teamset to be used was not specified")
+        return false
+      else
+        ts = Teamset.find(@teamset_source_use.to_i)
+        self.teamset = ts
+      end
+    elsif @teamset_plan == "copy"
+      if @teamset_source_copy.empty?
+        self.errors.add(:base, "The teamset to be copied was not specified")
+        return false
+      end
+      ts = Teamset.find(@teamset_source_copy.to_i)
+      self.teamset = ts&.dup
+      self.teamset&.make_solo_teams_for(self)
+    elsif @teamset_plan == "clone"
+      self.teamset = self.teamset.dup(self)
+    end
+  end
+  
   def sub_late?(sub)
     self.lateness_config.late?(self, sub)
   end
@@ -178,12 +254,7 @@ class Assignment < ApplicationRecord
   end
 
   def used_sub_for(user)
-    ans = UsedSub.find_by(user_id: user.id, assignment_id: self.id)
-    if ans.nil?
-      ans
-    else
-      ans.submission
-    end
+    UsedSub.find_by(user_id: user.id, assignment_id: self.id)&.submission
   end
 
   def main_submissions

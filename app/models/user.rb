@@ -9,8 +9,8 @@ class User < ApplicationRecord
   has_many :registrations, dependent: :destroy
   has_many :courses, through: :registrations
 
-  has_many :submissions, through: :user_submissions
   has_many :user_submissions, dependent: :destroy
+  has_many :submissions, through: :user_submissions
   has_many :reg_requests, dependent: :destroy
 
   has_many :team_users, dependent: :restrict_with_error
@@ -174,8 +174,8 @@ class User < ApplicationRecord
     name =~ /\s/ && name.downcase != name
   end
 
-  def active_team_for(course)
-    @active_team ||= teams_for(course).select(&:active?).first
+  def active_team_for(course, assn)
+    @active_team ||= teams_for(course).where(teamset_id: assn.teamset_id).select(&:active?).first
   end
 
   def teams_for(course)

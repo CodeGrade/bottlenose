@@ -1,10 +1,11 @@
 <% @page_title = "Dashboard" %>
 <style>
-  h3 i.glyphicon { font-size: 80%; margin-left: 0.5em; }
-  h3 i.glyphicon-chevron-up { display: none; }
-  h3 i.glyphicon-chevron-down { display: initial; }
-  h3.collapsed i.glyphicon-chevron-up { display: initial; }
-  h3.collapsed i.glyphicon-chevron-down { display: none; }
+  h4 i.glyphicon { font-size: 80%; margin-left: 0.5em; }
+  h4 i.glyphicon-chevron-up { display: none; }
+  h4 i.glyphicon-chevron-down { display: initial; }
+  h4.collapsed i.glyphicon-chevron-up { display: initial; }
+  h4.collapsed i.glyphicon-chevron-down { display: none; }
+  .team-heading { margin: 10px 15px; font-size: 16px; }
 </style>
 
 <h2>Your courses</h2>
@@ -42,24 +43,10 @@
                     <h3 class="panel-title">Teams</h3>
                 </div>
 
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Start</th>
-                            <th>End</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% current_user.teams.where(course: course).order(end_date: :desc).each do |team| %>
-                            <tr class="<%= team.active? ? "success" : "" %>">
-                                <td><%= team %></td>
-                                <td><%= team.start_date %></td>
-                                <td><%= team.end_date %></td>
-                            </tr>
-                        <% end %>
-                    </tbody>
-                </table>
+                <%= render "teamsets/all",
+                    admin: current_user.course_staff?(course),
+                    course: course, tag: "h4", editable: false
+                    %>
             </div>
         </div>
     </div>

@@ -17,6 +17,19 @@ setup_form = () ->
     $('#users option').each (i, opt) ->
       opt.selected = true
 
-run_on_page "teams/create", setup_form
-run_on_page "teams/new", setup_form
-run_on_page "teams/edit", setup_form
+  $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
+    animated: 'fade',
+    placement: 'right',
+    html: true
+  })
+
+  $("#existingTS").on("change", () ->
+    $(".teamset-div").addClass("hidden")
+    $("#ts_" + $(this).val()).removeClass("hidden")
+  ).change()
+
+
+
+run_on_page "teamsets/create", setup_form
+run_on_page "teamsets/new", setup_form
+run_on_page "teamsets/edit", setup_form

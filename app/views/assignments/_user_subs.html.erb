@@ -1,5 +1,5 @@
 <% cur_reg = current_user.registration_for(@course)
-   cur_reg_staff = cur_reg && cur_reg.staff? %>
+   cur_reg_staff = cur_reg&.staff? %>
 <% def maybe_link_to(which, user)
    tt = {
        toggle: "tooltip",
@@ -10,7 +10,7 @@
    if which
      link_to(user.name, user_path(user), class: "user-link", data: tt)
    else
-     span_tag(user.name, class: "user-link", data: tt)
+     content_tag(:span, user.name, class: "user-link", data: tt)
    end
    end %>
 <% if gradesheet.submissions.empty? %>

@@ -1,7 +1,7 @@
 <% @page_title = "View grades: #{@assignment.name}" %>
 
 <% cur_reg = current_user.registration_for(@course)
-   cur_reg_staff = cur_reg && cur_reg.staff? %>
+   cur_reg_staff = cur_reg&.staff? %>
 
 <p>
   <%= link_to "Back to Assignment: #{@assignment.name}", course_assignment_path(@course, @assignment) %>
@@ -25,7 +25,7 @@
       <%= show_score(q_score, @assignment, cur_reg_staff) %> / <%= show_score(q["weight"]) %></td>
     <% else %>
     <td>
-      <%= show_score((grades[i] && grades[i].weight), @assignment, cur_reg_staff) %>
+      <%= show_score(grades[i]&.weight, @assignment, cur_reg_staff) %>
        / <%= show_score(q["weight"]) %>
     </td>
     <% end %>
@@ -34,7 +34,7 @@
     <% q["parts"].each_with_index do |p, j| %>
     <tr>
       <td style="padding-left: 2em;">(<%= ('a'..'z').to_a[j] %>) <%= p["name"] %></td>
-      <td style="padding-left: 2em;"><%= show_score((grades[i] && grades[i].weight), @assignment, cur_reg_staff) %>
+      <td style="padding-left: 2em;"><%= show_score(grades[i]&.weight, @assignment, cur_reg_staff) %>
         / <%= show_score(p["weight"]) %></td>
     </tr>
     <% i += 1 %>
