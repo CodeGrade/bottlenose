@@ -198,6 +198,7 @@ class SubmissionsController < CoursesController
     if team
       # Construct a one-use team, so that this student can be graded in isolation
       team = Team.new(
+        teamset_id: team.teamset_id
         course: @course,
         start_date: orig_sub.created_at,
         end_date: orig_sub.created_at)
