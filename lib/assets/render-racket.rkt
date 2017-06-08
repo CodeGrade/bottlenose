@@ -68,8 +68,6 @@
 
 (define output-filename (make-parameter #f))
 
-(display (current-command-line-arguments))
- 
 (define file-to-compile
   (command-line
    #:program "render-racket"
