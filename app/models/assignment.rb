@@ -44,6 +44,58 @@ class Assignment < ApplicationRecord
   before_create :setup_teamsets
   before_update :update_teamsets
 
+  def legal_teamset_actions
+    # Returns the set of actions on teamsets that are legal as of the saved values in the database
+    # Any unsaved changes do not impact this decision, so that validations can check that any action
+    # taken is plausible.
+    # All actions are present, either as a dictionary of some specializing properties,
+    # or as an explanatory error message of why the action isn't currently legal
+    if self.new_record?
+      {
+        no_teams: {checked: true},
+        new: {existing: false},
+        use: {existing: false},
+        copy: {existing: false},
+        clone: "New assignment doesn't have a teamset yet to clone",
+        unique: "New assignment doesn't yet have a unique teamset"
+      }
+    else
+      legal_actions = {}
+      existing_subs = !submissions.empty?
+      orig_team_subs = self.changes[:team_subs]&.at(0) || self.team_subs?
+      orig_teamset_id = self.changes[:teamset_id]&.at(0) || self.teamset_id
+      if !existing_subs # Currently no submissions ==> anything goes
+        legal_actions[:no_teams] = {checked: !orig_team_subs}
+        legal_actions[:new] = {existing: false}
+        legal_actions[:use] = {existing: false, checked: orig_team_subs, value: orig_teamset_id}
+        legal_actions[:copy] = {existing: false}
+        legal_actions[:clone] = "No need to clone this teamset, since nothing has been submitted through it yet"
+        legal_actions[:unique] = "No need to restrict this teamset yet, since nothing has been submitted through it"
+      elsif !orig_team_subs # currently solo, currently some submissions ==> can't `use`
+        legal_actions[:no_teams] = {checked: true}
+        legal_actions[:new] = {existing: true}
+        legal_actions[:copy] = {existing: true}
+        legal_actions[:use] = "Cannot reuse an existing teamset since there are already solo submissions in this one"
+        legal_actions[:clone] = "This assignment already has solo submissions in it"
+        legal_actions[:unique] = "This assignment isn't using teams; it doesn't need to choose a teamset"
+      elsif self.teamset.assignments.count == 1 # this is the only user of this teamset ==> nothing to do
+        legal_actions[:unique] = true
+        legal_actions[:no_teams] = "This assignment already has team submissions in it"
+        legal_actions[:new] = "This assignment already has a unique teamset"
+        legal_actions[:copy] = "This assignment already has a unique teamset"
+        legal_actions[:use] = "Cannot reuse an existing teamset since there are already submissions in this one"
+        legal_actions[:clone] = "This assignment already has a unique teamset"
+      else # shared teamset, team submissions, existing submissions ==> can't use or copy anything but this one
+        legal_actions[:use] = {existing: true, checked: true, value: orig_teamset_id}
+        legal_actions[:clone] = {existing: true}
+        legal_actions[:unique] = "This assignment shares its teamset with others; it can't be unique"
+        legal_actions[:no_teams] = "This assignment already has team submissions in it"
+        legal_actions[:new] = "This assignment already has a teamset with submissions in it"
+        legal_actions[:copy] = "This assignment already has a teamset with submissions in it"
+      end
+      legal_actions
+    end
+  end
 
   def setup_teamsets
     # Options are:
@@ -54,6 +106,11 @@ class Assignment < ApplicationRecord
     
     return true if (!self.teamset.nil?) && @teamset_plan.nil?
     
+    action = legal_teamset_actions[@teamset_plan.to_sym]
+    if action.is_a? String
+      self.errors.add(:base, "Impossible state: cannot #{@teamset_plan} teamset because: #{action}")
+      return false
+    end
     self.team_subs = (@teamset_plan != "none")
     if @teamset_plan == "new" || @teamset_plan == "none"
       self.teamset = Teamset.create(course: self.course, name: "Team set for #{self.name}")
@@ -87,29 +144,40 @@ class Assignment < ApplicationRecord
     # Clone -- duplicate the teamset and transfer over any submissions
     
     return true if (!self.teamset.nil?) && @teamset_plan.nil?
-    
-    self.team_subs = (@teamset_plan != "none")
-    if @teamset_plan == "new"
+
+    action = legal_teamset_actions[@teamset_plan.to_sym]
+    if action.is_a? String
+      self.errors.add(:base, "Impossible state: cannot #{@teamset_plan} teamset because: #{action}")
+      return false
+    end
+    if @teamset_plan == "none"
+      # nothing to do
+    elsif @teamset_plan == "new"
       self.teamset.make_solo_teams_for(self)
-    elsif @teamset_plan == "use"
-      if @teamset_source_use.empty?
-        self.errors.add(:base, "The teamset to be used was not specified")
-        return false
-      else
-        ts = Teamset.find(@teamset_source_use.to_i)
-        self.teamset = ts
-      end
     elsif @teamset_plan == "copy"
-      if @teamset_source_copy.empty?
+      if @teamset_source_copy.blank?
         self.errors.add(:base, "The teamset to be copied was not specified")
         return false
       end
       ts = Teamset.find(@teamset_source_copy.to_i)
       self.teamset = ts&.dup
       self.teamset&.make_solo_teams_for(self)
+    elsif @teamset_plan == "unique"
+      # nothing to do
+    elsif @teamset_plan == "use"
+      if @teamset_source_use.blank?
+        self.errors.add(:base, "The teamset to be used was not specified")
+        return false
+      else
+        ts = Teamset.find(@teamset_source_use.to_i)
+        self.teamset = ts
+      end
     elsif @teamset_plan == "clone"
-      self.teamset = self.teamset.dup(self)
+      if self.teamset.assignments.count > 1 # no need to dup if it's already unique
+        self.teamset = self.teamset.dup(self)
+      end
     end
+    self.team_subs = (@teamset_plan != "none")
   end
   
   def sub_late?(sub)

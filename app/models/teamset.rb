@@ -104,8 +104,10 @@ class Teamset < ActiveRecord::Base
                       start_date: assn.available,
                       end_date: Date.today,
                       teamset: self)
+      team.users = [User.find(uid)]
       team.save
-      subs.update_all({team_id: team.id}) # does this need to be team_id, or can it be just team?
+      Submission.where(id: subs.map(&:id)).update_all({team_id: team.id})
+      # does this need to be team_id, or can it be just team?
     end
   end
 end

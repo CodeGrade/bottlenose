@@ -59,11 +59,11 @@ class AssignmentsController < ApplicationController
       @quest.points_available = last_assn.points_available
     end
 
-    @existing_subs = false
+    @legal_actions = @files.legal_teamset_actions.reject{|k, v| v.is_a? String}
   end
 
   def edit
-    @existing_subs = !@assignment.submissions.empty?
+    @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
   end
 
   def edit_weights
