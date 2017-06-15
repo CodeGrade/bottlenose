@@ -22,15 +22,28 @@ class ActiveSupport::TestCase
 
   def make_standard_course
     @ken      = create(:admin_user)
-    @fred     = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher")
-    @john     = create(:user, name: "John McStudent", first_name: "John", last_name: "McStudent")
     @cs101    = create(:course, public: true)
     @ts1      = create(:teamset, course: @cs101, name: "Default teamset 1")
     @ts2      = create(:teamset, course: @cs101, name: "Default teamset 2")
+    @ts3      = create(:teamset, course: @cs101, name: "Default teamset 3")
+    @fred     = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher")
     @section  = create(:section, course: @cs101, instructor: @fred, crn: 12345)
     @fred_reg = create(:registration, course: @cs101, user: @fred, section_id: @section.crn,
                        role: Registration::roles[:professor])
-    @john_reg = create(:registration, course: @cs101, user: @john, section_id: @section.crn)
+
+    @students = []
+    @regs     = []
+    [["John", "Joker"], ["Sarah", "Studious"], ["Andy", "Assiduous"], ["Claire", "Crafter"]].each do |fn, ln|
+      user = create(:user, name: "#{fn} #{ln}", first_name: fn, last_name: ln)
+      @students.push(user)
+      @regs.push(create(:registration, course: @cs101, user: user, section_id: @section.crn,
+                        role: Registration::roles[:student]))
+    end
+    @john     = @students[0]
+    @sarah    = @students[1]
+    @andy     = @students[2]
+    @claire   = @students[3]
+    @john_reg = @regs[0]
   end
 
   def simulated_upload(user, file)
@@ -41,7 +54,12 @@ class ActiveSupport::TestCase
 
   def assign_upload(assign, suffix)
     base = Rails.root.join('test', 'fixtures', 'files')
-    base.join(assign, "#{assign}-#{suffix}")
+    ans = base.join(assign, "#{assign}-#{suffix}")
+    if File.file? ans
+      ans
+    else
+      base.join(assign, suffix)
+    end
   end
 
   def assign_upload_obj(assign, suffix)
@@ -74,8 +92,14 @@ class ActiveSupport::TestCase
       assignment: aa,
       user: uu,
       upload_id: upl.id,
+      team:
+        if aa.team_subs?
+          uu.active_team_for(aa.course, aa)
+        else
+          nil
+        end
     )
-    sub.save_upload!
+    sub.save_upload
     sub.save!
 
     sub

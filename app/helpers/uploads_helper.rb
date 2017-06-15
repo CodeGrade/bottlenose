@@ -9,7 +9,8 @@ module UploadsHelper
     public
     def self.create_handler(name)
       name = name.to_s
-      PROCS[name] = lambda 
+      # from http://blog.gsamokovarov.com/ruby-tips-tricks-1, this works despite the warning
+      PROCS[name] = lambda
     end
     def self.alias_handler(new_name, old_name)
       new_name = new_name.to_s

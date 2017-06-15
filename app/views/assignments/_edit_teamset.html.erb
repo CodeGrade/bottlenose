@@ -1,38 +1,69 @@
 <label>Team Submissions</label>
-<% if !asgn.team_subs? %>
-<%
-   # NOTE: Only options are None, New, and Copy -- we can't Use an
-   # existing teamset because there are already-existing submissions
-   # that wouldn't have a plausible team in that teamset, and we don't
-   # want to mutate that teamset.
-   %>
+<% if @legal_actions[:unique] %>
+<div class="radio">
+  <label>
+    <input name="assignment[teamset_plan]" id="teamset_unique" type="radio"
+           value="unique" checked>
+    <strong>Using existing teamset:</strong> this assignment has its
+    own unique teamset already, with existing submissions, and cannot be changed<br>
+    <input type='text' class="col-sm-12" disabled value="<%= asgn.teamset&.name %>">
+  </label>
+</div>
+<% end %>
+<% if @legal_actions[:no_teams] %>
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_none" type="radio"
-           value="none" checked>
+           value="none" <% if @legal_actions[:no_teams][:checked] %>checked<% end %>>
     <strong>No teams:</strong> this assignment will be submitted individually
   </label>
 </div>
+<% end %>
+<% if @legal_actions[:new] %>
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_new" type="radio"
-           value="new">
+           value="new" <% if @legal_actions[:new][:checked] %>checked<% end %>>
     <strong>New teamset:</strong> after creating this assignment, go to the Teams
-    page to create a new set of teams.  Since some students have
-    submitted already, those students and their existing submissions
-    will be placed into solo teams.
+    page to create a new set of teams.
+    <% if @legal_actions[:new][:existing] %>
+    Since some students have submitted already, those students and
+    their existing submissions will be placed into solo teams.
+    <% end %>
   </label>
 </div>
+<% end %>
+<% if @legal_actions[:use] %>
+<div class="radio">
+  <label>
+    <input name="assignment[teamset_plan]" id="teamset_use" type="radio"
+           value="use" <% if @legal_actions[:use][:checked] %>checked<% end %>>
+    <strong>Use existing teamset:</strong> this assignment shares a teamset with
+    another one, and changes to this teamset will affect both assignments<br>
+    <% if @legal_actions[:use][:existing] %>
+    <input type='text' style="width: 100%;" disabled value="<%= asgn.teamset&.name %>">
+    <% else %>
+    <%= select_tag "assignment[teamset_source_use]",
+        options_from_collection_for_select(course.teamsets, "id", "name", @legal_actions[:use][:value]),
+        prompt: "Choose an existing teamset", value: @legal_actions[:use][:value],
+        class: "col-sm-12" %>
+    <% end %>
+  </label>
+</div>
+<% end %>
+<% if @legal_actions[:copy] %>
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_copy" type="radio"
            value="copy">
     <strong>Copy existing teamset:</strong> clones the teams from an existing
-    teamset, so changes to one set will not affect the other.  As with
-    the New teamset option, since some students have
-    submitted already, those students and their existing submissions
-    will be temporarily placed into solo teams.  Any
-    teams that cannot be cloned (because some students have dropped)
+    teamset, so changes to one set will not affect the other.
+    <% if @legal_actions[:copy][:existing] %>
+    Since some students have submitted already, those students and
+    their existing submissions will be temporarily placed into solo
+    teams.
+    <% end %>
+    Any teams that cannot be cloned (because some students have dropped)
     will be ignored.
     <br>
     <%= select_tag "assignment[teamset_source_copy]",
@@ -41,34 +72,8 @@
         class: "col-sm-12" %>
   </label>
 </div>
-<% elsif asgn.teamset.assignments.count == 1 %>
-<%
-   # There's nothing to be done here, because we already have a unique
-   # teamset for this assignment
-   %>
-<div class="radio">
-  <label>
-    <input name="assignment[teamset_plan]" id="teamset_unique" type="radio"
-           value="unique" checked>
-    <strong>Using existing teamset:</strong> this assignment has its
-    own unique teamset already, and cannot be changed<br>
-    <input type='text' class="col-sm-12" disabled value="<%= asgn.teamset.name %>">
-  </label>
-</div>
-<% else %>
-<%
-   # This assignment's teamset is shared with other assignments,
-   # so the available options are to continue to share, or to clone
-   %>
-<div class="radio">
-  <label>
-    <input name="assignment[teamset_plan]" id="teamset_use" type="radio"
-           value="use" checked>
-    <strong>Use existing teamset:</strong> this assignment shares a teamset with
-    another one, and changes to this teamset will affect both assignments<br>
-    <input type='text' style="width: 100%;" disabled value="<%= asgn.teamset.name %>">
-  </label>
-</div>
+<% end %>
+<% if @legal_actions[:clone] %>
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_clone" type="radio"
@@ -78,7 +83,7 @@
     to the teamset for this assignment will not affect the previous
     teamset. Existing submissions for this assignment will be revised
     to reflect these new teams.<br>
-    <input type='text' style="width: 100%;" disabled value="<%= asgn.teamset.name %>">
+    <input type='text' style="width: 100%;" disabled value="<%= asgn.teamset&.name %>">
   </label>
 </div>
 <% end %>
