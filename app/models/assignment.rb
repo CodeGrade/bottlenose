@@ -423,6 +423,7 @@ class Assignment < ApplicationRecord
       total_weight = 0
       def make_err(msg)
         self.errors.add(:base, msg)
+        no_problems = false
       end
       def is_float(val)
         Float(val) rescue false
@@ -447,9 +448,12 @@ class Assignment < ApplicationRecord
           total_weight += Float(q["weight"])
         end
       end
+      return unless no_problems
+      self.graders ||= []
+      if self.graders.count == 0
+        self.graders << Grader.new(type: "ExamGrader", avail_score: total_weight)
+      end
     end
-    self.graders ||= []
-    self.graders << Grader.new(type: "ExamGrader", avail_score: total_weight)
   end
 
   # setup graders
@@ -601,8 +605,11 @@ class Assignment < ApplicationRecord
           end
         end
       end
+      return unless no_problems
+      self.graders ||= []
+      if self.graders.count == 0
+        self.graders << Grader.new(type: "QuestionsGrader", avail_score: total_weight)
+      end
     end
-    self.graders ||= []
-    self.graders << Grader.new(type: "QuestionsGrader", avail_score: total_weight)
   end
 end
