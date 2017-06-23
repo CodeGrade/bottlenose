@@ -1,5 +1,11 @@
 require 'clamp'
 class ExamGrader < Grader
+  # Overridden from Grader, because the default is to publish automatically
+  def grade(assignment, sub)
+    do_grading(assignment, submission)
+    # and don't compute_grade automatically; wait to publish
+  end
+
   def autograde!(assignment, sub)
     g = self.grader_for sub
 
