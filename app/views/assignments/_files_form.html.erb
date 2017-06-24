@@ -137,6 +137,7 @@
       </ol>
 
       <%= link_to_add_association("Add Grader", f, :graders, partial: 'graders/form',
+                                  render_options: {"test_class" => "", "errors_to_show" => 3},
                                   "data-association-insertion-node" => '#files-graders',
                                   "data-association-insertion-method" => 'append',
                                   class: 'btn btn-default' ) %>

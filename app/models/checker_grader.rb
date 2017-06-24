@@ -5,6 +5,9 @@ require 'audit'
 class CheckerGrader < Grader
   validates :upload, presence: true
   validates :params, length: {minimum: 3}
+
+  after_initialize :load_checker_params
+  before_validation :set_checker_params
   
   def autograde?
     true
@@ -20,10 +23,21 @@ class CheckerGrader < Grader
     else
       filename = "<no file>"
     end
-    "#{self.avail_score} points: Run Checker tests in #{self.params} from #{filename}"
+    "#{self.avail_score} points: Run Checker tests in #{test_class} from #{filename}, " +
+      "and show #{errors_to_show} #{'failed test'.pluralize(errors_to_show)}"
   end
 
   protected
+  def load_checker_params
+    return if new_record?
+    testClass, errorsToShow = self.params.to_s.split(";")
+    self.test_class = testClass
+    self.errors_to_show = errorsToShow
+  end
+  def set_checker_params
+    self.params = "#{self.test_class};#{self.errors_to_show}"
+  end
+    
   def copy_srctest_from_to(from, to, prefix = "")
     if !prefix.empty?
       prefix = "#{prefix}: "
@@ -109,7 +123,7 @@ class CheckerGrader < Grader
 
             Audit.log("#{prefix}: Running Checker")
             test_out, test_err, test_status =
-                                Open3.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000", "-cp", classpath, "tester.Main", "-secmon", "-tap", self.params)
+                                Open3.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000", "-cp", classpath, "tester.Main", "-secmon", "-tap", self.test_class)
             details.write("Checker output: (exit status #{test_status})\n")
             details.write(test_out)
             if !test_status.success?
