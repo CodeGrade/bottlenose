@@ -123,7 +123,8 @@
               <div class="panel-heading">
                 <% if gr.object.grades.empty? %>
                   <div class="pull-right">
-                    <%= link_to_remove_association "Remove", gr, class: 'btn btn-danger' %>
+                    <%= link_to_remove_association "Remove", gr, class: 'btn btn-danger',
+                        style: "vertical-align: initial; margin: -6pt -8pt;" %>
                   </div>
                 <% end %>
                 <strong><%= gr.object.display_type %></strong>
