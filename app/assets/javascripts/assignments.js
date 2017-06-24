@@ -24,8 +24,10 @@
     });
 
     $("form").submit(function(e) {
-      var graderTypeInputs = $("input[id^='assignment_graders_'][id$='_destroy'][value='false']")
-          .parents("li.grader").find("input[id$='_type']");
+      var graderTypeInputs =
+          $("li.grader").filter(function(index) {
+            return $(this).find("input[id^='assignment_graders_'][id$='_destroy'][value='1']").length == 0;
+          }).find("input[id$='_type']");
       debugger
       var graderTypes = graderTypeInputs.map(function() { return $(this).val().replace(/^.*_/, ""); });
       var asHash = Object.create(null);
