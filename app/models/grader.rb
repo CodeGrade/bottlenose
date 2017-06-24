@@ -4,6 +4,13 @@ class Grader < ApplicationRecord
   belongs_to :upload
   has_many :grades
 
+  # Needed because when Cocoon instantiates new graders, it doesn't know what
+  # subtype they are, yet
+  attr_accessor :test_class
+  attr_accessor :errors_to_show
+  # Needed to make the upload not be anonymous
+  attr_accessor :upload_by_user_id
+
   def self.unique
     select(column_names - ["id"]).distinct
   end
@@ -53,6 +60,7 @@ class Grader < ApplicationRecord
     end
 
     up = Upload.new
+    up.user_id = self.upload_by_user_id
     up.store_upload!(data, {
                        type: "#{type} Configuration",
                        date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
@@ -63,6 +71,11 @@ class Grader < ApplicationRecord
     self.upload = up
   end
 
+  def assign_attributes(attrs)
+    self.upload_by_user_id = attrs.delete(:upload_by_user_id)
+    super(attrs)
+  end
+  
   protected
 
   def do_grading(assignment, submission)

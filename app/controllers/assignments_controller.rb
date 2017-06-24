@@ -111,12 +111,17 @@ class AssignmentsController < ApplicationController
       @assignment.assignment_upload_id = nil
     end
 
+    # Assign the current user to all file uploads for grader configs
+    ap[:graders_attributes]&.each do |k, v|
+      v[:upload_by_user_id] = current_user.id
+    end
     @assignment.assign_attributes(ap)
 
     if @assignment.save
       @assignment.save_uploads! if ap[:assignment_file]
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully updated.'
     else
+      @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
       render action: "edit"
     end
   end
@@ -211,7 +216,8 @@ class AssignmentsController < ApplicationController
                                ],
                                graders_attributes: [
                                  :avail_score, :upload_file, :params,
-                                 :type, :id, :_destroy
+                                 :type, :id, :_destroy, :errors_to_show, :test_class,
+                                 :upload_by_user_id
                                ]
                               )
   end

@@ -228,6 +228,15 @@ class CourseSpreadsheet
     end
   end
 
+  def sanitize(str)
+    str = str.strip
+    if str[0] == "=" || str[0] == "+" || str[0] == "-" || str[0] == "@"
+      str[1..str.length]
+    else
+      str
+    end
+  end
+
   def create_exams(course, sheet)
     labels, weight, users = create_name_columns(course, sheet)
 
@@ -315,8 +324,8 @@ class CourseSpreadsheet
 
   def create_name_columns(course, sheet)
     sheet.columns.push(
-      Col.new("LastName"), Col.new("FirstName"), Col.new("Instructor"),
-      Col.new("NUID", "String"), Col.new("Email"),
+      Col.new("LastName", "String"), Col.new("FirstName", "String"), Col.new("Instructor", "String"),
+      Col.new("NUID", "String"), Col.new("Email", "String"),
       Col.new("Section", "Number"), Col.new("Withdrawn?", "DateTime"),
       Col.new(""), Col.new("")
     )
@@ -329,11 +338,11 @@ class CourseSpreadsheet
     users.each do |u|
       reg = regs.find{|r| r.user_id == u.id}
       sheet.push_row(nil, [
-                       u.last_name || u.name,
-                       u.first_name || "",
-                       reg.section.instructor.last_name,
+                       sanitize(u.last_name || u.name),
+                       sanitize(u.first_name || ""),
+                       sanitize(reg.section.instructor.last_name),
                        u.nuid || "",
-                       u.email,
+                       sanitize(u.email),
                        reg.section.crn,
                        reg.dropped_date || "",
                        "", ""])
@@ -352,7 +361,7 @@ class CourseSpreadsheet
       grades = Gradesheet.new(assn, used_subs)
       subs_for_grading = UsedSub.where(assignment: assn).to_a
       
-      sheet.columns.push(Col.new(assn.name, "Number"))
+      sheet.columns.push(Col.new(sanitize(assn.name), "Number"))
       grades.graders.each_with_index do |g, i|
         sheet.columns.push(Col.new("", "Number")) if i > 0
         labels.push(Cell.new(g.type))
@@ -428,7 +437,7 @@ class CourseSpreadsheet
     start_col = sheet.columns.count
 
     hw_cols.each do |assn, col|
-      sheet.columns.push(Col.new(assn.name, "Percent"))
+      sheet.columns.push(Col.new(sanitize(assn.name), "Percent"))
       labels.push(Cell.new(assn.points_available / 100.0))
       weight.push(Cell.new(""))
 
@@ -472,10 +481,13 @@ class CourseSpreadsheet
 
     @twoPct = workbook.add_format
     @twoPct.set_num_format("0.00%")
+    @rawString = workbook.add_format(num_format: "@")
     def render_row(ws, s, r, r_num, row_offset)
       r.each_with_index do |c, c_num|
         if s.columns[c_num].type == "Percent"
           format = @twoPct
+        elsif s.columns[c_num].type == "String"
+          format = @rawString
         else
           format = nil
         end
@@ -486,7 +498,7 @@ class CourseSpreadsheet
         elsif c.value.is_a? DateTime or c.value.is_a? Time
           ws.write_date_time(r_num + row_offset, c_num, c.value.to_formatted_s(:db), format)
         else
-          ws.write(r_num + row_offset, c_num, c.value, format)
+          ws.write_string(r_num + row_offset, c_num, c.value, format)
         end
       end
     end

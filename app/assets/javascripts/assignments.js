@@ -1,33 +1,59 @@
 (function() {
-    function init_datetime() {
-        $('.datetime-picker').datetimepicker({
-            sideBySide: true,
-            format: "YYYY/MM/DD h:mm A",
-            defaultDate: undefined
-        });
-    }
+  function init_datetime() {
+    $('.datetime-picker').datetimepicker({
+      sideBySide: true,
+      format: "YYYY/MM/DD h:mm A",
+      defaultDate: undefined
+    });
+  }
 
-    function on_add_grader(evt, el) {
-        el.find(".spinner").each(function(_ii, div) {
-            activateSpinner(div);
-        });
- 
-        form_tabs_init_all(el);
-   }
+  function on_add_grader(evt, el) {
+    el.find(".spinner").each(function(_ii, div) {
+      activateSpinner(div);
+    });
+    
+    form_tabs_init_all(el);
+  }
 
-    function form_init() {
-        init_datetime();
+  function form_init() {
+    init_datetime();
 
-        $('.graders-list').on('cocoon:after-insert', on_add_grader);
-        $('.spinner').each(function (_ii, div) {
-            activateSpinner(div);
-        });
-    }
+    $('.graders-list').on('cocoon:after-insert', on_add_grader);
+    $('.spinner').each(function (_ii, div) {
+      activateSpinner(div);
+    });
 
-    run_on_page("assignments/new", form_init);
-    run_on_page("assignments/create", form_init);
-    run_on_page("assignments/edit", form_init);
-    run_on_page("assignments/update", form_init);
+    $("form").submit(function(e) {
+      var graderTypeInputs =
+          $("li.grader").filter(function(index) {
+            return $(this).find("input[id^='assignment_graders_'][id$='_destroy'][value='1']").length == 0;
+          }).find("input[id$='_type']");
+      debugger
+      var graderTypes = graderTypeInputs.map(function() { return $(this).val().replace(/^.*_/, ""); });
+      var asHash = Object.create(null);
+      graderTypes.map(function() { asHash[this] = (asHash[this] || 0) + 1; });
+      var prompt = "";
+      for (var type in asHash) {
+        if (asHash[type] > 1) {
+          prompt += "\t" + asHash[type] + " of " + type + "\n";
+        }
+      }
+      if (prompt !== "") {
+        if (!confirm("Are you sure you intended to have multiple graders of the same type?\n" + prompt)) {
+          e.preventDefault();
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
+  
+
+  run_on_page("assignments/new", form_init);
+  run_on_page("assignments/create", form_init);
+  run_on_page("assignments/edit", form_init);
+  run_on_page("assignments/update", form_init);
 })();
 
 /*

@@ -6,6 +6,9 @@ class JunitGrader < Grader
   validates :upload, presence: true
   validates :params, length: {minimum: 3}
   
+  after_initialize :load_junit_params
+  before_validation :set_junit_params
+
   def autograde?
     true
   end
@@ -20,10 +23,21 @@ class JunitGrader < Grader
     else
       filename = "<no file>"
     end
-    "#{self.avail_score} points: Run JUnit tests in #{self.params} from #{filename}"
+    "#{self.avail_score} points: Run JUnit tests in #{test_class} from #{filename}, " +
+      "and show #{errors_to_show} #{'failed test'.pluralize(errors_to_show)}"
   end
-  
+
   protected
+  def load_junit_params
+    return if new_record?
+    testClass, errorsToShow = self.params.to_s.split(";")
+    self.test_class = testClass
+    self.errors_to_show = errorsToShow
+  end
+  def set_junit_params
+    self.params = "#{self.test_class};#{self.errors_to_show}"
+  end
+
   def copy_srctest_from_to(from, to, prefix = "")
     if !prefix.empty?
       prefix = "#{prefix}: "
@@ -116,9 +130,9 @@ class JunitGrader < Grader
             # details.write output
 
             Audit.log("#{prefix}: Running JUnit")
-            details.write("java -cp #{classpath} edu.neu.TAPRunner #{self.params}}\n")
+            details.write("java -cp #{classpath} edu.neu.TAPRunner #{self.test_class}}\n")
             test_out, test_err, test_status =
-                                Open3.capture3("java", "-cp", classpath, "edu.neu.TAPRunner", self.params)
+                                Open3.capture3("java", "-cp", classpath, "edu.neu.TAPRunner", self.test_class)
             details.write("JUnit output: (exit status #{test_status})\n")
             details.write(test_out)
             if !test_status.success?

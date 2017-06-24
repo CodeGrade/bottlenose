@@ -3,7 +3,7 @@
 <table class="table no-first-row" style="margin-bottom: 0px;">
   <tr class="form-group">
     <td><%= f.label "avail_score", "Points available:" %></td>
-    <td><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>
+    <td><%= f.spinner "avail_score", f.object.avail_score || 50, min: 0, delta: 5 %></td>
   </tr>
   <tr class="form-group">
     <td><%= f.label "upload_file", "Reference tests:" %></td>
@@ -14,7 +14,16 @@
     </td>
   </tr>
   <tr class="form-group">
-    <td><%= f.label "params", "Test class:" %></td>
-    <td><%= f.text_field "params" %></td>
+    <td><%= f.label "test_class", "Test class:" %></td>
+    <td><%= f.text_field "test_class" %></td>
+  </tr>
+  <tr class="form-group">
+    <td><%= f.label "errors_to_show", "Number of errors to show:" %></td>
+    <% errs = begin
+       f.object.errors_to_show || 3
+       rescue Exception
+       3
+       end %>
+    <td><%= f.spinner "errors_to_show", errs, min: 0, delta: 1 %></td>
   </tr>
 </table>

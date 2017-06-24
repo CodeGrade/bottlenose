@@ -39,10 +39,12 @@ class Assignment < ApplicationRecord
   validates :blame_id,  :presence => true
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
-  before_create :fixup_graders
+  validates :graders,   :presence => true
 
+  before_create :fixup_graders
   before_create :setup_teamsets
   before_update :update_teamsets
+  before_update :update_exam_submission_times
 
   def legal_teamset_actions
     # Returns the set of actions on teamsets that are legal as of the saved values in the database
@@ -120,7 +122,11 @@ class Assignment < ApplicationRecord
         return false
       else
         ts = Teamset.find(@teamset_source_copy.to_i)
-        self.teamset = ts&.dup
+        if ts.nil?
+          self.errors.add(:base, "The specified teamset to be copied does not exist")
+          return false
+        end
+        self.teamset = ts.dup
       end
     elsif @teamset_plan == "use"
       if @teamset_source_use.empty?
@@ -160,8 +166,12 @@ class Assignment < ApplicationRecord
         return false
       end
       ts = Teamset.find(@teamset_source_copy.to_i)
-      self.teamset = ts&.dup
-      self.teamset&.make_solo_teams_for(self)
+      if ts.nil?
+        self.errors.add(:base, "The specified teamset to be copied does not exist")
+        return false
+      end
+      self.teamset = ts.dup
+      self.teamset.make_solo_teams_for(self)
     elsif @teamset_plan == "unique"
       # nothing to do
     elsif @teamset_plan == "use"
@@ -178,6 +188,13 @@ class Assignment < ApplicationRecord
       end
     end
     self.team_subs = (@teamset_plan != "none")
+  end
+
+  def update_exam_submission_times
+    return if self.type != "exam"
+    self.available = self.due_date # for exams, there's no window in which "the assignment is available"
+    self.submissions.update_attributes({created_at: self.due_date - 1.minute,
+                                        updated_at: self.due_date - 1.minute})
   end
   
   def sub_late?(sub)
@@ -423,6 +440,7 @@ class Assignment < ApplicationRecord
       total_weight = 0
       def make_err(msg)
         self.errors.add(:base, msg)
+        no_problems = false
       end
       def is_float(val)
         Float(val) rescue false
@@ -447,9 +465,12 @@ class Assignment < ApplicationRecord
           total_weight += Float(q["weight"])
         end
       end
+      return unless no_problems
+      self.graders ||= []
+      if self.graders.count == 0
+        self.graders << Grader.new(type: "ExamGrader", avail_score: total_weight)
+      end
     end
-    self.graders ||= []
-    self.graders << Grader.new(type: "ExamGrader", avail_score: total_weight)
   end
 
   # setup graders
@@ -601,8 +622,11 @@ class Assignment < ApplicationRecord
           end
         end
       end
+      return unless no_problems
+      self.graders ||= []
+      if self.graders.count == 0
+        self.graders << Grader.new(type: "QuestionsGrader", avail_score: total_weight)
+      end
     end
-    self.graders ||= []
-    self.graders << Grader.new(type: "QuestionsGrader", avail_score: total_weight)
   end
 end
