@@ -79,6 +79,7 @@ FactoryGirl.define do
     due_date (Time.now + 7.days)
     after(:build) do |assn|
       assn.course = assn.teamset.course
+      assn.graders << create(:grader)
     end
   end
 
