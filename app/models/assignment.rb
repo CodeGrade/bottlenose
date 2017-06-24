@@ -39,8 +39,9 @@ class Assignment < ApplicationRecord
   validates :blame_id,  :presence => true
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
-  before_create :fixup_graders
+  validates :graders,   :presence => true
 
+  before_create :fixup_graders
   before_create :setup_teamsets
   before_update :update_teamsets
   before_update :update_exam_submission_times

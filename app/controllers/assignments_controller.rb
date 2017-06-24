@@ -112,7 +112,7 @@ class AssignmentsController < ApplicationController
     end
 
     # Assign the current user to all file uploads for grader configs
-    ap[:graders_attributes].each do |k, v|
+    ap[:graders_attributes]&.each do |k, v|
       v[:upload_by_user_id] = current_user.id
     end
     @assignment.assign_attributes(ap)
