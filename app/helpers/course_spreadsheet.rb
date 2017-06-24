@@ -229,10 +229,11 @@ class CourseSpreadsheet
   end
 
   def sanitize(str)
+    str = str.strip
     if str[0] == "=" || str[0] == "+" || str[0] == "-" || str[0] == "@"
-      str[1..str.length].strip
+      str[1..str.length]
     else
-      str.strip
+      str
     end
   end
 
