@@ -60,7 +60,6 @@ class Upload < ApplicationRecord
     File.open(submission_path, 'wb') do |file|
       file.write(upload.read)
     end
-    extract_contents!(metadata[:mimetype] || upload.content_type)
   end
 
   def cleanup_extracted!
@@ -107,10 +106,10 @@ class Upload < ApplicationRecord
     else
       upload_path = submission_path.to_s
     end
-    begin
+    # begin
       if meta[:mimetype] == "application/zip" || upload_path.ends_with?(".zip")
         total = 0
-        ZipRuby::Archive.open(submission_path.to_s) do |ar|
+        ZipRuby::Archive.open(upload_path) do |ar|
           ar.each do |zf|
             total += zf.size
             if total > Upload.MAX_SIZE
@@ -120,7 +119,7 @@ class Upload < ApplicationRecord
         end
         return false
       elsif meta[:mimetype] == "application/x-tar" || upload_path.ends_with?(".tar")
-        return File.size(upload_path) > Upload.TOTAL_SIZE
+        return File.size(upload_path) > Upload.MAX_SIZE
       elsif meta[:mimetype] == "application/x-compressed-tar" || upload_path.ends_with?(".tgz") ||
             meta[:mimetype] == "application/gzip" || upload_path.ends_with?(".gz")
         Zlib::GzipReader.open(upload_path) do |zf|
@@ -133,12 +132,12 @@ class Upload < ApplicationRecord
         end
         return false
       else
-        return File.size(upload_path) > Upload.TOTAL_SIZE
+        return File.size(upload_path) > Upload.MAX_SIZE
       end
-    rescue Exception => e
-      puts e.message
-      raise Exception.new("Could not read archive to measure total file size")
-    end
+    # rescue Exception => e
+    #   puts e.message
+    #   raise Exception.new("Could not read archive to measure total file size")
+    # end
   end
 
   def extract_contents!(mimetype)
@@ -217,6 +216,8 @@ class Upload < ApplicationRecord
 
     Audit.log("User #{user.name} (#{user_id}) creating upload #{secret_key}")
 
+    create_submission_structure(upload, metadata)
+
     count = count_contents(upload, metadata)
     if count > Upload.MAX_FILES
       raise Exception.new("Too many files (more than #{Upload.MAX_FILES}) in submission!")
@@ -225,7 +226,7 @@ class Upload < ApplicationRecord
       raise Exception.new("Extracted files are too large (more than #{ActiveSupport::NumberHelper.number_to_human_size(Upload.MAX_SIZE)})")
     end
 
-    create_submission_structure(upload, metadata)
+    extract_contents!(metadata[:mimetype] || upload.content_type)
 
     Audit.log("Uploaded file #{file_name} for #{user.name} (#{user_id}) at #{secret_key}")
   end
@@ -270,11 +271,11 @@ class Upload < ApplicationRecord
   end
 
   def self.upload_path_for(p)
-    p.to_s.gsub(Rails.root.join("public").to_s, "")
+    p.to_s.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files")
   end
 
   def self.full_path_for(p)
-    Rails.root.join("public").to_s + self.upload_path_for(p)
+    Rails.root.join("private").to_s + self.upload_path_for(p)
   end
 
   def cleanup!
@@ -282,7 +283,7 @@ class Upload < ApplicationRecord
   end
 
   def self.base_upload_dir
-    Rails.root.join("public", "uploads", Rails.env)
+    Rails.root.join("private", "uploads", Rails.env)
   end
 
   def self.cleanup_test_uploads!

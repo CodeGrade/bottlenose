@@ -116,38 +116,7 @@ class ApplicationController < ActionController::Base
           link: item[:public_link],
           name: item[:public_link].sub(/^.*extracted\//, ""),
           contents: File.read(item[:full_path].to_s),
-          type: case File.extname(item[:full_path].to_s).downcase
-                when ".java"
-                  "text/x-java"
-                when ".js"
-                  "text/javascript"
-                when ".arr"
-                  "pyret"
-                when ".rkt", ".ss"
-                  "scheme"
-                when ".ml", ".mli"
-                  "mllike"
-                when ".mly"
-                  "text/x-ebnf"
-                when ".c", ".h"
-                  "text/x-csrc"
-                when ".cpp", ".c++"
-                  "text/x-c++src"
-                when ".cs"
-                  "text/x-csharp"
-                when ".jpg", ".jpeg", ".png"
-                  "image"
-                when ".jar"
-                  "jar"
-                when ".zip"
-                  "zip"
-                else
-                  if File.basename(item[:full_path].to_s) == "Makefile"
-                    "text/x-makefile"
-                  else
-                    "text/unknown"
-                  end
-                end,
+          type: mime_type(item[:full_path]),
           href: @submission_files.count + 1,
           lineComments: comments
           })
@@ -204,6 +173,41 @@ class ApplicationController < ActionController::Base
     fix_hrefs({nodes: @submission_files})
   end
 
+  def mime_type(full_path)
+    case File.extname(full_path).downcase
+    when ".java"
+      "text/x-java"
+    when ".js"
+      "text/javascript"
+    when ".arr"
+      "pyret"
+    when ".rkt", ".ss"
+      "scheme"
+    when ".ml", ".mli"
+      "mllike"
+    when ".mly"
+      "text/x-ebnf"
+    when ".c", ".h"
+      "text/x-csrc"
+    when ".cpp", ".c++"
+      "text/x-c++src"
+    when ".cs"
+      "text/x-csharp"
+    when ".jpg", ".jpeg", ".png"
+      "image"
+    when ".jar"
+      "jar"
+    when ".zip"
+      "zip"
+    else
+      if File.basename(full_path.to_s) == "Makefile"
+        "text/x-makefile"
+      else
+        "text/unknown"
+      end
+    end
+  end
+  
   # Course stuff
 
   def find_course
