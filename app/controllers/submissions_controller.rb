@@ -94,7 +94,7 @@ class SubmissionsController < CoursesController
       count += 1
     end
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  notice: "Regraded #{@grader.display_type} for #{plural(count, 'submission')}"
+                  notice: "Regraded #{@grader.display_type} for #{pluralize(count, 'submission')}"
   end
 
   def use_for_grading

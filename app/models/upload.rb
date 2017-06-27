@@ -1,8 +1,8 @@
 require 'audit'
-require 'zipruby'
 require 'fileutils'
 require 'zlib'
 require 'find'
+require 'open3'
 
 class Upload < ApplicationRecord
   def self.MAX_FILES
@@ -76,22 +76,29 @@ class Upload < ApplicationRecord
     else
       upload_path = submission_path.to_s
     end
+    output, err, status = "", "", ""
     begin
       if meta[:mimetype] == "application/zip" || upload_path.ends_with?(".zip")
-        return ZipRuby::Archive.open(upload_path).num_files
+        offset = 5 # archive name, column headers, dashes, dashes, and summary lines
+        output, status = Open3.capture2("unzip", "-l", upload_path)
       elsif meta[:mimetype] == "application/x-tar" || upload_path.ends_with?(".tar")
-        return SubTarball.count_files(upload_path)
+        output, err, status = Open3.capture3("tar", "-tvf", upload_path)
+        offset = 0
       elsif meta[:mimetype] == "application/x-compressed-tar" || upload_path.ends_with?(".tgz")
-        return SubTarball.count_files_gz(upload_path)
+        output, err, status = Open3.capture3("tar", "-tzvf", upload_path)
+        offset = 0
       elsif meta[:mimetype] == "application/gzip" || upload_path.ends_with?(".gz")
         if submission_path.to_s.ends_with?(".tar.gz")
-          return SubTarball.count_files_gz(upload_path)
+          output, err, status = Open3.capture3("tar", "-tf", upload_path)
+          offset = 0
         else
           return 1
         end
       else
         return 1
       end
+      raise Exception.new("Could not list the files in #{upload_path}") if !status.success?
+      return output.lines.count - offset
     rescue Exception => e
       puts e.message
       raise Exception.new("Could not read archive to count files")
@@ -106,22 +113,21 @@ class Upload < ApplicationRecord
     else
       upload_path = submission_path.to_s
     end
-    # begin
+    begin
       if meta[:mimetype] == "application/zip" || upload_path.ends_with?(".zip")
-        total = 0
-        ZipRuby::Archive.open(upload_path) do |ar|
-          ar.each do |zf|
-            total += zf.size
-            if total > Upload.MAX_SIZE
-              return true
-            end
-          end
-        end
-        return false
+        output, err, status = Open3.capture3("unzip", "-l", upload_path)
+        raise Exception.new("could not list the files in #{upload_path}") if !status.success?
+        return output.lines.last.split.first.to_i > Upload.MAX_SIZE
       elsif meta[:mimetype] == "application/x-tar" || upload_path.ends_with?(".tar")
         return File.size(upload_path) > Upload.MAX_SIZE
       elsif meta[:mimetype] == "application/x-compressed-tar" || upload_path.ends_with?(".tgz") ||
             meta[:mimetype] == "application/gzip" || upload_path.ends_with?(".gz")
+        # try getting the size info directly from the gzipped file (but size is mod 2^32)
+        output, err, status = Open3.capture3("gunzip", "-l", upload_path)
+        raise Exception.new("could not list the files in #{upload_path}") if !status.success?
+        return true if output.lines.last.split.second.to_i > Upload.MAX_SIZE
+        # if the size is "small", it might've actually been greater than 2^32 and overflowed
+        # so try the slower, manual approach
         Zlib::GzipReader.open(upload_path) do |zf|
           while (!zf.eof? && zf.pos <= Upload.MAX_SIZE) do
             zf.readpartial(Upload.MAX_SIZE)
@@ -134,10 +140,10 @@ class Upload < ApplicationRecord
       else
         return File.size(upload_path) > Upload.MAX_SIZE
       end
-    # rescue Exception => e
-    #   puts e.message
-    #   raise Exception.new("Could not read archive to measure total file size")
-    # end
+    rescue Exception => e
+      puts e.message
+      raise Exception.new("Could not read archive to measure total file size")
+    end
   end
 
   def extract_contents!(mimetype)
@@ -148,19 +154,22 @@ class Upload < ApplicationRecord
     extracted_path.mkpath
     if mimetype == "application/zip" ||
        submission_path.to_s.ends_with?(".zip")
-      ZipRuby::Archive.open(submission_path.to_s) do |ar|
-        ar.each do |zf|
-          if zf.directory?
-            FileUtils.mkdir_p(extracted_path.join(zf.name))
+      output, err, status = Open3.capture3("unzip", "-n", # Never overwrite
+                                           submission_path.to_s, # source
+                                           "-d", extracted_path.to_s) # target directory
+      if !status.success?
+        if output.include?("skipped \"../\"")
+          badfiles = output.lines.map do |l|
+            match = l.match(/skipped .* path component\(s\) in (.*)/)
+            match && match[1]
+          end.compact
+          if badfiles.length == 1
+            raise Exception.new("Could not unzip #{file_name}: #{badfiles} does not stay within the submission directory")
           else
-            dest = extracted_path.join(zf.name)
-            dirname = File.dirname(dest)
-            FileUtils.mkdir_p(dirname) unless File.exist?(dirname)
-
-            File.open(dest, 'wb') do |f|
-              f << zf.read
-            end
+            raise Exception.new("Could not unzip #{file_name}: #{badfiles.join(', ')} do not stay within the submission directory")
           end
+        else
+          raise Exception.new("Could not unzip #{file_name}: #{status}, #{output}")
         end
       end
     elsif mimetype == "application/x-tar" ||
@@ -174,12 +183,9 @@ class Upload < ApplicationRecord
       if submission_path.to_s.ends_with?(".tar.gz")
         SubTarball.untar_gz(submission_path, extracted_path)
       else
-        dest = extracted_path.join(File.basename(file_name, ".gz"))
-        Zlib::GzipReader.open(submission_path) do |input_stream|
-          File.open(dest, "w") do |output_stream|
-            IO.copy_stream(input_stream, output_stream)
-          end
-        end
+        FileUtils.copy(submission_path, extracted_path)
+        output, err, status = Open3.capture3("gunzip", extracted_path.join(File.basename(file_name, ".gz")).to_s)
+        return false if !status.success?
       end
     else
       FileUtils.cp(submission_path, extracted_path)
@@ -243,7 +249,13 @@ class Upload < ApplicationRecord
   def extracted_files
     def rec_path(path)
       path.children.sort.collect do |child|
-        if child.file?
+        if child.symlink?
+          {
+            path: child.basename.to_s,
+            link_to: Upload.upload_path_for(child.dirname.join(File.readlink(child))),
+            broken: (!File.exists?(File.realpath(child)) rescue true)
+          }
+        elsif child.file?
           {path: child.basename.to_s, full_path: child, public_link: Upload.upload_path_for(child)}
         elsif child.directory?
           {path: child.basename.to_s, children: rec_path(child)}

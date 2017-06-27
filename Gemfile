@@ -34,7 +34,6 @@ gem 'bootstrap-toggle-rails'
 
 gem 'momentjs-rails', '>= 2.9.0'
 gem 'font-awesome-rails'
-gem 'zipruby-compat', :require => 'zipruby', :git => "https://github.com/jawspeak/zipruby-compatibility-with-rubyzip-fork.git", :tag => "v0.3.7" # needed instead of zipruby because write_xlsx needs rubyzip, and they conflict ; FIXME: git reference
 
 gem 'delayed_job', github: 'dsander/delayed_job', branch: 'rails51' # FIXME: github
 gem 'delayed_job_active_record', github: 'gogovan/delayed_job_active_record', branch: 'rails-5.1' # FIXME
