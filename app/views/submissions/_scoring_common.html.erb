@@ -77,6 +77,8 @@
     <td>
       <% if all_scores[:raw_score].nil? %>
       <%= image_tag("question-mark.png", height: 16) %>
+      <% elsif @gradesheet.max_score.zero? %>
+      &mdash;
       <% else %>
       <%= to_fixed(100.0 * (all_scores[:raw_score] / @gradesheet.max_score)) %>%
       <%= if !complete then " (hidden)" end %>
