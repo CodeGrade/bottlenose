@@ -1,7 +1,7 @@
 require 'clamp'
 class QuestionsGrader < Grader
   def autograde!(assignment, sub)
-    g = self.grader_for sub
+    g = self.grade_for sub
 
     g.out_of = self.avail_score
 
@@ -24,8 +24,8 @@ class QuestionsGrader < Grader
   protected
 
   def do_grading(assignment, sub)
-    g = self.grader_for sub
-    comments = InlineComment.where(submission: sub, grader: g, suppressed: false).order(:line)
+    g = self.grade_for sub
+    comments = InlineComment.where(submission: sub, grade: g, suppressed: false).order(:line)
     questions = assignment.flattened_questions
     score = comments.pluck(:weight).zip(questions).reduce(0) do |sum, (w, q)|
       sum + (w.clamp(0, 1) * q["weight"])

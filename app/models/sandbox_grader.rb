@@ -23,7 +23,7 @@ class SandboxGrader < Grader
   protected
 
   def do_grading(assignment, sub)
-    g = self.grader_for sub
+    g = self.grade_for sub
 
     sandbox = Sandbox.create(name: "Manual grader", submission: sub)
     cont    = sandbox.container
@@ -44,7 +44,7 @@ class SandboxGrader < Grader
   end
 
   def run_sandbox(assignment, sub, sandbox, cont)
-    g = self.grader_for sub
+    g = self.grade_for sub
     g.score = 0
     g.out_of = 50
     g.available = false
@@ -72,7 +72,7 @@ class SandboxGrader < Grader
   end
 
   def run_sandbox(assignment, sub, sandbox, cont)
-    g = self.grader_for sub
+    g = self.grade_for sub
     g.score = 0
     g.out_of = 50
     g.available = false

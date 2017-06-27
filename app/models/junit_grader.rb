@@ -67,7 +67,7 @@ class JunitGrader < Grader
   end
   
   def do_grading(assignment, sub)
-    g = self.grader_for sub
+    g = self.grade_for sub
     u = sub.upload
     
     grader_dir = u.grader_path(g)
