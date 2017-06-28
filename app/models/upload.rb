@@ -220,7 +220,7 @@ class Upload < ApplicationRecord
       raise Exception.new("Duplicate secret key (1). That's unpossible!")
     end
 
-    Audit.log("User #{user.name} (#{user_id}) creating upload #{secret_key}")
+    Audit.log("User #{user&.name} (#{user_id}) creating upload #{secret_key}")
 
     create_submission_structure(upload, metadata)
 
@@ -234,7 +234,7 @@ class Upload < ApplicationRecord
 
     extract_contents!(metadata[:mimetype] || upload.content_type)
 
-    Audit.log("Uploaded file #{file_name} for #{user.name} (#{user_id}) at #{secret_key}")
+    Audit.log("Uploaded file #{file_name} for #{user&.name} (#{user_id}) at #{secret_key}")
   end
 
   def read_metadata
