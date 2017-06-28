@@ -103,7 +103,7 @@ private
           dest = File.join destination, entry.read.strip
           next
         end
-        dest ||= File.join destination, entry.full_name
+        dest ||= (File.join destination, entry.full_name).sub(/\/$/, "")
         if (File.realdirpath(dest).to_s.starts_with?(destination.to_s) rescue false)
           if entry.directory?
             FileUtils.rm_rf dest unless File.directory? dest
@@ -119,7 +119,7 @@ private
             # skip for now, come back to it after all other files have been created
           end
         else
-          raise Exception.new("Could not create #{entry.full_name}: this path does not stay within the submission directory")
+          raise Exception.new("Could not create #{entry.full_name}: this path does not stay within the submission directory.")
         end
         dest = nil
       end
