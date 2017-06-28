@@ -6,13 +6,13 @@
 
 <% if @student_info.length > 1 %>
 <style>
-  <% @course.course_sections.each do |s| %>
+  <% @course.sections.each do |s| %>
   #grades-table.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
   <% end %>
 </style>
 <h4>Select a section: <select id="sections">
     <option value="show_all">Show all sections</option>
-    <% @course.course_sections.each do |s| %>
+    <% @course.sections.each do |s| %>
     <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
     <% end %>
 </select></h4>
