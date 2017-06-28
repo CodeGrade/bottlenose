@@ -19,6 +19,8 @@ Bottlenose::Application.routes.draw do
     end
   end
 
+  get 'files/*path', to: 'files#upload', constraints: {path: /.*/}
+  
   resources :terms
 
   resources :courses, except: [:destroy] do

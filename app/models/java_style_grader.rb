@@ -22,7 +22,7 @@ class JavaStyleGrader < Grader
   protected
   
   def do_grading(assignment, sub)
-    g = self.grader_for sub
+    g = self.grade_for sub
     u = sub.upload
     files_dir = u.extracted_path
     grader_dir = u.grader_path(g)
@@ -48,7 +48,7 @@ class JavaStyleGrader < Grader
     end
     if !status.success?
       Audit.log "#{prefix}: JavaStyle checker failed: status #{status}, error: #{err}\n"
-      InlineComment.where(submission: sub, grader: g).destroy_all
+      InlineComment.where(submission: sub, grade: g).destroy_all
       
       g.score = 0
       g.out_of = self.avail_score
@@ -61,7 +61,7 @@ class JavaStyleGrader < Grader
         title: "Compilation errors",
         filename: sub.upload.extracted_path.to_s,
         line: 0,
-        grader: g,
+        grade: g,
         user: nil,
         label: "general",
         severity: InlineComment::severities["error"],
@@ -87,15 +87,15 @@ class JavaStyleGrader < Grader
   end
   
   def upload_inline_comments(tap, sub)
-    g = self.grader_for sub
-    InlineComment.where(submission: sub, grader: g).destroy_all
+    g = self.grade_for sub
+    InlineComment.where(submission: sub, grade: g).destroy_all
     ics = tap.tests.map do |t|
       InlineComment.new(
         submission: sub,
         title: t[:comment],
         filename: t[:info]["filename"],
         line: t[:info]["line"],
-        grader: g,
+        grade: g,
         user: nil,
         label: t[:info]["category"],
         severity: InlineComment::severities[t[:info]["severity"].humanize(:capitalize => false)],

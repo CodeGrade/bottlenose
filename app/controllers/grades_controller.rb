@@ -210,7 +210,7 @@ class GradesController < ApplicationController
     else
       comment.update(submission_id: params[:submission_id],
                      label: c["label"],
-                     filename: Upload.full_path_for(c["file"]),
+                     filename: c["file"],
                      line: c["line"],
                      grade_id: @grade.id,
                      user_id: current_user.id,
@@ -613,7 +613,7 @@ HEADER
       grades = all_grades[student.id]
       flattened = @assignment.flattened_questions
       grades.each_with_index do |g, q_num|
-        comment = InlineComment.find_or_initialize_by(submission_id: @sub.id, grader_id: @grade.id, line: q_num)
+        comment = InlineComment.find_or_initialize_by(submission_id: @sub.id, grade_id: @grade.id, line: q_num)
         if g.to_s.empty?
           if comment.new_record?
             next # no need to save blanks

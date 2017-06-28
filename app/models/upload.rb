@@ -1,10 +1,17 @@
 require 'audit'
-require 'zipruby'
 require 'fileutils'
 require 'zlib'
 require 'find'
+require 'open3'
 
 class Upload < ApplicationRecord
+  def self.MAX_FILES
+    100
+  end
+  def self.MAX_SIZE
+    10.megabytes
+  end
+
   include UploadsHelper
   validates :file_name,  :presence => true
   validates :user_id,    :presence => true
@@ -53,42 +60,11 @@ class Upload < ApplicationRecord
     File.open(submission_path, 'wb') do |file|
       file.write(upload.read)
     end
-    extract_contents!(metadata[:mimetype] || upload.content_type)
   end
 
   def cleanup_extracted!
     if Dir.exist?(upload_dir.join("extracted"))
       FileUtils.rm_r (upload_dir.join("extracted").to_s)
-    end
-  end
-
-  def count_contents(upload, meta)
-    if upload.is_a? ActionDispatch::Http::UploadedFile
-      upload_path = upload.path
-    elsif upload.is_a? String
-      upload_path = upload
-    else
-      upload_path = submission_path.to_s
-    end
-    begin
-      if meta[:mimetype] == "application/zip" || upload_path.ends_with?(".zip")
-        return ZipRuby::Archive.open(upload_path).num_files
-      elsif meta[:mimetype] == "application/x-tar" || upload_path.ends_with?(".tar")
-        return SubTarball.count_files(upload_path)
-      elsif meta[:mimetype] == "application/x-compressed-tar" || upload_path.ends_with?(".tgz")
-        return SubTarball.count_files_gz(upload_path)
-      elsif meta[:mimetype] == "application/gzip" || upload_path.ends_with?(".gz")
-        if submission_path.to_s.ends_with?(".tar.gz")
-          return SubTarball.count_files_gz(upload_path)
-        else
-          return 1
-        end
-      else
-        return 1
-      end
-    rescue Exception => e
-      puts e.message
-      raise Exception.new("Could not read archive to count files")
     end
   end
 
@@ -98,44 +74,7 @@ class Upload < ApplicationRecord
     return if Dir.exist?(extracted_path)
 
     extracted_path.mkpath
-    if mimetype == "application/zip" ||
-       submission_path.to_s.ends_with?(".zip")
-      ZipRuby::Archive.open(submission_path.to_s) do |ar|
-        ar.each do |zf|
-          if zf.directory?
-            FileUtils.mkdir_p(extracted_path.join(zf.name))
-          else
-            dest = extracted_path.join(zf.name)
-            dirname = File.dirname(dest)
-            FileUtils.mkdir_p(dirname) unless File.exist?(dirname)
-
-            File.open(dest, 'wb') do |f|
-              f << zf.read
-            end
-          end
-        end
-      end
-    elsif mimetype == "application/x-tar" ||
-          submission_path.to_s.ends_with?(".tar")
-      SubTarball.untar(submission_path, extracted_path)
-    elsif mimetype == "application/x-compressed-tar" ||
-          submission_path.to_s.ends_with?(".tgz")
-      SubTarball.untar_gz(submission_path, extracted_path)
-    elsif mimetype == "application/gzip" ||
-          submission_path.to_s.ends_with?(".gz")
-      if submission_path.to_s.ends_with?(".tar.gz")
-        SubTarball.untar_gz(submission_path, extracted_path)
-      else
-        dest = extracted_path.join(File.basename(file_name, ".gz"))
-        Zlib::GzipReader.open(submission_path) do |input_stream|
-          File.open(dest, "w") do |output_stream|
-            IO.copy_stream(input_stream, output_stream)
-          end
-        end
-      end
-    else
-      FileUtils.cp(submission_path, extracted_path)
-    end
+    ArchiveUtils.extract(submission_path.to_s, mimetype, extracted_path.to_s)
     Find.find(extracted_path) do |f|
       next unless File.file? f
       next if File.extname(f).empty?
@@ -166,16 +105,25 @@ class Upload < ApplicationRecord
       raise Exception.new("Duplicate secret key (1). That's unpossible!")
     end
 
-    Audit.log("User #{user.name} (#{user_id}) creating upload #{secret_key}")
+    Audit.log("User #{user&.name} (#{user_id}) creating upload #{secret_key}")
 
     create_submission_structure(upload, metadata)
 
-    count = count_contents(upload, metadata)
-    if count > 100
-      raise Exception.new("Too many files (#{count}) in submission!")
+    if upload.is_a? ActionDispatch::Http::UploadedFile
+      upload_path = upload.path
+    elsif upload.is_a? String
+      upload_path = upload
+    else
+      upload_path = submission_path.to_s
     end
+    effective_mime = metadata[:mimetype] || upload.content_type
+    
+    ArchiveUtils.too_many_files?(upload_path, effective_mime, Upload.MAX_FILES)
+    ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
 
-    Audit.log("Uploaded file #{file_name} for #{user.name} (#{user_id}) at #{secret_key}")
+    extract_contents!(effective_mime)
+
+    Audit.log("Uploaded file #{file_name} for #{user&.name} (#{user_id}) at #{secret_key}")
   end
 
   def read_metadata
@@ -190,7 +138,13 @@ class Upload < ApplicationRecord
   def extracted_files
     def rec_path(path)
       path.children.sort.collect do |child|
-        if child.file?
+        if child.symlink?
+          {
+            path: child.basename.to_s,
+            link_to: Upload.upload_path_for(child.dirname.join(File.readlink(child))),
+            broken: (!File.exists?(File.realpath(child)) rescue true)
+          }
+        elsif child.file?
           {path: child.basename.to_s, full_path: child, public_link: Upload.upload_path_for(child)}
         elsif child.directory?
           {path: child.basename.to_s, children: rec_path(child)}
@@ -218,11 +172,11 @@ class Upload < ApplicationRecord
   end
 
   def self.upload_path_for(p)
-    p.to_s.gsub(Rails.root.join("public").to_s, "")
+    p.to_s.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files")
   end
 
   def self.full_path_for(p)
-    Rails.root.join("public").to_s + self.upload_path_for(p)
+    Rails.root.join("private").to_s + self.upload_path_for(p)
   end
 
   def cleanup!
@@ -230,11 +184,11 @@ class Upload < ApplicationRecord
   end
 
   def self.base_upload_dir
-    Rails.root.join("public", "uploads", Rails.env)
+    Rails.root.join("private", "uploads", Rails.env)
   end
 
   def self.cleanup_test_uploads!
-    dir = Rails.root.join("public", "uploads", "test").to_s
+    dir = base_upload_dir.join("test").to_s
     if dir.length > 8 && dir =~ /test/
       FileUtils.rm_rf(dir)
     end

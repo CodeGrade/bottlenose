@@ -7,7 +7,7 @@ class ExamGrader < Grader
   end
 
   def autograde!(assignment, sub)
-    g = self.grader_for sub
+    g = self.grade_for sub
 
     g.out_of = self.avail_score
 
@@ -40,14 +40,14 @@ class ExamGrader < Grader
   protected
 
   def do_grading(assignment, sub)
-    g = self.grader_for sub
-    comments = InlineComment.where(submission: sub, grader: g, suppressed: false).where('line < ?', @num_questions)
+    g = self.grade_for sub
+    comments = InlineComment.where(submission: sub, grade: g, suppressed: false).where('line < ?', @num_questions)
     score = comments.pluck(:weight).sum
 
     g.out_of = self.avail_score
     g.score = [0, score].max # can get extra credit above max score
 
-    curved = InlineComment.find_by(submission: sub, grader: g, suppressed: false, line: @num_questions)
+    curved = InlineComment.find_by(submission: sub, grade: g, suppressed: false, line: @num_questions)
     if curved
       g.score = curved.weight
     end

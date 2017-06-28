@@ -204,14 +204,12 @@ $(function (){
     fileMap[i] = n.href;
   });
   window.selectTreeviewFileByHref = function(href) {
-    filesTreeview.selectNode(fileMap[href]);
+    if (fileMap[href]) filesTreeview.selectNode(fileMap[href]);
     return fileMap[href];
   }
   window.selectTreeviewFileByIndex = function(index) {
-    try {
+    if (fileMap[index] && fileMap[fileMap[index]])
       return filesTreeview.selectNode(fileMap[fileMap[index]]);
-    } catch(e) {
-    }
   }
   if (document.location.hash !== "") {
     return selectTreeviewFileByHref(document.location.hash);

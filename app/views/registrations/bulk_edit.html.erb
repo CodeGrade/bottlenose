@@ -2,7 +2,7 @@
 <h2>Edit registrations</h2>
 
 <% roles = Registration.roles.to_a.map{|r| [r[0].humanize, r[0]] }
-   sections = @course.course_sections.to_a.map{|s| [s.to_s, s.crn] } %>
+   sections = @course.sections.to_a.map{|s| [s.to_s, s.crn] } %>
 
 <table class="table">
   <thead>

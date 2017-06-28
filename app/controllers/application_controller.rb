@@ -116,38 +116,7 @@ class ApplicationController < ActionController::Base
           link: item[:public_link],
           name: item[:public_link].sub(/^.*extracted\//, ""),
           contents: File.read(item[:full_path].to_s),
-          type: case File.extname(item[:full_path].to_s).downcase
-                when ".java"
-                  "text/x-java"
-                when ".js"
-                  "text/javascript"
-                when ".arr"
-                  "pyret"
-                when ".rkt", ".ss"
-                  "scheme"
-                when ".ml", ".mli"
-                  "mllike"
-                when ".mly"
-                  "text/x-ebnf"
-                when ".c", ".h"
-                  "text/x-csrc"
-                when ".cpp", ".c++"
-                  "text/x-c++src"
-                when ".cs"
-                  "text/x-csharp"
-                when ".jpg", ".jpeg", ".png"
-                  "image"
-                when ".jar"
-                  "jar"
-                when ".zip"
-                  "zip"
-                else
-                  if File.basename(item[:full_path].to_s) == "Makefile"
-                    "text/x-makefile"
-                  else
-                    "text/unknown"
-                  end
-                end,
+          type: mime_type(item[:full_path]),
           href: @submission_files.count + 1,
           lineComments: comments
           })
@@ -178,6 +147,19 @@ class ApplicationController < ActionController::Base
           href: @submission_files.count,
           #icon: @lineCommentsByFile[item[:public_link].to_s] ? "glyphicon glyphicon-flash" : ""
         }
+      elsif item[:link_to]
+        @submission_files.push({
+          link_to: item[:link_to].sub(/^.*extracted\//, ""),
+          name: item[:path],
+          type: "symlink",
+          href: @submission_files.count + 1,
+          lineComments: {noCommentsFor: item[:path].to_s},
+          broken: item[:broken]
+          })
+        {
+          text: item[:path],
+          href: @submission_files.count
+        }
       else
         return nil if item[:path] == "__MACOSX"
         {
@@ -189,12 +171,20 @@ class ApplicationController < ActionController::Base
     end
 
     @submission_dirs = sub.upload.extracted_files.map{|i| with_extracted(i)}.compact
+    @submission_files.each do |sf|
+      if sf[:type] == "symlink" && !sf[:broken]
+        sf[:link_href] = @submission_files.find{|f| f[:link]&.ends_with?(sf[:link_to])}[:href]
+      end
+    end
 
     @count = @submission_files.count.to_s.length
 
     def fix_hrefs(node)
       if node[:href].is_a? Integer
         node[:href] = "#file_" + node[:href].to_s.rjust(@count, '0')
+      end
+      if node[:link_href].is_a? Integer
+        node[:link_href] = "#file_" + node[:link_href].to_s.rjust(@count, '0')
       end
       if node[:nodes]
         node[:nodes].each do |n| fix_hrefs(n) end
@@ -204,6 +194,41 @@ class ApplicationController < ActionController::Base
     fix_hrefs({nodes: @submission_files})
   end
 
+  def mime_type(full_path)
+    case File.extname(full_path).downcase
+    when ".java"
+      "text/x-java"
+    when ".js"
+      "text/javascript"
+    when ".arr"
+      "pyret"
+    when ".rkt", ".ss"
+      "scheme"
+    when ".ml", ".mli"
+      "mllike"
+    when ".mly"
+      "text/x-ebnf"
+    when ".c", ".h"
+      "text/x-csrc"
+    when ".cpp", ".c++"
+      "text/x-c++src"
+    when ".cs"
+      "text/x-csharp"
+    when ".jpg", ".jpeg", ".png"
+      "image"
+    when ".jar"
+      "jar"
+    when ".zip"
+      "zip"
+    else
+      if File.basename(full_path.to_s) == "Makefile"
+        "text/x-makefile"
+      else
+        "text/unknown"
+      end
+    end
+  end
+  
   # Course stuff
 
   def find_course

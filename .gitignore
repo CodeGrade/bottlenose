@@ -31,6 +31,8 @@
 /public/submissions/
 /public/uploads
 /public/downloads
+/private/uploads
+/private/downloads
 
 # Ignore auto-generated assets.
 /public/assets

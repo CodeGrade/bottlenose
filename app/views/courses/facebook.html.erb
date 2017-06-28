@@ -25,7 +25,8 @@
                   bcc: all_emails.join(","), title: "Email everyone (bcc)" %>
     </span>
     <% by_section = @students.group_by(&:section_id) %>
-    <% @sections.each do |s| 
+    <% @sections.each do |s|
+       next unless by_section[s.crn]&.length.to_i > 0
        all_emails = by_section[s.crn].sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>" } %>
     <span class="btn btn-default btn-large sec_<%= s.crn %>">
       <%= mail_to "#{current_user.name} <#{current_user.email}>",

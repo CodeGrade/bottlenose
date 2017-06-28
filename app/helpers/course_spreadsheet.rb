@@ -229,12 +229,7 @@ class CourseSpreadsheet
   end
 
   def sanitize(str)
-    str = str.strip
-    if str[0] == "=" || str[0] == "+" || str[0] == "-" || str[0] == "@"
-      str[1..str.length]
-    else
-      str
-    end
+    str.gsub(/^\s*[-+=@]+/, "").strip
   end
 
   def create_exams(course, sheet)
@@ -506,7 +501,7 @@ class CourseSpreadsheet
       ws = workbook.add_worksheet(s.name)
       row_offset = 0
       s.columns.each_with_index do |c, c_num|
-        ws.write(0 + row_offset, c_num, c.name)
+        ws.write_string(0 + row_offset, c_num, sanitize(c.name))
       end
       row_offset += 1
       s.header_rows.each_with_index do |r, r_num|

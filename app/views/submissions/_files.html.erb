@@ -3,7 +3,8 @@
 <div class="file-pane tab-pane panel-tab-pane <%= if i == 0; 'active' end %>" id="file_<%= index %>">
   <% if f[:type] == "image" %>
   <div class="nonCMwrapper" style="position: relative; display: inline-block;">
-    <%= image_tag f[:link], id: "image_#{index}", alt: f[:name], style: "max-width: 100%; max-height: 100%;" %>
+    <%= image_tag f[:link], id: "image_#{index}", alt: f[:name], style: "max-width: 100%; max-height: 100%;",
+        skip_pipeline: true %>
     <a href="<%= f[:link] %>" target="_blank"
        class="magnify-image btn btn-default" data-target="image_<%= index %>" data-container="file_<%= index %>"
        style="position: absolute; display: block; float: right; right: 0; top: 0; font-size: 300%;">
@@ -12,6 +13,14 @@
   </div>
   <% elsif f[:type] == "zip" || f[:type] == "jar" %>
   <div class="nonCMwrapper"><%= link_to "Download #{f[:name]}", f[:link] %></div>
+  <% elsif f[:type] == "symlink" %>
+  <div class="nonCMwrapper">Symbolic link to
+    <% if f[:broken] %>
+    <%= f[:link_to] %>, which is an invalid link
+    <% else %>
+    <%= link_to f[:link_to], f[:link_href], class: "symlink-jump" %>
+    <% end %>
+  </div>
   <% else %>
   <% begin
        contents = render html: f[:contents] %>
@@ -29,16 +38,3 @@
   <% end %>
 </div>
 <% end %>
-<!--
-<div class="modal fade" id="displayMagnifiedImage" role="dialog">
-  <div class="modal-dialog">
-    <div class="modal-content" style="max-width: 100%; max-height: 100%;">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal">&times;</button>
-      </div>
-      <div class="modal-body" id="magnifiedImageBody">
-      </div>
-    </div>
-  </div>
-</div>
--->

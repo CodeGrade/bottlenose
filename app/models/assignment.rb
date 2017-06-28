@@ -301,13 +301,13 @@ class Assignment < ApplicationRecord
     end
 
     dir = "downloads/#{tar_key}/"
-    FileUtils.mkdir_p(Rails.root.join('public', dir))
+    FileUtils.mkdir_p(Rails.root.join('private', dir))
 
     return '/' + dir + "assignment_#{id}.tgz"
   end
 
   def tarball_full_path
-    Rails.root.join('public', tarball_path.sub(/^\//, ''))
+    Rails.root.join('private', tarball_path.sub(/^\//, ''))
   end
 
   def submissions_for(user)
