@@ -152,7 +152,7 @@ class ArchiveUtils
 
   def self.helper_too_many_files?(file, stream, limit)
     count = 0
-    zf.each do |f|
+    stream.each do |f|
       count += 1
       if count > limit
         raise FileCountLimit.new(limit, file)
@@ -206,7 +206,7 @@ class ArchiveUtils
   end
 
   def self.tar_gz_total_size_too_large?(file, limit)
-    gzip_total_size_too_large(file, limit)
+    gzip_total_size_too_large?(file, limit)
   rescue FileSizeLimit => l
     raise l
   rescue FileReadError => r
@@ -216,7 +216,7 @@ class ArchiveUtils
   end
 
   def self.gzip_total_size_too_large?(file, limit)
-    Zlib::GzipReader.open(upload_path) do |zf|
+    Zlib::GzipReader.open(file) do |zf|
       while (!zf.eof? && zf.pos <= limit) do
         zf.readpartial(limit)
       end
@@ -309,9 +309,7 @@ class ArchiveUtils
   end
 
   def self.tar_gz_extract(file, dest)
-    Zlib::GzipReader.open(file) do |source|
-      File.open(source) do |tar| helper_extract(file, tar, dest) end
-    end
+    Zlib::GzipReader.open(file) do |source| helper_extract(file, source, dest) end
     return true
   end
 
