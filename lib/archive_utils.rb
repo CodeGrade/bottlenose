@@ -102,11 +102,11 @@ class ArchiveUtils
     elsif is_gz?(file, mime)
       gzip_total_size_too_large?(file, limit)
     else
-      if File.size(file) > limit
+      if File.size(file) >= limit
         raise FileSizeLimit.new(file, limit)
       end
       return false
-    end      
+    end
   end
 
   def self.extract(file, mime, dest)
@@ -178,13 +178,13 @@ class ArchiveUtils
           # Adapted from the implementation of ::Zip::Entry#create_file
           f.get_input_stream do |fs|
             buf = ''
-            while (total <= limit && !fs.eof?) do
-              buf = fs.sysread(::Zip::Decompressor::CHUNK_SIZE, buf)
+            while (total < limit && !fs.eof?) do
+              buf = fs.sysread(limit - total, buf)
               total += buf.length
             end
           end
         end
-        if total > limit
+        if total >= limit
           raise FileSizeLimit.new(limit, file)
         end
       end
@@ -197,7 +197,7 @@ class ArchiveUtils
   end
 
   def self.tar_total_size_too_large?(file, limit)
-    if File.size(file) > limit
+    if File.size(file) >= limit
       raise FileSizeLimit.new(limit, file)
     end
     return false
@@ -219,10 +219,10 @@ class ArchiveUtils
 
   def self.gzip_total_size_too_large?(file, limit)
     Zlib::GzipReader.open(file) do |zf|
-      while (!zf.eof? && zf.pos <= limit) do
+      while (!zf.eof? && zf.pos < limit) do
         zf.readpartial(limit)
       end
-      if zf.pos > limit
+      if zf.pos >= limit
         raise FileSizeLimit.new(limit, file)
       end
     end
