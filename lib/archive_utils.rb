@@ -103,7 +103,7 @@ class ArchiveUtils
       gzip_total_size_too_large?(file, limit)
     else
       if File.size(file) > limit
-        raise FileSizeLimit(file, limit)
+        raise FileSizeLimit.new(file, limit)
       end
       return false
     end      
@@ -185,7 +185,7 @@ class ArchiveUtils
           end
         end
         if total > limit
-          raise FileSizeLimit(limit, file)
+          raise FileSizeLimit.new(limit, file)
         end
       end
     end
