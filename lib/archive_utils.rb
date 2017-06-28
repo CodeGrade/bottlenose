@@ -2,7 +2,6 @@ require 'audit'
 require 'rubygems/package'
 require 'zlib'
 require 'zip'
-require 'open3'
 require 'fileutils'
 
 TAR_LONGLINK = '././@LongLink'
