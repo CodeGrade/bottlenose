@@ -60,7 +60,7 @@ class Grader < ApplicationRecord
     end
 
     up = Upload.new
-    up.user_id = self.upload_by_user_id
+    up.user = User.find_by(id: self.upload_by_user_id)
     up.store_upload!(data, {
                        type: "#{type} Configuration",
                        date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
