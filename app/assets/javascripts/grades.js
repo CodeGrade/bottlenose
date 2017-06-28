@@ -10,5 +10,4 @@
 
   run_on_page("grades/show", initFiles);
   run_on_page("grades/edit", initFiles);
-  run_on_page("grades/show", initFiles);
 })();

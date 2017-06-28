@@ -229,7 +229,7 @@ class CourseSpreadsheet
   end
 
   def sanitize(str)
-    str.gsub(/^\s+[-+=@]+/, "").strip
+    str.gsub(/^\s*[-+=@]+/, "").strip
   end
 
   def create_exams(course, sheet)
