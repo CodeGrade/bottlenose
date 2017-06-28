@@ -1,9 +1,6 @@
 require 'rubygems/package'
 require 'zlib'
 
-TAR_LONGLINK = '././@LongLink'
-
-
 class SubTarball
   def initialize(as_id)
     @as = Assignment.find(as_id)
@@ -95,55 +92,5 @@ class SubTarball
 
 private
   def self.untar_source(source, destination)
-    # from https://dracoater.blogspot.com/2013/10/extracting-files-from-targz-with-ruby.html
-    Gem::Package::TarReader.new(source) do |tar|
-      dest = nil
-      tar.each do |entry|
-        if entry.full_name == TAR_LONGLINK
-          dest = File.join destination, entry.read.strip
-          next
-        end
-        dest ||= (File.join destination, entry.full_name).sub(/\/$/, "")
-        if (File.realdirpath(dest).to_s.starts_with?(destination.to_s) rescue false)
-          if entry.directory?
-            FileUtils.rm_rf dest unless File.directory? dest
-            FileUtils.mkdir_p dest, :mode => entry.header.mode, :verbose => false
-          elsif entry.file?
-            FileUtils.rm_rf dest unless File.file? dest
-            FileUtils.mkdir_p(File.dirname(dest))
-            File.open dest, "wb" do |f|
-              f.print entry.read
-            end
-            FileUtils.chmod entry.header.mode, dest, :verbose => false
-          elsif entry.header.typeflag == '2' #Symlink!
-            # skip for now, come back to it after all other files have been created
-          end
-        else
-          raise Exception.new("Could not create #{entry.full_name}: this path does not stay within the submission directory.")
-        end
-        dest = nil
-      end
-      tar.rewind
-      dest = nil
-      tar.each do |entry|
-        if entry.full_name == TAR_LONGLINK
-          dest = File.join destination, entry.read.strip
-          next
-        end
-        dest ||= File.join destination, entry.full_name
-        if entry.header.typeflag == '2' #Symlink!
-          # Be careful: symlinks should not escape the destination directory
-          if File.realdirpath(entry.header.linkname, destination)
-              .to_s
-              .starts_with?(destination.to_s)
-            File.symlink entry.header.linkname, dest
-          else
-            where = File.realdirpath(entry.header.linkname, destination)
-            raise Exception.new("Could not create symlink from #{entry.header.linkname} ===> #{where}: this path does not stay within the submission directory")
-          end
-        end
-        dest = nil
-      end
-    end
   end
 end

@@ -68,128 +68,13 @@ class Upload < ApplicationRecord
     end
   end
 
-  def count_contents(upload, meta)
-    if upload.is_a? ActionDispatch::Http::UploadedFile
-      upload_path = upload.path
-    elsif upload.is_a? String
-      upload_path = upload
-    else
-      upload_path = submission_path.to_s
-    end
-    output, err, status = "", "", ""
-    begin
-      if meta[:mimetype] == "application/zip" || upload_path.ends_with?(".zip")
-        offset = 5 # archive name, column headers, dashes, dashes, and summary lines
-        output, status = Open3.capture2("unzip", "-l", upload_path)
-      elsif meta[:mimetype] == "application/x-tar" || upload_path.ends_with?(".tar")
-        output, err, status = Open3.capture3("tar", "-tvf", upload_path)
-        offset = 0
-      elsif meta[:mimetype] == "application/x-compressed-tar" || upload_path.ends_with?(".tgz")
-        output, err, status = Open3.capture3("tar", "-tzvf", upload_path)
-        offset = 0
-      elsif meta[:mimetype] == "application/gzip" || upload_path.ends_with?(".gz")
-        if submission_path.to_s.ends_with?(".tar.gz")
-          output, err, status = Open3.capture3("tar", "-tf", upload_path)
-          offset = 0
-        else
-          return 1
-        end
-      else
-        return 1
-      end
-      raise Exception.new("Could not list the files in #{upload_path}") if !status.success?
-      return output.lines.count - offset
-    rescue Exception => e
-      puts e.message
-      raise Exception.new("Could not read archive to count files")
-    end
-  end
-
-  def total_size_too_large?(upload, meta)
-    if upload.is_a? ActionDispatch::Http::UploadedFile
-      upload_path = upload.path
-    elsif upload.is_a? String
-      upload_path = upload
-    else
-      upload_path = submission_path.to_s
-    end
-    begin
-      if meta[:mimetype] == "application/zip" || upload_path.ends_with?(".zip")
-        output, err, status = Open3.capture3("unzip", "-l", upload_path)
-        raise Exception.new("could not list the files in #{upload_path}") if !status.success?
-        return output.lines.last.split.first.to_i > Upload.MAX_SIZE
-      elsif meta[:mimetype] == "application/x-tar" || upload_path.ends_with?(".tar")
-        return File.size(upload_path) > Upload.MAX_SIZE
-      elsif meta[:mimetype] == "application/x-compressed-tar" || upload_path.ends_with?(".tgz") ||
-            meta[:mimetype] == "application/gzip" || upload_path.ends_with?(".gz")
-        # try getting the size info directly from the gzipped file (but size is mod 2^32)
-        output, err, status = Open3.capture3("gunzip", "-l", upload_path)
-        raise Exception.new("could not list the files in #{upload_path}") if !status.success?
-        return true if output.lines.last.split.second.to_i > Upload.MAX_SIZE
-        # if the size is "small", it might've actually been greater than 2^32 and overflowed
-        # so try the slower, manual approach
-        Zlib::GzipReader.open(upload_path) do |zf|
-          while (!zf.eof? && zf.pos <= Upload.MAX_SIZE) do
-            zf.readpartial(Upload.MAX_SIZE)
-          end
-          if zf.pos > Upload.MAX_SIZE
-            return true
-          end
-        end
-        return false
-      else
-        return File.size(upload_path) > Upload.MAX_SIZE
-      end
-    rescue Exception => e
-      puts e.message
-      raise Exception.new("Could not read archive to measure total file size")
-    end
-  end
-
   def extract_contents!(mimetype)
     base = upload_dir
     extracted_path = base.join("extracted")
     return if Dir.exist?(extracted_path)
 
     extracted_path.mkpath
-    if mimetype == "application/zip" ||
-       submission_path.to_s.ends_with?(".zip")
-      output, err, status = Open3.capture3("unzip", "-n", # Never overwrite
-                                           submission_path.to_s, # source
-                                           "-d", extracted_path.to_s) # target directory
-      if !status.success?
-        if output.include?("skipped \"../\"")
-          badfiles = output.lines.map do |l|
-            match = l.match(/skipped .* path component\(s\) in (.*)/)
-            match && match[1]
-          end.compact
-          if badfiles.length == 1
-            raise Exception.new("Could not unzip #{file_name}: #{badfiles} does not stay within the submission directory")
-          else
-            raise Exception.new("Could not unzip #{file_name}: #{badfiles.join(', ')} do not stay within the submission directory")
-          end
-        else
-          raise Exception.new("Could not unzip #{file_name}: #{status}, #{output}")
-        end
-      end
-    elsif mimetype == "application/x-tar" ||
-          submission_path.to_s.ends_with?(".tar")
-      SubTarball.untar(submission_path, extracted_path)
-    elsif mimetype == "application/x-compressed-tar" ||
-          submission_path.to_s.ends_with?(".tgz")
-      SubTarball.untar_gz(submission_path, extracted_path)
-    elsif mimetype == "application/gzip" ||
-          submission_path.to_s.ends_with?(".gz")
-      if submission_path.to_s.ends_with?(".tar.gz")
-        SubTarball.untar_gz(submission_path, extracted_path)
-      else
-        FileUtils.copy(submission_path, extracted_path)
-        output, err, status = Open3.capture3("gunzip", extracted_path.join(File.basename(file_name, ".gz")).to_s)
-        return false if !status.success?
-      end
-    else
-      FileUtils.cp(submission_path, extracted_path)
-    end
+    ArchiveUtils.extract(submission_path.to_s, mimetype, extracted_path.to_s)
     Find.find(extracted_path) do |f|
       next unless File.file? f
       next if File.extname(f).empty?
@@ -224,15 +109,19 @@ class Upload < ApplicationRecord
 
     create_submission_structure(upload, metadata)
 
-    count = count_contents(upload, metadata)
-    if count > Upload.MAX_FILES
-      raise Exception.new("Too many files (more than #{Upload.MAX_FILES}) in submission!")
+    if upload.is_a? ActionDispatch::Http::UploadedFile
+      upload_path = upload.path
+    elsif upload.is_a? String
+      upload_path = upload
+    else
+      upload_path = submission_path.to_s
     end
-    if total_size_too_large?(upload, metadata)
-      raise Exception.new("Extracted files are too large (more than #{ActiveSupport::NumberHelper.number_to_human_size(Upload.MAX_SIZE)})")
-    end
+    effective_mime = metadata[:mimetype] || upload.content_type
+    
+    ArchiveUtils.too_many_files?(upload_path, effective_mime, MAX_FILES)
+    ArchiveUtils.total_size_too_large?(upload_path, effective_mime, MAX_SIZE)
 
-    extract_contents!(metadata[:mimetype] || upload.content_type)
+    extract_contents!(effective_mime)
 
     Audit.log("Uploaded file #{file_name} for #{user&.name} (#{user_id}) at #{secret_key}")
   end

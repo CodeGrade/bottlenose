@@ -127,7 +127,7 @@ GEM
       devise (>= 3.4.1)
       net-ldap (>= 0.6.0, <= 0.11)
     docile (1.1.5)
-    erubi (1.6.0)
+    erubi (1.6.1)
     erubis (2.7.0)
     execjs (2.7.0)
     factory_girl (4.8.0)
@@ -314,6 +314,7 @@ DEPENDENCIES
   rack
   rails (~> 5.1)
   rails-controller-testing
+  rubyzip
   sass-rails (>= 3.2)
   simplecov
   single_test
