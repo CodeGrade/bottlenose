@@ -260,6 +260,7 @@ class ArchiveUtils
   private
   def self.zip_extract(file, dest)
     Zip::File.open(file) do |zf|
+      seen_symlinks = false
       zf.each do |entry|
         out = File.join(dest, entry.name)
         if (safe_realdir(out).starts_with?(dest.to_s) rescue false)
@@ -276,6 +277,7 @@ class ArchiveUtils
           else
             FileUtils.rm_rf out unless File.file? out
             FileUtils.mkdir_p(File.dirname(out))
+            seen_symlinks = true
             # skip creating the symlink for now
           end
         else
@@ -286,16 +288,18 @@ class ArchiveUtils
           raise SafeExtractionError.new(file, entry.name)
         end
       end
-      # Now go through again, only for creating the symlinks
-      zf.each do |entry|
-        if entry.symlink?
-          out = File.join(dest, entry.name)
-          link_target = entry.get_input_stream.read
-          # Using realdirpath because symlinks shouldn't need to create any directories
-          if (File.realdirpath(link_target, dest).to_s.starts_with?(dest.to_s) rescue false)
-            File.symlink link_target, out
-          else
-            raise SafeExtractionError.new(file, entry.name)
+      if seen_symlinks
+        # Now go through again, only for creating the symlinks
+        zf.each do |entry|
+          if entry.symlink?
+            out = File.join(dest, entry.name)
+            link_target = entry.get_input_stream.read
+            # Using realdirpath because symlinks shouldn't need to create any directories
+            if (File.realdirpath(link_target, dest).to_s.starts_with?(dest.to_s) rescue false)
+              File.symlink link_target, out
+            else
+              raise SafeExtractionError.new(file, entry.name)
+            end
           end
         end
       end
@@ -327,6 +331,7 @@ class ArchiveUtils
   def self.helper_extract(file, source, destination)
     # from https://dracoater.blogspot.com/2013/10/extracting-files-from-targz-with-ruby.html
     Gem::Package::TarReader.new(source) do |tar|
+      seen_symlinks = false
       dest = nil
       tar.each do |entry|
         if entry.full_name == TAR_LONGLINK
@@ -348,6 +353,7 @@ class ArchiveUtils
           elsif entry.header.typeflag == '2' #Symlink!
             FileUtils.rm_rf dest unless File.file? dest
             FileUtils.mkdir_p(File.dirname(dest))
+            seen_symlinks = true
             # skip creating the symlink for now
           end
         else
@@ -355,27 +361,29 @@ class ArchiveUtils
         end
         dest = nil
       end
-      # Now go through again, only for creating the symlinks
-      tar.rewind
-      dest = nil
-      tar.each do |entry|
-        if entry.full_name == TAR_LONGLINK
-          dest = File.join destination, entry.read.strip
-          next
-        end
-        dest ||= File.join destination, entry.full_name
-        if entry.header.typeflag == '2' #Symlink!
-          # Be careful: symlinks should not escape the destination directory
-          if File.realdirpath(entry.header.linkname, destination)
-              .to_s
-              .starts_with?(destination.to_s)
-            File.symlink entry.header.linkname, dest
-          else
-            # where = File.realdirpath(entry.header.linkname, destination)
-            raise SafeExtractionError.new(file, entry.full_name)
-          end
-        end
+      if seen_symlinks
+        # Now go through again, only for creating the symlinks
+        tar.rewind
         dest = nil
+        tar.each do |entry|
+          if entry.full_name == TAR_LONGLINK
+            dest = File.join destination, entry.read.strip
+            next
+          end
+          dest ||= File.join destination, entry.full_name
+          if entry.header.typeflag == '2' #Symlink!
+            # Be careful: symlinks should not escape the destination directory
+            if File.realdirpath(entry.header.linkname, destination)
+                .to_s
+                .starts_with?(destination.to_s)
+              File.symlink entry.header.linkname, dest
+            else
+              # where = File.realdirpath(entry.header.linkname, destination)
+              raise SafeExtractionError.new(file, entry.full_name)
+            end
+          end
+          dest = nil
+        end
       end
     end
   end
