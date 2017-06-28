@@ -114,7 +114,7 @@ class ArchiveUtils
     # Ensures that any symlinks created are entirely local to the destination
     # Assumes that too_many_files? and total_size_too_large? are ok with this file
     # Raises an exception if symlinks are malicious
-    
+
     if is_zip?(file, mime)
       zip_extract(file, dest)
     elsif is_tar?(file, mime)
@@ -142,11 +142,13 @@ class ArchiveUtils
     Zip::File.open(file) do |zip| helper_too_many_files?(file, zip, limit) end
   end
   def self.tar_too_many_files?(file, limit)
-    Gem::Package::TarReader.new(file) do |tar| helper_too_many_files?(file, tar, limit) end
+    File.open(file) do |stream|
+      Gem::Package::TarReader.new(stream) do |tar| helper_too_many_files?(file, tar, limit) end
+    end
   end
   def self.tar_gz_too_many_files?(file, limit)
-    Zlib::GzipReader.open(file) do |targz|
-      Gem::Package::TarReader.new(targz) do |tar| helper_too_many_files?(file, tar, limit) end
+    Zlib::GzipReader.open(file) do |stream|
+      Gem::Package::TarReader.new(stream) do |tar| helper_too_many_files?(file, tar, limit) end
     end
   end
 
