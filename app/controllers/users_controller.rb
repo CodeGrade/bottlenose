@@ -69,6 +69,7 @@ class UsersController < ApplicationController
         redirect_to '/courses', notice: "Profile successfully updated"
       end
     else
+      FileUtils.rm(up[:profile]) # cleanup orphaned file
       if current_user_site_admin?
         render action: "edit"
       else
