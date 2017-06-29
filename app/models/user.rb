@@ -1,7 +1,12 @@
 require 'securerandom'
 require 'audit'
+require 'open3'
 
 class User < ApplicationRecord
+  MAGIC = {png: ["\x89PNG\x0d\x0a\x1a\x0a"],
+           jpg: ["\xff\xd8\xff\xdb", "\xff\xd8\xff\xe0", "\xff\xd8\xff\xe1"],
+           gif: ["GIF87a", "GIF89a"],
+           bmp: ["BM"]}
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable and :omniauthable
   devise :ldap_authenticatable, :database_authenticatable,
@@ -21,6 +26,9 @@ class User < ApplicationRecord
   validates :name,  length: { in: 2..30 }
   validates :nuid, numericality: {only_integer: true}, :allow_blank => true
 
+  validate :profile_is_image
+  before_update :make_profile_thumbnail
+  
   def self.pepper
     Devise.pepper
   end
@@ -46,6 +54,61 @@ class User < ApplicationRecord
     end
   end
 
+  def profile_image_type
+    start = IO.read(self.profile, 8)
+    MAGIC.each do |type, magics|
+      magics.each do |m|
+        if start.bytes[0..(m.length - 1)] == m.bytes
+          return type
+        end
+      end
+    end
+    return false
+  end
+  def profile_is_image
+    if self.profile && File.file?(self.profile)
+      if !profile_image_type
+        self.errors.add(:base, "Profile file matches no known image file type")
+        return false
+      end
+      return true
+    end
+  rescue Exception => e
+    print e
+    self.errors.add(:base, "Could not read profile file #{Upload.upload_path_for(profile)}: #{e}")
+    return false
+  end
+
+  def make_profile_thumbnail
+    if self.profile_changed? && self.profile && File.file?(self.profile)
+      old_file = self.profile
+      print "Here\n"
+      secret = SecureRandom.urlsafe_base64
+      new_file = Upload.base_upload_dir.join("#{secret}_#{self.username}_profile_thumb.jpg")
+      type = profile_image_type
+      print "Making #{new_file} from #{type} #{old_file}\n"
+      output, err, status = Open3.capture3("convert",
+                                           "#{type}:#{old_file}",
+                                           "-resize", "200x300",
+                                           "-define", "jpeg:extent=40KB",
+                                           "jpg:#{new_file}")
+      if status.success?
+        print "Success"
+        self.profile = new_file
+        FileUtils.rm(old_file)
+        return true
+      else
+        print "Failure"
+        self.errors.add(:base,
+                        "Could not create a thumbnail of the profile #{Upload.upload_path_for(old_file)}: #{output}, #{err}")
+        return false
+      end
+    end
+  rescue Exception => e
+    print "Exception! #{e}\n"
+    self.errors.add(:base, "Could not create a thumbnail of the profile #{Upload.upload_path_for(old_file)}: #{e}")
+    return false
+  end
 
   # Different people with the same name are fine.
   # If someone uses two emails, they get two accounts. So sad.
