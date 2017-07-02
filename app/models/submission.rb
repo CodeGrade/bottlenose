@@ -260,8 +260,9 @@ class Submission < ApplicationRecord
         complete = complete and gr.autograde?
         gr.autograde!(assignment, self) # make sure we create all needed grades
       rescue Exception => e
-        puts e.inspect
-        puts e.backtrace
+        Audit.log "Assignment #{assignment.id}, submission #{sub.id} failed autograding:"
+        Audit.log e.inspect
+        Audit.log e.backtrace
         complete = false
       end
     end
