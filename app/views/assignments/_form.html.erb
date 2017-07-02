@@ -1,19 +1,19 @@
 <div>
   <ul class="nav nav-tabs">
     <li class="active"><a href="#type-files" data-toggle="tab">Files</a></li>
-    <li><a href="#type-exam" data-toggle="tab">Exam</a></li>
     <li><a href="#type-questions" data-toggle="tab">Questions</a></li>
+    <li><a href="#type-exam" data-toggle="tab">Exam</a></li>
   </ul>
 
   <div class="tab-content">
     <div id="type-files" class="tab-pane active">
       <%= render 'files_form', asgn: @files || @assignment %>
     </div>
-    <div id="type-exam" class="tab-pane">
-      <%= render 'exam_form', asgn: @exam || @assignment %>
-    </div>
     <div id="type-questions" class="tab-pane">
       <%= render 'questions_form', asgn: @quest || @assignment %>
+    </div>
+    <div id="type-exam" class="tab-pane">
+      <%= render 'exam_form', asgn: @exam || @assignment %>
     </div>
   </div>
 </div>
