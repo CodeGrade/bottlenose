@@ -126,7 +126,7 @@ class Submission < ApplicationRecord
 
   def save_upload
     if @upload_data.nil?
-      errors[:base] << "You need to submit a file."
+      errors.add(:base, "You need to submit a file.")
       return false
     end
 
@@ -148,7 +148,7 @@ class Submission < ApplicationRecord
         mimetype:   data.content_type
       })
     rescue Exception => e
-      errors[:base] << e.message
+      errors.add(:base, e.message)
       return false
     end
     if up.save
@@ -320,36 +320,36 @@ class Submission < ApplicationRecord
 
   def user_is_registered_for_course
     if user && !user.courses.any?{|cc| cc.id == course.id }
-      errors[:base] << "Not registered for this course :" + user.name
+      errors.add(:base, "Not registered for this course :" + user.name)
     end
     if team && !team.users.all?{|u| u.courses.any?{|cc| cc.id == course.id } }
-      errors[:base] << "Not registered for this course :" + team.users.map{|u| u.name}.to_s
+      errors.add(:base, "Not registered for this course :" + team.users.map{|u| u.name}.to_s)
     end
   end
 
   def submitted_file_or_manual_grade
     if upload_id.nil? and self.assignment.type != "exam"
-      errors[:base] << "You need to submit a file."
+      errors.add(:base, "You need to submit a file.")
     end
   end
 
   def file_below_max_size
     msz = course.sub_max_size
     if upload_size > msz.megabytes
-      errors[:base] << "Upload exceeds max size (#{upload_size} > #{msz} MB)."
+      errors.add(:base, "Upload exceeds max size (#{upload_size} > #{msz} MB).")
     end
   end
 
   def has_team_or_user
     if assignment.team_subs?
       if team.nil?
-        errors[:base] << "Assignment requires team subs. No team set."
+        errors.add(:base, "Assignment requires team subs. No team set.")
       end
     else
       if user.nil?
-        errors[:base] << "Assignment requires individual subs. No user set."
+        errors.add(:base, "Assignment requires individual subs. No user set.")
       elsif team
-        errors[:base] << "Assignment requires individual subs. Team should not be set."
+        errors.add(:base, "Assignment requires individual subs. Team should not be set.")
       end
     end
   end

@@ -10,7 +10,7 @@ class UsedSub < ApplicationRecord
 
   def submission_matches_assignment
     if submission.assignment_id != assignment_id
-      errors[:base] << "Submission / assignment mismatch."
+      errors.add(:base, "Submission / assignment mismatch.")
     end
   end
 end

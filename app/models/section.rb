@@ -1,4 +1,9 @@
 class Section < ApplicationRecord
+  def self.inheritance_column
+    nil
+  end
+  enum type: [:lecture, :lab, :recitation, :online]
+
   belongs_to :course
   belongs_to :instructor, :class_name => "User", :foreign_key => "instructor_id", :primary_key => "id"
   delegate :term, to: :course

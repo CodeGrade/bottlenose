@@ -2,48 +2,62 @@
 <h2>Edit registrations</h2>
 
 <% roles = Registration.roles.to_a.map{|r| [r[0].humanize, r[0]] }
-   sections = @course.sections.to_a.map{|s| [s.to_s, s.crn] } %>
+   grouped_sections = @course.sections_by_type
+   first_section_type = @course.section_types[0][0]
+   Section.types.each do |type, _|
+     sections = grouped_sections[type]&.map{|s| [s.to_s, s.crn] }
+     next unless sections %>
 
+<h3><%= type.humanize %> sections</h3>
 <table class="table">
   <thead>
     <tr>
-      <th>Name</th>
-      <th>Role</th>
-      <th>Section</th>
-      <th>Re-enroll?</th>
-      <th></th>
+      <th class="col-sm-5">Name</th>
+      <th class="col-sm-1">Role</th>
+      <th class="col-sm-4">Section</th>
+      <th class="col-sm-2"><% if type == first_section_type %>Re-enroll?<% end %></th>
+      <th class="col-sm-1"></th>
       <!-- <th>Save</th> -->
     </tr>
   </thead>
   <tbody>
     <% @registrations.each do |r| %>
+    <% section = r.sections.where(type: type)&.first %>
+    <% next unless section %>
     <tr>
       <td>
-        <form id="reg_<%= r.id %>"><input type="hidden" name="id" value="<%= r.id %>" /></form>
+        <form id="reg_<%= type %>_<%= r.id %>">
+          <input type="hidden" name="id" value="<%= r.id %>" />
+          <input type="hidden" name="orig_section[]" value="<%= section.id %>" />
+        </form>
         <%= r.user.display_name %>
       </td>
-      <td><%= select_tag "role", options_for_select(roles, r.role), {form: "reg_#{r.id}"} %></td>
-      <td><%= select_tag "section", options_for_select(sections, r.section_id), {form: "reg_#{r.id}"} %></td>
+      <td><%= select_tag "role", options_for_select(roles, r.role), {form: "reg_#{type}_#{r.id}"} %></td>
+      <td><%= select_tag "new_section[]", options_for_select(sections, section.id),
+              {form: "reg_#{type}_#{r.id}"} %></td>
       <td>
+        <% if type == first_section_type %>
         <%= noopAction = if r.dropped_date? then "Stay withdrawn" else "Already enrolled" end
             check_box_tag "reenroll", nil,
               false,
-              {form: "reg_#{r.id}", id: "reenroll_#{r.id}", disabled: r.dropped_date.nil?,
+              {form: "reg_#{type}_#{r.id}", id: "reenroll_#{r.id}", disabled: r.dropped_date.nil?,
               data: {toggle: "toggle", on: "Reenroll", off: noopAction}} %>
+        <% end %>
       </td>
-      <td><i id="success_<%= r.id %>" style="font-size: 150%;"
+      <td><i id="success_<%= type %>_<%= r.id %>" style="font-size: 150%;"
              class="hidden text-success glyphicon glyphicon-ok"
              data-toggle="tooltip" title="Registration information saved"
              ></i></td>
-      <!-- <td><%= submit_tag "Save", {form: "reg_#{r.id}", class: "btn btn-default"} %></td> -->
+      <!-- <td><%= submit_tag "Save", {form: "reg_#{type}_#{r.id}", class: "btn btn-default"} %></td> -->
     </tr>
     <% end %>
   </tbody>
 </table>
+<% end %>
 <script>
   $("form").submit(function() {
     var $form = $(this);
-    var $check = $("#success_" + $form.find("input[name='id']").val());
+    var $check = $("#success_" + $form.attr("id").split("_")[1] + $form.find("input[name='id']").val());
     var valuesToSubmit = $form.serialize();
     $.ajax({
         type: "POST",

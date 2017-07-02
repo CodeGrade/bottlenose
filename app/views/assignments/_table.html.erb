@@ -25,12 +25,13 @@
          else
            assns = assignments.where("available <= ?", DateTime.current)
          end %>
-      <% used_subs_for_user = for_user.used_submissions_for(assns).to_a %>
+      <% used_subs_for_user = for_user.used_submissions_for(assns)
+                                      .map{|us| [us.assignment_id, us] }.to_h %>
       <% subs_for_user = Assignment.submissions_for([for_user], assns).group_by(&:assignment_id) %>
       <% assns.order(due_date: :desc, available: :desc).each do |assignment| %>
         <%
            submissions = subs_for_user[assignment.id] || []
-           used = used_subs_for_user.find{|a| a.assignment_id == assignment.id}&.submission
+           used = used_subs_for_user[assignment.id]&.submission
            score =
              if used.nil?
                nil

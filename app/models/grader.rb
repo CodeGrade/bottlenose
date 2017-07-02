@@ -55,7 +55,7 @@ class Grader < ApplicationRecord
 
   def upload_file=(data)
     if data.nil?
-      errors[:base] << "You need to submit a file."
+      errors.add(:base, "You need to submit a file.")
       return
     end
 

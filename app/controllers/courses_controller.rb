@@ -56,8 +56,13 @@ class CoursesController < ApplicationController
       return
     end
     @students = @course.students
-                .select("users.*", "registrations.dropped_date", "registrations.section_id")
+                .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
                 .order("users.last_name", "users.first_name")
+    @reg_sections = RegistrationSection.where(registration: @course.registrations)
+    @students_by_section = @reg_sections.group_by(&:section_id).map do |section_id, regs|
+      [section_id, @students.where("registrations.id": regs.map(&:registration_id))]
+    end.to_h
+    @sections_by_student = @reg_sections.group_by(&:registration_id)
   end
 
   def create
@@ -148,7 +153,7 @@ class CoursesController < ApplicationController
                              :id, :_destroy
                            ],
                            sections_attributes: [
-                             :course_id, :crn, :meeting_time, :instructor_id,
+                             :course_id, :crn, :meeting_time, :instructor_id, :type,
                              :id, :prof_name, :_destroy
                            ])
   end

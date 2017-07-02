@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170602143559) do
+ActiveRecord::Schema.define(version: 20170702154328) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -139,6 +139,13 @@ ActiveRecord::Schema.define(version: 20170602143559) do
     t.integer "max_penalty"
   end
 
+  create_table "reg_request_sections", force: :cascade do |t|
+    t.integer "reg_request_id", null: false
+    t.integer "section_id", null: false
+    t.index ["reg_request_id"], name: "index_reg_request_sections_on_reg_request_id"
+    t.index ["section_id"], name: "index_reg_request_sections_on_section_id"
+  end
+
   create_table "reg_requests", id: :serial, force: :cascade do |t|
     t.integer "course_id"
     t.text "notes"
@@ -146,7 +153,13 @@ ActiveRecord::Schema.define(version: 20170602143559) do
     t.datetime "updated_at"
     t.integer "user_id"
     t.integer "role", default: 0, null: false
+  end
+
+  create_table "registration_sections", force: :cascade do |t|
+    t.integer "registration_id", null: false
     t.integer "section_id", null: false
+    t.index ["registration_id"], name: "index_registration_sections_on_registration_id"
+    t.index ["section_id"], name: "index_registration_sections_on_section_id"
   end
 
   create_table "registrations", id: :serial, force: :cascade do |t|
@@ -157,7 +170,6 @@ ActiveRecord::Schema.define(version: 20170602143559) do
     t.boolean "show_in_lists"
     t.string "tags", default: ""
     t.integer "role", default: 0, null: false
-    t.integer "section_id", null: false
     t.datetime "dropped_date"
     t.index ["course_id"], name: "index_registrations_on_course_id"
     t.index ["user_id"], name: "index_registrations_on_user_id"
@@ -175,6 +187,8 @@ ActiveRecord::Schema.define(version: 20170602143559) do
     t.integer "crn", null: false
     t.string "meeting_time"
     t.integer "instructor_id", null: false
+    t.integer "type", default: 0, null: false
+    t.index ["course_id"], name: "index_sections_on_course_id"
     t.index ["crn"], name: "index_sections_on_crn", unique: true
   end
 

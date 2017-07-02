@@ -11,6 +11,9 @@
   <td class="col-sm-4">
     <%= f.text_field :meeting_time, class: 'form-control' %>
   </td>
+  <td class="col-sm-1">
+    <%= f.select :type, Section.types.to_a.map{|t| [t[0].humanize, t[0]]} %>
+  </td>
   <td>
     <%= link_to_remove_association "Remove", f, class: 'btn btn-danger' %>
   </td>

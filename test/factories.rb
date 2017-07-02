@@ -97,7 +97,8 @@ FactoryGirl.define do
 
     after(:build) do |sub|
       unless sub.user.registration_for(sub.course)
-        create(:registration, user: sub.user, course: sub.course, section: sub.course.sections.first)
+        create(:registration, user: sub.user, course: sub.course, role: 0, show_in_lists: true,
+               new_sections: [sub.course.sections.first.crn])
       end
 
       if sub.upload
@@ -108,22 +109,24 @@ FactoryGirl.define do
 
   factory :registration do
     user
-    section
+    course
 
     role 0
     show_in_lists true
-    after(:build) do |reg|
-      reg.course = reg.section.course
+    after(:create) do |reg|
+      reg.new_sections = [reg.course.sections.first.crn]
+      reg.save_sections
     end
   end
 
   factory :reg_request do
     user
-    section
+    course
 
     notes "Let me in!"
-    after(:build) do |rr|
-      rr.course = rr.section.course
+    after(:create) do |reg|
+      reg.new_sections = [reg.course.sections.first.crn]
+      reg.save_sections
     end
   end
 
@@ -136,8 +139,12 @@ FactoryGirl.define do
       u1 = create(:user)
       u2 = create(:user)
 
-      r1 = create(:registration, user: u1, course: team.course, section: team.course.sections.first)
-      r2 = create(:registration, user: u2, course: team.course, section: team.course.sections.first)
+      r1 = create(:registration, user: u1, course: team.course,
+                  show_in_lists: true, new_sections: [team.course.sections.first])
+      r1.save_sections
+      r2 = create(:registration, user: u2, course: team.course,
+                  show_in_lists: true, new_sections: [team.course.sections.first])
+      r2.save_sections
 
       team.users = [u1, u2]
       team.start_date = Time.now - 2.days

@@ -30,14 +30,23 @@ class Course < ApplicationRecord
     end
   end
 
+  def section_types
+    self.sections.map(&:type).uniq.sort_by{|t| Section::types[t]}.map{|t| [t, Section::types[t]]}
+  end
+
+  def sections_by_type
+    self.sections.group_by(&:type)
+  end
+  
   def register_profs
     if registrations.empty?
       sections.each do |sec|
-        Registration.create!(
+        r = Registration.create!(
           course_id: self.id,
           user_id: sec.instructor_id,
-          section_id: sec.id,
-          role: :professor
+          role: "professor",
+          show_in_lists: false,
+          new_sections: [sec.id]
         )
       end
     end
@@ -96,8 +105,12 @@ class Course < ApplicationRecord
     professors.first
   end
 
-  def add_registration(username, crn, role = :student)
-
+  def add_registration(username, crns, role = :student)
+    # Can't register for a course without registering
+    if crns.empty?
+      raise Exception.new("Must register for at least one section")
+    end
+    
     # TODO: Check LDAP for user.
     uu = User.find_by(username: username)
     if uu.nil?
@@ -112,20 +125,26 @@ class Course < ApplicationRecord
     end
 
     if uu.nil?
-      return nil
+      raise Exception.new("Could not find user with username #{username}")
     end
-    section = Section.find_by(crn: crn)
-    if section.nil?
-      return nil
-    end
+    
     # If creating the user fails, this will not create a registration
     # because there is a validation on user.
-    registrations.where(user: uu)
-                 .first_or_create(user_id: uu.id,
-                                  course_id: self.id,
-                                  section: section,
-                                  role: role,
-                                  show_in_lists: role == 'student')
+    reg = registrations.where(user: uu)
+                       .first_or_create(user_id: uu.id,
+                                        course_id: self.id)
+    reg.role = role
+    reg.show_in_lists = (role == 'student')
+    reg.dropped_date = nil # implicitly un-drop the user
+    
+    crns.each do |crn|
+      section = Section.find_by(crn: crn)
+      if section.nil?
+        raise Exception.new("Could not find section with CRN #{crn}")
+      end
+      RegistrationSection.find_or_create_by!(registration: reg, section: section)
+    end
+    reg
   end
 
   def assignments_sorted

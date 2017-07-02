@@ -276,9 +276,12 @@ class User < ApplicationRecord
   end
 
   def course_regs_by_term
-    regs = self.registrations.includes(:course).includes(:section).includes(:term)
+    regs = self.registrations.includes(:course).includes(:term)
     courses = regs.map(&:course)
-    sections = regs.map(&:section)
+    rs = RegistrationSection.where(registration_id: regs.map(&:id)).includes(:section).group_by(&:registration_id)
+    sections = regs.map do |r|
+      rs[r.id].map(&:section)
+    end
     dropped = regs.map(&:dropped_date)
     terms = courses.map(&:term)
     terms.zip(courses, sections, dropped).group_by{|tcsd| tcsd[0]}

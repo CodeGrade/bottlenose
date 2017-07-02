@@ -32,7 +32,7 @@ class ExamGrader < Grader
 
   def upload_file=(data)
     unless data.nil?
-      errors[:base] << "You cannot submit a file for exams."
+      errors.add(:base, "You cannot submit a file for exams.")
       return
     end
   end

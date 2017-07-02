@@ -1,11 +1,25 @@
 <% content_for :content do %>
+<style>
+  #sections { margin: 0px; }
+  #sections > p:not(:last-child) { margin-bottom: 0px; }
+</style>
 <% cur_reg = current_user.registration_for(@course) %>
     <div class="page-header">
         <h1>
           <%= link_to @course.name, course_path(@course) %>
           <br/>
-          <small><%= @course.term.name %><% if cur_reg %>, Section <%= cur_reg.section.to_s %><% end %></small>
+          <small><%= @course.term.name %></small>
+          <% if cur_reg && cur_reg.sections.count == 1 %>
+          <small>&mdash; Section <%= cur_reg.sections.first.to_s %></small>
+          <% end %>
         </h1>
+        <% if cur_reg && cur_reg.sections.count != 1 %>
+        <h2 id="sections">
+          <% cur_reg.sections.order(:type).each do |r| %>
+          <p><small>Section <%= r.to_s %> (<%= r.type.humanize %>)</small></p>
+          <% end %>
+        </h2>
+        <% end %>
 
 
         <% if cur_reg %>

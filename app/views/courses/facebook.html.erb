@@ -3,8 +3,10 @@
 
 <style>
   <% @sections.each do |s| %>
-  #students.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
-  #emails.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
+  #students.show_one .sec_<%= s.crn %> { display: none; }
+  #students.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: initial; }
+  #emails.show_one .sec_<%= s.crn %> { display: none; }
+  #emails.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: initial; }
   #emails.show_all .sec_<%= s.crn %> { display: none; }
   <% end %>
   #emails.show_one .show_all { display: none; }
@@ -24,10 +26,9 @@
                   "Email all sections",
                   bcc: all_emails.join(","), title: "Email everyone (bcc)" %>
     </span>
-    <% by_section = @students.group_by(&:section_id) %>
     <% @sections.each do |s|
-       next unless by_section[s.crn]&.length.to_i > 0
-       all_emails = by_section[s.crn].sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>" } %>
+       next unless @students_by_section[s.crn]&.length.to_i != 0
+       all_emails = @students_by_section[s.crn].sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>" } %>
     <span class="btn btn-default btn-large sec_<%= s.crn %>">
       <%= mail_to "#{current_user.name} <#{current_user.email}>",
                   "Email section #{s.crn}",
@@ -43,7 +44,7 @@
   <% @students.each_slice(6) do |row| %>
   <div class="row">
     <% row.each do |s| %>
-    <div class="col-md-2 text-center sec_<%= s.section_id %>">
+    <div class="col-md-2 text-center <%= @sections_by_student[s.reg_id].map{|sec| "sec_#{sec.section_id}"}.join(" ") %>">
       <%= image_tag Upload.upload_path_for(s.profile || "silhouette.jpg"), 
           alt: s.display_name, style: "max-height: 200px; max-width: 100%;" %>
       <p><%= link_to s.display_name, user_path(s) %></p>

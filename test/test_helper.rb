@@ -28,16 +28,18 @@ class ActiveSupport::TestCase
     @ts3      = create(:teamset, course: @cs101, name: "Default teamset 3")
     @fred     = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher")
     @section  = create(:section, course: @cs101, instructor: @fred, crn: 12345)
-    @fred_reg = create(:registration, course: @cs101, user: @fred, section_id: @section.crn,
-                       role: Registration::roles[:professor])
+    @fred_reg = create(:registration, course: @cs101, user: @fred,
+                       role: Registration::roles[:professor], show_in_lists: false, new_sections: [@section.crn])
+    @fred_reg.save_sections
 
     @students = []
     @regs     = []
     [["John", "Joker"], ["Sarah", "Studious"], ["Andy", "Assiduous"], ["Claire", "Crafter"]].each do |fn, ln|
       user = create(:user, name: "#{fn} #{ln}", first_name: fn, last_name: ln)
       @students.push(user)
-      @regs.push(create(:registration, course: @cs101, user: user, section_id: @section.crn,
-                        role: Registration::roles[:student]))
+      @regs.push(create(:registration, course: @cs101, user: user,
+                        role: Registration::roles[:student], show_in_lists: true, new_sections: [@section.crn]))
+      @regs.last.save_sections
     end
     @john     = @students[0]
     @sarah    = @students[1]

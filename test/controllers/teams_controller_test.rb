@@ -4,14 +4,17 @@ class TeamsControllerTest < ActionController::TestCase
   setup do
     @team = create(:team)
     @fred = create(:user)
-    create(:registration, user: @fred, course: @team.course, section: @team.course.sections.first,
-           role:  Registration::roles[:professor])
+    create(:registration, user: @fred, course: @team.course, new_sections: [@team.course.sections.first.crn],
+           role:  Registration::roles[:professor]).save_sections
 
-    mreg = create(:registration, course: @team.course)
+    mreg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    mreg.save_sections
     @mark = mreg.user
-    jreg = create(:registration, course: @team.course)
+    jreg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    jreg.save_sections
     @jane = jreg.user
-    greg = create(:registration, course: @team.course)
+    greg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    greg.save_sections
     @greg = greg.user
   end
 
