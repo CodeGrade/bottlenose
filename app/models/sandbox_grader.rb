@@ -49,35 +49,7 @@ class SandboxGrader < Grader
   def run_sandbox(assignment, sub, sandbox, cont)
     g = self.grade_for sub
     g.score = 0
-    g.out_of = 50
-    g.available = false
-    g.save!
-
-    file = sub.upload.submission_path
-    secret = SecureRandom.hex(16)
-
-    self.save
-    grade = 0.0
-
-    prefix = "Assignment #{assignment.id}, submission #{sub.id}"
-
-    begin
-      grade = run_sandbox(assignment, sub, sandbox, cont)
-      Audit.log "#{prefix}: Sandbox grader complete\n"
-    rescue Exception => e
-      Audit.log "#{prefix}: Sandbox grader failed\n"
-      Audit.log "#{e.inspect}\n"
-    end
-
-    sandbox.stop_container
-    sandbox.destroy or Audit.log "#{prefix}: #{sandbox.errors.inspect}\n"
-    return grade
-  end
-
-  def run_sandbox(assignment, sub, sandbox, cont)
-    g = self.grade_for sub
-    g.score = 0
-    g.out_of = 50
+    g.out_of = self.avail_score
     g.available = false
     g.save!
 
@@ -121,7 +93,7 @@ class SandboxGrader < Grader
 
     parts = stdout.split("#{secret}\n")
     g.score = 0
-    g.out_of = 50
+    g.out_of = self.avail_score
 
     details_log = grader_dir.join("details.log")
     makefile_tap = grader_dir.join("makefile.tap")
@@ -143,13 +115,13 @@ class SandboxGrader < Grader
       rescue Exception => e
         Audit.log "#{prefix}: Could not parse Tap results; see #{details_log}\n"
         g.score = 0
-        g.out_of = 1
+        g.out_of = self.avail_score
         g.grading_output = details_log.to_s
       end
     else
       Audit.log "#{prefix}: Sandbox grader failed: did not find at least three parts of output (expected secret #{secret}); see #{details_log}\n"
       g.score = 0
-      g.out_of = 1
+      g.out_of = self.avail_score
       g.grading_output = details_log.to_s
     end
 
@@ -175,10 +147,10 @@ class SandboxGrader < Grader
       end
       g.updated_at = DateTime.now
 
-      score = g.score / g.out_of
+      score = g.score.to_f / g.out_of.to_f
       unless (score < 5 && score > -0.1)
         g.score = 0
-        g.out_of = 50
+        g.out_of = self.avail_score
       end
     end
 
