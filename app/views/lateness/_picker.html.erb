@@ -1,4 +1,11 @@
-<div class="form-tabs" data-init-tab="<%= f.object.lateness_config&.type || 'default' %>">
+<% default_tab =
+     if f.object.lateness_config.id.nil? || f.object.lateness_config.id == @course&.lateness_config_id
+       'default'
+     else
+       f.object.lateness_config.type
+     end
+   %>
+<div class="form-tabs" data-init-tab="<%= default_tab %>">
   <% if !within_course %>
   <p class="col-sm-12">(This is the default late policy for all
     assignments in this course.)</p>
