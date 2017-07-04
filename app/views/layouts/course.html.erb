@@ -16,11 +16,13 @@
         <h1>
           <%= link_to @course.name, course_path(@course) %>
           <br/>
-          <span class="sectionContainer">
+          <span <% if cur_reg %>class="sectionContainer"<% end %>>
             <small><%= @course.term.name %></small>
             <span class="sectionList">
+              <% if cur_reg %>
               <% cur_reg.sections.order(:type).each do |r| %>
               <small>Section <%= r.to_s %> (<%= r.type.humanize %>)</small></br>
+              <% end %>
               <% end %>
             </span>
           </span>
