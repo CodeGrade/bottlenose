@@ -28,12 +28,12 @@
       <td>
         <form id="reg_<%= type %>_<%= r.id %>">
           <input type="hidden" name="id" value="<%= r.id %>" />
-          <input type="hidden" name="orig_section[]" value="<%= section.id %>" />
+          <input type="hidden" name="orig_sections[]" value="<%= section.crn %>" />
         </form>
         <%= r.user.display_name %>
       </td>
       <td><%= select_tag "role", options_for_select(roles, r.role), {form: "reg_#{type}_#{r.id}"} %></td>
-      <td><%= select_tag "new_section[]", options_for_select(sections, section.id),
+      <td><%= select_tag "new_sections[]", options_for_select(sections, section.crn),
               {form: "reg_#{type}_#{r.id}"} %></td>
       <td>
         <% if type == first_section_type %>
@@ -65,9 +65,17 @@
         data: valuesToSubmit,
         dataType: "JSON"
     }).done(function(json){
-      if (json.dropped_date === null) {
+      if (json.reg.dropped_date === null) {
         $form.find("input[type='checkbox']").attr("disabled", true);
         $form.find(".toggle-off").text("Already enrolled");
+      }
+      if (json.changes) {
+        for (var i = 0; i < json.changes.length; i++) {
+          var old_section = $form.find("input[name='orig_sections[]']");
+          if (old_section.val() == json.changes[i].old) {
+            old_section.val(json.changes[i].new);
+          }
+        }
       }
       $check.removeClass("hidden");
     });

@@ -67,12 +67,11 @@ class RegistrationsController < ApplicationController
           changed = false
           @reg.dropped_date = nil if params[:reenroll]
           @reg.role = params[:role]
-          section_param_names.each do |sectype|
-            next unless params[sectype]
-            type = sectype.to_s.gsub("_section", "")
-            rs = RegistrationSection.where(registration: @reg).find{|rs| rs.section.type == type}
+          section_changes = params[:orig_sections].zip(params[:new_sections])
+          section_changes.each do |orig, new|
+            rs = RegistrationSection.find_by(registration_id: @reg.id, section_id: orig)
             if rs
-              rs.section_id = params[sectype].to_i
+              rs.section_id = new
               if rs.changed?
                 changed = true
                 rs.save
@@ -81,7 +80,7 @@ class RegistrationsController < ApplicationController
           end
           if @reg.changed? || changed
             @reg.save
-            render :json => @reg
+            render :json => {"reg": @reg, "changes": section_changes.map{|o,n| {old: o, new: n}}}
           else
             render :json => {"no-change": true}
           end

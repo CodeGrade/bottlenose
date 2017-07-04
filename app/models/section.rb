@@ -12,6 +12,13 @@ class Section < ApplicationRecord
   validates :instructor, presence: true
   validates :meeting_time, length: { minimum: 3 }
 
+  after_save do
+    if self.saved_change_to_crn?
+      RegistrationSection.where(section_id: self.crn_before_last_save).update(section_id: self.crn)
+      RegRequestSection.where(section_id: self.crn_before_last_save).update(section_id: self.crn)
+    end
+  end
+
   def to_s
     if self.meeting_time.to_s != ""
       "#{self.crn} : #{self.instructor.last_name} at #{self.meeting_time}"
