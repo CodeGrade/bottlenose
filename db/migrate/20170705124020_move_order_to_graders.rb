@@ -1,4 +1,6 @@
 class MoveOrderToGraders < ActiveRecord::Migration[5.1]
+  class AssignmentGrader < ApplicationRecord
+  end
   def up
     add_column :graders, :order, :integer
     add_column :graders, :assignment_id, :integer
