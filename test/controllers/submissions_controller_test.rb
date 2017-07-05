@@ -5,7 +5,6 @@ class SubmissionsControllerTest < ActionController::TestCase
     make_standard_course
 
     @hello = create(:assignment, course: @cs101, teamset: @ts1)
-    create(:assignment_grader, assignment: @hello)
     @john_hello = create(:submission, user: @john, assignment: @hello)
   end
 

@@ -40,6 +40,8 @@ class AssignmentsControllerTest < ActionController::TestCase
                  "1477181088065"=> {
                    "type"=>"ManualGrader",
                    "avail_score"=>"50",
+                   "order"=>"1",
+                   "_destroy"=>"false",
                  }
                },
                lateness_config_attributes: {
@@ -77,6 +79,7 @@ class AssignmentsControllerTest < ActionController::TestCase
                  "1477181088065"=> {
                    "type"=>"ManualGrader",
                    "avail_score"=>"50",
+                   "order"=>"1"
                  }
                },
                lateness_config_attributes: {
@@ -115,6 +118,7 @@ class AssignmentsControllerTest < ActionController::TestCase
                  "1477181088065"=> {
                    "type"=>"ManualGrader",
                    "avail_score"=>"50",
+                   "order"=>"1"
                  }
                },
                lateness_config_attributes: {
@@ -154,6 +158,7 @@ class AssignmentsControllerTest < ActionController::TestCase
                  "1477181088065"=> {
                    "type"=>"ManualGrader",
                    "avail_score"=>"50",
+                   "order"=>"1"
                  }
                },
                lateness_config_attributes: {

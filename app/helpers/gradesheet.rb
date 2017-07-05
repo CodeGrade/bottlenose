@@ -20,7 +20,7 @@ class Gradesheet
 
     @assignment = assignment
     @submissions = submissions
-    @graders = @assignment.assignment_graders.order(:order).includes(:grader).map{ |c| c.grader }
+    @graders = @assignment.graders_ordered
     @max_score = @graders.sum(&:avail_score)
     raw_grades = Grade.where(submission_id: @submissions.map(&:id))
     @raw_grades = raw_grades.group_by(&:submission_id)

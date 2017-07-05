@@ -53,14 +53,10 @@ FactoryGirl.define do
 
   factory :grader do
     type "ManualGrader"
+    sequence(:order)
     avail_score 100.0
     params ""
-  end
-
-  factory :assignment_grader do
-    grader
     assignment
-    order 0
   end
 
   factory :teamset do
@@ -71,6 +67,7 @@ FactoryGirl.define do
   factory :assignment do
     teamset
     association :blame, factory: :user
+    
     lateness_config
     available (Time.now - 10.days)
     points_available 100
@@ -79,7 +76,9 @@ FactoryGirl.define do
     due_date (Time.now + 7.days)
     after(:build) do |assn|
       assn.course = assn.teamset.course
-      assn.graders << create(:grader)
+    end
+    after(:create) do |assn, evaluator|
+      assn.graders << create(:grader, assignment: assn)
     end
   end
 

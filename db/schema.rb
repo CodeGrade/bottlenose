@@ -10,18 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170702154328) do
+ActiveRecord::Schema.define(version: 20170705124020) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
-
-  create_table "assignment_graders", id: :serial, force: :cascade do |t|
-    t.integer "assignment_id", null: false
-    t.integer "grader_id", null: false
-    t.integer "order"
-    t.index ["assignment_id", "grader_id"], name: "unique_assignment_graders", unique: true
-    t.index ["assignment_id"], name: "index_assignment_graders_on_assignment_id"
-  end
 
   create_table "assignments", id: :serial, force: :cascade do |t|
     t.string "name", null: false
@@ -97,6 +89,8 @@ ActiveRecord::Schema.define(version: 20170702154328) do
     t.float "avail_score"
     t.string "params"
     t.integer "upload_id"
+    t.integer "order", null: false
+    t.integer "assignment_id", null: false
   end
 
   create_table "grades", id: :serial, force: :cascade do |t|

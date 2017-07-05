@@ -38,9 +38,10 @@
     <% if within_course %>
       <div class="tab-pane" data-tab="default">
         <div class="form-group">
-          <%= f.hidden_field :lateness_config_id %>
+          <%= f.fields_for :lateness_config do |cd| %>
           <p>Use course-default lateness policy:</p>
           <p><%= @course.lateness_config.to_s %></p>
+          <% end %>
         </div>
       </div>
     <% end %>

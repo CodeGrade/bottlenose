@@ -147,6 +147,8 @@ GEM
       thor (>= 0.14, < 2.0)
     jquery-tablesorter (1.23.13)
       railties (>= 3.2, < 6)
+    jquery-ui-rails (6.0.1)
+      railties (>= 3.2.16)
     json (2.1.0)
     launchy (2.4.3)
       addressable (~> 2.3)
@@ -303,6 +305,7 @@ DEPENDENCIES
   i18n
   jquery-rails
   jquery-tablesorter
+  jquery-ui-rails
   launchy
   listen
   momentjs-rails (>= 2.9.0)
