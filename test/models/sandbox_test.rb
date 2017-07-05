@@ -13,8 +13,7 @@ class SandboxTest < ActiveSupport::TestCase
     grdtar = Rails.root.join('test', 'fixtures', 'files', 'TestScript', 'test.pl')
     upload = simulated_upload(@fred, grdtar)
     upload.save!
-    grdcfg = build(:grader, type: "SandboxGrader", upload: upload, params: "lazy.rb")
-    AssignmentGrader.create!(assignment: assign, grader: grdcfg)
+    grdcfg = build(:grader, type: "SandboxGrader", upload: upload, params: "lazy.rb", assignment: assign, order: 1)
 
     subprg = Rails.root.join('test', 'fixtures', 'files', 'TestScript', 'hello.c')
     sub = build(:submission, user: @john, assignment: assign, 
@@ -34,8 +33,7 @@ class SandboxTest < ActiveSupport::TestCase
     grdtar = Rails.root.join('test', 'fixtures', 'files', 'HelloSingle', 'HelloSingle-grading.tar.gz')
     upload = simulated_upload(@fred, grdtar)
     upload.save!
-    grdcfg = build(:grader, type: "SandboxGrader", upload: upload, params: "makefile.rb")
-    AssignmentGrader.create!(assignment: assign, grader: grdcfg)
+    grdcfg = build(:grader, type: "SandboxGrader", upload: upload, params: "makefile.rb", assignment: assign, order: 1)
 
     subprg = Rails.root.join('test', 'fixtures', 'files', 'HelloSingle', 'hello.c')
     sub = build(:submission, user: @john, assignment: assign, 

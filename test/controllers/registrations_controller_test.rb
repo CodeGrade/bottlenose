@@ -84,11 +84,6 @@ class RegistrationsControllerTest < ActionController::TestCase
     assert reg.tags.split(/\s*;\s*/).include?("honors")
   end
 
-  test "should toggle show-in-reports" do
-    sign_in @fred
-    post :toggle, params: { format: 'js', course_id: @cs301.id, id: @john_reg.id }
-  end
-
   test "should destroy registration" do
     sign_in @fred
     assert_difference('Registration.count', -1) do

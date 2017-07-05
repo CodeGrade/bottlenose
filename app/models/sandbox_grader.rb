@@ -34,47 +34,22 @@ class SandboxGrader < Grader
     begin
       grade = run_sandbox(assignment, sub, sandbox, cont)
     rescue Exception => e
-      puts "Sandbox grader failed"
-      puts e.inspect
+      Audit.log "Assignment #{assignment.id}, submission #{sub.id}: Sandbox grader failed"
+      Audit.log e.inspect
     end
 
     sandbox.stop_container
-    sandbox.destroy or puts sandbox.errors.inspect
+    unless sandbox.destroy
+      Audit.log "Assignment #{assignment.id}, submission #{sub.id}: could not destroy sandbox"
+      Audit.log sandbox.errors.inspect
+    end
     return grade
   end
 
   def run_sandbox(assignment, sub, sandbox, cont)
     g = self.grade_for sub
     g.score = 0
-    g.out_of = 50
-    g.available = false
-    g.save!
-
-    file = sub.upload.submission_path
-    secret = SecureRandom.hex(16)
-
-    self.save
-    grade = 0.0
-
-    prefix = "Assignment #{assignment.id}, submission #{sub.id}"
-
-    begin
-      grade = run_sandbox(assignment, sub, sandbox, cont)
-      Audit.log "#{prefix}: Sandbox grader complete\n"
-    rescue Exception => e
-      Audit.log "#{prefix}: Sandbox grader failed\n"
-      Audit.log "#{e.inspect}\n"
-    end
-
-    sandbox.stop_container
-    sandbox.destroy or Audit.log "#{prefix}: #{sandbox.errors.inspect}\n"
-    return grade
-  end
-
-  def run_sandbox(assignment, sub, sandbox, cont)
-    g = self.grade_for sub
-    g.score = 0
-    g.out_of = 50
+    g.out_of = self.avail_score
     g.available = false
     g.save!
 
@@ -118,7 +93,7 @@ class SandboxGrader < Grader
 
     parts = stdout.split("#{secret}\n")
     g.score = 0
-    g.out_of = 50
+    g.out_of = self.avail_score
 
     details_log = grader_dir.join("details.log")
     makefile_tap = grader_dir.join("makefile.tap")
@@ -140,13 +115,13 @@ class SandboxGrader < Grader
       rescue Exception => e
         Audit.log "#{prefix}: Could not parse Tap results; see #{details_log}\n"
         g.score = 0
-        g.out_of = 1
+        g.out_of = self.avail_score
         g.grading_output = details_log.to_s
       end
     else
       Audit.log "#{prefix}: Sandbox grader failed: did not find at least three parts of output (expected secret #{secret}); see #{details_log}\n"
       g.score = 0
-      g.out_of = 1
+      g.out_of = self.avail_score
       g.grading_output = details_log.to_s
     end
 
@@ -155,15 +130,16 @@ class SandboxGrader < Grader
     g.save!
 
     if parts.size < 3
-      puts "Can't parse sandbox output: Not enough parts"
-      puts "Expected secret: #{secret}"
-      puts "== Output =="
-      puts stdout
-      puts "== Parts =="
-      puts parts.inspect
+      Audit.log "Assignment #{assignment.id}, submission #{sub.id}: Can't parse sandbox output: Not enough parts"
+      Audit.log "Expected secret: #{secret}"
+      Audit.log "== Output =="
+      Audit.log stdout
+      Audit.log "== Parts =="
+      Audit.log parts.inspect
+      Audit.log "==========="
     else
       tap = TapParser.new(parts[1])
-      Audit.log "Sandbox grader results: Tap: #{tap.points_earned}\n"
+      Audit.log "Assignment #{assignment.id}, submission #{sub.id} sandbox grader results: Tap: #{tap.points_earned}\n"
 
       g.score = tap.points_earned
       if tap.points_available >= 1.0
@@ -171,16 +147,16 @@ class SandboxGrader < Grader
       end
       g.updated_at = DateTime.now
 
-      score = g.score / g.out_of
+      score = g.score.to_f / g.out_of.to_f
       unless (score < 5 && score > -0.1)
         g.score = 0
-        g.out_of = 50
+        g.out_of = self.avail_score
       end
     end
 
     g.save!
 
-    puts g.notes
+    # puts g.notes
     sandbox.destroy!
 
     return self.avail_score.to_f * (g.score.to_f / g.out_of.to_f)

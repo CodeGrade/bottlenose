@@ -6,6 +6,13 @@
   h4.collapsed i.glyphicon-chevron-up, h3.collapsed i.glyphicon-chevron-up { display: initial; }
   h4.collapsed i.glyphicon-chevron-down, h3.collapsed i.glyphicon-chevron-down { display: none; }
   .team-heading { margin: 10px 15px; font-size: 16px; }
+  .sectionList { display: block; font-size: 85%; }
+  .courseHeader {
+    font-size: 21px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
 </style>
 
 <h2>Your courses</h2>
@@ -20,15 +27,21 @@
     <% end %>
   </h3>
   <div id="term_<%= i %>" <% if term.archived? %>class="collapse"<% end %>>
-  <% info.each do |term, course, section, dropped| %>
+  <% info.each do |term, course, sections, dropped| %>
     <% if dropped %>
     <h3 style="font-size: 21px;"><%= course.name %></h3>
     <div class="row">
       <p class="col-sm-12">Withdrawn on <span class="local-time"><%= dropped %></span></p>
     </div>
     <% else %>
-    <h3 style="font-size: 21px;"><%= link_to course.name, course_path(course) %>
-      <span style="padding-left: 3em;">Section <%= section.to_s %></span></h3>
+    <h3 class="courseHeader">
+      <%= link_to course.name, course_path(course) %>
+      <span class="sectionList">
+        <% sections.each do |s| %>
+        <span>Section <%= s.to_s %> (<%= s.type.humanize %>)</span><br />
+        <% end %>
+      </span>
+    </h3>
 
     <div class="row">
         <div class="col-md-7">

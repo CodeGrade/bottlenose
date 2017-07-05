@@ -46,7 +46,7 @@ class Team < ApplicationRecord
   def all_enrolled
     not_enrolled = users.select {|u| u.registration_for(course).nil?}
     if not_enrolled.count > 0
-      errors[:base] << "Not all team members are enrolled in this course: " + not_enrolled.to_a.to_s
+      errors.add(:base, "Not all team members are enrolled in this course: " + not_enrolled.to_a.to_s)
     end
   end
 

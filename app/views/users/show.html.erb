@@ -25,7 +25,13 @@
       
       <tr>
         <td>Email:</td>
-        <td><%= mail_to "#{@user.name} <#{@user.email}>", @user.email %></td>
+        <td>
+          <% if @user.email.blank? %>
+          &lt;none specified&gt;
+          <% else %>
+          <%= mail_to "#{@user.name} <#{@user.email}>", @user.email %>
+          <% end %>
+        </td>
       </tr>
       <tr>
         <td>NUID:</td>

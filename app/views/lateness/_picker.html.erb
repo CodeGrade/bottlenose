@@ -1,4 +1,11 @@
-<div class="form-tabs" data-init-tab="<%= f.object.lateness_config&.type || 'default' %>">
+<% default_tab =
+     if f.object.lateness_config.id.nil? || f.object.lateness_config.id == @course&.lateness_config_id
+       'default'
+     else
+       f.object.lateness_config.type
+     end
+   %>
+<div class="form-tabs" data-init-tab="<%= default_tab %>">
   <% if !within_course %>
   <p class="col-sm-12">(This is the default late policy for all
     assignments in this course.)</p>
@@ -31,9 +38,10 @@
     <% if within_course %>
       <div class="tab-pane" data-tab="default">
         <div class="form-group">
-          <%= f.hidden_field :lateness_config_id %>
+          <%= f.fields_for :lateness_config do |cd| %>
           <p>Use course-default lateness policy:</p>
           <p><%= @course.lateness_config.to_s %></p>
+          <% end %>
         </div>
       </div>
     <% end %>

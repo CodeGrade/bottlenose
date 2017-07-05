@@ -88,9 +88,15 @@ class AssignmentsController < ApplicationController
   end
 
   def create
-    @assignment = Assignment.new(assignment_params)
+    # Assign the current user to all file uploads for grader configs
+    ap = assignment_params
+    ap[:graders_attributes]&.each do |k, v|
+      v[:upload_by_user_id] = current_user.id
+    end
+    @assignment = Assignment.new(ap)
     @assignment.course_id = @course.id
     @assignment.blame_id = current_user.id
+    @assignment.current_user = current_user
     if @assignment.type == "exam"
       @assignment.available = @assignment.due_date
     end
@@ -100,6 +106,7 @@ class AssignmentsController < ApplicationController
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully created.'
     else
       @assignment.destroy
+      @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
       render action: "new"
     end
   end
@@ -116,6 +123,7 @@ class AssignmentsController < ApplicationController
       v[:upload_by_user_id] = current_user.id
     end
     @assignment.assign_attributes(ap)
+    @assignment.current_user = current_user
 
     if @assignment.save
       @assignment.save_uploads! if ap[:assignment_file]
@@ -189,11 +197,6 @@ class AssignmentsController < ApplicationController
 
   protected
 
-  def set_grader
-    return self.send("set_#{params[:assignment][:type]}_graders")
-  end
-
-
   def do_recreate_grades(assignment)
     confs = assignment.graders.to_a
     count = @assignment.used_submissions.reduce(0) do |sum, sub|
@@ -207,31 +210,19 @@ class AssignmentsController < ApplicationController
                                :points_available, :hide_grading, :blame_id,
                                :assignment_file,  :type, :related_assignment_id,
                                :course_id, :team_subs, :request_time_taken,
-                               :lateness_config_id, :removefile,
+                               :removefile,
                                :teamset_plan, :teamset_source_use, :teamset_source_copy,
                                lateness_config_attributes: [
                                  :type, :percent_off, :frequency,
                                  :max_penalty, :days_per_assignment,
-                                 :_destroy
+                                 :_destroy, :id
                                ],
                                graders_attributes: [
                                  :avail_score, :upload_file, :params,
                                  :type, :id, :_destroy, :errors_to_show, :test_class,
-                                 :upload_by_user_id
+                                 :upload_by_user_id, :order
                                ]
                               )
-  end
-
-  def graders_params
-    graders = params.to_unsafe_h["graders"] # FIXME: Nested models refactor.
-
-    if graders.nil?
-      nil
-    else
-      graders.map do |k, v|
-        [k, v]
-      end.to_h
-    end
   end
 
   def require_admin_or_prof
@@ -261,104 +252,6 @@ class AssignmentsController < ApplicationController
   def show_Exam
     @questions = @assignment.questions
     @grader = @assignment.graders.first
-  end
-
-  def set_files_graders
-    params_graders = graders_params
-    if params_graders.nil?
-      @assignment.errors.add(:graders, "parameter is missing")
-      return false
-    end
-
-    no_problems = true
-    graders = {}
-    params_graders.each do |id, grader|
-      grader[:removed] = true if grader[:removed] == "true"
-      grader[:removed] = false if grader[:removed] == "false"
-      if grader[:removed]
-        graders[id] = grader
-        next
-      end
-
-      type = grader[:type]
-      if type.nil?
-        @assignment.errors.add(:graders, "type is missing")
-        no_problems = false
-        next
-      end
-      type = type.split("_")[1]
-
-      grader = grader[type]
-      grader[:type] = type
-
-      upload = grader[:upload_file]
-      if upload
-        up = Upload.new
-        up.user_id = current_user.id
-        up.store_upload!(upload, {
-                           type: "#{type} Configuration",
-                           date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-                           mimetype: upload.content_type
-                         })
-        unless up.save
-          @assignment.errors.add(:upload_file, "could not save upload")
-          no_problems = false
-          next
-        end
-        grader[:upload_file] = up
-      end
-
-      graders[id] = grader
-    end
-    return no_problems unless no_problems
-
-
-    Grader.transaction do
-      existing_confs = @assignment.graders.to_a
-      existing_ags = @assignment.assignment_graders.to_a
-      max_order = existing_ags.reduce(0) do |acc, ag| [acc, ag.order].max end
-      existing_confs.each do |c|
-        conf = graders[c.id.to_s]
-        graders.delete c.id.to_s
-        if conf[:removed]
-          existing_ags.find{|g| g.grader_id == c.id}.destroy
-          next
-        else
-          c.assign_attributes(conf)
-          if c.changed?
-            unless c.save
-              @assignment.errors << c.errors
-              no_problems = false
-              raise ActiveRecord::Rollback
-            end
-            # make sure that the graders are updated to be the right total score
-            unless c.autograde?
-              Grader.where(grader_id: c.id).update_all({out_of: c.avail_score})
-            end
-          end
-        end
-      end
-
-      graders.each do |k, conf|
-        next if conf[:removed]
-        c = Grader.new(conf)
-        if c.invalid? or !c.save
-          no_problems = false
-          @assignment.errors.add(:graders, "Could not create grader #{c.to_s}")
-          raise ActiveRecord::Rollback
-        else
-          AssignmentGrader
-            .find_or_initialize_by(assignment_id: @assignment.id, grader_id: c.id)
-            .update(order: max_order)
-          max_order += 1
-        end
-      end
-
-      # NOT SURE IF I WANT TO DO THIS IMMEDIATELY OR NOT
-      # do_recreate_graders @assignment
-    end
-
-    return no_problems
   end
 
   def find_assignment

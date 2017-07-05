@@ -1,8 +1,10 @@
 class Grader < ApplicationRecord
   belongs_to :submission
-  belongs_to :grader
+  belongs_to :assignment
   belongs_to :upload
   has_many :grades
+  validates_presence_of :assignment
+  validates :order, presence: true, uniqueness: {scope: :assignment_id}
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
   # subtype they are, yet
@@ -55,7 +57,7 @@ class Grader < ApplicationRecord
 
   def upload_file=(data)
     if data.nil?
-      errors[:base] << "You need to submit a file."
+      errors.add(:base, "You need to submit a file.")
       return
     end
 
@@ -67,12 +69,15 @@ class Grader < ApplicationRecord
                        mimetype: data.content_type
                      })
 
-    self.upload_id_will_change! if self.upload.nil? or (self.upload.id != data.id)
-    self.upload = up
+    unless up.save
+      self.errors.add(:upload_file, "could not save upload")
+      return
+    end
+    self.upload_id = up.id
   end
 
   def assign_attributes(attrs)
-    self.upload_by_user_id = attrs.delete(:upload_by_user_id)
+    self.upload_by_user_id = attrs[:upload_by_user_id]
     super(attrs)
   end
   

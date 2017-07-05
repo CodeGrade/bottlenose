@@ -21,20 +21,19 @@ class RegistrationsController < ApplicationController
 
   def create
     reg_params = registration_params
-    # Create @registration object for errors.
-    @registration = Registration.new()
 
-    if params[:username].blank?
-      @registration.errors[:base] << "Must provide a username."
-      render action: "new"
-      return
+    uu = User.find_by(username: reg_params[:username])
+    if uu
+      @registration = Registration.find_by(course_id: @course, user_id: uu.id)
+    end
+    if @registration
+      @registration.assign_attributes(reg_params)
+    else
+      # Create @registration object for errors.
+      @registration = Registration.new(reg_params)
     end
 
-    # Set the @registration to the new registration on @course.
-    @registration = @course.add_registration(params[:username],
-                                             reg_params[:section].to_i,
-                                             RegRequest::roles[reg_params[:role]])
-    if @registration and @registration.save
+    if @registration && @registration.save && @registration.save_sections
       redirect_to course_registrations_path(@course),
                   notice: 'Registration was successfully created.'
     else
@@ -54,7 +53,7 @@ class RegistrationsController < ApplicationController
     end
     @registrations = @registrations
                      .includes(:user)
-                     .includes(:section)
+                     .includes(:registration_sections)
                      .to_a.sort_by{|r| r.user.display_name}
   end
 
@@ -65,14 +64,23 @@ class RegistrationsController < ApplicationController
         if @reg.nil? or @reg.course.id != @course.id
           render :json => {failure: "Unknown registration"}
         else
-          if @reg.role != params[:role] or
-             params[:section].to_i != @reg.section_id or
-             (params[:reenroll] and !@reg.dropped_date.nil?)
-            @reg.section_id = params[:section].to_i
-            @reg.dropped_date = nil if params[:reenroll]
-            @reg.role = params[:role]
+          changed = false
+          @reg.dropped_date = nil if params[:reenroll]
+          @reg.role = params[:role]
+          section_changes = params[:orig_sections].zip(params[:new_sections])
+          section_changes.each do |orig, new|
+            rs = RegistrationSection.find_by(registration_id: @reg.id, section_id: orig)
+            if rs
+              rs.section_id = new
+              if rs.changed?
+                changed = true
+                rs.save
+              end
+            end
+          end
+          if @reg.changed? || changed
             @reg.save
-            render :json => @reg
+            render :json => {"reg": @reg, "changes": section_changes.map{|o,n| {old: o, new: n}}}
           else
             render :json => {"no-change": true}
           end
@@ -87,30 +95,44 @@ class RegistrationsController < ApplicationController
   def bulk_enter
     @course = Course.find(params[:course_id])
     num_added = 0
+    failed = []
 
     CSV.parse(params[:usernames]) do |row|
-      if @course.add_registration(row[0], row[1])
+      uu = User.find_by(username: row[0])
+      if uu
+        r = Registration.find_by(course_id: @course, user_id: uu.id)
+      end
+      if r
+        r.assign_attributes(course_id: @course.id, new_sections: row[1..-1],
+                            username: row[0], role: "student")
+      else
+        # Create @registration object for errors.
+        r = Registration.new(course_id: @course.id, new_sections: row[1..-1],
+                             username: row[0], role: "student")
+      end
+
+      if (r.save && r.save_sections)
         num_added += 1
+      else
+        failed << row[0]
       end
     end
 
-    redirect_to course_registrations_path(@course),
-                notice: "Added #{num_added} students."
+    if failed.blank?
+      redirect_to course_registrations_path(@course),
+                  notice: "Added #{pluralize(num_added, 'student')}."
+    else
+      failed.each do |f| @course.errors.add(:base, f) end
+      redirect_to course_registrations_path(@course),
+                  notice: "Added #{num_added} students.",
+                  alert: "Could not add #{pluralize(failed.count, 'student')}: #{failed.join(", ")}"
+    end
   end
 
   def destroy
     @registration.destroy
 
     redirect_to course_registrations_path(@course)
-  end
-
-  def toggle
-    @registration.show_in_lists = ! @registration.show_in_lists?
-    @registration.save
-
-    @show = @registration.show_in_lists? ? "Yes" : "No"
-
-    redirect_back(fallback_location: course_registrations_path(@course))
   end
 
   private
@@ -122,7 +144,14 @@ class RegistrationsController < ApplicationController
   end
 
   def registration_params
-    params.require(:registration)
-          .permit(:course_id, :section, :role, :user_id, :show_in_lists, :tags)
+    ans = params.require(:registration)
+          .permit(:course_id, :orig_sections, :new_sections, :role, :username, :show_in_lists, :tags)
+    ans[:course_id] = params[:course_id]
+    ans[:new_sections] = params[:new_sections].reject(&:blank?)
+    ans
+  end
+
+  def section_param_names
+    Section::types.map{|t, _| "#{t}_section"}
   end
 end

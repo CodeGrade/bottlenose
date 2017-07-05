@@ -126,7 +126,7 @@ class Submission < ApplicationRecord
 
   def save_upload
     if @upload_data.nil?
-      errors[:base] << "You need to submit a file."
+      errors.add(:base, "You need to submit a file.")
       return false
     end
 
@@ -148,7 +148,7 @@ class Submission < ApplicationRecord
         mimetype:   data.content_type
       })
     rescue Exception => e
-      errors[:base] << e.message
+      errors.add(:base, e.message)
       return false
     end
     if up.save
@@ -234,7 +234,10 @@ class Submission < ApplicationRecord
     if config.grade_exists_for(self)
       false
     else
-      config.delay.autograde!(assignment, self)
+      # Students will have their delayed jobs de-prioritized based on how many submissions
+      # they've spammed the system with in the past hour
+      num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
+      config.delay(priority: num_recent_attempts).autograde!(assignment, self)
       true
     end
   end
@@ -260,8 +263,9 @@ class Submission < ApplicationRecord
         complete = complete and gr.autograde?
         gr.autograde!(assignment, self) # make sure we create all needed grades
       rescue Exception => e
-        puts e.inspect
-        puts e.backtrace
+        Audit.log "Assignment #{assignment.id}, submission #{sub.id} failed autograding:"
+        Audit.log e.inspect
+        Audit.log e.backtrace
         complete = false
       end
     end
@@ -320,36 +324,36 @@ class Submission < ApplicationRecord
 
   def user_is_registered_for_course
     if user && !user.courses.any?{|cc| cc.id == course.id }
-      errors[:base] << "Not registered for this course :" + user.name
+      errors.add(:base, "Not registered for this course :" + user.name)
     end
     if team && !team.users.all?{|u| u.courses.any?{|cc| cc.id == course.id } }
-      errors[:base] << "Not registered for this course :" + team.users.map{|u| u.name}.to_s
+      errors.add(:base, "Not registered for this course :" + team.users.map{|u| u.name}.to_s)
     end
   end
 
   def submitted_file_or_manual_grade
     if upload_id.nil? and self.assignment.type != "exam"
-      errors[:base] << "You need to submit a file."
+      errors.add(:base, "You need to submit a file.")
     end
   end
 
   def file_below_max_size
     msz = course.sub_max_size
     if upload_size > msz.megabytes
-      errors[:base] << "Upload exceeds max size (#{upload_size} > #{msz} MB)."
+      errors.add(:base, "Upload exceeds max size (#{upload_size} > #{msz} MB).")
     end
   end
 
   def has_team_or_user
     if assignment.team_subs?
       if team.nil?
-        errors[:base] << "Assignment requires team subs. No team set."
+        errors.add(:base, "Assignment requires team subs. No team set.")
       end
     else
       if user.nil?
-        errors[:base] << "Assignment requires individual subs. No user set."
+        errors.add(:base, "Assignment requires individual subs. No user set.")
       elsif team
-        errors[:base] << "Assignment requires individual subs. Team should not be set."
+        errors.add(:base, "Assignment requires individual subs. Team should not be set.")
       end
     end
   end

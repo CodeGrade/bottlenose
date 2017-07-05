@@ -263,8 +263,12 @@ class CourseSpreadsheet
                   Cell.new(""), Cell.new(""), Cell.new(""))
       exam_cols.push [exam, weight.count - 2]
 
+      all_grade_comments = InlineComment.where(submission_id: subs_for_grading.map(&:submission_id))
+                           .group_by(&:submission_id)
+      subs_by_user = subs_for_grading.map{|sfg| [sfg.user_id, sfg]}.to_h
+
       users.each_with_index do |u, i|
-        sub_id = subs_for_grading.find{|sfg| sfg.user_id == u.id}
+        sub_id = subs_by_user[u.id]
         begin
           sub = grades.grades[:grades].find{|grade_row| grade_row[:sub].id == sub_id.submission_id} unless sub_id.nil?
         rescue Exception => e
@@ -280,8 +284,8 @@ class CourseSpreadsheet
                                         nil))
           sheet.push_row(i, [curved, 0])
         else
-          grade_comments = InlineComment.where(submission_id: sub_id.submission_id)
-          q_grades = (0..questions.count-1).map{|i| grade_comments.find{|g| g.line == i}}.map{|c| (c && c["weight"])}
+          grade_comments = all_grade_comments[sub_id.submission_id]&.map{|c| [c.line, c]}.to_h
+          q_grades = grade_comments.slice(0..questions.count-1).map{|c| (c && c["weight"])}
           q_grades.each do |g|
             sheet.push_row(i, g || "<none>")
           end
@@ -295,7 +299,7 @@ class CourseSpreadsheet
                                   sum_grade, CellRef.new(nil, col_name(weight.count - 4), true, 3, true, tot_weight))
 
           sheet.push_row(i, Cell.new(nil, sum_grade))
-          curve = grade_comments.find_by(line: questions.count)
+          curve = grade_comments[questions.count]
           if curve
             curved = Cell.new(nil, Formula.new(sub[:sub].score, "/", curve["weight"], tot_weight))
           else
@@ -320,27 +324,40 @@ class CourseSpreadsheet
   def create_name_columns(course, sheet)
     sheet.columns.push(
       Col.new("LastName", "String"), Col.new("FirstName", "String"), Col.new("Instructor", "String"),
-      Col.new("NUID", "String"), Col.new("Email", "String"),
-      Col.new("Section", "Number"), Col.new("Withdrawn?", "DateTime"),
-      Col.new(""), Col.new("")
-    )
+      Col.new("NUID", "String"), Col.new("Email", "String"))
+    sections = course.sections
+    sections_by_type = sections.group_by(&:type)
+    sections_by_crn = sections.map{|s| [s.crn, s]}.to_h
+    course_section_types = sections_by_type.keys
+    course_section_types.each do |type|
+      sheet.columns.push(Col.new("#{type.humanize} section", "Number"))
+    end
+    sheet.columns.push(Col.new("Withdrawn?", "DateTime"), Col.new(""), Col.new(""))
     labels = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""])
     weight = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""])
 
     users = course.students.order(:last_name, :first_name).to_a
 
-    regs = course.registrations.includes(:section).to_a
+    regs = course.registrations.joins(:sections)
+           .select(:user_id, :crn, :type, :dropped_date)
+           .group_by(&:user_id)
+           .map do |uid, sections|
+      [uid, sections.map{|s| [s.type, {section: sections_by_crn[s.crn], dropped_date: s.dropped_date}]}.to_h]
+    end.to_h
     users.each do |u|
-      reg = regs.find{|r| r.user_id == u.id}
-      sheet.push_row(nil, [
-                       sanitize(u.last_name || u.name),
-                       sanitize(u.first_name || ""),
-                       sanitize(reg.section.instructor.last_name),
-                       u.nuid || "",
-                       sanitize(u.email),
-                       reg.section.crn,
-                       reg.dropped_date || "",
-                       "", ""])
+      reg = regs[u.id]
+      lecture = reg[Section::types["lecture"]][:section]
+      row = [ sanitize(u.last_name || u.name),
+              sanitize(u.first_name || ""),
+              sanitize(lecture&.instructor&.last_name || ""),
+              u.nuid || "",
+              sanitize(u.email)]
+      course_section_types.each do |type|
+        section = reg[Section::types[type]]&.fetch(:section)
+        row.push(section&.crn || "")
+      end
+      row.push(lecture[:dropped_date] || "", "", "")
+      sheet.push_row(nil, row)
     end
 
     return labels, weight, users
@@ -370,9 +387,11 @@ class CourseSpreadsheet
                                                       col_name(weight.count - 1), true, 3, true))),
                   Cell.new(""), Cell.new(""), Cell.new(""))
       hw_cols.push [assn, weight.count - 2]
-      
+
+      subs_by_user = subs_for_grading.map{|sfg| [sfg.user_id, sfg]}.to_h
+
       users.each_with_index do |u, i|
-        sub_id = subs_for_grading.find{|sfg| sfg.user_id == u.id}
+        sub_id = subs_by_user[u.id]
         sub = grades.grades[:grades].find{|grade_row| grade_row[:sub].id == sub_id.submission_id} unless sub_id.nil?
         if sub.nil?
           grades.graders.each do |g| sheet.push_row(i, "") end

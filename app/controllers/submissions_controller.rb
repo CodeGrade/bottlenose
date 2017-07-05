@@ -337,14 +337,14 @@ class SubmissionsController < CoursesController
     no_problems = true
     time_taken = submission_params[:time_taken]
     if @assignment.request_time_taken and time_taken.empty?
-      @submission.errors[:base] << "Please specify how long you have worked on this assignment"
+      @submission.errors.add(:base, "Please specify how long you have worked on this assignment")
       no_problems = false
     elsif time_taken and !(Float(time_taken) rescue false)
-      @submission.errors[:base] << "Please specify a valid number for how long you have worked on this assignment"
+      @submission.errors.add(:base, "Please specify a valid number for how long you have worked on this assignment")
       no_problems = false
     end
     if submission_params[:upload_file].nil?
-      @submission.errors[:base] << "You need to submit a file."
+      @submission.errors.add(:base, "You need to submit a file.")
       no_problems = false
     end
     no_problems = (no_problems and @submission.save_upload and @submission.save)
@@ -369,10 +369,10 @@ class SubmissionsController < CoursesController
     no_problems = true
     time_taken = submission_params[:time_taken]
     if @assignment.request_time_taken and time_taken.empty?
-      @submission.errors[:base] << "Please specify how long you have worked on this assignment"
+      @submission.errors.add(:base, "Please specify how long you have worked on this assignment")
       no_problems = false
     elsif time_taken and !(Float(time_taken) rescue false)
-      @submission.errors[:base] << "Please specify a valid number for how long you have worked on this assignment"
+      @submission.errors.add(:base, "Please specify a valid number for how long you have worked on this assignment")
       no_problems = false
     end
     if @answers.count != num_qs

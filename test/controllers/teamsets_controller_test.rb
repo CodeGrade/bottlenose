@@ -4,25 +4,32 @@ class TeamsetsControllerTest < ActionController::TestCase
   setup do
     @team = create(:team)
     @fred = create(:user)
-    create(:registration, user: @fred, course: @team.course, section_id: @team.course.sections.first.crn,
-           role:  Registration::roles[:professor])
+    r = create(:registration, user: @fred, course: @team.course, new_sections: [@team.course.sections.first.crn],
+               role:  Registration::roles[:professor])
+    r.save_sections
 
-    mreg = create(:registration, course: @team.course, section_id: @team.course.sections.first.crn)
+    mreg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    mreg.save_sections
     @mark = mreg.user
-    jreg = create(:registration, course: @team.course, section_id: @team.course.sections.first.crn)
+    jreg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    jreg.save_sections
     @jane = jreg.user
-    greg = create(:registration, course: @team.course, section_id: @team.course.sections.first.crn)
+    greg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    greg.save_sections
     @greg = greg.user
 
     @largeCourse = create(:course)
     @largeTs = create(:teamset, course: @largeCourse)
     @manyUsers = (1..30).map do |n| create(:user) end
     @manyUsers.each do |u|
-      Registration.create(user: u, course: @largeCourse, section: @largeCourse.sections.first,
+      r = Registration.create(user: u, course: @largeCourse, new_sections: [@largeCourse.sections.first.crn],
                           role: Registration::roles[:student], show_in_lists: true)
+      r.save_sections
+      r
     end
-    Registration.create(user: @fred, course: @largeCourse, section: @largeCourse.sections.first,
+    Registration.create(user: @fred, course: @largeCourse, new_sections: [@largeCourse.sections.first.crn],
                         role: Registration::roles[:professor], show_in_lists: true)
+      .save_sections
   end
 
   test "should get index" do

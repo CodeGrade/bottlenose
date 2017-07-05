@@ -12,6 +12,12 @@ class Assignment < ApplicationRecord
   attr_accessor :teamset_plan
   attr_accessor :teamset_source_use
   attr_accessor :teamset_source_copy
+  attr_accessor :current_user
+
+  before_create :fixup_graders
+  before_create :setup_teamsets
+  before_update :update_teamsets
+  before_update :update_exam_submission_times
 
   belongs_to :blame, :class_name => "User", :foreign_key => "blame_id"
 
@@ -27,8 +33,7 @@ class Assignment < ApplicationRecord
   has_many :submissions, :dependent => :restrict_with_error
   has_many :used_subs, :dependent => :destroy
 
-  has_many :assignment_graders, :dependent => :destroy
-  has_many :graders, through: :assignment_graders
+  has_many :graders, dependent: :destroy
   accepts_nested_attributes_for :graders, allow_destroy: true
 
   validates :name,      :uniqueness => { :scope => :course_id }
@@ -39,12 +44,7 @@ class Assignment < ApplicationRecord
   validates :blame_id,  :presence => true
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
-  validates :graders,   :presence => true
 
-  before_create :fixup_graders
-  before_create :setup_teamsets
-  before_update :update_teamsets
-  before_update :update_exam_submission_times
 
   def legal_teamset_actions
     # Returns the set of actions on teamsets that are legal as of the saved values in the database
@@ -349,7 +349,7 @@ class Assignment < ApplicationRecord
   end
 
   def graders_ordered
-    graders.order("assignment_graders.order")
+    graders.order(:order)
   end
 
   def questions
@@ -407,6 +407,11 @@ class Assignment < ApplicationRecord
     end
   end
 
+  def assign_attributes(attrs)
+    @params_graders = attrs[:graders_attributes]
+    super(attrs)
+  end
+  
   def fixup_graders
     set_exam_graders if self.type == "exam"
     set_questions_graders if self.type == "questions"
@@ -466,10 +471,16 @@ class Assignment < ApplicationRecord
         end
       end
       return unless no_problems
-      self.graders ||= []
-      if self.graders.count == 0
-        self.graders << Grader.new(type: "ExamGrader", avail_score: total_weight)
-      end
+      c = GraderConfig.new(type: "ExamGrader", avail_score: @total_weight)
+      if c.invalid? or !c.save
+        self.errors.add(:graders, "Could not create grader #{c.to_s}")
+        return false
+      else
+        AssignmentGrader
+          .find_or_initialize_by(assignment_id: self.id, grader_config_id: c.id)
+          .update(order: 1)
+        return true
+      end      
     end
   end
 
@@ -623,9 +634,15 @@ class Assignment < ApplicationRecord
         end
       end
       return unless no_problems
-      self.graders ||= []
-      if self.graders.count == 0
-        self.graders << Grader.new(type: "QuestionsGrader", avail_score: total_weight)
+      c = GraderConfig.new(type: "QuestionsGrader", avail_score: @total_weight)
+      if c.invalid? or !c.save
+        self.errors.add(:graders, "Could not create grader #{c.to_s}")
+        return false
+      else
+        AssignmentGrader
+          .find_or_initialize_by(assignment_id: self.id)
+          .update(order: 1, grader_config_id: c.id)
+        return true
       end
     end
   end

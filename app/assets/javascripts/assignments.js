@@ -7,20 +7,36 @@
     });
   }
 
+  var max_grader_order;
   function on_add_grader(evt, el) {
     el.find(".spinner").each(function(_ii, div) {
       activateSpinner(div);
     });
-    
+    el.find("#files-graders input[name$='[order]']").val(++max_grader_order);
     form_tabs_init_all(el);
   }
 
   function form_init() {
     init_datetime();
 
+    max_grader_order =
+      Math.max(0,
+               Math.max.apply(null,
+                              $("input[name$='[order]'").map(function() { return $(this).val() }).toArray()));
+
     $('.graders-list').on('cocoon:after-insert', on_add_grader);
     $('.spinner').each(function (_ii, div) {
       activateSpinner(div);
+    });
+
+    $("#files-graders").sortable({
+      placeholder: "ui-state-highlight",
+      update: function(e, ui) {
+        var orders = $("#files-graders input[name$='[order]']");
+        orders.each(function(index, item) {
+          $(item).val(++max_grader_order);
+        });
+      }
     });
 
     $("form").submit(function(e) {

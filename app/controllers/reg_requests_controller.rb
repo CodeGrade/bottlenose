@@ -53,14 +53,8 @@ class RegRequestsController < ApplicationController
 
   def accept_help(request)
     begin
-      reg = Registration.find_or_create_by(user: request.user,
-                                           course: request.course,
-                                           role: request.role,
-                                           section: request.section)
-      if reg
-        reg.show_in_lists = (request[:role] == RegRequest::roles[:student])
-        reg.dropped_date = nil
-        reg.save!
+      reg = request.course.add_registration(request.user.username, request.crns, request.role)
+      if reg && reg.save
         request.destroy
       end
       nil
@@ -83,8 +77,10 @@ class RegRequestsController < ApplicationController
   private
 
   def reg_request_params
-    ans = params[:reg_request].permit(:notes, :role, :section)
-    ans[:section] = Section.find_by(crn: ans[:section].to_i)
-    ans
+    params[:reg_request].permit(:notes, :role, section_param_names)
+  end
+
+  def section_param_names
+    Section::types.map{|t, _| "#{t}_section"}
   end
 end

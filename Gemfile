@@ -22,6 +22,7 @@ gem 'coffee-rails'
 gem 'coffee-rails-source-maps'
 gem 'uglifier'
 gem 'jquery-rails'
+gem 'jquery-ui-rails'
 gem 'jquery-tablesorter'
 gem 'cocoon'
 

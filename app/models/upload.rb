@@ -3,6 +3,7 @@ require 'fileutils'
 require 'zlib'
 require 'find'
 require 'open3'
+require 'archive_utils'
 
 class Upload < ApplicationRecord
   def self.MAX_FILES

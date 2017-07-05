@@ -22,17 +22,21 @@
 
         <%= f.hidden_field :course_id %>
         <div class="form-group">
-          <%= label_tag :username, "Username" %>
-          <%= text_field_tag :username, nil, { class: "form-control" } %>
+          <%= f.label :username, "Username" %>
+          <%= f.text_field :username, class: "form-control"  %>
         </div>
         <div class="form-group">
           <%= f.label :role %><br />
           <%= f.select :role, RegRequest.roles.to_a.map { |w| [w[0].humanize, w[0]] } %>
         </div>
+        <% grouped_sections = @course.sections_by_type %>
+        <% @course.section_types.each do |t, _| %>
         <div class="form-group">
-          <%= f.label :section %><br />
-          <%= f.select :section, @course.sections.to_a.map {|s| [s.to_s, s.crn] } %>
-        </div>  
+          <%= label_tag "new_sections[]", "#{t.humanize} section" %><br />
+          <%= select_tag "new_sections[]",
+              options_for_select([["<None>", ""]] + grouped_sections[t].map {|s| [s.to_s, s.crn] }) %>
+        </div>
+        <% end %>
         <div class="form-group">
           <%= f.submit nil, class: 'btn btn-primary' %>
         </div>
@@ -51,8 +55,10 @@
           <%= text_area_tag :usernames, nil, class: "form-control", rows: 10 %>
           <p class="help-block">
             Enter student usernames in CSV format, followed by the CRN
-            of their section:
-            <code>jsmith123, 12345\n...</code>.
+            of their sections (lecture, lab, etc):
+            <code style="white-space: pre-line; display: block;">jsmith123, 12345, 34567
+              ...
+            </code>
           </p>
         </div>
         <div class="form-group">
