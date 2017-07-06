@@ -154,7 +154,7 @@ class Submission < ApplicationRecord
     if up.save
       self.upload_id = up.id
 
-      Audit.log("Sub #{id}: New submission upload by #{user.name} " +
+      Audit.log("Sub #{self.id}: New submission upload by #{user.name} " +
                 "(#{user.id}) with key #{up.secret_key}")
       return true
     else
@@ -263,7 +263,7 @@ class Submission < ApplicationRecord
         complete = complete and gr.autograde?
         gr.autograde!(assignment, self) # make sure we create all needed grades
       rescue Exception => e
-        Audit.log "Assignment #{assignment.id}, submission #{sub.id} failed autograding:"
+        Audit.log "Assignment #{assignment.id}, submission #{self.id} failed autograding:"
         Audit.log e.inspect
         Audit.log e.backtrace
         complete = false
