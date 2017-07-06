@@ -243,17 +243,23 @@ class User < ApplicationRecord
   def grouped_registrations
     ret = {}
     regs = self.registrations
+    reg_sections = RegistrationSection.where(registration_id: regs.map(&:id))
+    sections = Section.where(crn: reg_sections.map(&:section_id)).map{|s| [s.crn, s]}.to_h
+    reg_sections = reg_sections.group_by(&:registration_id)
     terms = Term.all_sorted.to_a
+    all_regs_by_term = regs.joins(:course).select("registrations.*", "courses.term_id as term_id").group_by(&:term_id)
+    courses = Course.where(id: regs.map(&:course_id)).map{|c| [c.id, c]}.to_h
     Registration.roles.each do |role_name, role_val|
       by_role = ret[role_name]
       if by_role.nil? then by_role = ret[role_name] = {} end
       if by_role[:count].nil? then by_role[:count] = 0 end
       terms.each do |term|
-        regs_by_term = regs.joins(:course).where("courses.term_id": term.id).to_a
+        regs_by_term = all_regs_by_term[term.id]
         by_term = by_role[term.name]
         if by_term.nil? then by_term = by_role[term.name] = [] end
-        regs_by_term.select{|r| r.role == role_name}.each do |r|
-          by_term.push({course: r.course, sections: r.sections.group_by(&:type)})
+        regs_by_term&.select{|r| r.role == role_name}&.each do |r|
+          r_sections = sections.values_at(*reg_sections[r.id].map(&:section_id))
+          by_term.push({course: courses[r.course_id], sections: r_sections.group_by(&:type)})
           by_role[:count] += 1
         end
       end
