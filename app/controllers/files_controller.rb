@@ -14,7 +14,7 @@ class FilesController < ApplicationController
                 disposition: disp,
                 type: mime
     else
-      render 'errors/not_found', layout: 'errors', status: 404
+      render 'errors/not_found', layout: 'errors', formats: [:html], status: 404
     end
   end
 end
