@@ -7,6 +7,7 @@
 
 (require racket/gui/base)
 (require framework)
+(require racket/string)
 
 (define count 0)
 (define (encomment s)
@@ -15,13 +16,16 @@
                 (bytes-append #";;; " s #"\n"))
               (regexp-split #rx#"\n" s))))
 
+(define (escape-tilde s)
+  (string-replace s "~" "~tilde;" #:all? #t))
+
 (define (display-all snip out)
   (if (not snip)
       out
       (begin
         (cond
           [(is-a? snip string-snip%)
-           (display (send snip get-text 0 (send snip get-count)) out)]
+           (display (escape-tilde (send snip get-text 0 (send snip get-count))) out)]
           [(is-a? snip comment-box:snip%)
            (let* ((comment (open-output-bytes))
                   (contents (display-all (send (send snip get-editor) find-first-snip) comment)))
