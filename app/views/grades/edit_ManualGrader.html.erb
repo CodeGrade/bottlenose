@@ -75,7 +75,6 @@
 
 <script>
   var lineComments = <%= raw(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
-  <%= render :partial => 'submissions/render_embedded_images.js' %>
   <%= render :partial => 'submissions/render_comments.js' %>
   <%= render :partial => 'grades/enter_comments.js' %>
   $(function() {

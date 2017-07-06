@@ -42,7 +42,6 @@
 </div>
 
 <script>
-  <%= render 'submissions/render_embedded_images.js' %>
   var lineComments = <%= raw json_escape(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
   <%= render 'submissions/render_comments.js' %>
   $(function() { renderComments(lineComments); });
