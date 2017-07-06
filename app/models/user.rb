@@ -74,7 +74,6 @@ class User < ApplicationRecord
       return true
     end
   rescue Exception => e
-    print e
     self.errors.add(:base, "Could not read profile file #{Upload.upload_path_for(profile)}: #{e}")
     return false
   end
@@ -82,30 +81,26 @@ class User < ApplicationRecord
   def make_profile_thumbnail
     if self.profile_changed? && self.profile && File.file?(self.profile)
       old_file = self.profile
-      print "Here\n"
       secret = SecureRandom.urlsafe_base64
       new_file = Upload.base_upload_dir.join("#{secret}_#{self.username}_profile_thumb.jpg")
       type = profile_image_type
-      print "Making #{new_file} from #{type} #{old_file}\n"
+      Audit.log "Making #{new_file} from #{type} #{old_file}\n"
       output, err, status = Open3.capture3("convert",
                                            "#{type}:#{old_file}",
                                            "-resize", "200x300",
                                            "-define", "jpeg:extent=40KB",
                                            "jpg:#{new_file}")
       if status.success?
-        print "Success"
         self.profile = new_file
         FileUtils.rm(old_file)
         return true
       else
-        print "Failure"
         self.errors.add(:base,
                         "Could not create a thumbnail of the profile #{Upload.upload_path_for(old_file)}: #{output}, #{err}")
         return false
       end
     end
   rescue Exception => e
-    print "Exception! #{e}\n"
     self.errors.add(:base, "Could not create a thumbnail of the profile #{Upload.upload_path_for(old_file)}: #{e}")
     return false
   end
@@ -258,7 +253,7 @@ class User < ApplicationRecord
         by_term = by_role[term.name]
         if by_term.nil? then by_term = by_role[term.name] = [] end
         regs_by_term.select{|r| r.role == role_name}.each do |r|
-          by_term.push(r.course)
+          by_term.push({course: r.course, sections: r.sections.group_by(&:type)})
           by_role[:count] += 1
         end
       end

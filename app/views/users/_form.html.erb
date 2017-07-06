@@ -15,7 +15,9 @@
     <div class="col-sm-3 text-center">
       <%= image_tag Upload.upload_path_for(@user.profile || "silhouette.jpg"),
           id: "profile_preview", alt: @user.display_name, width: "100%" %>
-      <label class="btn btn-default btn-file" style: "width: 100%;">
+      <label class="btn btn-default btn-file" style: "width: 100%;"
+             data-toggle="tooltip" data-placement="bottom"
+             title="Images will be resized to 200x300 pixels, and compressed to 40KB">
         Select profile photo
         <%= f.file_field "profile", value: Upload.upload_path_for(@user.profile),
             accept: 'image/png,image/gif,image/jpeg', style: "display: none;"%>
