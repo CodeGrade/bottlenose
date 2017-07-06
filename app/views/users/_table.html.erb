@@ -1,18 +1,5 @@
 <% if role == :student %>
 <% link_to_students = current_user.site_admin? || current_user.professor_ever? %>
-<% def maybe_link_to(which, user)
-   tt = {
-       toggle: "tooltip",
-       delay: {show:0, hide: 250},
-       title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
-                        alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
-     }
-   if which
-     link_to(user.name, user_path(user), class: "user-link", data: tt)
-   else
-     content_tag(:span, user.name, class: "user-link", data: tt)
-   end
-   end %>
 <div class="panel panel-default">
   <div class="panel-heading">
     <h3 class="panel-title">
@@ -50,13 +37,6 @@
       <% end %>
     </tbody>
   </table>
-<script>
-  $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
-    animated: 'fade',
-    placement: 'right',
-    html: true
-  });
-</script>
 </div>
 <% else
    staff = @course.registrations.to_a %>

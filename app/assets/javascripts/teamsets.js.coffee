@@ -17,12 +17,6 @@ setup_form = () ->
     $('#users option').each (i, opt) ->
       opt.selected = true
 
-  $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
-    animated: 'fade',
-    placement: 'right',
-    html: true
-  })
-
   $("#existingTS").on("change", () ->
     $(".teamset-div").addClass("hidden")
     $("#ts_" + $(this).val()).removeClass("hidden")

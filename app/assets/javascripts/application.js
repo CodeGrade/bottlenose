@@ -130,7 +130,13 @@ function ensureFilesPresentOnSubmit(e, sel) {
 }
 
 $(function() {
-  $('[data-toggle="tooltip"]').tooltip();
+  $('[data-toggle="tooltip"]').each(function(elt) {
+    $(this).tooltip({
+      animated: 'fade',
+      placement: $(this).data("placement") || 'right',
+      html: true
+    });
+  });
 
   $('.local-time').each(function(_) {
     var dd = moment(Date.parse($(this).text()));
