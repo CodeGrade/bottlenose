@@ -8,10 +8,8 @@ class RegRequestsControllerTest < ActionController::TestCase
 
     @cs301 = @cs101
 
-    @mike_req  = create(:reg_request, user: @mike, course: @cs301, new_sections: [@section.crn])
-    @mike_req.save_sections
-    @ken_req   = create(:reg_request, user: @ken, course: @cs301, new_sections: [@section.crn])
-    @ken_req.save_sections
+    @mike_req  = create(:reg_request, user: @mike, course: @cs301, "#{@section.type}_sections": @section.crn.to_s)
+    @ken_req   = create(:reg_request, user: @ken, course: @cs301, "#{@section.type}_sections": @section.crn.to_s)
   end
 
   test "should get index" do
@@ -35,7 +33,7 @@ class RegRequestsControllerTest < ActionController::TestCase
       post :create, params: {
         course_id: @cs301.id,
         reg_request: {
-          new_sections: [@section.crn],
+          "#{@section.type}_sections": @section.crn.to_s,
           notes: "Let me in"
         }
       }

@@ -49,6 +49,7 @@ class TeamsetsController < ApplicationController
   
   def randomize
     count = @teamset.randomize(params[:random][:size].to_i,
+                               params[:random][:teams_within],
                                params[:random][:start_date],
                                params[:random][:end_date])
     redirect_back fallback_location: course_teamsets_path(@course),

@@ -73,6 +73,7 @@ class TeamsetsControllerTest < ActionController::TestCase
               random: {
                 start_date: Date.today,
                 end_date: Date.today + 1.week,
+                teams_within: "course",
                 size: 3
               } }
     end
@@ -87,6 +88,7 @@ class TeamsetsControllerTest < ActionController::TestCase
               random: {
                 start_date: Date.today,
                 end_date: Date.today + 1.week,
+                teams_within: "course",
                 size: 3
               } }
     end
@@ -103,6 +105,7 @@ class TeamsetsControllerTest < ActionController::TestCase
               random: {
                 start_date: Date.today,
                 end_date: Date.today + 1.week,
+                teams_within: "course",
                 size: 2
               } }
     end
@@ -114,20 +117,21 @@ class TeamsetsControllerTest < ActionController::TestCase
     assert_equal 13, @largeTs.active_teams.count
     @largeTs.dissolve_all(DateTime.now)
     assert_equal 0, @largeTs.active_teams.count
-    assert_difference('Team.count', 8) do
+    assert_difference('Team.count', 7) do
       patch :randomize, params: {
               course_id: @largeCourse.id,
               id: @largeTs.id,
               random: {
                 start_date: Date.today,
                 end_date: Date.today + 1.week,
+                teams_within: "course",
                 size: 4
               } }
     end
     assert_response :redirect
-    # 19 teams from before, plus ceil(30 / 4) more == 27 total
-    assert_equal "8 random teams created", flash[:notice]
-    assert_equal 27, assigns(:teamset).teams.count
+    # 19 teams from before, plus floor(30 / 4) more == 26 total
+    assert_equal "7 random teams created", flash[:notice]
+    assert_equal 26, assigns(:teamset).teams.count
     # Test :dissolve_all
     assert_no_difference('Team.count') do
       patch :dissolve_all, params: {
@@ -141,9 +145,9 @@ class TeamsetsControllerTest < ActionController::TestCase
 
   test "should clone teamset" do
     sign_in @fred
-    @largeTs.randomize(3, Date.today)
+    @largeTs.randomize(3, "course", Date.today)
     @largeTs.dissolve_all(DateTime.current)
-    @largeTs.randomize(6, Date.today)
+    @largeTs.randomize(6, "course", Date.today)
     # Create 15 teams, only five of which are active
     @ts2 = create(:teamset, course: @largeCourse)
     assert_difference('Team.count', 5) do

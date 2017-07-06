@@ -84,7 +84,7 @@ class Course < ApplicationRecord
     if for_users
       look_for = look_for.where(id: for_users.map(&:id))
     end
-    look_for.select("users.*", "registrations.dropped_date")
+    look_for.select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
   end
 
   def professors

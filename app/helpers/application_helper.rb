@@ -114,7 +114,7 @@ module ApplicationHelper
   end
 
   def show_team(team)
-    maybe_link_team(true, team)
+    maybe_link_team(true, true, team)
   end
   def maybe_link_team(show_team, show_user, team)
     content_tag(:span, [

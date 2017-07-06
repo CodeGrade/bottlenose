@@ -26,7 +26,7 @@
       <tr>
         <td width="1em"><%= mail_to "#{user.name} <#{user.email}>", "@" %></td>
         <td>
-          <%= maybe_link_to(link_to_students, user) %>
+          <%= maybe_link_user(link_to_students, user) %>
         </td>
         <td><%= if link_to_students then
                   link_to 'Impersonate', impersonate_user_path(user), method: 'post'

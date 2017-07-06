@@ -25,20 +25,40 @@ class Teamset < ActiveRecord::Base
     return new_ts
   end
 
-  def randomize(size, start_date, end_date = nil)
+  def randomize(size, within_section, start_date, end_date = nil)
     # This method randomly allocates the un-teamed students in this teamset
     # into new teams of the given size
     count = 0
-    students_without_active_team.to_a.shuffle.each_slice(size).each do |t|
-      @team = Team.new(course: self.course,
-                       start_date: start_date,
-                       end_date: end_date,
-                       teamset: self
-                      )
-      @team.users = t
+    case within_section
+    when "course"
+      grouped_students_to_team = [students_without_active_team]
+    else
+      unteamed_students = students_without_active_team
+      reg_sections = RegistrationSection.where(registration_id: unteamed_students.map(&:reg_id)).group_by(&:section_id)
+      sections = self.course.sections.group_by(&:type)
+      students_by_reg = unteamed_students.map{|s| [s.reg_id, s]}.to_h
+      grouped_students_to_team = sections[within_section].map do |s|
+        students_by_reg.values_at(*reg_sections[s.crn].map(&:registration_id))
+      end
+    end
+    leftovers = []
+    grouped_students_to_team.each do |students_to_team|
+      students_to_team.shuffle.each_slice(size).each do |t|
+        @team = Team.new(course: self.course,
+                         start_date: start_date,
+                         end_date: end_date,
+                         teamset: self
+                        )
 
-      if @team.save
-        count += 1
+        if t.count == size
+          @team.users = t
+          
+          if @team.save
+            count += 1
+          end
+        else
+          leftovers += t
+        end
       end
     end
     return count

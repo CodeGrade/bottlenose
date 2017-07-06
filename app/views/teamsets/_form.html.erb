@@ -80,7 +80,13 @@
     <div class="col-sm-12 form-inline" style="margin: 0 0 10px;">
       <%= rand.hidden_field "start_date" %>
       <%= rand.hidden_field "end_date" %>
-      Generate random teams of size <%= rand.spinner "size", 2, :min => 2, :max => 10 %>
+      <span class="col-sm-4">Generate random teams of size <%= rand.spinner "size", 2, :min => 2, :max => 10 %></span>
+      <span class="col-sm-4">
+        Match team members:
+        <%= rand.select "teams_within",
+            options_for_select([["Within whole course", "course"]] +
+            @course.section_types.map{|t, v| ["Within #{t.pluralize(2)}", t]}) %>
+      </span>
     </div>
     <p class="col-sm-12">
       <%= f.submit "Generate random teams", method: :patch, id: "submit-random",
@@ -207,3 +213,8 @@
     </div>
   </div>
 </div>
+<script>
+  $(function() {
+    $('.spinner').each(function() { activateSpinner(this) });
+  });
+</script>

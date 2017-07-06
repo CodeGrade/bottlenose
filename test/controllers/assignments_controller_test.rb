@@ -10,10 +10,10 @@ class AssignmentsControllerTest < ActionController::TestCase
     @assn_teams_1 = create(:assignment, course: @cs101, teamset: @ts3, team_subs: true, name: "HelloSingle")
     
     # Create some non-active teams, and some active ones
-    @ts2.randomize(2, Date.today - 1.week, Date.today - 1.day)
-    @ts2.randomize(2, Date.today)
+    @ts2.randomize(2, "course", Date.today - 1.week, Date.today - 1.day)
+    @ts2.randomize(2, "course", Date.today)
 
-    @ts3.randomize(1, Date.today)
+    @ts3.randomize(1, "course", Date.today)
   end
 
   test "should get new" do
