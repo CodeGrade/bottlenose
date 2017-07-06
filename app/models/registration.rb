@@ -107,7 +107,7 @@ class Registration < ApplicationRecord
         self.errors.add(:base, "Could not find section #{crn}")
       else
         begin
-          RegistrationSection.create!(registration: self, section_id: crn)
+          RegistrationSection.find_or_create_by!(registration: self, section_id: crn)
         rescue Exception => e
           self.errors.add(:base, "Could not register for section #{crn}: #{e}")
         end

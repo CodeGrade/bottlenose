@@ -6,60 +6,64 @@ class RegRequest < ActiveRecord::Base
   belongs_to :course
   belongs_to :user
 
-  has_many :reg_request_sections
+  has_many :reg_request_sections, dependent: :destroy
   has_many :sections, through: :reg_request_sections
 
   validates :user_id, :uniqueness => { :scope => :course_id }
 
   Section::types.each do |t, value|
     # This attribute writer is so that the registration form can assign the parameter
-    attr_accessor "#{t}_section".to_sym
-    # This reader is for convenience
-    define_method "#{t}_sections".to_sym do
-      self.sections.where(type: value)
+    attr_accessor "#{t}_sections".to_sym
+  end
+
+  def create_registration
+    reg = self.course.registrations.where(user_id: self.user_id)
+          .first_or_create(user_id: self.user_id, course_id: self.course_id)
+    reg.role = self.role
+    reg.show_in_lists = (role == 'student')
+    reg.dropped_date = nil # implicitly un-drop user
+    reg.new_sections = self.sections.map(&:crn)
+    reg
+  end
+
+  before_validation :confirm_sections
+  def confirm_sections
+    @requested_sections = []
+    Section::types.each do |t, value|
+      t_sections = self.send("#{t}_sections".to_sym)
+      next if t_sections.nil?
+      if !t_sections.match?(/^\s*\d+(\s*,\s*\d+)*\s*$/)
+        a_an = t.match?(/^[aeiou]/) ? "an" : "a"
+        self.errors.add(:base, "Expected to receive #{a_an} #{t} section request")
+      else
+        @requested_sections += t_sections.split(",").map(&:to_i)
+      end
+    end
+    if @requested_sections.blank?
+      self.errors.add(:base, "A new registration must include at least one section")
+      return false
+    end
+    @sections = Section.where(crn: @requested_sections)
+    if @sections.length != @requested_sections.count
+      self.errors.add(:base, "Could not find all requested sections")
+      return false
+    elsif @sections.map(&:course_id).uniq.count > 1
+      self.errors.add(:base, "Requested sections were not all part of the same course")
+      return false
     end
   end
-  attr_accessor :orig_sections
-  attr_accessor :new_sections
-  def after_initialize
-    @orig_sections ||= []
-    @new_sections ||= []
-  end
-  def save_sections
-    remove_old_sections
-    create_new_sections
-    print self.errors.full_messages.join("\n")
-    return self.errors.size != 0
-  end
+  after_save :create_new_sections
 
   delegate :name, :email, to: :user
 
   private
-  def remove_old_sections
-    @orig_sections&.each do |crn|
-      rs = RegRequestSection.find_by(reg_request_id: self.id, section_id: crn)
-      if rs.nil?
-        self.errors.add(:base, "Could not find section #{crn} to remove enrollment")
-      else
-        begin
-          rs.destroy!
-        rescue Exception => e
-          self.errors.add(:base, "Could not remove enrollment from section #{crn}: #{e}")
-        end
-      end
-    end
-  end
   def create_new_sections
-    @new_sections&.each do |crn|
-      s = Section.find_by(crn: crn)
-      if s.nil?
-        self.errors.add(:base, "Could not find section #{crn}")
-      else
-        begin
-          RegRequestSection.create!(reg_request_id: self.id, section_id: crn)
-        rescue Exception => e
-          self.errors.add(:base, "Could not register for section #{crn}: #{e}")
-        end
+    @sections.each do |s|
+      begin
+        RegRequestSection.create!(reg_request_id: self.id, section_id: s.crn)
+      rescue Exception => e
+        self.errors.add(:base, "Could not register for section #{s.crn}: #{e}")
+        raise ActiveRecord::Rollback
       end
     end
   end

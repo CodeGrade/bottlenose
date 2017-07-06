@@ -105,48 +105,6 @@ class Course < ApplicationRecord
     professors.first
   end
 
-  def add_registration(username, crns, role = :student)
-    # Can't register for a course without registering
-    if crns.empty?
-      raise Exception.new("Must register for at least one section")
-    end
-    
-    # TODO: Check LDAP for user.
-    uu = User.find_by(username: username)
-    if uu.nil?
-      res = Devise::LDAP::Adapter.get_ldap_entry(username)
-      if res
-        uu = User.create!(username: username,
-                          name: res[:displayname][0],
-                          last_name: res[:sn][0],
-                          first_name: res[:givenname][0],
-                          email: res[:mail][0])
-      end
-    end
-
-    if uu.nil?
-      raise Exception.new("Could not find user with username #{username}")
-    end
-    
-    # If creating the user fails, this will not create a registration
-    # because there is a validation on user.
-    reg = registrations.where(user: uu)
-                       .first_or_create(user_id: uu.id,
-                                        course_id: self.id)
-    reg.role = role
-    reg.show_in_lists = (role == 'student')
-    reg.dropped_date = nil # implicitly un-drop the user
-    
-    crns.each do |crn|
-      section = Section.find_by(crn: crn)
-      if section.nil?
-        raise Exception.new("Could not find section with CRN #{crn}")
-      end
-      RegistrationSection.find_or_create_by!(registration: reg, section: section)
-    end
-    reg
-  end
-
   def assignments_sorted
     self.assignments.to_a.sort_by(&:due_date)
   end

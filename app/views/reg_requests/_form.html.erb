@@ -1,7 +1,8 @@
 <%= form_for [@course, @reg_request] do |f| %>
   <% if @reg_request.errors.any? %>
     <div id="error_explanation" class="alert alert-danger">
-      <h2><%= pluralize(@reg_request.errors.count, "error") %> prohibited this reg_request from being saved:</h2>
+      <h2><%= pluralize(@reg_request.errors.count, "error") %>
+      prohibited this registration request from being saved:</h2>
 
       <ul>
       <% @reg_request.errors.full_messages.each do |msg| %>
@@ -28,8 +29,8 @@
   <% grouped_sections = @course.sections_by_type %>
   <% @course.section_types.each do |t, _| %>
   <div class="form-group">
-    <%= f.label "#{t}_section" %><br />
-    <%= f.select "#{t}_section", [["<None>", ""]] + grouped_sections[t].map {|s| [s.to_s, s.crn] } %>
+    <%= f.label "#{t}_sections" %><br />
+    <%= f.select "#{t}_sections", [["<None>", ""]] + grouped_sections[t].map {|s| [s.to_s, s.crn] } %>
   </div>
   <% end %>
 
