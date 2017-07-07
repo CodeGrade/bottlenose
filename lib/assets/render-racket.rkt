@@ -56,10 +56,19 @@
            (let ((serial count))
              (set! count (+ 1 count))
              (display (format "~~embed:~a:s~~data:image/png;base64,~a~~embed:~a:e~~" serial (base64-encode (convert snip 'png-bytes) "") serial) out))]
+          [(is-a? snip snip%)
+           (display (format "~a" (or (send snip get-text 0 (send snip get-count) #t) snip)) out)]
+          [(special-comment? snip)
+           (display (format "#| ~a |#" (special-comment-value snip)) out)]
+          [(syntax? snip) (display (syntax->datum snip) out)]
           [else
            (display (format ">>>~a<<<" snip) out)]
           )
         (display-all (send snip next) out))))
+(define (drop-header lines)
+  (if (and (cons? lines) (regexp-match #rx";; The first three lines of this file were inserted by DrRacket." (first lines)))
+      (drop lines 3)
+      lines))
 (define (render file)
   (let* ((dummy (new text%))
          (_ (send dummy load-file file))
@@ -67,7 +76,7 @@
          (text (get-output-string (display-all first (open-output-bytes))))
          )
     (apply bytes-append
-           (add-between (drop (regexp-split #rx#"\n" text) 3)
+           (add-between (drop-header (regexp-split #rx#"\n" text))
                         #"\n"))))
 
 (define output-filename (make-parameter #f))

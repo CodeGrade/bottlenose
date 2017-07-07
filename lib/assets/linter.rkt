@@ -122,7 +122,8 @@
             ([s-line (in-lines (open-input-string orig-text))]
              [t-line (in-lines (open-input-string tabbed-text))]
              [i (in-naturals)])
-    (if (equal? s-line t-line)
+    (if (or (equal? s-line t-line) ; line is unchanged, or 
+            (regexp-match #rx"^\\s*$" s-line)) ; ignore whitespace-only lines
         acc
         (let ((orig-indent (- (string-length s-line) (string-length (string-trim s-line #:right? #f))))
               (tabbed-indent (- (string-length t-line) (string-length (string-trim t-line #:right? #f)))))
