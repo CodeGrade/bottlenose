@@ -1,3 +1,7 @@
+require 'open3'
+require 'tap_parser'
+require 'audit'
+
 class Grader < ApplicationRecord
   belongs_to :submission
   belongs_to :assignment
@@ -95,4 +99,87 @@ class Grader < ApplicationRecord
     end
     g
   end
+
+  def run_command_produce_tap(assignment, sub)
+    g = self.grade_for sub
+    u = sub.upload
+    grader_dir = u.grader_path(g)
+
+    grader_dir.mkpath
+
+    prefix = "Assignment #{assignment.id}, submission #{sub.id}"
+
+    tap_out, env, args = get_command_arguments(assignment, sub)
+
+    Audit.log("#{prefix}: Running #{self.type}.  Command line: #{args.join(' ')}\n")
+    print("#{prefix}: Running #{self.type}.  Command line: #{args.join(' ')}\n")
+    output, err, status = Open3.capture3(env, *args)
+    File.open(grader_dir.join(tap_out), "w") do |style|
+      style.write(Upload.upload_path_for(output))
+      g.grading_output = style.path
+    end
+    if !status.success?
+      Audit.log "#{prefix}: #{self.type} checker failed: status #{status}, error: #{err}\n"
+      InlineComment.where(submission: sub, grade: g).destroy_all
+      
+      g.score = 0
+      g.out_of = self.avail_score
+      g.updated_at = DateTime.now
+      g.available = true
+      g.save!
+
+      InlineComment.create!(
+        submission: sub,
+        title: "Compilation errors",
+        filename: sub.upload.extracted_path.to_s,
+        line: 0,
+        grade: g,
+        user: nil,
+        label: "general",
+        severity: InlineComment::severities["error"],
+        weight: self.avail_score,
+        comment: "Could not parse your program, so could not compute any style points at all",
+        suppressed: false)
+
+      return 0
+    else
+      tap = TapParser.new(output)
+      Audit.log "#{prefix}: #{self.type} checker results: Tap: #{tap.points_earned}\n"
+
+      g.score = tap.points_earned
+      g.out_of = tap.points_available
+      g.updated_at = DateTime.now
+      g.available = true
+      g.save!
+
+      upload_inline_comments(tap, sub)
+
+      return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
+    end
+  end
+
+  def get_command_arguments(assignment, sub)
+    fail NotImplementedError, "Must implement this if you're using run_command_produce_tap"
+  end
+
+  def upload_inline_comments(tap, sub)
+    g = self.grade_for sub
+    InlineComment.where(submission: sub, grade: g).destroy_all
+    ics = tap.tests.map do |t|
+      InlineComment.new(
+        submission: sub,
+        title: t[:comment],
+        filename: t[:info]["filename"],
+        line: t[:info]["line"],
+        grade: g,
+        user: nil,
+        label: t[:info]["category"],
+        severity: InlineComment::severities[t[:info]["severity"].humanize(:capitalize => false)],
+        comment: t[:info]["message"],
+        weight: t[:info]["weight"],
+        suppressed: t[:info]["suppressed"])
+    end
+    InlineComment.import ics
+  end
+
 end

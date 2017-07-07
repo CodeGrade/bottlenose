@@ -1,0 +1,17 @@
+<%= f.hidden_field :type, value: "RacketStyleGrader" %>
+<%= f.hidden_field :order %>
+
+<table class="table no-first-row" style="margin-bottom: 0px;">
+  <tr>
+    <td><%= f.label "avail_score", "Points available:" %></td>
+    <td><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>
+  </tr>
+  <tr>
+    <td><%= f.label "upload_file", "Custom configuration:" %></td>
+    <td><%= f.file_field "upload_file" %>
+      <% if f.object.upload %>
+        <br>Current file: <%= link_to f.object.upload_file, f.object.upload_file %>
+      <% end %>
+    </td>
+  </tr>
+</table>

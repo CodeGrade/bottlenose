@@ -70,12 +70,15 @@ class Upload < ApplicationRecord
   end
 
   def extract_contents!(mimetype)
-    base = upload_dir
-    extracted_path = base.join("extracted")
     return if Dir.exist?(extracted_path)
 
+    extract_contents_to(mimetype, upload_dir.join("extracted"), true)
+  end
+
+  def extract_contents_to!(mimetype, extracted_path, postprocess)
     extracted_path.mkpath
     ArchiveUtils.extract(submission_path.to_s, mimetype, extracted_path.to_s)
+    return unless postprocess
     Find.find(extracted_path) do |f|
       next unless File.file? f
       next if File.extname(f).empty?

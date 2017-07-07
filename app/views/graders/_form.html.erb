@@ -7,6 +7,7 @@
       <li><a href="#" data-tab="JavaStyleGrader">Java Style</a></li>
       <li><a href="#" data-tab="CheckerGrader">Checker Tests</a></li>
       <li><a href="#" data-tab="JunitGrader">JUnit Tests</a></li>
+      <li><a href="#" data-tab="RacketStyleGrader">Racket Style</a></li>
       <li><a href="#" data-tab="ManualGrader">Manual Grading</a></li>
       <li><a href="#" data-tab="SandboxGrader">Sandboxed Tests</a></li>
     </ul>
@@ -24,6 +25,11 @@
       <div data-tab="JunitGrader" class="tab-pane">
         <div class="form-group">
           <%= render 'graders/junit_grader', f: f %>
+        </div>
+      </div>
+      <div data-tab="RacketStyleGrader" class="tab-pane">
+        <div class="form-group">
+          <%= render 'graders/racket_style_grader', f: f %>
         </div>
       </div>
       <div data-tab="ManualGrader" class="tab-pane">
