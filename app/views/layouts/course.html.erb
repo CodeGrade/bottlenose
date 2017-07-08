@@ -21,7 +21,7 @@
             <span class="sectionList">
               <% if cur_reg %>
               <% cur_reg.sections.order(:type).each do |r| %>
-              <small>Section <%= r.to_s %> (<%= r.type.humanize %>)</small></br>
+              <small>Section <%= r.to_s %></small></br>
               <% end %>
               <% end %>
             </span>
