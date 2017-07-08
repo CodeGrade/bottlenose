@@ -10,14 +10,13 @@
 (provide render)
 
 (define count 0)
+(define (next-count)
+  (set! count (+ 1 count))
+  count)
+(define patches '())
 (define (encomment s)
   (let* ((lines (regexp-split #rx"\n" s))
-         (line-lengths
-          (map (λ(l)
-                 (string-length
-                  (regexp-replace* #px"~embed:\\d+:s~[^~]+~embed:\\d+:e~"
-                                   l ".")))
-               lines))
+         (line-lengths (map string-length lines))
          (max-len (apply max line-lengths))
          (border (string-append "#| " (make-string max-len #\#) " |#\n"))
          (lines (map (λ(l len)
@@ -32,8 +31,34 @@
              "\n"))
      "\n" border)))
 
-(define (escape-tilde s)
+(define (escape-tildes s)
   (string-replace s "~" "~tilde;" #:all? #t))
+(define (unescape-tildes s)
+  (string-replace s "~tilde;" "~" #:all? #t))
+(define (escape-newlines s)
+  (string-replace s "\n" "~n" #:all? #t))
+
+(define (add-patch type)
+  (λ(contents)
+    (let* ((contents (if (bytes? contents)
+                         (bytes->string/utf-8 contents)
+                         contents))
+           (serial (next-count))
+           (contents (escape-newlines (escape-tildes contents))))
+      (set! patches
+            (cons
+             (format "~~embed:~a:~a:s~~~a~~embed:~a:e~~"
+                     type serial contents serial)
+             patches))
+    (format "~~embed:~a~~" serial))))
+
+(define add-comment (add-patch "comment"))
+(define add-xml (add-patch "xml"))
+(define add-text (add-patch "text"))
+(define add-number (add-patch "number"))
+(define add-racket (add-patch "racket"))
+(define add-splice (add-patch "splice"))
+(define add-image (add-patch "image"))
 
 (define (display-all snip out #:verbose? [verbose? #t])
   (if (not snip)
@@ -41,7 +66,7 @@
       (let ((snip-name (send (send snip get-snipclass) get-classname)))
         (cond
           [(is-a? snip string-snip%)
-           (display (escape-tilde (send snip get-text 0 (send snip get-count)))
+           (display (escape-tildes (send snip get-text 0 (send snip get-count)))
                     out)]
           [(is-a? snip comment-box:snip%)
            (let* ((comment (open-output-bytes))
@@ -49,24 +74,27 @@
                                                find-first-snip)
                                          comment
                                          #:verbose? verbose?)))
-             (display (encomment (get-output-string comment)) out))]
+             (display (add-comment (get-output-string comment)) out))]
           [(equal? snip-name
                    "(lib \"number-snip.ss\" \"drscheme\" \"private\")")
-           (when verbose? (display "#|Number|#" out))
-           (display (send snip get-number) out)]
+           (display (add-number (number->string (send snip get-number))) out)]
           [(or (is-a? snip xml-snip<%>)
                (equal? snip-name "(lib \"xml-snipclass.ss\" \"xml\")")
                (equal? snip-name "(lib \"xml-snipclass.rkt\" \"xml\")")
                (equal? snip-name "(lib \"xml.ss\" \"wxme\")"))
-           (when verbose? (display "#|XML|#" out))
-           (display-all (send (send snip get-editor) find-first-snip) out
-                        #:verbose? verbose?)]
+           (let* ((xml (open-output-bytes))
+                  (contents (display-all (send (send snip get-editor)
+                                               find-first-snip)
+                                         xml)))
+             (display (add-xml (get-output-string xml)) out))]
           [(or (equal? snip-name "(lib \"text-snipclass.ss\" \"xml\")")
                (equal? snip-name "(lib \"text-snipclass.rkt\" \"xml\")")
                (equal? snip-name "(lib \"text.ss\" \"wxme\")"))
-           (when verbose? (display "#|TEXT|#" out))
-           (display-all (send (send snip get-editor) find-first-snip) out
-                        #:verbose? verbose?)]
+           (let* ((text (open-output-bytes))
+                  (contents (display-all (send (send snip get-editor)
+                                               find-first-snip)
+                                         text)))
+             (display (add-text (get-output-string text)) out))]
           #;[(equal? (send (send snip get-snipclass) get-classname)
                      "wxmedia")
              (displayln "WXMEDIA")
@@ -75,28 +103,30 @@
                (equal? snip-name "(lib \"scheme-snipclass.ss\" \"xml\")")
                (equal? snip-name "(lib \"scheme-snipclass.rkt\" \"xml\")")
                (equal? snip-name "(lib \"scheme.ss\" \"wxme\")"))
-           (when verbose? (display "#|RACKET|#" out))
-           (if (send snip get-splice?)
-               (display ",@(" out)
-               (display ",(" out))
-           (display-all (send (send snip get-editor) find-first-snip) out
-                        #:verbose? verbose?)
-           (display ")" out)]
+           (let* ((rkt (open-output-bytes))
+                  (contents (display-all (send (send snip get-editor)
+                                               find-first-snip)
+                                         rkt)))
+             (if (send snip get-splice?)
+                 (display (add-splice (get-output-string rkt)) out)
+                 (display (add-racket (get-output-string rkt)) out)))]
           #;[(is-a? snip editor-snip%)
              (displayln snip-name (current-error-port))
              (display-all (send (send snip get-editor) find-first-snip) out
                           #:verbose? verbose?)]
           [(convertible? snip)
-           (let ((serial count))
-             (set! count (+ 1 count))
-             (if verbose?
-                 (display
-                  (format "~~embed:~a:s~~~a~a~~embed:~a:e~~"
-                          serial
-                          "data:image/png;base64,"
-                          (base64-encode (convert snip 'png-bytes) "")
-                          serial) out)
-                 (display "~image~" out)))]
+           (display (add-image (base64-encode (convert snip 'png-bytes) ""))
+                    out)]
+;           (let ((serial count))
+;             (set! count (+ 1 count))
+;             (if verbose?
+;                 (display
+;                  (format "~~embed:~a:s~~~a~a~~embed:~a:e~~"
+;                          serial
+;                          "data:image/png;base64,"
+;                          (base64-encode (convert snip 'png-bytes) "")
+;                          serial) out)
+;                 (display "~image~" out)))]
           [(syntax? snip)
            (display (syntax->datum snip) out)]
           [else
@@ -111,23 +141,18 @@
             (first lines)))
       (drop lines 3)
       lines))
-(define (pretty-display contents #:indent [indent ""])
-  (cond
-    [(list? contents)
-     (display indent) (displayln "(")
-     (map (λ(c) (pretty-display c #:indent (string-append indent " "))) contents)
-     (display indent) (displayln ")")]
-    [else
-     (display indent) (displayln contents)]))
 (define (render file #:verbose? [verbose? #t])
   (let* ((dummy (new text%))
          (_ (send dummy load-file file))
          (first (send dummy find-first-snip))
          (out (open-output-bytes))
          (contents (display-all first out #:verbose? verbose?))
+         (_ (when (and verbose? (cons? patches))
+              (displayln "~~~~~EMBEDS~~~~~" out)))
+         (_ (when verbose? (map (λ(p) (displayln p out)) (reverse patches))))
          (text (get-output-string out))
+         (text (if verbose? text (unescape-tildes text)))
          )
-    ;(pretty-display contents)
     (apply bytes-append
            (add-between (drop-header (regexp-split #rx#"\n" text))
                         #"\n"))))
@@ -149,4 +174,3 @@
         (λ() (display rendered)))
       (display rendered)))
 
-;(debug)

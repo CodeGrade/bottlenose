@@ -95,8 +95,9 @@
   (define all-lines (port->lines (open-input-string (send t get-text))))
   (define drrackety?
     (and (cons? all-lines)
-         (string=? (first all-lines)
-                   ";; The first three lines of this file were inserted by DrRacket. They record metadata")))
+         (regexp-match
+            ";; The first three lines of this file were inserted by DrRacket."
+            (first all-lines))))
   (define real-lines (if drrackety? (drop all-lines 3) all-lines))
   (reverse
    (for/fold ([acc '()])
@@ -119,16 +120,21 @@
   (define orig-text (send t get-text))
   (send t tabify-all)
   (define tabbed-text (send t get-text))
-  (reverse (for/fold ([acc '()])
-            ([s-line (in-lines (open-input-string orig-text))]
-             [t-line (in-lines (open-input-string tabbed-text))]
-             [i (in-naturals 1)])
-    (if (or (equal? s-line t-line) ; line is unchanged, or 
-            (regexp-match #px"^\\s*$" s-line)) ; ignore whitespace-only lines
-        acc
-        (let ((orig-indent (- (string-length s-line) (string-length (string-trim s-line #:right? #f))))
-              (tabbed-indent (- (string-length t-line) (string-length (string-trim t-line #:right? #f)))))
-          (cons (list i s-line t-line orig-indent tabbed-indent) acc))))))
+  (reverse
+   (for/fold ([acc '()])
+             ([s-line (in-lines (open-input-string orig-text))]
+              [t-line (in-lines (open-input-string tabbed-text))]
+              [i (in-naturals 1)])
+     (if (or (equal? s-line t-line) ; line is unchanged, or 
+             (regexp-match #px"^\\s*$" s-line)) ; ignore whitespace-only lines
+         acc
+         (let ((orig-indent
+                (- (string-length s-line)
+                   (string-length (string-trim s-line #:right? #f))))
+               (tabbed-indent
+                (- (string-length t-line)
+                   (string-length (string-trim t-line #:right? #f)))))
+           (cons (list i s-line t-line orig-indent tabbed-indent) acc))))))
 #;(module+ test
   (check-equal? (bad-indentation "(+ 1\n  2)") '())
   (check-equal? (bad-indentation "(+ 1\n    2)") '((1 "    2)" "  2)")))

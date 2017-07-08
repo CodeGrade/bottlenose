@@ -12,14 +12,21 @@
 
 (define messages '())
 
-(define (tap #:problem problem #:filename filename #:line line #:penalty penalty #:message message)
+(define (escape-string message)
+  (string-replace
+   (string-replace
+    (string-replace message "\\" "\\\\")
+    "\n" "\\n")
+   "\"" "\\\""))
+(define (tap #:problem problem #:filename filename #:line line
+             #:penalty penalty #:message message)
   (set! messages
         (cons
          (list
           (format "not ok ~a ~a" (+ 1 (length messages)) problem)
           (format "# More information")
           (format "  ---")
-          (format "  message: \"~a\"" (string-replace (string-replace (string-replace message "\\" "\\\\") "\n" "\\n") "\"" "\\\""))
+          (format "  message: \"~a\"" (escape-string message))
           (format "  filename: \"~a\"" filename)
           (format "  line: ~a" line)
           (format "  category: ~a" problem)
@@ -48,7 +55,7 @@
                    #:filename filename
                    #:line line-num
                    #:penalty 1
-                   #:message (format "This line has length ~a, but must be no longer than ~a characters.  Please reformat the code.\n"
+                   #:message (format "This line must be no longer than ~a characters.  Please reformat the code.\n"
                                      length width)))
             )
           (for [(line-info (bad-indentation-text t))]
