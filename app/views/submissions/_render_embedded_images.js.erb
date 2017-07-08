@@ -1,9 +1,10 @@
 function renderInlineImages(cm, code) {
   var text = $(code).text();
   var text_embeds = text.split("~~~~~EMBEDS~~~~~\n");
-  if (text_embeds.length == 1) { return; }
-  cm.setValue(text_embeds[0]);
-  var embeds = processEmbeds(text_embeds[1]);
+  if (text_embeds.length == 2) {
+    cm.setValue(text_embeds[0]);
+    var embeds = processEmbeds(text_embeds[1]);
+  }
   var lines = text_embeds[0].split(/\r\n?|\n/);
   for (var lineNo = 0; lineNo < lines.length; lineNo++) {
     var idx = undefined;
