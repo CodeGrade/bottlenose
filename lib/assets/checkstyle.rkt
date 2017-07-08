@@ -32,40 +32,40 @@
 
 (define (process filename width)
   (begin
-    (if (not (correct-parse? filename))
+    (displayln filename (current-error-port))
+    (set! messages '())
+    (define t (load-file filename))
+    (if (not (correct-parse-text? t))
         (tap #:problem "CleanParse"
              #:filename filename
              #:line 0
              #:penalty (total-points)
              #:message "The program would not parse correctly: please revise the code")
         (begin
-          (for [(line-info (bad-widths filename #:width width))]
-            (match line-info
-              [(list line-num length contents)
-               (tap #:problem "LineLength"
-                    #:filename filename
-                    #:line (+ 1 line-num)
-                    #:penalty 1
-                    #:message (format "This line has length ~a, but must be no longer than ~a characters.  Please reformat the code.\n"
-                                      length width))])
+          (for [(line-info (bad-widths-text t #:width width))]
+            (let-values (((line-num length contents) (apply values line-info)))
+              (tap #:problem "LineLength"
+                   #:filename filename
+                   #:line line-num
+                   #:penalty 1
+                   #:message (format "This line has length ~a, but must be no longer than ~a characters.  Please reformat the code.\n"
+                                     length width)))
             )
-          (for [(line-before-after (bad-indentation filename))]
-            (match line-before-after
-              [(list line before after orig-indent correct-indent)
-               (define tab-warning
-                 (if (string-contains? before "\t")
-                     "  (Reminder: you should not have any tab characters in your code!"
-                     ""))
-               (tap #:problem "Indentation"
-                    #:filename filename
-                    #:line (+ 1 line)
-                    #:penalty 1
-                    #:message (format
-                               "This line is not properly indented: it should have ~a spaces of indentation.~a  Please reformat the code."
-                               correct-indent
-                               tab-warning)
-                    )]))
-          ))
+          (for [(line-info (bad-indentation-text t))]
+            (let-values (((line before after orig-indent correct-indent) (apply values line-info)))
+              (define tab-warning
+                (if (string-contains? before "\t")
+                    "  (Reminder: you should not have any tab characters in your code!"
+                    ""))
+              (tap #:problem "Indentation"
+                   #:filename filename
+                   #:line line
+                   #:penalty 1
+                   #:message (format
+                              "This line is not properly indented: it should have ~a spaces of indentation.~a  Please reformat the code."
+                              correct-indent
+                              tab-warning)
+                 )))))
     (displayln "TAP version 13")
     (displayln (format "1..~a" (length messages)))
     (displayln (format "# Time: ~a" (exact->inexact (/ (current-process-milliseconds) 1000))))
@@ -85,26 +85,28 @@
    [else
     (void)]))
 
+(module+ main
 
-(define file-to-compile
-  (command-line
-   #:program "render-racket"
-   #:once-each
-   [("-o") outfile
-    "Output filename (optional)"
-    (output-filename outfile)]
-   [("--max-points") maxPoints
-    "Maximum points available (optional)"
-    (total-points maxPoints)]
-   [("--line-width") lineWidth
-    "Maximum allowed line width (optional)"
-    (line-width lineWidth)]
-   #:args (filename)
-   filename))
+  (define file-to-compile
+    (command-line
+     #:program "checkstyle"
+     #:once-each
+     [("-o") outfile
+             "Output filename (optional)"
+             (output-filename outfile)]
+     [("--max-points") maxPoints
+                       "Maximum points available (optional)"
+                       (total-points maxPoints)]
+     [("--line-width") lineWidth
+                       "Maximum allowed line width (optional)"
+                       (line-width lineWidth)]
+     #:args (filename)
+     filename))
 
 
 
-(if (output-filename)
-    (with-output-to-file (output-filename) #:exists 'replace
-      (λ() (process-files file-to-compile (line-width))))
-    (process-files file-to-compile (line-width)))
+  (if (output-filename)
+      (with-output-to-file (output-filename) #:exists 'replace
+        (λ() (process-files file-to-compile (line-width))))
+      (process-files file-to-compile (line-width)))
+  )
