@@ -65,6 +65,7 @@ FactoryGirl.define do
   end
   
   factory :assignment do
+    type "Files"
     teamset
     association :blame, factory: :user
     

@@ -72,7 +72,7 @@ class Upload < ApplicationRecord
   def extract_contents!(mimetype)
     return if Dir.exist?(extracted_path)
 
-    extract_contents_to(mimetype, upload_dir.join("extracted"), true)
+    extract_contents_to!(mimetype, upload_dir.join("extracted"), true)
   end
 
   def extract_contents_to!(mimetype, extracted_path, postprocess)

@@ -1,6 +1,6 @@
 <% @page_title = "New Submission: #{@assignment.name}" %>
 
-<%= form_for [@course, @assignment, @submission] do |f| %>
+<%= form_for [@course, @assignment.becomes(Assignment), @submission] do |f| %>
   <% allowed = @assignment.sub_allow_submission?(@submission)
      not_following = @assignment.sub_not_following_related?(current_user)
      rate_limit = @assignment.rate_limit?(@submission)

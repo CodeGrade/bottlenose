@@ -35,7 +35,7 @@ class AssignmentsControllerTest < ActionController::TestCase
                name: "Useful Work",
                due_date: '2019-05-22',
                available: '2011-05-22',
-               type: "files",
+               type: "Files",
                graders_attributes: {
                  "1477181088065"=> {
                    "type"=>"ManualGrader",
@@ -56,7 +56,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     end
 
     @assn = assigns(:assignment)
-    assert_redirected_to [@cs101, @assn]
+    assert_redirected_to [@cs101, @assn.becomes(Assignment)]
     assert_equal teamset_count + 1, Teamset.count
     assert_equal 0, @assn.teamset.teams.count
   end
@@ -74,7 +74,7 @@ class AssignmentsControllerTest < ActionController::TestCase
                name: "Useful Work",
                due_date: '2019-05-22',
                available: '2011-05-22',
-               type: "files",
+               type: "Files",
                graders_attributes: {
                  "1477181088065"=> {
                    "type"=>"ManualGrader",
@@ -94,7 +94,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     end
 
     @assn = assigns(:assignment)
-    assert_redirected_to [@cs101, @assn]
+    assert_redirected_to [@cs101, @assn.becomes(Assignment)]
     assert_equal teamset_count + 1, Teamset.count
     assert_equal 0, @assn.teamset.teams.count
   end
@@ -113,7 +113,7 @@ class AssignmentsControllerTest < ActionController::TestCase
                name: "Using existing teamset",
                due_date: "2017-07-04",
                available: "2017-06-20",
-               type: "files",
+               type: "Files",
                graders_attributes: {
                  "1477181088065"=> {
                    "type"=>"ManualGrader",
@@ -133,7 +133,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     end
                
     @asn = assigns(:assignment)
-    assert_redirected_to [@cs101, @asn]
+    assert_redirected_to [@cs101, @asn.becomes(Assignment)]
 
     assert_equal @ts2.id, @asn.teamset_id
     assert_equal teamset_count, Teamset.count
@@ -153,7 +153,7 @@ class AssignmentsControllerTest < ActionController::TestCase
                name: "Copy existing teamset",
                due_date: "2017-07-04",
                available: "2017-06-20",
-               type: "files",
+               type: "Files",
                graders_attributes: {
                  "1477181088065"=> {
                    "type"=>"ManualGrader",
@@ -173,7 +173,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     end
                
     @assn = assigns(:assignment)
-    assert_redirected_to [@cs101, @assn]
+    assert_redirected_to [@cs101, @assn.becomes(Assignment)]
 
     assert_not_equal @ts2.id, @assn.teamset_id
     assert_equal teamset_count + 1, Teamset.count
@@ -201,7 +201,7 @@ class AssignmentsControllerTest < ActionController::TestCase
         teamset_source_use: @ts1,
         assignment: @assn_no_teams_1.assignment,
         name: "Something different",
-        type: "files",
+        type: "Files",
       },
       lateness: {
         "type" => "lateness_UseCourseDefaultConfig",
@@ -217,7 +217,7 @@ class AssignmentsControllerTest < ActionController::TestCase
           "ManualGrader"=>{"avail_score"=>"50"}},
       }
     }
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
   end
 
   ##################################################
@@ -237,7 +237,7 @@ class AssignmentsControllerTest < ActionController::TestCase
               teamset_plan: "new",
               assignment: @assn_no_teams_1.assignment,
               name: "Something different",
-              type: "files",
+              type: "Files",
             },
             lateness: {
               "type" => "lateness_UseCourseDefaultConfig",
@@ -254,7 +254,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
     @assn_no_teams_1.reload
     assert_equal 1, @assn_no_teams_1.teamset.teams.count
   end  
@@ -274,7 +274,7 @@ class AssignmentsControllerTest < ActionController::TestCase
               teamset_source_copy: @ts2,
               assignment: @assn_no_teams_1.assignment,
               name: "Something different",
-              type: "files",
+              type: "Files",
             },
             lateness: {
               "type" => "lateness_UseCourseDefaultConfig",
@@ -291,7 +291,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
     @assn_no_teams_1.reload
     assert_equal 1 + @ts2.active_teams.count, @assn_no_teams_1.teamset.teams.count
   end
@@ -305,7 +305,7 @@ class AssignmentsControllerTest < ActionController::TestCase
               teamset_plan: "unique",
               assignment: @assn_no_teams_1.assignment,
               name: "Something different",
-              type: "files",
+              type: "Files",
             },
             lateness: {
               "type" => "lateness_UseCourseDefaultConfig",
@@ -322,7 +322,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
     assert_match "Impossible state: cannot unique", assigns(:assignment).errors.full_messages.join("\n")
   end
   
@@ -336,7 +336,7 @@ class AssignmentsControllerTest < ActionController::TestCase
               teamset_source_copy: " ",
               assignment: @assn_no_teams_1.assignment,
               name: "Something different",
-              type: "files",
+              type: "Files",
             },
             lateness: {
               "type" => "lateness_UseCourseDefaultConfig",
@@ -353,7 +353,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
     assert_match "The teamset to be copied was not specified", assigns(:assignment).errors.full_messages.join("\n")
   end
   
@@ -372,7 +372,7 @@ class AssignmentsControllerTest < ActionController::TestCase
               teamset_source_use: @ts1,
               assignment: @assn_teams_1.assignment,
               name: "Something different",
-              type: "files",
+              type: "Files",
             },
             lateness: {
               "type" => "lateness_UseCourseDefaultConfig",
@@ -389,7 +389,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
     @assn_teams_1.reload
     assert_equal @ts1.id, @assn_teams_1.teamset_id
   end
@@ -412,7 +412,7 @@ class AssignmentsControllerTest < ActionController::TestCase
               teamset_source_use: @ts1,
               assignment: @assn_teams_1.assignment,
               name: "Something different",
-              type: "files",
+              type: "Files",
             },
             lateness: {
               "type" => "lateness_UseCourseDefaultConfig",
@@ -429,7 +429,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
     assert_match "Impossible state: cannot use teamset because: Cannot reuse", assigns(:assignment).errors.full_messages.join("\n")
   end
 
@@ -448,7 +448,7 @@ class AssignmentsControllerTest < ActionController::TestCase
               teamset_plan: "clone",
               assignment: @assn_shared_teams_1.assignment,
               name: "Something different",
-              type: "files",
+              type: "Files",
             },
             lateness: {
               "type" => "lateness_UseCourseDefaultConfig",
@@ -465,7 +465,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
     sub.reload
     sub.team.reload
     assert_not_equal old_teamset.id, sub.team.teamset_id
@@ -486,7 +486,7 @@ class AssignmentsControllerTest < ActionController::TestCase
               teamset_plan: "clone",
               assignment: @assn_teams_1.assignment,
               name: "Something different",
-              type: "files",
+              type: "Files",
             },
             lateness: {
               "type" => "lateness_UseCourseDefaultConfig",
@@ -503,7 +503,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment)]
+    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
     assert_match "Impossible state: cannot clone", assigns(:assignment).errors.full_messages.join("\n")
   end
 

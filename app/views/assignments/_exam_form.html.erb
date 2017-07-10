@@ -1,4 +1,5 @@
-<%= form_for [@course, asgn] do |f| %>
+<%= form_for [@course, asgn.becomes(Assignment)] do |f| %>
+<% f.object = asgn.becomes(asgn.class) %>
   <%= f.hidden_field :type, value: "exam" %>
 
   <% if asgn.errors.any? %>
