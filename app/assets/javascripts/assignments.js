@@ -12,7 +12,7 @@
     el.find(".spinner").each(function(_ii, div) {
       activateSpinner(div);
     });
-    el.find("#files-graders input[name$='[order]']").val(++max_grader_order);
+    el.find("input[name$='[order]']").val(++max_grader_order);
     form_tabs_init_all(el);
   }
 
