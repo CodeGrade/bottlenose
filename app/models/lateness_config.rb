@@ -1,8 +1,6 @@
 require 'clamp'
 
 class LatenessConfig < ApplicationRecord
-  belongs_to :lateness_config
-
   def self.unique
     select(column_names - ["id"]).distinct
   end
