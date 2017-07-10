@@ -339,10 +339,9 @@ class Assignment < ApplicationRecord
     graders.order(:order)
   end
 
-  def assign_attributes(attrs)
-    @params_graders = attrs[:graders_attributes]
-    super(attrs)
+  def lateness_config_attributes=(attrs)
+    self.lateness_config = LatenessConfig.find_or_initialize_by(id: attrs[:id])
+    self.lateness_config.assign_attributes(attrs)
   end
-  
 
 end
