@@ -1,6 +1,6 @@
 <%= form_for [@course, asgn.becomes(Assignment)] do |f| %>
 <% f.object = asgn.becomes(asgn.class) %>
-  <%= f.hidden_field :type, value: "questions" %>
+  <%= f.hidden_field :type, value: "Questions" %>
 
   <% if asgn.errors.any? %>
     <div id="error_explanation" class="alert alert-danger">
