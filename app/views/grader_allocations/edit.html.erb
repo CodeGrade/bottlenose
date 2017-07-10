@@ -3,7 +3,7 @@
       @assignment) %></h3>
 
 <div class="well">
-  <%= form_for([@course, @assignment, @config],
+  <%= form_for([@course, @assignment.becomes(Assignment), @config],
                :url => { action: :update, method: :patch }) do |f| %>
   <h3>Bulk grading allocations</h3>
   <p>
@@ -46,7 +46,7 @@
     Choose a submission from the left and a grader from the right,
     then click the middle button to create that grading allocation.
   </p>
-  <%= form_for([@course, @assignment, @config],
+  <%= form_for([@course, @assignment.becomes(Assignment), @config],
                :url => { action: :patch, method: :patch }) do |f| %>
 
   <div class="row form-group" style="vertical-align: middle;">

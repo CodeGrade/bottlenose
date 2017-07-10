@@ -6,7 +6,7 @@
     The assignment will need to be resubmitted and regraded entirely,
     if this is a mistake.
   </h4>
-  <%= form_for [@course, @assignment, @submission],
+  <%= form_for [@course, @assignment.becomes(Assignment), @submission],
       :url => { action: :update_plagiarism, method: :patch } do |f| %>
   <p>
     The assignment was graded out of

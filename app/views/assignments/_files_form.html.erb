@@ -1,7 +1,8 @@
 <style>
   .ui-state-highlight { height: 6em; margin-bottom: 20px; background-color: aliceblue; border: 1px solid black; }
 </style>
-<%= form_for [@course, asgn] do |f| %>
+<%= form_for [@course, asgn.becomes(Assignment)] do |f| %>
+  <% f.object = asgn.becomes(asgn.class) %>
   <%= f.hidden_field :type, value: "files" %>
 
   <% if asgn.errors.any? %>

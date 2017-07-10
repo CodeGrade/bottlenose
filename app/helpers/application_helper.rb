@@ -94,6 +94,44 @@ module ApplicationHelper
     end
   end
 
+  def user_link_data(user)
+    {
+      toggle: "tooltip",
+      delay: {show:0, hide: 250},
+      title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
+                          alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+    }
+  end
+  def show_user(user)
+    maybe_link_user(true, user)
+  end
+  def maybe_link_user(show, user)
+    if show
+      link_to(user.name, user_path(user), class: "user-link", data: user_link_data(user))
+    else
+      content_tag :span, user.name, class: "user-link", data: user_link_data(user)
+    end
+  end
+
+  def show_team(team)
+    maybe_link_team(true, true, team)
+  end
+  def maybe_link_team(show_team, show_user, team)
+    content_tag(:span, [
+                  if show_team
+                    link_to("Team #{team.id}", course_teamset_team_path(@course, team.teamset, team))
+                  else
+                    "Team #{team.id}"
+                  end,
+                  " - ",
+                  team.users.sort_by(&:sort_name).map do |u|
+                    maybe_link_user(show_user, u).html_safe
+                  end.join(", ")
+                ].flatten.join("\n").html_safe)
+  end
+  
+
+  
   def registration_show_toggle_path(reg_id)
     "/registrations/#{reg_id}/toggle_show"
   end

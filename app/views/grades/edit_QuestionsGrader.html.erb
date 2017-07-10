@@ -25,7 +25,7 @@
 <% end %>
 
 <% content_for :wide_content do %>
-<%= form_for [@course, @assignment, @submission, @grade] do |f| %>
+<%= form_for [@course, @assignment.becomes(Assignment), @submission, @grade] do |f| %>
 <% if @assignment.related_assignment_id %>
 <div class="col-sm-6">
   <div id="files-sidebar" data-spy="affix">

@@ -13,7 +13,8 @@
 <div class="row">
 <div class="col-sm-12"> 
 <% sub_comments.each do |file, comments| %>
-<h3><%= if file == @submission.upload.extracted_path.to_s then "Overall" else file end %>:</h3>
+<% file = file.gsub(@submission.upload.extracted_path.to_s, "") %>
+<h3><%= if file == "" then "Overall" else file end %>:</h3>
   <% comments.each do |c| %>
   <div class="<%= "#{c.severity.humanize(:capitalize => false)} #{c.grade.grader.type.humanize}" %>">
   <span class="label label-default">- <%= to_fixed(c.weight) %></span>

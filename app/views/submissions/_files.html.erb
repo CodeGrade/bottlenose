@@ -1,3 +1,17 @@
+<style>
+.embed-replaced { vertical-align: baseline; display: inline-block; }
+.embed-image { }
+.embed-comment { border: 1px solid black; margin: 2px; position: relative; padding-left: 1em; }
+.embed-comment::before { content: "\003B"; font-size: 150%; top: -0.25em; left: 0; position: absolute; color: black; }
+.embed-text { border: 1px solid black; margin: 2px; position: relative; padding-top: 1em;}
+.embed-text::before { content: "\201C\201D"; font-size: 150%; top: 0; right: 0; position: absolute; color: black; }
+.embed-racket { border: 1px solid purple; margin: 2px; position: relative; padding-top: 1em; }
+.embed-racket::after { content: ","; font-size: 100%; top: 0; right: 0; position: absolute; color: purple; }
+.embed-splice { border: 1px solid blue; margin: 2px; position: relative; padding-top: 1em; }
+.embed-splice::after { content: ",@"; font-size: 100%; top: 0; right: 0; position: absolute; color: blue; }
+.embed-xml { border: 1px solid green; margin: 2px; position: relative; padding-top: 1em; }
+.embed-xml::after { content: "\2039\203A"; font-size: 150%; top: -0.25em; right: 0; position: absolute; color: green; }
+</style>
 <% sub_files.each_with_index do |f, i| %>
 <% index = (i + 1).to_s.rjust(sub_files.count.to_s.length, '0') %>
 <div class="file-pane tab-pane panel-tab-pane <%= if i == 0; 'active' end %>" id="file_<%= index %>">
@@ -38,3 +52,6 @@
   <% end %>
 </div>
 <% end %>
+<script>
+  <%= render 'submissions/render_embedded_images.js' %>
+</script>

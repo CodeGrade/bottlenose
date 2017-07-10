@@ -65,6 +65,7 @@ FactoryGirl.define do
   end
   
   factory :assignment do
+    type "Files"
     teamset
     association :blame, factory: :user
     
@@ -123,9 +124,9 @@ FactoryGirl.define do
     course
 
     notes "Let me in!"
-    after(:create) do |reg|
-      reg.new_sections = [reg.course.sections.first.crn]
-      reg.save_sections
+    after(:build) do |reg|
+      sections = {"#{reg.course.sections.first.type}_sections": "#{reg.course.sections.first.crn}"}
+      reg.assign_attributes(sections)
     end
   end
 

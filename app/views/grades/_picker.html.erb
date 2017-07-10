@@ -17,6 +17,7 @@
     <li><%= tab_if_type("JavaStyleGrader", "Java style") %></li>
     <li><%= tab_if_type("CheckerGrader", "Checker tests") %></li>
     <li><%= tab_if_type("JunitGrader", "JUnit tests") %></li>
+    <li><%= tab_if_type("RacketStyleGrader", "Racket style") %></li>
     <li><%= tab_if_type("ManualGrader", "Manual grading") %></li>
     <li><%= tab_if_type("SandboxGrader", "Sandboxed tests") %></li>
     <li><%= tab_if_type("reuse", "Copy existing settings") %></li>
@@ -92,6 +93,16 @@
         <tr class="form-group">
           <td><%= jg.label "params", "Test class:" %></td>
           <td><%= jg.text_field "params", value: target.params %></td>
+        </tr>
+      </table>
+    </div>
+    <% end %>
+    <%= f_grader.fields_for "RacketStyleGrader" do |jsg| %>
+    <div id="<%= new_grader %>_RacketStyleGrader" class="tab-pane equal-height-group form-group">
+      <table class="table" style="margin-bottom: 0px;">
+        <tr>
+          <td><%= jsg.label "avail_score", "Points available:" %></td>
+          <td><%= jsg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %></td>
         </tr>
       </table>
     </div>

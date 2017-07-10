@@ -23,6 +23,9 @@ class RegRequestsController < ApplicationController
 
       redirect_to courses_path, notice: 'A registration request will be sent.'
     else
+      errors = @reg_request.errors
+      @reg_request = @reg_request.dup
+      @reg_request.errors.copy!(errors)
       render :new
     end
   end
@@ -53,8 +56,8 @@ class RegRequestsController < ApplicationController
 
   def accept_help(request)
     begin
-      reg = request.course.add_registration(request.user.username, request.crns, request.role)
-      if reg && reg.save
+      reg = request.create_registration
+      if reg && reg.save && reg.save_sections
         request.destroy
       end
       nil
@@ -65,12 +68,12 @@ class RegRequestsController < ApplicationController
   
 
   def reject
-    RegRequest.find(params[:id]).delete
+    RegRequest.find(params[:id]).destroy
     redirect_back fallback_location: course_registrations_path(@course)
   end
 
   def reject_all
-    RegRequest.where(course_id: params[:course_id]).delete_all # No dependents, so deletion is fine
+    RegRequest.where(course_id: params[:course_id]).destroy_all
     redirect_back fallback_location: course_registrations_path(@course)
   end
 
@@ -81,6 +84,6 @@ class RegRequestsController < ApplicationController
   end
 
   def section_param_names
-    Section::types.map{|t, _| "#{t}_section"}
+    Section::types.map{|t, _| "#{t}_sections"}
   end
 end

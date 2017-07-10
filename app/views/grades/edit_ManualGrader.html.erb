@@ -50,7 +50,7 @@
   <span class="pull-right">Total score:
     <span id="score">??</span>&nbsp;/&nbsp;<%= to_fixed(@grade.out_of)%>
   </span>
-  <%= form_for [@course, @assignment, @submission, @grade] do |f| %>
+  <%= form_for [@course, @assignment.becomes(Assignment), @submission, @grade] do |f| %>
   <%= hidden_field_tag :finalScore %>
   <%= hidden_field_tag :comments %>
   <%= f.submit "Give comments on all files below", id: "completed", class: "btn btn-success disabled" %>
@@ -75,7 +75,6 @@
 
 <script>
   var lineComments = <%= raw(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
-  <%= render :partial => 'submissions/render_embedded_images.js' %>
   <%= render :partial => 'submissions/render_comments.js' %>
   <%= render :partial => 'grades/enter_comments.js' %>
   $(function() {

@@ -21,9 +21,9 @@ class Section < ApplicationRecord
 
   def to_s
     if self.meeting_time.to_s != ""
-      "#{self.crn} : #{self.instructor.last_name} at #{self.meeting_time}"
+      "#{self.crn} : #{self.instructor.last_name} at #{self.meeting_time} (#{self.type.humanize})"
     else
-      "#{self.crn} : #{self.instructor.last_name}"
+      "#{self.crn} : #{self.instructor.last_name} (#{self.type.humanize})"
     end
   end
 

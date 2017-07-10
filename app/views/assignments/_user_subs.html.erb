@@ -1,18 +1,5 @@
 <% cur_reg = current_user.registration_for(@course)
    cur_reg_staff = cur_reg&.staff? %>
-<% def maybe_link_to(which, user)
-   tt = {
-       toggle: "tooltip",
-       delay: {show:0, hide: 250},
-       title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
-                        alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
-     }
-   if which
-     link_to(user.name, user_path(user), class: "user-link", data: tt)
-   else
-     content_tag(:span, user.name, class: "user-link", data: tt)
-   end
-   end %>
 <% if gradesheet.submissions.empty? %>
   <div class="well">
     No submissions yet.
@@ -47,13 +34,15 @@
       <td>
         <% if sub.stale_team? %>
         <span class="well-sm glyphicon glyphicon-alert" 
+              data-toggle="tooltip" data-placement="top"
               title="Team was dissolved before homework was due"></span>
         <% elsif used %>
-        <span class="well-sm glyphicon glyphicon-chevron-right" 
+        <span class="well-sm glyphicon glyphicon-chevron-right"
+              data-toggle="tooltip" data-placement="top"
               title="This submission is used for grading"></span>
         <% end %>
       </td>
-      <td><%= maybe_link_to(cur_reg_staff, sub.user) %></td>
+      <td><%= maybe_link_user(cur_reg_staff, sub.user) %></td>
       <td><%= sub.team %></td>
       <td><span class="local-time"><%= sub.created_at %></span></td>
       <% scores = if cur_reg_staff then grade[:staff_scores] else grade[:blind_scores] end %>
@@ -121,11 +110,4 @@
   <% end %>
 
   </table>
-  <script>
-    $('a[data-toggle="tooltip"], span[data-toggle="tooltip"]').tooltip({
-      animated: 'fade',
-      placement: 'right',
-      html: true
-    });
-  </script>
 <% end %>

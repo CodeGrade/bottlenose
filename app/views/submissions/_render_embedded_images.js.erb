@@ -1,27 +1,69 @@
 function renderInlineImages(cm, code) {
-  var lines = $(code).text().split(/\r\n?|\n/);
+  var text = $(code).text();
+  var text_embeds = text.split("~~~~~EMBEDS~~~~~\n");
+  if (text_embeds.length == 2) {
+    cm.setValue(text_embeds[0]);
+    var embeds = processEmbeds(text_embeds[1]);
+  }
+  var lines = text_embeds[0].split(/\r\n?|\n/);
   for (var lineNo = 0; lineNo < lines.length; lineNo++) {
     var idx = undefined;
-    var elided = 0;
-    var startIdx = 0;
-    while((idx = lines[lineNo].search(/~embed:\d+:s~/)) >= 0) {
-      startIdx = idx + elided;
-      var start = lines[lineNo].match(/~embed:(\d+):s~/);
-      var end = new RegExp("~embed:" + start[1] + ":s~(.*?\)~embed:" + start[1] + ":e~");
-      end = lines[lineNo].match(end);
-      elided += end[0].length;
-      var endIdx = startIdx + end[0].length;
-      lines[lineNo] = lines[lineNo].replace(end[0], "");
-      var img = document.createElement("img");
-      img.src = end[1];
-      img.style = "vertical-align: baseline; max-width: 50%; max-height: 50%;";
-      console.log(startIdx);
-      console.log(endIdx);
-      console.log(end[1]);
-      document.body.append(img);
-      debugger;
-      cm.markText({line: lineNo, ch: startIdx}, {line: lineNo, ch: endIdx},
-                  {replacedWith: img});
+    while((idx = lines[lineNo].search(/~embed:\d+~/)) >= 0) {
+      var start = lines[lineNo].match(/~embed:(\d+)~/);
+      var replacement = embeds[start[1]][0];
+      document.body.append(replacement);
+      lines[lineNo] = lines[lineNo].replace("~embed", "~done~")
+      cm.markText({line: lineNo, ch: idx}, {line: lineNo, ch: idx + start[0].length},
+                  {replacedWith: replacement});
+    }
+    var tildeRx = /~tilde;/g;
+    var tildes = [];
+    while ((result = tildeRx.exec(lines[lineNo]))) {
+      tildes.push(result.index);
+    }
+    for (var i = tildes.length - 1; i >= 0; i--) {
+      cm.replaceRange("~", {line: lineNo, ch: tildes[i]}, {line: lineNo, ch: tildes[i] + 7});
     }
   }
+}
+
+function processEmbeds(embeds) {
+  var ans = [];
+  var lines = embeds.split(/\r\n?|\n/);
+  var Processors = {}
+  Processors["image"] = function(content) {
+    return $("<img>").attr("src", "data:image/png;base64," + content)
+      .addClass("embed-replaced").addClass("embed-image");
+  };
+  Processors["general"] = function(content, type) {
+    var ret = $("<div>").addClass("embed-replaced").addClass("embed-" + type);
+    var pieces = content
+        .replace(/~n/g, "\n")
+        .replace(/~tilde;/g, "~")
+        .split(/(~embed:\d+~)/);
+    for (var i = 0; i < pieces.length; i++) {
+      var info = pieces[i].match(/~embed:(\d+)~/);
+      if (info) {
+        ret.append(ans[info[1]]);
+      } else {
+        ret.append($("<span>").text(pieces[i].replace(/~tilde;/g, "~")));
+      }
+    }
+    return ret;
+  }
+  Processors["text"] = function(content) { return Processors.general(content, "text"); }
+  Processors["xml"] = function(content) { return Processors.general(content, "xml"); }
+  Processors["racket"] = function(content) { return Processors.general(content, "racket"); }
+  Processors["splice"] = function(content) { return Processors.general(content, "splice"); }
+  Processors["number"] = function(content) { return Processors.general(content, "number"); }
+  Processors["comment"] = function(content) { return Processors.general(content, "comment"); }
+
+  // lines[lines.length - 1] == "", so skip it
+  for (var i = 0; i < lines.length - 1; i++) {
+    var info = lines[i].match(/^~embed:([a-z]+):(\d+):s~(.*)~embed:\d+:e~$/);
+    if (info === null || Processors[info[1]] === undefined)
+      debugger;
+    ans[info[2]] = Processors[info[1]](info[3]);
+  }
+  return ans;
 }

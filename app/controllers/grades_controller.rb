@@ -465,6 +465,50 @@ HEADER
     GradesController.pretty_print_comments(@grade.inline_comments)
   end
 
+  # RacketStyleGrader
+  def show_RacketStyleGrader
+    get_submission_files(@submission, nil, "RacketStyleGrader")
+    @commentType = "RacketStyleGrader"
+    if @grade.grading_output
+      begin
+        @grading_output = File.read(@grade.grading_output)
+        begin
+          tap = TapParser.new(@grading_output)
+          @grading_output = tap
+          @tests = tap.tests
+        rescue Exception
+          @tests = []
+        end
+      rescue Errno::ENOENT
+        @grading_output = "Grading output file is missing or could not be read"
+        @tests = []
+      end
+    end
+    num_comments = @grade.inline_comments.where.not(line: 0).count
+    if @tests.nil? or @tests.count != num_comments
+      @error_header = <<HEADER.html_safe
+<p>There seems to be a problem displaying the style-checker's feedback on this submission.</p>
+<p>Please email the professor, with the following information:</p>
+<ul>
+<li>Course: #{@course.id}</li>
+<li>Assignment: #{@assignment.id}</li>
+<li>Submission: #{@submission.id}</li>
+<li>Grader: #{@grade.id}</li>
+<li>User: #{current_user.name} (#{current_user.id})</li>
+</li>
+HEADER
+    end
+    render "show_RacketStyleGrader"
+    # debugger
+    # redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
+  end
+  def edit_RacketStyleGrader
+    redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
+  end
+  def details_RacketStyleGrader
+    GradesController.pretty_print_comments(@grade.inline_comments)
+  end
+
   # QuestionsGrader
   def edit_QuestionsGrader
     @questions = @assignment.questions

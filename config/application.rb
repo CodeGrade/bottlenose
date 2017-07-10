@@ -22,6 +22,9 @@ module Bottlenose
 
     config.autoload_paths << Rails.root.join('lib')
 
+    # Add subdirectories of models
+    config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
+    
     config.assets.precompile += ["codemirror*", "codemirror/**/*"]
 
     config.active_job.queue_adapter = :delayed_job
