@@ -32,7 +32,7 @@ class JunitGrader < Grader
     return if new_record?
     testClass, errorsToShow = self.params.to_s.split(";")
     self.test_class = testClass
-    self.errors_to_show = errorsToShow
+    self.errors_to_show = errorsToShow.to_i
   end
   def set_junit_params
     self.params = "#{self.test_class};#{self.errors_to_show}"
