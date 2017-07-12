@@ -18,22 +18,29 @@ module UploadsHelper
       PROCS[new_name] = PROCS[old_name]
     end
 
-    def self.process(f)
+    def self.process(extracted_path, f)
       ext = File.extname(f)[1..-1]
-      PROCS[ext]&.call(f)
+      PROCS[ext]&.call(extracted_path, f)
     end
 
-    create_handler :rkt do |f|
+    create_handler :rkt do |extracted_path, f|
+      embeds = extracted_path.dirname.join("embedded")
+      embeds.mkpath
       output, err, status = Open3.capture3("xvfb-run", "-a", "--server-num", "1",
                                            "racket", Rails.root.join("lib/assets/render-racket.rkt").to_s,
+                                           "-e", embeds.to_s,
                                            "-o", f + "ext",
                                            f)
-      if status.success? || File.exists?(f + "ext")
-        FileUtils.mv f + "ext", f
+      if status.success?
+        contents = File.read(f + "ext")
+        File.open(f, "w") do |f|
+          f.write contents.gsub(Upload.base_upload_dir.to_s, "/files")
+        end
+        FileUtils.rm(f + "ext")
         Audit.log "Successfully processed #{f}"
         return true
       else
-        FileUtils.rm f + "ext", force: true
+        FileUtils.rm (f + "ext"), force: true
         Audit.log <<ERROR
 ================================
 Problem processing #{f}:

@@ -56,7 +56,7 @@
                    #:line line-num
                    #:penalty 1
                    #:message (format "This line must be no longer than ~a characters.  Please reformat the code.\n"
-                                     length width)))
+                                     width)))
             )
           (for [(line-info (bad-indentation-text t))]
             (let-values (((line before after orig-indent correct-indent) (apply values line-info)))

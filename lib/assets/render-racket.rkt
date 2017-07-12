@@ -58,7 +58,24 @@
 (define add-number (add-patch "number"))
 (define add-racket (add-patch "racket"))
 (define add-splice (add-patch "splice"))
-(define add-image (add-patch "image"))
+(define add-image
+  (let ((img-cache (make-hash))
+        (cache-count 0))
+    (λ(contents)
+      (cond
+        [(extracted-dir)
+         (let ((cached (hash-ref img-cache contents #f)))
+           (cond
+             [cached ((add-patch "image-file") cached)]
+             [else
+              (set! cache-count (+ 1 cache-count))
+              (let ((filename (build-path (extracted-dir)
+                                          (format "embed~a.png"  cache-count))))
+                (display-to-file contents filename #:exists 'replace)
+                (hash-set! img-cache contents (path->string filename))
+                ((add-patch "image-file") (path->string filename)))]))]
+        [else
+         ((add-patch "image-data") (base64-encode contents ""))]))))
 
 (define (display-all snip out #:verbose? [verbose? #t])
   (if (not snip)
@@ -95,10 +112,10 @@
                                                find-first-snip)
                                          text)))
              (display (add-text (get-output-string text)) out))]
-          #;[(equal? (send (send snip get-snipclass) get-classname)
-                     "wxmedia")
-             (displayln "WXMEDIA")
-             (display-all (send (send snip get-editor) find-first-snip) out)]
+          ;; [(equal? (send (send snip get-snipclass) get-classname)
+          ;;            "wxmedia")
+          ;;    (displayln "WXMEDIA")
+          ;;    (display-all (send (send snip get-editor) find-first-snip) out)]
           [(or (is-a? snip scheme-snip<%>)
                (equal? snip-name "(lib \"scheme-snipclass.ss\" \"xml\")")
                (equal? snip-name "(lib \"scheme-snipclass.rkt\" \"xml\")")
@@ -110,23 +127,13 @@
              (if (send snip get-splice?)
                  (display (add-splice (get-output-string rkt)) out)
                  (display (add-racket (get-output-string rkt)) out)))]
-          #;[(is-a? snip editor-snip%)
-             (displayln snip-name (current-error-port))
-             (display-all (send (send snip get-editor) find-first-snip) out
-                          #:verbose? verbose?)]
+          ;; [(is-a? snip editor-snip%)
+          ;;    (displayln snip-name (current-error-port))
+          ;;    (display-all (send (send snip get-editor) find-first-snip) out
+          ;;                 #:verbose? verbose?)]
           [(convertible? snip)
-           (display (add-image (base64-encode (convert snip 'png-bytes) ""))
+           (display (add-image (convert snip 'png-bytes))
                     out)]
-;           (let ((serial count))
-;             (set! count (+ 1 count))
-;             (if verbose?
-;                 (display
-;                  (format "~~embed:~a:s~~~a~a~~embed:~a:e~~"
-;                          serial
-;                          "data:image/png;base64,"
-;                          (base64-encode (convert snip 'png-bytes) "")
-;                          serial) out)
-;                 (display "~image~" out)))]
           [(syntax? snip)
            (display (syntax->datum snip) out)]
           [else
@@ -158,14 +165,19 @@
                         #"\n"))))
 
 (define output-filename (make-parameter #f))
+(define extracted-dir   (make-parameter #f))
 
 (module+ main
   (define file-to-compile
     (command-line
      #:program "render-racket"
-     #:once-each [("-o") outfile
-                         "Output filename (optional)"
-                         (output-filename outfile)]
+     #:once-each
+     [("-o") outfile
+      "Output filename (optional)"
+      (output-filename outfile)]
+     [("-e" "--extracted") extract
+      "Extracted directory for images (optional)"
+      (extracted-dir extract)]
      #:args (filename)
      filename))
   (define rendered (render file-to-compile))

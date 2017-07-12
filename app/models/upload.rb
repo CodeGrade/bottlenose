@@ -72,7 +72,7 @@ class Upload < ApplicationRecord
   def extract_contents!(mimetype)
     return if Dir.exist?(extracted_path)
 
-    extract_contents_to!(mimetype, upload_dir.join("extracted"), true)
+    extract_contents_to!(mimetype, extracted_path, true)
   end
 
   def extract_contents_to!(mimetype, extracted_path, postprocess)
@@ -82,7 +82,7 @@ class Upload < ApplicationRecord
     Find.find(extracted_path) do |f|
       next unless File.file? f
       next if File.extname(f).empty?
-      Postprocessor.process(f)
+      Postprocessor.process(extracted_path, f)
     end
   end
 
