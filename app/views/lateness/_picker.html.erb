@@ -1,5 +1,5 @@
 <% default_tab =
-     if f.object.lateness_config.id.nil? || f.object.lateness_config.id == @course&.lateness_config_id
+     if f.object.lateness_config_id.nil? || f.object.lateness_config_id == @course&.lateness_config_id
        'default'
      else
        f.object.lateness_config.type

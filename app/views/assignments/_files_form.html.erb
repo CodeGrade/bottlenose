@@ -3,7 +3,7 @@
 </style>
 <%= form_for [@course, asgn.becomes(Assignment)] do |f| %>
   <% f.object = asgn.becomes(asgn.class) %>
-  <%= f.hidden_field :type, value: "files" %>
+  <%= f.hidden_field :type, value: "Files" %>
 
   <% if asgn.errors.any? %>
     <div id="error_explanation" class="alert alert-danger">
@@ -37,38 +37,7 @@
       <p>This file will be available for students
         to download as starter code for this
         assignment.</p>
-      <p class="form-inline">
-        <label class="btn btn-default btn-file">
-          Browse <%= f.file_field :assignment_file, id: "assignment-file", style: "display: none;" %>
-        </label>
-        <span id="current_file" class="btn">Current file:
-          <%= asgn.assignment_file.empty? ? "nothing" :
-              link_to(asgn.assignment_file,
-              Upload.upload_path_for(asgn.assignment_full_path)) %></span>
-        <%= f.hidden_field "removefile", value: "" %>
-        <button type="button"
-                <% if asgn.assignment_file.empty? %>
-                disabled  class="btn btn-default pull-right"
-                <% else %>
-                class="btn btn-warning pull-right"
-                <% end %>
-                id="remove-assignment-file">Clear assignment file</button>
-        <script>
-          $("#assignment-file").change(function() {
-            var label = $(this).val().replace(/\\/g, '/').replace(/.*\//, '');
-            $("#current_file").text("New file: " + label);
-            $("#remove-assignment-file").prop('disabled', false).removeClass("btn-default").addClass("btn-warning");
-            $("input#assignment_removefile").val('');
-          });
-          $("#remove-assignment-file").click(function() {
-            $("input[name='assignment_file']").replaceWith(
-              $("input[name='assignment_file']").val("<nothing>").clone(true));
-            $(this).prop('disabled', true).addClass("btn-default").removeClass("btn-warning");
-            $("#current_file").text("New file: <nothing>");
-            $("input#assignment_removefile").val('remove');
-          });
-        </script>
-      </p>
+      <%= render "assignment_file_picker", f: f, asgn: asgn, id: "files" %>
     </div>
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>

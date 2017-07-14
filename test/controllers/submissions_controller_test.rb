@@ -32,15 +32,17 @@ class SubmissionsControllerTest < ActionController::TestCase
 
     assert_difference('Submission.count') do
       post :create, params: {
-        course_id: @cs101.id, assignment_id: @hello.id,
+        course_id: @cs101.id, 
+        assignment_id: @hello.id,
         submission: {
+          type: "FilesSub",
           student_notes: "@@@skip tests@@@",
           file_name: "HelloWorld.tgz",
           upload_file: upload },
       }
     end
 
-    assert_redirected_to [@cs101, @hello, assigns(:submission)]
+    assert_redirected_to [@cs101, @hello.becomes(Assignment), assigns(:submission).becomes(Submission)]
   end
 
   test "should handle different archives" do
@@ -52,15 +54,17 @@ class SubmissionsControllerTest < ActionController::TestCase
       
       assert_difference('Submission.count') do
         post :create, params: {
-               course_id: @cs101.id, assignment_id: @hello.id,
+               course_id: @cs101.id,
+               assignment_id: @hello.id,
                submission: {
+                 type: "FilesSub",
                  student_notes: "@@@skip tests@@@",
                  file_name: "HelloWorld.#{ext}",
                  upload_file: upload_file },
              }
       end
       
-      assert_redirected_to [@cs101, @hello, assigns(:submission)]
+      assert_redirected_to [@cs101, @hello.becomes(Assignment), assigns(:submission).becomes(Submission)]
 
       upload = assigns(:submission).upload
       assert(Dir.exist?(upload.upload_dir), "Upload directory exists for extension #{ext}")
@@ -81,15 +85,17 @@ class SubmissionsControllerTest < ActionController::TestCase
     
     assert_difference('Submission.count') do
       post :create, params: {
-             course_id: @cs101.id, assignment_id: @hello.id,
+             course_id: @cs101.id,
+             assignment_id: @hello.id,
              submission: {
+               type: "FilesSub",
                student_notes: "@@@skip tests@@@",
                file_name: "hello.c",
                upload_file: upload_file },
            }
     end
     
-    assert_redirected_to [@cs101, @hello, assigns(:submission)]
+    assert_redirected_to [@cs101, @hello.becomes(Assignment), assigns(:submission).becomes(Submission)]
 
     upload = assigns(:submission).upload
     assert(Dir.exist?(upload.upload_dir), "Upload directory exists for single file")
@@ -116,8 +122,15 @@ class SubmissionsControllerTest < ActionController::TestCase
   test "should update submission" do
     skip
 
-    put :update, {id: @john_hello}, { submission: { student_notes: "Bacon!",
-      assignment_id: @john_hello.assignment_id, user_id: @john.id }}, {user_id: @fred.id}
+    put :update,
+        {id: @john_hello},
+        { submission: {
+            student_notes: "Bacon!",
+            type: "FilesSub",
+            assignment: @john_hello.assignment,
+            user_id: @john.id }
+        },
+        {user_id: @fred.id}
     assert_response :redirect
   end
 

@@ -46,13 +46,13 @@
   <tr>
     <td><h4>Raw score:</h4></td>
     <td><h4><%= show_score(grades[0..@assignment.flattened_questions.count - 1].map(&:weight).map(&:to_f).sum,
-                @assignment, cur_reg_staff) %> / <%= show_score(@grade.avail_score) %></h4></td>
+                @assignment, cur_reg_staff) %> / <%= show_score(@grader.avail_score) %></h4></td>
   </tr>
   <% if grades[@assignment.flattened_questions.count] and !grades[@assignment.flattened_questions.count].new_record? %>
   <tr>
     <td><h4>Curved score:</h4></td>
     <td><h4><%= show_score(grades[@assignment.flattened_questions.count].weight,
-                @assignment, cur_reg_staff) %> / <%= show_score(@grade.avail_score) %></h4></td>
+                @assignment, cur_reg_staff) %> / <%= show_score(@grader.avail_score) %></h4></td>
   </tr>
   <% end %>
   <tr>

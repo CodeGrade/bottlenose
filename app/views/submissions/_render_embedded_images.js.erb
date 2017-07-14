@@ -10,9 +10,10 @@ function renderInlineImages(cm, code) {
     var idx = undefined;
     while((idx = lines[lineNo].search(/~embed:\d+~/)) >= 0) {
       var start = lines[lineNo].match(/~embed:(\d+)~/);
+      lines[lineNo] = lines[lineNo].replace("~embed", "~done~")
+      if (embeds[start[1]] === undefined) continue;
       var replacement = embeds[start[1]][0];
       document.body.append(replacement);
-      lines[lineNo] = lines[lineNo].replace("~embed", "~done~")
       cm.markText({line: lineNo, ch: idx}, {line: lineNo, ch: idx + start[0].length},
                   {replacedWith: replacement});
     }
@@ -31,8 +32,12 @@ function processEmbeds(embeds) {
   var ans = [];
   var lines = embeds.split(/\r\n?|\n/);
   var Processors = {}
-  Processors["image"] = function(content) {
+  Processors["image-data"] = function(content) {
     return $("<img>").attr("src", "data:image/png;base64," + content)
+      .addClass("embed-replaced").addClass("embed-image");
+  };
+  Processors["image-file"] = function(content) {
+    return $("<img>").attr("src", content)
       .addClass("embed-replaced").addClass("embed-image");
   };
   Processors["general"] = function(content, type) {
@@ -60,9 +65,9 @@ function processEmbeds(embeds) {
 
   // lines[lines.length - 1] == "", so skip it
   for (var i = 0; i < lines.length - 1; i++) {
-    var info = lines[i].match(/^~embed:([a-z]+):(\d+):s~(.*)~embed:\d+:e~$/);
+    var info = lines[i].match(/^~embed:([-a-z]+):(\d+):s~(.*)~embed:\d+:e~$/);
     if (info === null || Processors[info[1]] === undefined)
-      debugger;
+      continue;
     ans[info[2]] = Processors[info[1]](info[3]);
   }
   return ans;

@@ -219,6 +219,13 @@ class Assignment < ApplicationRecord
     end
   end
 
+  def destroy
+    au = self.assignment_upload
+    au.destroy unless au.nil?
+    self.assignment_upload_id = nil;
+    super
+  end
+  
   def assignment_upload
     Upload.find_by_id(assignment_upload_id)
   end
@@ -250,11 +257,11 @@ class Assignment < ApplicationRecord
     @assignment_file_data = data
   end
 
-  def save_uploads!
+  def save_upload
     user = User.find(blame_id)
 
     if @assignment_file_data.nil?
-      return
+      return "Nothing to save"
     else
       unless assignment_upload_id.nil?
         Audit.log("Assn #{id}: Orphaning assignment upload " +
@@ -263,20 +270,28 @@ class Assignment < ApplicationRecord
 
       up = Upload.new
       up.user_id = user.id
-      up.store_upload!(@assignment_file_data, {
-        type:       "Assignment File",
-        user:       "#{user.name} (#{user.id})",
-        course:     "#{course.name} (#{course.id})",
-        date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-        mimetype:   @assignment_file_data.content_type
-      })
-      up.save!
+      begin
+        up.store_upload!(@assignment_file_data, {
+          type:       "Assignment File",
+          user:       "#{user.name} (#{user.id})",
+          course:     "#{course.name} (#{course.id})",
+          date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+          mimetype:   @assignment_file_data.content_type
+        })
+      rescue Exception => e
+        errors.add(:base, e.message)
+        return false
+      end
 
-      self.assignment_upload_id = up.id
-      self.save!
+      if up.save
+        self.assignment_upload_id = up.id
 
-      Audit.log("Assn #{id}: New assignment file upload by #{user.name} " +
-                "(#{user.id}) with key #{up.secret_key}")
+        Audit.log("Assn #{id}: New assignment file upload by #{user.name} " +
+                  "(#{user.id}) with key #{up.secret_key}")
+        return true
+      else
+        return false
+      end
     end
   end
 
@@ -339,10 +354,9 @@ class Assignment < ApplicationRecord
     graders.order(:order)
   end
 
-  def assign_attributes(attrs)
-    @params_graders = attrs[:graders_attributes]
-    super(attrs)
+  def lateness_config_attributes=(attrs)
+    self.lateness_config = LatenessConfig.find_or_initialize_by(id: attrs[:id])
+    self.lateness_config.assign_attributes(attrs)
   end
-  
 
 end

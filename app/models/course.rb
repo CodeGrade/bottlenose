@@ -71,6 +71,11 @@ class Course < ApplicationRecord
     users.where("registrations.role": RegRequest::roles["student"])
   end
 
+  def students_with_registrations
+    students.joins("JOIN registration_sections ON registrations.id = registration_sections.registration_id")
+      .joins("JOIN sections ON registration_sections.section_id = sections.crn")
+  end
+
   def users_with_drop_info(for_users = nil)
     look_for = users
     if for_users
@@ -162,7 +167,7 @@ class Course < ApplicationRecord
 
   def grading_assigned_for(user)
     GraderAllocation
-      .where(grade_id: user.id)
+      .where(who_grades_id: user.id)
       .where(course: self)
       .where(grading_completed: nil)
       .group_by(&:assignment_id)
@@ -170,7 +175,7 @@ class Course < ApplicationRecord
 
   def grading_done_for(user)
     GraderAllocation
-      .where(grade_id: user.id)
+      .where(who_grades_id: user.id)
       .where(course: self)
       .where.not(grading_completed: nil)
       .joins(:submission)

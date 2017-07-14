@@ -92,6 +92,7 @@ class ActiveSupport::TestCase
     sub = create(
       :submission,
       assignment: aa,
+      type: "FilesSub",
       user: uu,
       upload_id: upl.id,
       team:

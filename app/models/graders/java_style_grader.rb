@@ -37,6 +37,7 @@ class JavaStyleGrader < Grader
       ]
     else
       [
+        "style.tap",
         {},
         ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
          files_dir.to_s, "-maxPoints", self.avail_score.to_s]

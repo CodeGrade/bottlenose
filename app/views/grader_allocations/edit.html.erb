@@ -1,9 +1,10 @@
-<h3>Edit grader allocations for <%= @config.display_type %> for
+<% @page_title = "Edit grader allocations for #{@assignment.name}" %>
+<h3>Edit grader allocations for <%= @grader.display_type %> for
   <%= link_to @assignment.name, course_assignment_path(@course,
       @assignment) %></h3>
 
 <div class="well">
-  <%= form_for([@course, @assignment.becomes(Assignment), @config],
+  <%= form_for([@course, @assignment.becomes(Assignment), @grader],
                :url => { action: :update, method: :patch }) do |f| %>
   <h3>Bulk grading allocations</h3>
   <p>
@@ -46,7 +47,7 @@
     Choose a submission from the left and a grader from the right,
     then click the middle button to create that grading allocation.
   </p>
-  <%= form_for([@course, @assignment.becomes(Assignment), @config],
+  <%= form_for([@course, @assignment.becomes(Assignment), @grader],
                :url => { action: :patch, method: :patch }) do |f| %>
 
   <div class="row form-group" style="vertical-align: middle;">
@@ -60,7 +61,7 @@
       <%= f.submit "Assign grader", class: 'btn btn-primary' %>
     </div>
     <div class="col-sm-4">
-      <%= select_tag(:grade_id,
+      <%= select_tag(:who_grades_id,
           names_for_graders(@course.staff),
           size: 10,
           multiple: false, class: "form-control") %>
@@ -93,7 +94,7 @@
     <ul>
       <% subs.each do |sub| %>
       <% grade = @grades[sub.id] %>
-      <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.grade_id == g} %>
+      <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.who_grades_id == g} %>
       <li>
         <%= link_to sub.submission_user_names,
             edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
@@ -116,12 +117,12 @@
             <br>
             <span class="btn-group">
             <%= link_to "Delete",
-                delete_course_grade_allocation_path(@course, alloc, :config => @config),
+                delete_course_grader_allocation_path(@course, alloc, :config => @grader),
                 class: "abandon btn btn-sm btn-warning",
                 title: "Use this to remove this assignment from this grader, without penalty",
                 method: :patch, data: { confirm: "Are you sure?" } %>
             <%= link_to "Abandon",
-                abandon_course_grader_allocation_path(@course, alloc, :config => @config),
+                abandon_course_grader_allocation_path(@course, alloc, :config => @grader),
                 class: "abandon btn btn-sm btn-danger",
                 title: "Use this to remove this assignment from this grader, and blame them",
                 method: :patch, data: { confirm: "Are you sure?" } %>

@@ -51,8 +51,20 @@ class SubmissionsController < CoursesController
   end
 
   def create
+    asgn_type = @assignment.type
+    sub_type = submission_params[:type]
+    case [asgn_type, sub_type]
+    when ["Files", "FilesSub"] then true
+    when ["Questions", "QuestionsSub"] then true
+    when ["Exam", "ExamSub"] then true
+    else
+      redirect_to course_assignment_path(@course, @assignment),
+                  alert: "That submission type (#{sub_type}) does not match the assignment type (#{asgn_type})."
+      return
+    end
+
     @submission = Submission.new(submission_params)
-    @submission.assignment_id = @assignment.id
+    @submission.assignment = @assignment
     if @assignment.team_subs?
       @team = current_user.active_team_for(@course, @assignment)
       @submission.team = @team
@@ -113,9 +125,9 @@ class SubmissionsController < CoursesController
   end
 
   def update_plagiarism
-    guilty_students = params[:submission] || {}
-    guilty_students = guilty_students[:penalty] || {}
+    guilty_students = params.dig(:submission, :penalty)&.to_unsafe_h || {}
     guilty_students = guilty_students.map{|k, v| [k.to_i, v.to_f]}.to_h
+
     if guilty_students.empty?
       redirect_back fallback_location: edit_plagiarism_course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "You haven't selected any students as being involved"
@@ -146,10 +158,24 @@ class SubmissionsController < CoursesController
         suppressed: false,
         title: "",
         info: nil)
-      sub_comment.save
+      sub_comment.save!
     end
+    # Add a comment explaining the split
+    sub_comment = InlineComment.new(
+      submission: @submission,
+      label: "Plagiarized submission",
+      line: 0,
+      filename: @submission.upload.extracted_path,
+      grade_id: current_user.id,
+      severity: "info",
+      comment: "This submission has been reviewed for plagiarism and regraded accordingly.",
+      weight: 0,
+      suppressed: false,
+      title: "",
+      info: nil)
+    sub_comment.save
     redirect_to course_assignment_path(@course, @assignment),
-                notice: "Submission marked as plagiarized for #{guilty_students.map{|u| User.find(u).name}.join(', ')}"
+                notice: "Submission marked as plagiarized for #{guilty_students.map{|uid, _| User.find(uid).name}.join(', ')}"
   end
 
   def split_submission
@@ -173,7 +199,7 @@ class SubmissionsController < CoursesController
         suppressed: false,
         title: "",
         info: nil)
-      sub_comment.save
+      sub_comment.save!
     end
     # Add a comment explaining the split
     sub_comment = InlineComment.new(
@@ -188,7 +214,7 @@ class SubmissionsController < CoursesController
       suppressed: false,
       title: "",
       info: nil)
-    sub_comment.save
+    sub_comment.save!
     redirect_to course_assignment_path(@course, @assignment),
                 notice: "Group submission split for #{@submission.users.map(&:name).join(', ')}"
   end
@@ -239,20 +265,20 @@ class SubmissionsController < CoursesController
 
   def submission_params
     if true_user_prof_for?(@course) or current_user_prof_for?(@course)
-      params[:submission].permit(:assignment_id, :user_id, :student_notes,
+      params[:submission].permit(:assignment_id, :user_id, :student_notes, :type,
                                  :auto_score, :calc_score, :created_at, :updated_at, :upload,
                                  :grading_output, :grading_uid, :team_id,
                                  :teacher_score, :teacher_notes,
                                  :ignore_late_penalty, :upload_file,
                                  :comments_upload_file, :time_taken)
     else
-      params[:submission].permit(:assignment_id, :user_id, :student_notes,
+      params[:submission].permit(:assignment_id, :user_id, :student_notes, :type,
                                  :upload, :upload_file, :time_taken)
     end
   end
 
   def answers_params
-    array_from_hash(params[:answers])
+    array_from_hash(params[:answers].to_unsafe_h)
   end
 
   def require_admin_or_staff
@@ -334,21 +360,7 @@ class SubmissionsController < CoursesController
 
   # CREATE
   def create_Files
-    no_problems = true
-    time_taken = submission_params[:time_taken]
-    if @assignment.request_time_taken and time_taken.empty?
-      @submission.errors.add(:base, "Please specify how long you have worked on this assignment")
-      no_problems = false
-    elsif time_taken and !(Float(time_taken) rescue false)
-      @submission.errors.add(:base, "Please specify a valid number for how long you have worked on this assignment")
-      no_problems = false
-    end
-    if submission_params[:upload_file].nil?
-      @submission.errors.add(:base, "You need to submit a file.")
-      no_problems = false
-    end
-    no_problems = (no_problems and @submission.save_upload and @submission.save)
-    if no_problems
+    if (@submission.save_upload and @submission.save)
       @submission.set_used_sub!
       @submission.create_grades!
       @submission.delay.autograde!
@@ -361,117 +373,16 @@ class SubmissionsController < CoursesController
   end
 
   def create_Questions
-    @answers = answers_params
-    questions = @assignment.questions.reduce([]) do |acc, section|
-      section.reduce(acc) do |acc, (name, qs)| acc + qs end
-    end
-    num_qs = questions.count
-    no_problems = true
-    time_taken = submission_params[:time_taken]
-    if @assignment.request_time_taken and time_taken.empty?
-      @submission.errors.add(:base, "Please specify how long you have worked on this assignment")
-      no_problems = false
-    elsif time_taken and !(Float(time_taken) rescue false)
-      @submission.errors.add(:base, "Please specify a valid number for how long you have worked on this assignment")
-      no_problems = false
-    end
-    if @answers.count != num_qs
-      @submission.errors.add(:base, "There were #{plural(@answers.count, 'answer')} for #{plural(num_qs, 'question')}")
-      @submission.cleanup!
-      no_problems = false
+    @submission.answers = answers_params
+
+    related_sub = @assignment.related_assignment.used_sub_for(@current_user)
+    if related_sub.nil?
+      @submission.related_files = []
     else
-      questions.zip(@answers).each_with_index do |(q, a), i|
-        if a.nil? or a["main"].nil?
-          @submission.errors.add(:base, "Question #{i + 1} is missing an answer")
-          no_problems = false
-          next
-        end
-        if q["YesNo"]
-          type = "YesNo"
-          unless ["yes", "no"].member?(a["main"].downcase)
-            @submission.errors.add(:base, "Question #{i + 1} has a non-Yes/No answer")
-            no_problems = false
-          end
-        elsif q["TrueFalse"]
-          type = "TrueFalse"
-          unless ["true", "false"].member?(a["main"].downcase)
-            @submission.errors.add(:base, "Question #{i + 1} has non-true/false answer")
-            no_problems = false
-          end
-        elsif q["Numeric"]
-          type = "Numeric"
-          if !(Float(a["main"]) rescue false)
-            @submission.errors.add(:base, "Question #{i + 1} has a non-numeric answer")
-            no_problems = false
-          elsif Float(a["main"]) < q["Numeric"]["min"] or Float(a["main"]) > q["Numeric"]["max"]
-            @submission.errors.add(:base, "Question #{i + 1} has a numeric answer outside the valid range")
-            no_problems = false
-          end
-        elsif q["MultipleChoice"]
-          type = "MultipleChoice"
-          if a["main"].nil?
-            # nothing, was handled above
-          elsif !(Integer(a["main"]) rescue false)
-            @submission.errors.add(:base, "Question #{i + 1} has an invalid multiple-choice answer")
-            no_problems = false
-          elsif a["main"].to_i < 0 or a["main"].to_i >= q[type]["options"].count
-            @submission.errors.add(:base, "Question #{i + 1} has an invalid multiple-choice answer")
-            no_problems = false
-          end
-        elsif q["Text"]
-          type = "Text"
-        end
-        if q[type]["parts"]
-          if a["parts"].nil? or q[type]["parts"].count != a["parts"].count
-            @submission.errors.add(:base, "Question #{i + 1} is missing answers to its sub-parts")
-            no_problems = false
-          else
-            q[type]["parts"].zip(a["parts"]).each_with_index do |(qp, ap), j|
-              if qp["codeTag"]
-                if @assignment.related_assignment
-                  related_sub = @assignment.related_assignment.used_sub_for(current_user)
-                  if related_sub.nil?
-                    @submission_files = []
-                  else
-                    get_submission_files(related_sub)
-                  end
-                  if ap["file"].to_s == "<none>"
-                  # nothing
-                  elsif !(@submission_files.any?{|f| f[:link] == ap["file"].to_s}) or !(Integer(ap["line"]) rescue false)
-                    @submission.errors.add(:base, "Question #{i + 1} part #{j + 1} has an invalid code-tag")
-                    no_problems = false
-                  end
-                else
-                  @submission.errors.add(:base, "Question #{i + 1} part #{j + 1} has a code-tag, but there is no submission related to these questions!  Please email your professor.")
-                  no_problems = false
-                end
-              elsif qp["codeTags"]
-                # TODO
-              elsif qp["text"]
-                # TODO
-              elsif qp["requiredText"]
-                if ap["info"].to_s.empty?
-                  @submission.errors.add(:base, "Question #{i + 1} part #{j + 1} has a missing required text answer")
-                  no_problems = false
-                end
-              end
-            end
-          end
-        end
-      end
+      @submission.related_files = get_submission_files(related_sub)
     end
 
-    if no_problems
-      Tempfile.open('answers.yaml', Rails.root.join('tmp')) do |f|
-        f.write(YAML.dump(@answers))
-        f.flush
-        f.rewind
-        uploadfile = ActionDispatch::Http::UploadedFile.new(filename: "answers.yaml", tempfile: f)
-        @submission.upload_file = uploadfile
-        @submission.save_upload
-      end
-      @submission.type = "Questions"
-      @submission.save
+    if @submission.save_upload && @submission.save
       @submission.set_used_sub!
       @submission.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)
@@ -493,7 +404,7 @@ class SubmissionsController < CoursesController
     @gradesheet = Gradesheet.new(@assignment, [@submission])
     comments = @submission.grade_submission_comments(true) || {}
     comments = comments[@submission.upload.extracted_path.to_s] || []
-    @plagiarized = comments.any?{|c| c.label == "Plagiarism"}
+    @plagiarized = comments.select{|c| c.label == "Plagiarism"}
     @split = comments.any?{|c| c.label == "Split submission"}
   end
   def show_Questions
@@ -514,6 +425,10 @@ class SubmissionsController < CoursesController
       @submission_files = []
       @answers_are_newer = true
     end
+    comments = @submission.grade_submission_comments(true) || {}
+    comments = comments[@submission.upload.extracted_path.to_s] || []
+    @plagiarized = comments.select{|c| c.label == "Plagiarism"}
+    @split = comments.any?{|c| c.label == "Split submission"}
   end
   def show_Exam
     @student_info = @course.students.select(:username, :last_name, :first_name, :id)

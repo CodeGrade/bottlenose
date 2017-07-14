@@ -13,6 +13,7 @@ class User < ApplicationRecord
          :recoverable, :rememberable, :trackable, :registerable 
   has_many :registrations, dependent: :destroy
   has_many :courses, through: :registrations
+  has_many :sections, through: :registrations
 
   has_many :user_submissions, dependent: :destroy
   has_many :submissions, through: :user_submissions

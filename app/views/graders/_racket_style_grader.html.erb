@@ -10,7 +10,7 @@
     <td><%= f.label "upload_file", "Custom configuration:" %></td>
     <td><%= f.file_field "upload_file" %>
       <% if f.object.upload %>
-        <br>Current file: <%= link_to f.object.upload_file, f.object.upload_file %>
+        <br>Current file: <%= link_to f.object.upload_file, f.object.upload.path %>
       <% end %>
     </td>
   </tr>
