@@ -61,7 +61,7 @@
       <%= f.submit "Assign grader", class: 'btn btn-primary' %>
     </div>
     <div class="col-sm-4">
-      <%= select_tag(:grade_id,
+      <%= select_tag(:who_grades_id,
           names_for_graders(@course.staff),
           size: 10,
           multiple: false, class: "form-control") %>
@@ -94,7 +94,7 @@
     <ul>
       <% subs.each do |sub| %>
       <% grade = @grades[sub.id] %>
-      <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.grade_id == g} %>
+      <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.who_grades_id == g} %>
       <li>
         <%= link_to sub.submission_user_names,
             edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>

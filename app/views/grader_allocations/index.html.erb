@@ -39,7 +39,7 @@
   <% subs.each do |sub| %>
   <% usernames =  %>
   <% grade = @grades[sub.id] %>
-  <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.grader_id == g} %>
+  <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.who_grades_id == g} %>
   <li>
     <%= link_to sub.submission_user_names,
         edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>

@@ -34,7 +34,7 @@ class GraderAllocationsController < ApplicationController
                     alert: "This submission does not belong to this assignment."
       return
     end
-    who_grades = (params[:grade_id] and User.find(params[:grade_id]))
+    who_grades = (params[:who_grades_id] and User.find(params[:who_grades_id]))
     if who_grades.nil?
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
                     alert: "The specified grader does not exist"
@@ -47,7 +47,7 @@ class GraderAllocationsController < ApplicationController
 
     alloc = GraderAllocation.find_or_initialize_by(
       submission_id: params[:submission_id],
-      grade_id: who_grades.id,
+      who_grades_id: who_grades.id,
       assignment: @assignment,
       course: @course)
     alloc.grading_assigned = DateTime.now
@@ -80,7 +80,7 @@ class GraderAllocationsController < ApplicationController
           sub = unfinished.pop
           alloc = GraderAllocation.find_or_initialize_by(
             submission: sub,
-            grade_id: g.id,
+            who_grades_id: g.id,
             assignment: @assignment,
             course: @course)
           alloc.grading_assigned = time
@@ -92,7 +92,7 @@ class GraderAllocationsController < ApplicationController
         g = who_grades[i % unfinished.count]
         alloc = GraderAllocation.find_or_initialize_by(
           submission: sub,
-          grade_id: g.id,
+          who_grades_id: g.id,
           assignment: @assignment,
           course: @course)
         alloc.grading_assigned = time
@@ -137,7 +137,7 @@ class GraderAllocationsController < ApplicationController
     @allocations =
       GraderAllocation
       .where(assignment: @assignment)
-      .joins("INNER JOIN users ON users.id = grader_allocations.grade_id")
+      .joins("INNER JOIN users ON users.id = grader_allocations.who_grades_id")
       .to_a
     @grades = 
       # only use submissions that are being used for grading, but this may produce duplicates for team submissions
@@ -167,14 +167,14 @@ class GraderAllocationsController < ApplicationController
     #   GraderAllocation
     #   .where(assignment: @assignment)
     #   .joins(SubsForGrading.where(assignment: @assignment))
-    #   .joins("INNER JOIN users ON users.id = grader_allocations.grader_id")
-    #   .group_by(&:grader_id)
+    #   .joins("INNER JOIN users ON users.id = grader_allocations.who_grades_id")
+    #   .group_by(&:who_grades_id)
     subs_and_graders =
       @used_subs
       .includes(:users)
       .joins("LEFT OUTER JOIN grader_allocations ga ON used_subs.submission_id = ga.submission_id")
-      .select("submissions.*", "ga.grade_id", "ga.abandoned")
-    @who_grades = subs_and_graders.group_by(&:grade_id)
+      .select("submissions.*", "ga.who_grades_id", "ga.abandoned")
+    @who_grades = subs_and_graders.group_by(&:who_grades_id)
     subs_and_graders = subs_and_graders.group_by(&:id)
     @course.staff.each do |g|
       @who_grades[g.id] = [] unless @who_grades[g.id]
@@ -188,7 +188,7 @@ class GraderAllocationsController < ApplicationController
   end
 
   def stats
-    @grader_info = GraderAllocation.where(course: @course).group_by(&:grader_id).map do |g, gas|
+    @grader_info = GraderAllocation.where(course: @course).group_by(&:who_grades_id).map do |g, gas|
       notdone, finished = gas.partition{|ga| ga.abandoned? or ga.grading_completed.nil?}
       abandoned, incomplete = notdone.partition{|ga| ga.abandoned?}
       avg_grading_time = finished.map{|ga| (ga.grading_completed - ga.grading_assigned) / 1.day }.sum

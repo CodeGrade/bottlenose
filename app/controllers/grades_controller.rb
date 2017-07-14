@@ -181,7 +181,7 @@ class GradesController < ApplicationController
       course: @course,
       submission: @submission)
     if alloc and alloc.grading_completed.nil?
-      if alloc.grader_id != current_user.id
+      if alloc.who_grades_id != current_user.id
         alloc.abandoned = true
         alloc.grading_completed = DateTime.now
         alloc.save
@@ -189,7 +189,7 @@ class GradesController < ApplicationController
           assignment: @assignment,
           course: @course,
           submission: @submission,
-          grader_id: current_user.id,
+          who_grades_id: current_user.id,
           grading_assigned: alloc.grading_assigned)
       end
       alloc.abandoned = false

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170713123707) do
+ActiveRecord::Schema.define(version: 20170714150844) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -74,14 +74,14 @@ ActiveRecord::Schema.define(version: 20170713123707) do
     t.integer "course_id", null: false
     t.integer "assignment_id", null: false
     t.integer "submission_id", null: false
-    t.integer "grade_id", null: false
+    t.integer "who_grades_id", null: false
     t.datetime "grading_assigned", null: false
     t.boolean "abandoned", default: false, null: false
     t.datetime "grading_completed"
     t.index ["assignment_id"], name: "index_grader_allocations_on_assignment_id"
     t.index ["course_id"], name: "index_grader_allocations_on_course_id"
-    t.index ["grade_id"], name: "index_grader_allocations_on_grade_id"
     t.index ["submission_id"], name: "index_grader_allocations_on_submission_id"
+    t.index ["who_grades_id"], name: "index_grader_allocations_on_who_grades_id"
   end
 
   create_table "graders", id: :serial, force: :cascade do |t|

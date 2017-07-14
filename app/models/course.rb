@@ -167,7 +167,7 @@ class Course < ApplicationRecord
 
   def grading_assigned_for(user)
     GraderAllocation
-      .where(grade_id: user.id)
+      .where(who_grades_id: user.id)
       .where(course: self)
       .where(grading_completed: nil)
       .group_by(&:assignment_id)
@@ -175,7 +175,7 @@ class Course < ApplicationRecord
 
   def grading_done_for(user)
     GraderAllocation
-      .where(grade_id: user.id)
+      .where(who_grades_id: user.id)
       .where(course: self)
       .where.not(grading_completed: nil)
       .joins(:submission)
