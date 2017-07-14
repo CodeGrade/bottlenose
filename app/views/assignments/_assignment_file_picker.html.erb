@@ -1,0 +1,15 @@
+      <p class="form-inline file-picker" id="<%= id %>">
+        <label class="btn btn-default btn-file">
+          Browse <%= f.file_field :assignment_file, class: "assignment-file", style: "display: none;" %>
+        </label>
+        <span class="current_file" style="margin: 6px 12px;">Current file:
+          <%= asgn.assignment_file.empty? ? "nothing" :
+              link_to(asgn.assignment_file,
+              Upload.upload_path_for(asgn.assignment_full_path)) %></span>
+        <button type="button"
+                <% if asgn.assignment_file.empty? %>
+                disabled  class="btn btn-default pull-right remove-assignment-file"
+                <% else %>
+                class="btn btn-warning pull-right remove-assignment-file"
+                <% end %> >Clear assignment file</button>
+      </p>

@@ -6,8 +6,9 @@
     The assignment will need to be resubmitted and regraded entirely,
     if this is a mistake.
   </h4>
-  <%= form_for [@course, @assignment.becomes(Assignment), @submission],
+  <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)],
       :url => { action: :update_plagiarism, method: :patch } do |f| %>
+  <% f.object = @submission.becomes(@submission.class) %>
   <p>
     The assignment was graded out of
     <%= @max_points %> points.  How many points

@@ -45,11 +45,10 @@ class AssignmentsController < ApplicationController
 
     @exam = @files.dup
     @exam.graders = [ExamGrader.new]
-    @files.lateness_config_id = @course.lateness_config_id
     @exam.request_time_taken = false
 
     @quest = @files.dup
-    @files.lateness_config_id = @course.lateness_config_id
+    @quest.lateness_config_id = @course.lateness_config_id
     @quest.request_time_taken = false
 
     last_assn = @course.assignments.order(created_at: :desc).first
@@ -93,16 +92,12 @@ class AssignmentsController < ApplicationController
     ap[:graders_attributes]&.each do |k, v|
       v[:upload_by_user_id] = current_user.id
     end
+    ap[:course_id] = @course.id
+    ap[:blame_id] = current_user.id
+    ap[:current_user] = current_user
     @assignment = Assignment.new(ap)
-    @assignment.course_id = @course.id
-    @assignment.blame_id = current_user.id
-    @assignment.current_user = current_user
-    if @assignment.type == "exam"
-      @assignment.available = @assignment.due_date
-    end
 
-    if @assignment.save
-      @assignment.save_uploads! if params[:assignment][:assignment_file]
+    if @assignment.save_upload && @assignment.save
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully created.'
     else
       @assignment.destroy
@@ -125,8 +120,7 @@ class AssignmentsController < ApplicationController
     @assignment.assign_attributes(ap)
     @assignment.current_user = current_user
 
-    if @assignment.save
-      @assignment.save_uploads! if ap[:assignment_file]
+    if @assignment.save_upload && @assignment.save
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully updated.'
     else
       @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}

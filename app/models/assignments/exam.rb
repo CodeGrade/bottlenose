@@ -1,10 +1,15 @@
 class Exam < Assignment
-  before_create :set_exam_graders
+  validate :set_exam_graders
   before_update :update_exam_submission_times
 
+  def assign_attributes(attrs)
+    super(attrs)
+    self.available = self.due_date
+    self.lateness_config = self.course.lateness_config
+  end
+  
   def set_exam_graders
-    # FIXME: This is complicated, and shouldn't be here either.
-
+    return true unless self.new_record?
     upload = @assignment_file_data
     if upload.nil?
       if self.assignment_upload.nil?
@@ -15,7 +20,7 @@ class Exam < Assignment
       end
     else
       begin
-        questions = YAML.load(upload.tempfile)
+        questions = YAML.load(File.read(upload.tempfile))
         upload.rewind
       rescue Psych::SyntaxError => e
         self.errors.add(:base, "Could not parse the supplied file")
@@ -26,11 +31,9 @@ class Exam < Assignment
       self.errors.add(:base, "Supplied file does not contain a list of questions")
       return false
     else
-      no_problems = true
-      total_weight = 0
+      @total_weight = 0
       def make_err(msg)
         self.errors.add(:base, msg)
-        no_problems = false
       end
       def is_float(val)
         Float(val) rescue false
@@ -45,27 +48,19 @@ class Exam < Assignment
               make_err "Question #{part['name']} has an invalid weight"
               next
             elsif !part["extra"]
-              total_weight += Float(part["weight"])
+              @total_weight += Float(part["weight"])
             end
           end
         elsif !is_float(q["weight"])
           make_err "Question #{q['name']} has an invalid weight"
           next
         elsif !q["extra"]
-          total_weight += Float(q["weight"])
+          @total_weight += Float(q["weight"])
         end
       end
-      return unless no_problems
-      c = GraderConfig.new(type: "ExamGrader", avail_score: @total_weight)
-      if c.invalid? or !c.save
-        self.errors.add(:graders, "Could not create grader #{c.to_s}")
-        return false
-      else
-        AssignmentGrader
-          .find_or_initialize_by(assignment_id: self.id, grader_config_id: c.id)
-          .update(order: 1)
-        return true
-      end      
+      return false if self.errors.count > 0
+      self.graders << Grader.new(type: "ExamGrader", avail_score: @total_weight,
+                                 assignment: self, order: self.graders.count + 1)
     end
   end
 

@@ -1,11 +1,13 @@
 <% @page_title = "New Submission: #{@assignment.name}" %>
 
-<%= form_for [@course, @assignment.becomes(Assignment), @submission] do |f| %>
-  <% allowed = @assignment.sub_allow_submission?(@submission)
+<%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)] do |f| %>
+  <% f.object = @submission.becomes(@submission.class)
+     allowed = @assignment.sub_allow_submission?(@submission)
      not_following = @assignment.sub_not_following_related?(current_user)
      rate_limit = @assignment.rate_limit?(@submission)
      staff_override = true_user.course_staff?(@course)
      %>
+  <%= f.hidden_field :type, value: "QuestionsSub" %>
   <%= render "new_common", f: f, type: {noun: "submission", verb: "submit", gerund: "submitting" },
       not_following: not_following, allowed: allowed, rate_limit: rate_limit, staff_override: staff_override %>
 

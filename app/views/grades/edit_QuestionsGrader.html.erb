@@ -25,7 +25,7 @@
 <% end %>
 
 <% content_for :wide_content do %>
-<%= form_for [@course, @assignment.becomes(Assignment), @submission, @grade] do |f| %>
+<%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission), @grade] do |f| %>
 <% if @assignment.related_assignment_id %>
 <div class="col-sm-6">
   <div id="files-sidebar" data-spy="affix">
@@ -64,6 +64,9 @@
 <div id="responses" class="form-group col-sm-6">
 <% end %>
 <%= render "submissions/render_questions" %>
+<script>
+  <%= render partial: "submissions/render_questions.js" %>
+</script>
 <%= f.submit "Submit grade", id: "completed", class: "btn btn-success" %>
 <script>$("form").submit(ensureValidNumericInputOnSubmit);</script>
 </div>

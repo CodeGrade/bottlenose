@@ -137,18 +137,18 @@ class GraderAllocationsController < ApplicationController
     @allocations =
       GraderAllocation
       .where(assignment: @assignment)
-      .joins("INNER JOIN users ON users.id = grader_allocations.grader_id")
+      .joins("INNER JOIN users ON users.id = grader_allocations.grade_id")
       .to_a
     @graders = 
       # only use submissions that are being used for grading, but this may produce duplicates for team submissions
       # only pick submissions from this course
       # only pick non-staff submissions
       # sort the assignments
-      Grader
-      .joins("INNER JOIN used_subs ON graders.submission_id = used_subs.submission_id")
+      Grade
+      .joins("INNER JOIN used_subs ON grades.submission_id = used_subs.submission_id")
       .joins("INNER JOIN registrations ON used_subs.user_id = registrations.user_id")
       .where("used_subs.assignment_id": @assignment.id)
-      .select("graders.*")
+      .select("grades.*")
       .where(grader: @grader)
       .joins("INNER JOIN users ON used_subs.user_id = users.id")
       .select("users.name AS user_name")
@@ -173,8 +173,8 @@ class GraderAllocationsController < ApplicationController
       @used_subs
       .includes(:users)
       .joins("LEFT OUTER JOIN grader_allocations ga ON used_subs.submission_id = ga.submission_id")
-      .select("submissions.*", "ga.grader_id", "ga.abandoned")
-    @who_grades = subs_and_graders.group_by(&:grader_id)
+      .select("submissions.*", "ga.grade_id", "ga.abandoned")
+    @who_grades = subs_and_graders.group_by(&:grade_id)
     subs_and_graders = subs_and_graders.group_by(&:id)
     @course.staff.each do |g|
       @who_grades[g.id] = [] unless @who_grades[g.id]

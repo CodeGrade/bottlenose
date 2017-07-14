@@ -2,9 +2,6 @@ require 'securerandom'
 require 'audit'
 
 class Submission < ApplicationRecord
-  def self.inheritance_column
-    nil
-  end
   belongs_to :assignment
   belongs_to :user
   belongs_to :team
@@ -320,7 +317,7 @@ class Submission < ApplicationRecord
     grades.all?(&:available)
   end
 
-  private
+  protected
 
   def user_is_registered_for_course
     if user && !user.courses.any?{|cc| cc.id == course.id }
@@ -332,7 +329,7 @@ class Submission < ApplicationRecord
   end
 
   def submitted_file_or_manual_grade
-    if upload_id.nil? and self.assignment.type != "exam"
+    if upload_id.nil? and self.assignment.type != "Exam"
       errors.add(:base, "You need to submit a file.")
     end
   end

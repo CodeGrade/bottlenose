@@ -86,7 +86,7 @@ class GradesController < ApplicationController
     end
   end
   def questions_params
-    array_from_hash(params[:grades])
+    array_from_hash(params[:grades].to_unsafe_h)
   end
 
   def require_admin_or_staff
@@ -226,7 +226,7 @@ class GradesController < ApplicationController
 
   def question_to_inlinecomment(c)
     comment = InlineComment.find_or_initialize_by(submission_id: params[:submission_id],
-                                                  grader_id: @grade.id,
+                                                  grade_id: @grade.id,
                                                   line: c["index"])
     comment.update(label: "Graded question",
                    filename: @submission.upload.submission_path,
@@ -273,7 +273,7 @@ class GradesController < ApplicationController
         elsif params[:grade_action] == "setGrades"
           sub = @assignment.used_sub_for(User.find(params[:user_id]))
           @grader = @assignment.graders.first # and only config
-          config = Grader.find_by(grader_id: @grader.id, submission_id: sub.id) if sub
+          config = Grade.find_by(grader_id: @grader.id, submission_id: sub.id) if sub
           if (config && (config.updated_at > Time.parse(params[:timestamp])))
             render :json => {existingTimestamp: config.updated_at, yourTimestamp: params[:timestamp]},
                    :status => 409 # conflicting request
@@ -626,13 +626,14 @@ HEADER
   ##############################
   def edit_exam_grades_for(students)
     # NOTE: students must be joined to the registrations table already, to provide section information
-    @student_info = students.select(:username, :last_name, :first_name, :nickname, :id, "registrations.section_id")
+    @student_info = students.select(:username, :last_name, :first_name, :nickname, :id)
+    @students_by_section = @course.students_with_registrations.select(:id, "registration_sections.section_id AS crn").group_by(&:id)
     @used_subs = @assignment.used_submissions
     @grade_comments = InlineComment.where(submission_id: @used_subs.map(&:id)).group_by(&:submission_id)
   end
 
   def update_exam_grades
-    students_with_grades = params[:student].reject do |k, v|
+    students_with_grades = params[:student].to_unsafe_h.reject do |k, v|
       v.values.join("") == ""
     end
     all_grades = array_from_hash(students_with_grades)
@@ -646,11 +647,11 @@ HEADER
       if @sub.nil?
         @sub = Submission.create!(assignment: @assignment,
                                   user: student,
-                                  type: "Exam",
+                                  type: "ExamSub",
                                   created_at: @assignment.due_date - 1.minute)
       end
       @sub.set_used_sub!
-      @grade = Grader.find_or_create_by(grader_id: @grader.id, submission_id: @sub.id)
+      @grade = Grade.find_or_create_by(grader_id: @grader.id, submission_id: @sub.id)
       if @grade.new_record?
         @grade.out_of = @grader.avail_score
       end

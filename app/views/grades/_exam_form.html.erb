@@ -7,7 +7,8 @@
 <% if @student_info.length > 1 %>
 <style>
   <% @course.sections.each do |s| %>
-  #grades-table.show_one:not(.sec_<%= s.crn %>) .sec_<%= s.crn %> { display: none; }
+  #grades-table.show_one .sec_<%= s.crn %> { display: none; }
+  #grades-table.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
   <% end %>
 </style>
 <h4>Select a section: <select id="sections">
@@ -40,7 +41,8 @@
   <tbody id="grades">
   <% used_subs = @used_subs.group_by(&:user_id) %>
   <% @student_info.order("LOWER(last_name)", "LOWER(first_name)").each do |u| %>
-    <tr id="<%= u.id %>" class="sec_<%= u.section_id %>">
+    <% sections = @students_by_section[u.id].map{|u| "sec_#{u.crn}"}.join(' ') %>
+    <tr id="<%= u.id %>" class="<%= sections %>">
       <td>
         <form id="grade_<%= u.id %>">
           <input type="hidden" name="user_id" value="<%= u.id %>" />

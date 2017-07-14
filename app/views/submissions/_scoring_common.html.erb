@@ -73,7 +73,7 @@
     <td></td>
   </tr>
   <tr>
-    <td>Raw Percentage</td>
+    <td>Raw Percentage:</td>
     <td>
       <% if all_scores[:raw_score].nil? %>
       <%= image_tag("question-mark.png", height: 16) %>
@@ -86,6 +86,13 @@
     </td>
     <td></td>
   </tr>
+  <% unless @plagiarized.blank? %>
+  <tr>
+    <td><b>Plagiarism penalty:</b></td>
+    <td><%= to_fixed(@plagiarized[0].weight) %>&nbsp;/&nbsp;<%= to_fixed(@gradesheet.max_score) %></td>
+    <td><%= @plagiarized[0].comment %></td>
+  </tr>
+  <% end %>
   <% if @submission.late? or @submission.ignore_late_penalty %>
   <tr>
     <td>Days Late:</td>
@@ -133,7 +140,7 @@
         <% end %>
       <% end %>
       <% if cur_reg&.professor? %>
-      <% if @plagiarized %>
+      <% unless @plagiarized.blank? %>
       <span class="btn btn-danger disabled">Plagiarized submission</span>
       <% else %>
       <%= link_to edit_plagiarism_course_assignment_submission_path(@course, @gradesheet.assignment, @submission),

@@ -94,6 +94,7 @@ FactoryGirl.define do
     assignment
     user
     upload
+    type "FilesSub"
 
     after(:build) do |sub|
       unless sub.user.registration_for(sub.course)

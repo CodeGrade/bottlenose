@@ -62,9 +62,24 @@
       }
       return true;
     });
-  }
 
-  
+    $(".file-picker").each(function(index) {
+      var $e = $(this);
+      $e.find(".assignment-file").change(function() {
+        var label = $(this).val().replace(/\\/g, '/').replace(/.*\//, '');
+        $e.find(".current_file").text("New file: " + label);
+        $e.find(".remove-assignment-file").prop('disabled', false).removeClass("btn-default").addClass("btn-warning");
+        $e.find("input.assignment_removefile").val('');
+      });
+      $e.find(".remove-assignment-file").click(function() {
+        $e.find("input[name='assignment_file']").replaceWith(
+          $e.find("input[name='assignment_file']").val("<nothing>").clone(true));
+        $(this).prop('disabled', true).addClass("btn-default").removeClass("btn-warning");
+        $e.find(".current_file").text("New file: <nothing>");
+        $e.find("input.assignment_removefile").val('remove');
+      });
+    });
+  }
 
   run_on_page("assignments/new", form_init);
   run_on_page("assignments/create", form_init);

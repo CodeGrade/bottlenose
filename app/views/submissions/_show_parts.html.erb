@@ -13,8 +13,7 @@
     <% sub_file = @submission_files.find{|f| f[:link] == part_ans['file']} %>
     <% if sub_file %>
     <span class="btn btn-default btn-sm btn-disabled"
-          data-on="click" data-call="showFile"
-          data-args="<%= [sub_file[:href], part_ans['line'].to_i] %>">
+          data-showFile="<%= [sub_file[:href], part_ans['line'].to_i] %>">
       <%= sub_file[:name] %>, line <%= part_ans["line"] %>
     </span>
     <% else %>

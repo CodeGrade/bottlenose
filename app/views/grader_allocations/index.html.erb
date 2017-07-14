@@ -1,10 +1,11 @@
+<% @page_title = "Pending grading for #{@assignment.name}" %>
 <h3>Pending grading for
   <%= link_to @assignment.name,
       course_assignment_path(@course, @assignment) %></h3>
 
 <h4 style="display: inline-block;">Submissions not assigned to graders</h4>
 <div style="padding-bottom: 0.5em; display: inline-block;">
-  <%= link_to edit_course_assignment_grader_allocations_path(@course, @assignment, @config),
+  <%= link_to edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
       class: "btn btn-default btn-md" do %>
   <i class="glyphicon glyphicon-list-alt"></i>
   Assign manual graders

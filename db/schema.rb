@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170710141402) do
+ActiveRecord::Schema.define(version: 20170713123707) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -201,7 +201,7 @@ ActiveRecord::Schema.define(version: 20170710141402) do
     t.integer "comments_upload_id"
     t.boolean "stale_team"
     t.float "score"
-    t.string "type", default: "Files", null: false
+    t.string "type", null: false
     t.float "time_taken"
     t.index ["assignment_id"], name: "index_submissions_on_assignment_id"
     t.index ["user_id", "assignment_id"], name: "index_submissions_on_user_id_and_assignment_id"
