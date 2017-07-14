@@ -13,16 +13,16 @@
 </div>
 <ul>
   <% @who_grades[nil].each do |sub| %>
-  <% grader = @graders[sub.id] %>
+  <% grade = @grades[sub.id] %>
   <% usernames = sub.submission_user_names %>
   <li>
-    <% if grader.score.nil? %>
+    <% if grade.score.nil? %>
     <%= link_to usernames,
-        edit_course_assignment_submission_grader_path(@course, @assignment, sub, grader) %>
+        edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
     <% else %>
     <%= link_to usernames,
-        course_assignment_submission_grader_path(@course, @assignment, sub, grader) %>
-      (completed <span class="local-time"><%= grader.updated_at %></span>)
+        course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
+      (completed <span class="local-time"><%= grade.updated_at %></span>)
     <% end %>
   </li>
   <% end %>
@@ -38,12 +38,12 @@
 <ul>
   <% subs.each do |sub| %>
   <% usernames =  %>
-  <% grader = @graders[sub.id] %>
+  <% grade = @grades[sub.id] %>
   <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.grader_id == g} %>
   <li>
     <%= link_to sub.submission_user_names,
-        edit_course_assignment_submission_grader_path(@course, @assignment, sub, grader) %>
-    <% if grader.score.nil? %>
+        edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
+    <% if grade.score.nil? %>
       <% if alloc.abandoned? %>
       <span class="bg-warning text-danger"><br>abandoned</span></span>
       <% else %>
@@ -61,7 +61,7 @@
       </span></span>
       <% end %>
     <% else %>
-      <span class="text-muted"><br>completed <span class="local-time"><%= grader.updated_at %></span></span>
+      <span class="text-muted"><br>completed <span class="local-time"><%= grade.updated_at %></span></span>
     <% end %>
   </li>
   <% end %>

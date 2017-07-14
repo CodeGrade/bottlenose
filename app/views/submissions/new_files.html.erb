@@ -7,7 +7,7 @@
      rate_limit = @assignment.rate_limit?(@submission)
      staff_override = true_user.course_staff?(@course)
      %>
-  <%= f.hidden_field :type, value: "QuestionsSub" %>
+  <%= f.hidden_field :type, value: "FilesSub" %>
   <%= render "new_common", f: f, type: {noun: "submission", verb: "submit", gerund: "submitting" },
       not_following: not_following, allowed: allowed, rate_limit: rate_limit, staff_override: staff_override %>
 
