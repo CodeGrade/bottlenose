@@ -60,7 +60,10 @@
                     <div class="radio">
                     <label>
                       <input name="grades[<%= index %>][score-preset]" id="grades_<%= index %>_<%= e_i %>"
-                             type="radio" value="<%= val %>"><span><b><%= val %>:</b> <span><%= hint %></span></span>
+                             type="radio" value="<%= val %>">
+                      <span><b><%= val %>:</b>
+                        <span><%= sanitize(hint, tags: %w(b strong i em code pre)) %></span>
+                      </span>
                     </label>
                     </div>
                     <% end %>
