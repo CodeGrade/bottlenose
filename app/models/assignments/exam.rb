@@ -59,8 +59,13 @@ class Exam < Assignment
         end
       end
       return false if self.errors.count > 0
-      self.graders << Grader.new(type: "ExamGrader", avail_score: @total_weight,
-                                 assignment: self, order: self.graders.count + 1)
+      grader = self.graders.first
+      if grader.nil?
+        grader = Grader.new(type: "ExamGrader", assignment: self)
+        self.graders << grader
+      end
+      grader.avail_score = @total_weight
+      grader.order = self.graders.count + 1
     end
   end
 
