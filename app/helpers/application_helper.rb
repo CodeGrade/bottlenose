@@ -145,4 +145,14 @@ module ApplicationHelper
       ent =~ /\.rb$/
     end
   end
+
+  def sanitize_question(html, options = {})
+    options[:tags] = %w(b strong i em textarea code pre) unless options[:tags]
+    if options[:allow_code]
+      options.delete(:allow_code)
+      attrs = (options[:attributes] || []) + %w"class data-lang"
+      options[:attributes] = attrs
+    end
+    sanitize(html, options)
+  end
 end

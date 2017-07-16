@@ -8,9 +8,7 @@
           <% index = count + i %>
           <li id="question_<%= index %>">
             <p>
-              <%= sanitize(q["prompt"],
-                  tags: %w(b strong i em p textarea pre code),
-                  attributes: %w(class data-lang)) %>
+              <%= sanitize_question(q["prompt"], allow_code: true) %>
               <small>(<%= pluralize(q["weight"], "point") %>)</small>
             </p>
             <% if @show_grades %>
@@ -31,7 +29,7 @@
               <div class="panel-body">
                 <% if !q["correctAnswer"].nil? %>
                 <p style="font-style: italic;"><b>Correct answer:</b>
-                    <%= sanitize(
+                    <%= sanitize_question(
                         case type
                         when "YesNo"
                           if q["correctAnswer"] then "Yes" else "No" end
@@ -41,8 +39,7 @@
                           q["options"][q["correctAnswer"].to_i]
                         else
                           q["correctAnswer"].to_s
-                        end,
-                        tags: %w(b strong i em code pre))
+                        end)
                         %></p>
                 <% end %>
                 <% if q["rubric"] %>
@@ -65,7 +62,7 @@
                              type="radio" value="<%= val %>"
                              data-feedback="<%= feedback %>">
                       <span><b><%= val %>:</b>
-                        <span><%= sanitize(hint, tags: %w(b strong i em code pre)) %></span>
+                        <span><%= sanitize_question(hint) %></span>
                       </span>
                     </label>
                     </div>

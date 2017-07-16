@@ -22,7 +22,7 @@
       <input name="answers[<%= index %>][main]" id="answer_<%= index %>_<%= opt_idx %>"
              type="radio" value="<%= opt_idx %>" <%= if value == opt_idx then 'checked' end %>
              <% if @answers and value.to_s.empty? %>class="unanswered"<% end %>>
-      <%= sanitize(opt, tags: %w(b strong i em code pre), attributes: %w(class data-lang)) %>
+      <%= sanitize_question(opt, allow_code: true) %>
     </label>
     <% end %>
   </div>
