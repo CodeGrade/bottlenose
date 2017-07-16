@@ -66,11 +66,16 @@ class Questions < Assignment
                         if !(guide.is_a? Object) || guide.keys.count != 1
                           self.errors.add(:base, "Question #{question_count}, rubric entry #{i} is ill-formed")
                         else
-                          guide.each do |weight, hint|
+                          guide.each do |weight, desc|
                             if !is_float(weight)
                               self.errors.add(:base, "Question #{question_count}, rubric entry #{i} has non-numeric weight")
                             elsif Float(weight) < 0 || Float(weight) > 1
                               self.errors.add(:base, "Question #{question_count}, rubric entry #{i} has out-of-bounds weight")
+                            end
+                            if desc.is_a? String
+                              # ok
+                            elsif (desc.is_a? Object) && !((desc["hint"].is_a? String) || (desc["feedback"].is_a? String))
+                              self.errors.add(:base, "Question #{question_count}, rubric entry #{i} has malformed feedback")
                             end
                           end
                         end

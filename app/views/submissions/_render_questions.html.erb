@@ -56,11 +56,14 @@
                 <div class="form-group col-sm-8">
                   <label>Presets:</label>
                   <% q["rubric"].each_with_index do |entry, e_i| %>
-                    <% entry.each do |val, hint| %>
+                    <% entry.each do |val, desc| %>
+                    <% hint = ((desc.is_a? String) ? desc : desc["hint"])
+                       feedback = ((desc.is_a? String) ? desc : desc["feedback"]) %>
                     <div class="radio">
                     <label>
                       <input name="grades[<%= index %>][score-preset]" id="grades_<%= index %>_<%= e_i %>"
-                             type="radio" value="<%= val %>">
+                             type="radio" value="<%= val %>"
+                             data-feedback="<%= feedback %>">
                       <span><b><%= val %>:</b>
                         <span><%= sanitize(hint, tags: %w(b strong i em code pre)) %></span>
                       </span>
@@ -79,7 +82,9 @@
             <script>
               $("input[name^='grades[<%= index %>][score-preset]'").on("change", function() { 
                 $("input#grades_<%= index %>_score").val($(this).val()).change(); 
-                $("textarea#grades_<%= index %>_comment").val($(this).next("span").find("span").text()).change();
+                var feedback = $(this).data("feedback");
+                if (feedback === undefined) { feedback = $(this).next("span").find("span").text(); }
+                $("textarea#grades_<%= index %>_comment").val(feedback).change();
               });
               $("input#grades_<%= index %>_score").on("change",
                 function() { 

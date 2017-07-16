@@ -83,8 +83,8 @@
       <% if q["rubric"] %>
       <ul>
       <% q["rubric"].each do |entry| %>
-        <% entry.each do |val, hint| %>
-        <li><b><%= val %>:</b> <%= hint %></li>
+        <% entry.each do |val, desc| %>
+        <li><b><%= val %>:</b> <%= desc["hint"] || desc %></li>
         <% end %>
       <% end %>
       </ul>
