@@ -43,7 +43,7 @@ class Teamset < ActiveRecord::Base
     end
     leftovers = []
     grouped_students_to_team.each do |students_to_team|
-      students_to_team.shuffle.each_slice(size).each do |t|
+      students_to_team.shuffle!.each_slice(size).each do |t|
         @team = Team.new(course: self.course,
                          start_date: start_date,
                          end_date: end_date,

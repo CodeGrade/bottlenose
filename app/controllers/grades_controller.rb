@@ -413,7 +413,7 @@ HEADER
         @tests = @grading_output.tests
       else
         @grading_header = "Selected test results"
-        @tests = @grading_output.tests.delete_if{|t| t[:passed]}.shuffle.take(@grade.grader.errors_to_show || 3)
+        @tests = @grading_output.tests.reject{|t| t[:passed]}.shuffle!.take(@grade.grader.errors_to_show || 3)
       end
     end
 
@@ -455,7 +455,7 @@ HEADER
         @grading_header = "All tests passed"
       else
         @grading_header = "Selected test results"
-        @tests = @grading_output.tests.delete_if{|t| t[:passed]}.shuffle.take(@grade.grader.errors_to_show || 3)
+        @tests = @grading_output.tests.reject{|t| t[:passed]}.shuffle!.take(@grade.grader.errors_to_show || 3)
       end
     end
 
@@ -612,7 +612,7 @@ HEADER
         @tests = @grading_output.tests
       else
         @grading_header = "Selected test results"
-        @tests = @grading_output.tests.delete_if{|t| t[:passed]}.shuffle.take(3)
+        @tests = @grading_output.tests.reject{|t| t[:passed]}.shuffle!.take(3)
       end
     end
 
