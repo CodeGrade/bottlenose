@@ -44,7 +44,7 @@
         course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
         class: "btn btn-default",
         method: 'patch',
-        data: { confirm: "Are you sure you want to publish all grades?" }
+        data: { confirm: "Are you sure you want to publish all completed grades?" }
         %><button type="button" class="btn btn-md btn-default dropdown-toggle"
                  style="float: unset;"
                  data-toggle="dropdown"
@@ -111,7 +111,7 @@
       </tr>
     </thead>
     <tbody>
-    <% @gradesheet.grades[:grades].each do |grade| %>
+    <% @gradesheet.grades[:grades].each do |id, grade| %>
       <% sub = grade[:sub] %>
       <% if sub.stale_team? %>
       <tr class='text-muted'>
