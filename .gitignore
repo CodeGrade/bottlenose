@@ -48,3 +48,4 @@ db/dump.sql.gz
 .vagrant
 
 *.class
+lib/assets/*.jar
