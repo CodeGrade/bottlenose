@@ -39,7 +39,7 @@
       <%= render "assignment_file_picker", f: f, asgn: asgn, id: "questions" %>
     </div>
 
-    <%= render 'questions_schema' %>
+    <%= render 'questions_schema', id: "questions-schema" %>
   </div>
   
   <div class="for-type row">
@@ -51,7 +51,8 @@
                                 .where(type: "Files").where.not(id: asgn.id)
                                 .order(due_date: :desc) %>
       <%= f.select :related_assignment_id,
-          [["<none>", nil]] + (related_assns.to_a.map do |a| [a.name, a.id] end) %>
+          [["<none>", nil]] + (related_assns.to_a.map do |a| [a.name, a.id] end),
+          selected: asgn.related_assignment_id&.to_i %>
     </div>
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>
