@@ -14,7 +14,7 @@
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_none" type="radio"
-           value="none" <% if @legal_actions[:no_teams][:checked] %>checked<% end %>>
+           value="none" <% if asgn.teamset_plan == "none" || @legal_actions[:no_teams][:checked] %>checked<% end %>>
     <strong>No teams:</strong> this assignment will be submitted individually
   </label>
 </div>
@@ -23,7 +23,7 @@
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_new" type="radio"
-           value="new" <% if @legal_actions[:new][:checked] %>checked<% end %>>
+           value="new" <% if asgn.teamset_plan == "new" || @legal_actions[:new][:checked] %>checked<% end %>>
     <strong>New teamset:</strong> after creating this assignment, go to the Teams
     page to create a new set of teams.
     <% if @legal_actions[:new][:existing] %>
@@ -37,15 +37,18 @@
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_use" type="radio"
-           value="use" <% if @legal_actions[:use][:checked] %>checked<% end %>>
+           value="use" <% if asgn.teamset_plan == "use" || @legal_actions[:use][:checked] %>checked<% end %>>
     <strong>Use existing teamset:</strong> this assignment shares a teamset with
     another one, and changes to this teamset will affect both assignments<br>
     <% if @legal_actions[:use][:existing] %>
     <input type='text' style="width: 100%;" disabled value="<%= asgn.teamset&.name %>">
     <% else %>
     <%= select_tag "assignment[teamset_source_use]",
-        options_from_collection_for_select(course.teamsets, "id", "name", @legal_actions[:use][:value]),
-        prompt: "Choose an existing teamset", value: @legal_actions[:use][:value],
+        options_from_collection_for_select(course.teamsets, "id", "name", 
+                                           asgn.teamset_source_use&.to_i || @legal_actions[:use][:value]),
+        prompt: [asgn.teamset_source_use,
+                 @legal_actions[:use][:value],
+                 "Choose an existing teamset"].find(&:presence),
         class: "col-sm-12" %>
     <% end %>
   </label>
@@ -55,7 +58,7 @@
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_copy" type="radio"
-           value="copy">
+           value="copy" <% if asgn.teamset_plan == "copy" %>checked<% end %>>
     <strong>Copy existing teamset:</strong> clones the teams from an existing
     teamset, so changes to one set will not affect the other.
     <% if @legal_actions[:copy][:existing] %>
@@ -67,8 +70,9 @@
     will be ignored.
     <br>
     <%= select_tag "assignment[teamset_source_copy]",
-        options_from_collection_for_select(course.teamsets, "id", "name"),
-        prompt: "Choose an existing teamset",
+        options_from_collection_for_select(course.teamsets, "id", "name", asgn.teamset_source_copy&.to_i),
+        prompt: [asgn.teamset_source_copy,
+                 "Choose an existing teamset"].find(&:presence),
         class: "col-sm-12" %>
   </label>
 </div>
@@ -77,7 +81,7 @@
 <div class="radio">
   <label>
     <input name="assignment[teamset_plan]" id="teamset_clone" type="radio"
-           value="clone">
+           value="clone" <% if asgn.teamset_plan == "clone" %>checked<% end %>>
     <strong>Clone existing teamset:</strong> clone the teamset that
     this assignment currently shares with another one, so that changes
     to the teamset for this assignment will not affect the previous
