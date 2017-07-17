@@ -177,20 +177,21 @@ function activateSpinner(obj, options) {
   function validate() {
     max = input.data("max");
     min = input.data("min");
+    var disabled = input.prop("disabled");
     var val = parseFloat(input.val(), 10);
     if (max !== undefined && val >= max) {
       upArrow.addClass("disabled");
       clearInterval(upInterval);
       upInterval = undefined;
     }
-    if (min === undefined || val > min)
+    if (!disabled && (min === undefined || val > min))
       downArrow.removeClass("disabled");
     if (min !== undefined && val <= min) {
       downArrow.addClass("disabled");
       clearInterval(downInterval);
       downInterval = undefined;
     }
-    if (max === undefined || val < max)
+    if (!disabled && (max === undefined || val < max))
       upArrow.removeClass("disabled");
   }
   input.on("change", validate);
@@ -209,6 +210,7 @@ function activateSpinner(obj, options) {
     input.val(newVal.toFixed(precision)).change();
   }
   input.on("keydown", function(e) {
+    if (input.prop("disabled")) return;
     validateNumericInput(e);
     if (e.key === "ArrowUp") { increment(); return; }
     if (e.key === "ArrowDown") { decrement(); return; }
@@ -219,12 +221,23 @@ function activateSpinner(obj, options) {
     if (max !== undefined && newVal > max) { e.preventDefault(); }
     if (min !== undefined && newVal < min) { e.preventDefault(); }
   });
+  input.on("deactivate", function(e) {
+    input.prop("disabled", true);
+    upArrow.addClass("disabled");
+    downArrow.addClass("disabled");
+  });
+  input.on("reactivate", function(e) {
+    input.prop("disabled", false);
+    validate();
+  });
 
   $(upArrow).on('mousedown', function() {
+    if (input.prop("disabled")) return;
     upInterval = setInterval(increment, 200);
     increment();
   });
   $(downArrow).on('mousedown', function() {
+    if (input.prop("disabled")) return;
     downInterval = setInterval(decrement, 200);
     decrement();
   });
@@ -236,6 +249,12 @@ function activateSpinner(obj, options) {
     return false;
   });
   return input;
+}
+function disableSpinner(divOrInput) {
+  $(divOrInput).find("input").addBack().trigger("deactivate");
+}
+function enableSpinner(divOrInput) {
+  $(divOrInput).find("input").addBack().trigger("reactivate");
 }
 
 function makeSpinner(options) {
