@@ -273,7 +273,7 @@ class ArchiveUtils
             File.open(out, "wb") do |f|
               f.print entry.get_input_stream.read
             end
-            FileUtils.chmod entry.unix_perms, out, :verbose => false
+            FileUtils.chmod entry.unix_perms, out, :verbose => false if entry.unix_perms
           else
             FileUtils.rm_rf out unless File.file? out
             FileUtils.mkdir_p(File.dirname(out))
@@ -306,6 +306,8 @@ class ArchiveUtils
     end
     return true
   rescue Exception => e
+    puts e
+    puts e.backtrace
     raise FileReadError.new(file, 'zip', e)
   end
 
@@ -349,7 +351,7 @@ class ArchiveUtils
             File.open dest, "wb" do |f|
               f.print entry.read
             end
-            FileUtils.chmod entry.header.mode, dest, :verbose => false
+            FileUtils.chmod entry.header.mode, dest, :verbose => false if entry.header.mode
           elsif entry.header.typeflag == '2' #Symlink!
             FileUtils.rm_rf dest unless File.file? dest
             FileUtils.mkdir_p(File.dirname(dest))
