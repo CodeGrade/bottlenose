@@ -4,7 +4,8 @@
 (require racket/string
          racket/match
          racket/list
-         racket/cmdline)
+         racket/cmdline
+         racket/path)
 
 (define output-filename (make-parameter #f))
 (define total-points (make-parameter 50))
@@ -83,11 +84,13 @@
   
 (define (process-files start width)
   (cond
-   [(file-exists? start)
+   [(and (file-exists? start)
+         (bytes=? (path-get-extension start) #".rkt"))
     (process start width)]
    [(directory-exists? start)
     (for ([p (in-directory start)])
-      (when (file-exists? p)
+      (when (and (file-exists? p)
+                 (equal? (path-get-extension p) #".rkt"))
           (process (format "~a" p) width)))]
    [else
     (void)]))

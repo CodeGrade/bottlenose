@@ -1,4 +1,8 @@
-<% @page_title = "View Submission Details" %>
+<% if @grade
+   @page_title = "Scoring Details: #{@grade.grader.display_type}"
+   else
+   @page_title = "View Submission Details"
+   end %>
 <% cur_reg = current_user.registration_for(@course) %>
 <% content_for :wide_content_before do %>
 <% if @commentType %>
@@ -14,11 +18,55 @@
 <h1>Submission</h1>
 
 <%= render 'submissions/sub_info' %>
+
+<% if @grade %>
+<h1>Scoring Details: <%= @grade.grader.display_type %></h1>
+<% end %>
+
+<% if @error_header %>
+<div id="error_explanation" class="alert alert-danger">
+  <%= @error_header %>
+</div>
+<% end %>
+<% if @sub_comments %>
+<h2>General comments</h2>
+<div class="row">
+<div class="col-sm-12"> 
+<% @sub_comments.each do |file, comments| %>
+<% file = file.gsub(@submission.upload.extracted_path.to_s, "") %>
+<h3 style="margin-top: 0;"><%= if file == "" then "Overall" else file end %>:</h3>
+  <% comments.each do |c| %>
+  <div class="<%= "#{c.severity.humanize(capitalize: false)} #{c.grade.grader.type.humanize}" %>">
+    <span class="label label-default">- <%= to_fixed(c.weight) %></span>
+    <span class="description"><%= c.title %>: <%= c.comment %></span>
+  </div>
+  <% end %>
+<% end %>
+</div>
+</div>
+<% end %>
 <h3>
-  <% if @grader %>
-  <%= link_to details_course_assignment_submission_grader_path(@course, @assignment, @submission, @grader),
+<% if @grade %>
+  <%= link_to details_course_assignment_submission_grade_path(@course, @assignment, @submission, @grade),
       class: "btn btn-default" do %>
   <i class="glyphicon glyphicon-download-alt"></i> Download comments
+  <% end %>
+  <% if cur_reg&.staff? && @grade.grading_output %>
+  <%= link_to Upload.upload_path_for(@grade.grading_output), class: "btn btn-default" do %>
+    <i class="glyphicon glyphicon-download-alt"></i> Download raw output
+  <% end %>
+  <% end %>  
+
+  <% if @grade.available? || cur_reg&.staff? %>
+  <span class="pull-right">Total score:
+  <% if @grading_output.is_a?(TapParser) %>
+    <%= show_score(@grading_output.points_earned) %>&nbsp;/&nbsp;
+    <%= to_fixed(@grading_output.points_available)%>
+  <% elsif @grading_output&.is_a?(Grade) %>
+    <%= show_score(@grading_output.score) %>&nbsp;/&nbsp;
+    <%= to_fixed(@grading_output.out_of)%>
+  <% end %>
+  </span>
   <% end %>
 <% else %>
   <%= link_to details_course_assignment_submission_path(@course, @assignment, @submission, :format => :text),
@@ -32,18 +80,20 @@
 <% end %>
 
 <% content_for :wide_content do %>
-<div class="col-sm-3">
-  <div id="files-sidebar" data-spy="affix">
-    <div id="files" class="nav treeview condensed"></div>
+<div id="all-files">
+  <div class="col-sm-3 files-sidebar-container">
+    <div class="files-sidebar">
+      <div id="files-all-files" class="files nav treeview condensed"></div>
+    </div>
   </div>
-</div>
-<div class="col-sm-9 tab-content">
-  <%= render "submissions/files", sub_files: @submission_files %>
+  <div class="col-sm-9 tab-content">
+    <%= render "submissions/files", sub_files: @submission_files, root: "all-files" %>
+  </div>
 </div>
 
 <script>
   var lineComments = <%= raw json_escape(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
-  <%= render 'submissions/render_comments.js' %>
+  <%= render 'submissions/render_comments.js', sub_dirs: @submission_dirs, vertical: false, root: "all-files" %>
   $(function() { renderComments(lineComments); });
 </script>
 <% end %>

@@ -1,0 +1,39 @@
+<% @page_title = "#{@course.name} / #{@gradesheet.assignment.name} / Submissions for #{@user.display_name}" %>
+<% cur_reg = current_user.registration_for(@course) %>
+
+<%= render 'assignment_questions_info', gradesheet: @gradesheet,
+    cur_reg: cur_reg %>
+<div class="row">
+  <div class="col-md-6">
+    <p>
+      Complete <b><%= pluralize(@gradesheet.assignment.review_count,
+                                @gradesheet.assignment.review_target + " review") %></b>
+      of <%= link_to @gradesheet.assignment.related_assignment.name,
+             course_assignment_path(@course, @gradesheet.assignment.related_assignment) %>
+    </p>
+    <% if (current_user.site_admin? || cur_reg&.professor?) %>
+      <p>
+        <b>Threshold:</b> Only show reviews of quality
+        <%= @gradesheet.assignment.review_threshold %>% or higher.
+      </p>
+    <% end %>
+  </div>
+</div>
+
+<h3>
+  Submissions
+  <% if @user.id != current_user.id %>
+  for <%= @user.name %>
+  <% else %>
+  (<%= @gradesheet.submissions.count %>)
+  <% end %>
+  <% if @user.id == current_user.id %>
+  <% if true %>
+  <%= link_to "New Submission",
+         new_course_assignment_submission_path(@course, @gradesheet.assignment), class: "btn btn-success" %>
+  <% else %>
+  <div class="btn btn-warning">Submissions are temporarily disabled; they will resume later today.</div>
+  <% end %>
+  <% end %>
+</h3>
+<%= render 'user_subs', user: @user, course: @course, gradesheet: @gradesheet %>

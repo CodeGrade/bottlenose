@@ -155,4 +155,41 @@ module ApplicationHelper
     end
     sanitize(html, options)
   end
+
+  def self.mime_type(full_path)
+    case File.extname(full_path).downcase
+    when ".java"
+      "text/x-java"
+    when ".js"
+      "text/javascript"
+    when ".arr"
+      "pyret"
+    when ".rkt", ".ss"
+      "scheme"
+    when ".ml", ".mli"
+      "mllike"
+    when ".mly"
+      "text/x-ebnf"
+    when ".c", ".h"
+      "text/x-csrc"
+    when ".cpp", ".c++"
+      "text/x-c++src"
+    when ".cs"
+      "text/x-csharp"
+    when ".jpg", ".jpeg", ".png"
+      "image"
+    when ".jar"
+      "jar"
+    when ".zip"
+      "zip"
+    when ".tap"
+      "text/plain"
+    else
+      if File.basename(full_path.to_s) == "Makefile"
+        "text/x-makefile"
+      else
+        "text/unknown"
+      end
+    end
+  end
 end

@@ -1,82 +1,5 @@
-<% vertical = false if local_assigns[:vertical].nil? %>
-function renderComments(lineComments) {
-  $(".file-pane").each(function(index) {
-    var theseComments = lineComments[index] || {};
-    if (theseComments["noCommentsFor"]) return;
-    var cm = $(this).find(".CodeMirror")[0].CodeMirror;
-    cm.operation(function() {
-      Object.keys(theseComments).forEach(function(type, _) {
-        var commentsByType = theseComments[type] || {};
-        Object.keys(commentsByType).forEach(function(line, _) {
-          var commentsOnLine = commentsByType[line] || {};
-          commentsOnLine.forEach(function(comment, _) {
-            renderComment(cm, type, line, comment);
-          });
-        });
-      });
-    });
-  });
-}
-
-function renderComment(cm, type, line, comment) {
-  var widget = $("<div>").addClass(comment.severity).addClass(type);
-  var table = $("<table>");
-  widget.append(table);
-  var row = $("<tr>");
-  table.append(row);
-  var td = $("<td>").addClass("nowrap");
-  row.append(td);
-  var label = $("<span>").text(comment.label || comment.author).addClass("label label-default");
-  td.append(label);
-  if (comment.suppressed) {
-    var icon = $("<span>").addClass("glyphicon glyphicon-flag")
-        .data("toggle", "toolip").data("placement", "top")
-        .attr("title", "Too many errors of this type were found; no further points were deducted");
-    td.append(icon);
-    var deduction = $("<span>").addClass("label label-default")
-        .data("toggle", "tooltip").data("placement", "top")
-        .attr("title", "This problem would normally deduct " + comment.deduction + " points");
-    if (comment.deduction < 0)
-      deduction.text("[+" + Math.abs(comment.deduction) + "]");
-    else {
-      deduction.text("[-" + comment.deduction + "]");
-    }
-    td.append(deduction);
-  } else {
-    var icon = $("<span>").addClass("glyphicon")
-        .data("toggle", "tooltip").data("placement", "top");
-    if (comment.severity === "Error")
-      icon.addClass("glyphicon-ban-circle").attr("title", "Error");
-    else if (comment.severity === "Warning")
-      icon.addClass("glyphicon-warning-sign").attr("title", "Warning");
-    else
-      icon.addClass("glyphicon-info-sign").attr("title", "Suggestion");
-    td.append(icon);
-    var deduction = $("<span>").addClass("label label-danger");
-    if (comment.deduction < 0)
-      deduction.text("[+" + Math.abs(comment.deduction) + "]");
-    else {
-      deduction.text("[-" + comment.deduction + "]");
-    }
-    if (comment.deduction < 0)
-      deduction.text("+" + Math.abs(comment.deduction));
-    else {
-      deduction.text("-" + comment.deduction);
-    }    
-    td.append(deduction);
-  }
-  td = $("<td>");
-  row.append(td);
-  if (comment.title !== "" && comment.title !== undefined) {
-    td.append($("<span>").addClass("description").text(comment.title + ": " + comment.comment));
-  } else {
-    td.append($("<span>").addClass("description").text(comment.comment));
-  }
-  cm.addLineWidget(parseInt(line) - 1, widget[0], {coverGutter: false, noHScroll: true});
-}
-
 $(function (){
-  $("textarea.sourceCode").each(function(index, code) {
+  $("#<%= root %>").find("textarea.sourceCode").each(function(index, code) {
     if ($(code).data("lang")) {
       var cm = CodeMirror.fromTextArea(code, {
         readOnly: true, indentUnit: 2,
@@ -91,7 +14,7 @@ $(function (){
     }
     $(code).addClass("cm-s-mdn-like cm-s-default");
   });
-  $("#files").treeview({
+  $("#<%= root %>").find(".files").treeview({
     expandIcon: 'glyphicon glyphicon-chevron-down', // deliberately the same
     collapseIcon: 'glyphicon glyphicon-chevron-down', // always expanded
     enableLinks: true,
@@ -99,7 +22,7 @@ $(function (){
       e.preventDefault();
       e.stopPropagation();
       if (data.href !== undefined && data.href !== "#") {
-        $(".tab-pane").removeClass("active");
+        $("#<%= root %>").find(".tab-pane").removeClass("active");
         // make sure any comments are visible
         var newPane = $(data.href);
         var cm = newPane.addClass("active").find(".CodeMirror");
@@ -110,12 +33,12 @@ $(function (){
         newPane.find(".magnify-image").each(magnifyImages);
       }
     },
-    data: <%= raw(JSON.pretty_generate(@submission_dirs)) %>
+    data: <%= raw json_escape(JSON.pretty_generate(sub_dirs)) %>
   });
-  var filesTreeview = $("#files").treeview(true);
+  var filesTreeview = $("#<%= root %>").find(".files").treeview(true);
   filesTreeview.expandAll({ silent: true });
   document.addEventListener("keydown", function(e) {
-    var sel = $(document.getSelection().focusNode).parent("#files li.node-files");
+    var sel = $(document.getSelection().focusNode).parent(".files li.node-files-<%= root %>");
     if (sel.length === 0) return;
     sel = filesTreeview.getSelected();
     if (!sel) return;
@@ -136,7 +59,7 @@ $(function (){
       move = true;
     }
     if (move && sib >= 0 && sib < fileMap.length) {
-      selectTreeviewFileByIndex(sib);
+      selectTreeviewFileByIndex(<%= root %>, sib);
       e.preventDefault();
       e.stopPropagation();
       sel = filesTreeview.getSelected();
@@ -147,73 +70,73 @@ $(function (){
         sel.scrollIntoView();
     }
   });
-  var footerHeight = $(".footer").outerHeight();
+  var footerHeight = $(".footer").outerHeight() + 4; // adds a bit of padding
   var divSurround = $(".CodeMirror").first().closest(".tab-pane");
   var parentBulk = $(divSurround).outerHeight() - $(divSurround).height();
   var toggleComments = $("#toggle-comments");
   var toggleCommentsHeight = 0;
   if (toggleComments.length > 0) {
-    toggleCommentsHeight = toggleComments.first().closest("p").outerHeight();
+    toggleCommentsHeight = toggleComments.first().closest("p").outerHeight(true);
   }
-  $("#files-sidebar").data("offset-top", $("#files").offset().top);
-  // $(".magnify-image").click(function(evt) {
-  //   var image = $(evt.target).parent().find("img");
-  //   $("#magnifiedImageBody")
-  //     .html("")
-  //     .append($("<img>").attr('src', image.attr('src')))
-  //     .parent().parent().width(image[0].naturalWidth + 30);
-  //   $("#displayMagnifiedImage").modal();
-  // });
+  var navBar = $("nav.navbar").first();
+  if (navBar.length > 0) {
+    // Note: this will be overruled in application.scss if the window is resized too narrowly
+    $(".files-sidebar-container").css("top", navBar.outerHeight() + "px");
+  } else {
+    $(".files-sidebar-container").css("top", "0px");
+  }
   function magnifyImages(index, btn) {
     var target = document.getElementById($(btn).data("target"));
-    var container = $("#" + $(btn).data("container"));
+    var container = $("#<%= root %>").find("." + $(btn).data("container"));
     if (target.naturalHeight > container.height() || target.naturalWidth > container.width()) {
       $(btn).show();
     } else {
       $(btn).hide();
     }
   }
-  <% if vertical %>
   $(window).resize(function() {
     var windowHeight = $(window).height();
-    var height = (windowHeight - footerHeight) * 0.8 - parentBulk;
-    $(".CodeMirror").each(function(index, cm) {
-      cm.CodeMirror.setSize(null, height);
+    <% if vertical %>
+    var navBarHeight = $("#<%= root %>").prev(".navbar").outerHeight(true) || 0;
+    var codeFraction = 0.8;
+    var codeHeight = (windowHeight - footerHeight - navBarHeight) * codeFraction - parentBulk;
+    var filesHeight = (windowHeight - footerHeight - navBarHeight) * (1.0 - codeFraction);
+    <% else %>
+    var codeHeight = windowHeight - footerHeight - parentBulk;
+    var filesHeight = windowHeight - footerHeight - toggleCommentsHeight;
+    <% end %>
+    $("#<%= root %>").find(".CodeMirror").each(function(index, cm) {
+      cm.CodeMirror.setSize(null, codeHeight);
     });
-    $("#files-sidebar").height((windowHeight - footerHeight) * 0.2);
-    $("#files").height((windowHeight - footerHeight) * 0.2);
-    $(".magnify-image").each(magnifyImages);
+    $("#<%= root %>").find(".nonCMwrapper").height(codeHeight);
+    $("#<%= root %>").find(".files-sidebar .files-treeview").height(filesHeight);
+    $("#<%= root %>").find(".files").height(filesHeight);
+    $("#<%= root %>").find(".magnify-image").each(magnifyImages);
   });
-  <% else %>
-  $(window).resize(function() {
-    var windowHeight = $(window).height();
-    var height = windowHeight - footerHeight - parentBulk;
-    $(".CodeMirror").each(function(index, cm) {
-      cm.CodeMirror.setSize(null, height);
-    });
-    $("#files-sidebar").height(windowHeight - footerHeight - toggleCommentsHeight);
-    $("#files").height(windowHeight - footerHeight - toggleCommentsHeight);
-    $(".nonCMwrapper").height(windowHeight - footerHeight - parentBulk - toggleCommentsHeight);
-    $(".magnify-image").each(magnifyImages);
-  });
-  <% end %>
   $(window).resize();
-  var fileMap = [];
+  if (window.fileMap === undefined)
+    window.fileMap = {};
+  if (fileMap["<%= root %>"] === undefined)
+    fileMap["<%= root %>"] = [];
+  if (window.fileTrees === undefined)
+    window.fileTrees = {};
+  window.fileTrees["<%= root %>"] = filesTreeview;
   filesTreeview.findNodes('', 'href').forEach(function(n, i) {
+    n.href += "_<%= root %>";
     fileMap[n.href] = n;
-    fileMap[i] = n.href;
+    fileMap["<%= root %>"][i] = n.href;
   });
-  window.selectTreeviewFileByHref = function(href) {
-    if (fileMap[href]) filesTreeview.selectNode(fileMap[href]);
+  window.selectTreeviewFileByHref = function(root, href) {
+    if (fileMap[href]) window.fileTrees[root].selectNode(fileMap[href]);
     return fileMap[href];
   }
-  window.selectTreeviewFileByIndex = function(index) {
-    if (fileMap[index] && fileMap[fileMap[index]])
-      return filesTreeview.selectNode(fileMap[fileMap[index]]);
+  window.selectTreeviewFileByIndex = function(root, index) {
+    if (fileMap[root][index] && fileMap[fileMap[root][index]])
+      return fileTrees[root].selectNode(fileMap[fileMap[root][index]]);
   }
   if (document.location.hash !== "") {
-    return selectTreeviewFileByHref(document.location.hash);
+    return selectTreeviewFileByHref("<%= root %>", document.location.hash);
   } else {
-    return selectTreeviewFileByIndex(0);
+    return selectTreeviewFileByIndex("<%= root %>", 0);
   }
 });

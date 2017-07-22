@@ -46,9 +46,11 @@
     <%= select_tag "assignment[teamset_source_use]",
         options_from_collection_for_select(course.teamsets, "id", "name", 
                                            asgn.teamset_source_use&.to_i || @legal_actions[:use][:value]),
-        prompt: [asgn.teamset_source_use,
-                 @legal_actions[:use][:value],
-                 "Choose an existing teamset"].find(&:presence),
+        prompt: (if [asgn.teamset_source_use, @legal_actions[:use][:value]].find(&:presence)
+                 nil
+                 else
+                 "Choose an existing teamset"
+                 end),
         class: "col-sm-12" %>
     <% end %>
   </label>

@@ -1,0 +1,158 @@
+<% @page_title = "New Response: #{@assignment.name}" %>
+<% content_for :wide_content do %>
+
+<%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)] do |f| %>
+  <% f.object = @submission.becomes(@submission.class)
+     allowed = @assignment.sub_allow_submission?(@submission)
+     not_following = @assignment.sub_not_following_related?(current_user)
+     rate_limit = @assignment.rate_limit?(@submission)
+     staff_override = true_user.course_staff?(@course)
+     %>
+  <%= f.hidden_field :type, value: "CodereviewSub" %>
+<div class="container">
+  <%= render "new_common", f: f, type: {noun: "response", verb: "respond", gerund: "responding" },
+      not_following: not_following, allowed: allowed, rate_limit: rate_limit, staff_override: staff_override %>
+</div>
+
+<% if (allowed && not_following && !rate_limit) || staff_override %>
+<% if @submission_info.count < @assignment.review_count %>
+<div class="container">
+  <h1>No assignments to review</h1>
+  <p>There is nothing available at this time to review.  If this is
+    not true, please contact your professor.</p>
+</div>
+<% else %>
+<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id), index|
+   @submission_dirs = sub_dirs
+   @submission_files = sub_files %>
+<%= f.hidden_field :related_subs, multiple: true, value: sub_id %>
+<% if @submission_info.length != 1 %>
+<a id="nav_<%= index %>" style="width: 0px; height: 0px; float: left;"></a>
+<nav class="review-navbar navbar navbar-default">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <h3 class="text-center col-sm-12">
+        <% if index != 0 %>
+        <a href="#nav_<%= index - 1 %>" class="btn btn-med btn-default pull-left">&laquo; Previous review</a>
+        <% else %>
+        <a href="#" style="visibility: hidden;" class="btn btn-med btn-default pull-left">&laquo; Previous review</a>
+        <% end %>
+        <span>Review <%= index + 1 %> of <%= @submission_info.count %></span>
+        <% if index != @submission_info.length - 1 %>
+        <a href="#nav_<%= index + 1 %>" class="btn btn-med btn-default pull-right">Next review &raquo;</a>
+        <% else %>
+        <a href="#" style="visibility: hidden;" class="btn btn-med btn-default pull-right">Next review &raquo;</a>
+        <% end %>
+      </h3>
+    </div>
+  </div>
+</nav>
+<% end %>
+<div id="sub_<%= sub_id %>" class="container-fluid" style="padding: 0px;">
+  <div class="col-sm-6 files-sidebar-container">
+    <div class="files-sidebar">
+      <div class="files-treeview">
+        <div id="files-sub_<%= sub_id %>" class="files nav treeview condensed"></div>
+      </div>
+      <div class="tab-content">
+        <%= render "files", sub_files: sub_files, root: "sub_#{sub_id}" %>
+      </div>
+    </div>
+    <script>
+      <%= render "render_comments.js", sub_dirs: sub_dirs, vertical: true, root: "sub_#{sub_id}" %>
+    </script>
+  </div>
+
+  <div class="responses form-group col-sm-6">
+    <% @count = 0 %>
+    <% @questions.each do |section| %>
+      <% section.each do |name, qs| %>
+        <h4><%= name %></h4>
+        <ol start="<%= @count + 1 %>">
+          <% qs.each_with_index do |question, i| %>
+            <% question.each do |type, q| %>
+              <li>
+                <p>
+                  <%= sanitize_question(q["prompt"], allow_code: true) %>
+                  <small>(<%= pluralize(q["weight"], "point") %>)</small>
+                </p>
+                <%= render "enter_answer_#{type.underscore}", sub_id: sub_id, q: q, index: i + @count %>
+                <p></p>
+                <% if q["parts"] %>
+                  <div class="parts" data-qnum="<%= i + @count %>">
+                  <% q["parts"].each_with_index do |part, part_i| %>
+                    <% part_ans = @answers&.dig(sub_id.to_s, i + @count, "parts", part_i) %>
+                    <% if part["codeTag"] %>
+                    <p><%= sanitize_question(part["codeTag"], allow_code: true) %></p>
+                    <%= render partial: "code_tag",
+                        locals: {i: i, sub_id: sub_id, count: @count, part_ans: part_ans, part_i: part_i, sub_files: sub_files} %>
+                    <% elsif part["text"] %>
+                    <p><%= sanitize_question(part["text"], allow_code: true) %></p>
+                    <textarea class="form-control" rows="5"
+                              name="answers[<%= sub_id %>][<%= i + @count %>][parts][<%= part_i %>][info]"><%= part_ans&.dig("info") %></textarea>
+                    <% elsif part["requiredText"] %>
+                    <p><%= sanitize_question(part["requiredText"], allow_code: true) %></p>
+                    <textarea class="form-control <%= if @answers && part_ans&.dig(:info).blank? then 'unanswered' end %>" rows="5"
+                              name="answers[<%= sub_id %>][<%= i + @count %>][parts][<%= part_i %>][info]"><%= part_ans&.dig("info") %></textarea>
+                    <% end %>
+                  <% end %>
+                  </div>
+                <% end %>
+              </li>
+            <% end %>
+          <% end %>
+        </ol>
+        <% @count += qs.count %>
+      <% end %>
+    <% end %>
+
+    <div class="spacer">&nbsp;</div>
+  </div>
+</div>
+<% end %><%# @submission_info.each %>
+
+<div class="container">
+  <% if @assignment.request_time_taken %>
+  <div class="form-group">
+    <%= f.label :time_taken, "How many hours have you worked on this assignment?" %>
+    <%= f.spinner :time_taken, @submission.time_taken || "", :min => 0, :delta => 0.5 %>
+  </div>
+  <script>
+    $(function() { $(".spinner").each(function() { activateSpinner(this, {precision: 1}) }); })
+  </script>
+  <% end %>
+  <%= f.label :student_notes %>
+  <%= f.text_area :student_notes, class: 'form-control' %>
+  <div id="late-warning">
+    <h3 class="hidden" style="margin-top: initial;">Warning!</h3>
+    <p class="hidden">It is now past the due date and time for this
+      assignment, and your submission will be considered late.  Are you
+      sure you want to submit?</p>
+    <p><%= f.submit "Submit response", class: "btn btn-primary" %></p>
+  </div>
+</div>
+    
+
+<% end %><%# if not blank %>
+<% end %><%# if allowed or staff-override %>
+<% end %><%# form-for %>
+<script>
+  <%= render partial: "new_questions.js", locals: {count: (@count.to_i - 1)} %>
+  $(".navbar-header a").click(function(e) { 
+    window.scrollTo(0, $($(this).attr("href"))[0].offsetTop); 
+    e.stopPropagation();
+    e.preventDefault();
+  });
+  var deadline = moment(Date.parse("<%= @assignment.due_date.strftime("%Y/%m/%d %H:%M") %>")).valueOf();
+  var now = moment().valueOf();
+  setTimeout(function() {
+    var warning = $("#late-warning");
+    warning.addClass("alert alert-danger");
+    warning.find("p").removeClass("hidden");
+    warning.find("h3").removeClass("hidden");
+  }, Math.max(deadline - now, 0));
+  $("form").submit(function(e) {
+    return ensureValidNumericInputOnSubmit(e, "input.numeric:not([disabled])");
+  });
+</script>
+<% end %><%# content-for %>

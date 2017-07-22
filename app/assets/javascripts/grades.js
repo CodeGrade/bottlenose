@@ -3,7 +3,7 @@
     $(".symlink-jump").click(function(e) {
       e.preventDefault();
       e.stopPropagation();
-      selectTreeviewFileByHref($(this).attr("href"));
+      selectTreeviewFileByHref($(this).data("root"), $(this).attr("href"));
     });
   }
 

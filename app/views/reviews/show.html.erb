@@ -1,0 +1,19 @@
+<% @page_title = "Showing Code-review" %>
+
+<% content_for :wide_content_before do %>
+
+<p>
+  <%= link_to "< Back to submission", course_assignment_submission_path(@course, @assignment, @submission) %>
+</p>
+<h1><%= @review_assignment.review_target.capitalize %> Review</h1>
+
+<p class="alert alert-info">
+  This review of your submission is intended to
+  be <i>informative</i>, <i>professional</i> and <i>helpful</i>.  If
+  you find something offensive about this review, please email your
+  professor.
+</p>
+
+<% end %>
+
+<%= render "submissions/codereview_details" %>

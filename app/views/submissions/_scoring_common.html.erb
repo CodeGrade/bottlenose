@@ -60,6 +60,29 @@
     </td>
   </tr>
   <% end %>
+  <% @submission.reviews.each do |review| %>
+  <tr>
+    <td><%= review.review_submission.assignment.review_target.capitalize %> review:</td>
+    <td>&mdash;</td>
+    <td>
+      <% if !review.grade.available %>
+        <% if cur_reg_staff %>
+        <%= link_to "Review feedback",
+            course_assignment_submission_review_path(@course, @assignment, @submission, review) %>
+        (unavailable)
+        <% else %>
+        This review is not yet available.
+        <% end %>
+      <% elsif (review.score / review.out_of) * 100 >= review.review_submission.assignment.review_threshold %>
+      <%= link_to "Review feedback",
+          course_assignment_submission_review_path(@course, @assignment, @submission, review) %>
+      <% else %>
+      This review was withheld as being either too uninformative or
+      too unhelpful.
+      <% end %>
+    </td>
+  </tr>
+  <% end %>
   <tr>
     <td>Raw Score:</td>
     <td>

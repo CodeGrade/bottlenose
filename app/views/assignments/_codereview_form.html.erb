@@ -1,0 +1,149 @@
+<%= form_for [@course, asgn.becomes(Assignment)] do |f| %>
+<% f.object = asgn.becomes(asgn.class) %>
+  <%= f.hidden_field :type, value: "Codereview" %>
+
+  <% if asgn.errors.any? %>
+    <div id="error_explanation" class="alert alert-danger">
+      <h2><%= pluralize(asgn.errors.count, "error") %> prohibited this
+        assignment from being saved:</h2>
+
+      <ul>
+      <% asgn.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= f.label :name %>
+    <%= f.text_field :name, class: 'form-control' %>
+  </div>
+  <div class="form-group">
+    <%= f.label :assignment, "Assignment Text" %>
+    <p>This description will appear on the homework-submission page,
+    and may be useful to remind students which files are expected, or
+      a link to the assignment itself.  HTML markup is allowed here.</p>
+    <%= f.text_area :assignment, class: "form-control rich-text" %>
+  </div>
+  <div class="for-type row">
+    <div class="form-group col-sm-6">
+      <p>
+      <%= f.label :assignment_file, "Assignment questions" %>
+      </p>
+      <p>This file contains the questions for
+        this assignment, in YAML format.
+        <span class="btn btn-info btn-sm pull-right" data-toggle="collapse"
+              data-target="#review-schema">See schema</span>
+      </p>
+      <div>&nbsp;</div>
+      <%= render "assignment_file_picker", f: f, asgn: asgn, id: "questions" %>
+    </div>
+    <div class="form-group col-sm-6">
+      <%= f.label :related_assignment_id %>
+      <p>Please select the underlying assignment for this code review.</p>
+      <% related_assns = @course.assignments
+                                .where(type: "Files").where.not(id: asgn.id)
+                                .order(due_date: :desc) %>
+      <%= f.select :related_assignment_id,
+          options_from_collection_for_select(related_assns, "id", "name", asgn.related_assignment_id&.to_i),
+          prompt: [asgn.related_assignment&.name, "Choose a related assignment"].find(&:presence)
+          %>
+    </div>
+
+    <%= render 'questions_schema', id: "review-schema" %>
+  </div>
+
+  <div class="for-type row">
+    <div class="form-group col-sm-6">
+      <%= f.fields_for :graders, asgn.graders do |gr| %>
+      <div class="form-group row">
+        <%= gr.label :review_target, "Who to review?", class: "col-sm-3" %>
+        <%= gr.select :review_target,
+            [["Self review", "self"], ["Peer review", "peer"]],
+            selected: gr.object.review_target || "self", html: {class: "col-sm-4"} %>
+        <p class="col-sm-5">Either review students' own submission, or their peers'</p>
+      </div>
+      <div class="form-group row">
+        <%= gr.label :review_count, "How many reviews?", class: "col-sm-3" %>
+        <p class="col-sm-5">If peer reviews, how many review should each student complete?</p>
+        <%= gr.spinner :review_count, gr.object.review_count || 1, min: 1, delta: 1, class: "col-sm-4" %>
+      </div>
+      <div class="form-group row">
+        <%= gr.label :review_threshold, "Review quality threshold", class: "col-sm-3" %>
+        <p class="col-sm-5">Reviews with an overall score below this percentage will be
+          censored from the reviewee.</p>
+        <%= gr.spinner :review_threshold, gr.object.review_threshold || 75, 
+            min: 0, max: 100, delta: 5, class: "col-sm-4" %>
+      </div>
+      <% end %>
+    </div>
+    <div class="form-group col-sm-6">
+      <%= f.label :points_available %>
+      <p>
+        This is the percentage of the final grade that this
+        assignment is worth.  Default: same as previous assignment.</p>
+      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+    </div>
+  </div>
+
+  <div class="for-type row">
+    <div class="form-group col-sm-6">
+      <%= f.label :due_date do %>
+      Due date
+      <% end %>
+      <p>Assignment should not be submitted after this time. Default: one week from today.</p>
+      <div>
+        <%= f.text_field :due_date, class: 'form-control datetime-picker' %>
+      </div>
+    </div>
+    <div class="form-group col-sm-6">
+      <%= f.label :available_date %>
+      <p>Assignment will not be visible until this time. Default: today.</p>
+      <div>
+        <%= f.text_field :available, class: 'form-control datetime-picker' %>
+      </div>
+    </div>
+  </div>
+
+  <div class="for-type row">
+    <div class="form-group col-sm-6">
+      <%= render "edit_teamset", course: @course, asgn: asgn %>
+    </div>
+    <div class="form-group col-sm-6">
+      <%= f.label :request_time_taken, "Request time taken?" %>
+      <p>If selected, ask students on each submission how long they've
+        worked on the assignment.</p>
+      <%= f.check_box :request_time_taken, checked: asgn.request_time_taken,
+          data: {toggle: "toggle", on: "Yes", off: "No"} %>
+    </div>
+  </div>
+
+  <div class="form-group for-type">
+    <div>
+      <p><strong>Late Penalty</strong></p>
+      <%= render 'lateness/picker', within_course: true, f: f %>
+    </div>
+  </div>
+  <div class="form-group">
+  <%= f.submit nil, class: 'btn btn-primary' %>
+  </div>
+<% end %>
+<script>
+  $("#type-codereview").find("select[name$='[review_target]']").change(function() {
+    if ($(this).val() == "self") {
+      disableSpinner($("#type-codereview").find("input[name$='[review_count]']").val(1));
+      $("#type-codereview")
+         .find("#teamset_new, #teamset_copy, #assignment_teamset_source_copy")
+         .prop("disabled", true);
+      if ($("#type-codereview").find("input[name='assignment[teamset_plan]']:checked").prop("disabled")) {
+        $("#type-codereview").find("#teamset_none").prop("checked", true);
+      }
+    } else {
+      enableSpinner($("#type-codereview").find("input[name$='[review_count]']"));
+      $("#type-codereview")
+         .find("#teamset_new, #teamset_copy, #assignment_teamset_source_copy")
+         .prop("disabled", false);
+    }
+  }).change();
+</script>

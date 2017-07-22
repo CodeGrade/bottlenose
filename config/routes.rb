@@ -82,8 +82,9 @@ Bottlenose::Application.routes.draw do
           post 'recreate/:grader_id', to: 'submissions#recreate_grade', as: 'recreate_grade'
           get 'plagiarism', to: 'submissions#edit_plagiarism', as: 'edit_plagiarism'
           patch 'plagiarism', to: 'submissions#update_plagiarism', as: 'update_plagiarism'
-          patch 'split', to: 'submissions#split_submission', as: 'split'
+          patch 'split', to: 'submissions#split_submission', as: 'split'          
         end
+        resources :reviews, only: [:show] 
         resources :grades, only: [:show, :edit, :update] do
           member do
             post :regrade

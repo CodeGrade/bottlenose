@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170714150844) do
+ActiveRecord::Schema.define(version: 20170718000106) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -125,6 +125,14 @@ ActiveRecord::Schema.define(version: 20170714150844) do
     t.index ["submission_id", "grade_id", "line"], name: "index_inline_comments_on_submission_id_and_grade_id_and_line"
   end
 
+  create_table "interlocks", force: :cascade do |t|
+    t.integer "assignment_id", null: false
+    t.integer "related_assignment_id", null: false
+    t.string "constraint", null: false
+    t.index ["assignment_id"], name: "index_interlocks_on_assignment_id"
+    t.index ["related_assignment_id"], name: "index_interlocks_on_related_assignment_id"
+  end
+
   create_table "lateness_configs", id: :serial, force: :cascade do |t|
     t.string "type"
     t.integer "days_per_assignment"
@@ -167,6 +175,18 @@ ActiveRecord::Schema.define(version: 20170714150844) do
     t.datetime "dropped_date"
     t.index ["course_id"], name: "index_registrations_on_course_id"
     t.index ["user_id"], name: "index_registrations_on_user_id"
+  end
+
+  create_table "review_feedbacks", force: :cascade do |t|
+    t.integer "grade_id"
+    t.integer "submission_id", null: false
+    t.integer "review_submission_id", null: false
+    t.integer "upload_id", null: false
+    t.float "score"
+    t.float "out_of"
+    t.datetime "updated_at"
+    t.index ["review_submission_id"], name: "index_review_feedbacks_on_review_submission_id"
+    t.index ["submission_id"], name: "index_review_feedbacks_on_submission_id"
   end
 
   create_table "sandboxes", id: :serial, force: :cascade do |t|

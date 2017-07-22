@@ -35,7 +35,7 @@ class Gradesheet
       b_scores = {raw_score: 0.0, scores: []}
       res = {sub: s, staff_scores: s_scores, blind_scores: b_scores}
       @graders.each do |c|
-        g = @raw_grades[s.id]&.fetch(c.id)
+        g = @raw_grades[s.id] && @raw_grades[s.id][c.id]
         if g
           if g.out_of.nil?
             scaled = g.score

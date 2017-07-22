@@ -19,18 +19,20 @@
 
 <% content_for :wide_content do %>
 <% if @assignment.related_assignment_id %>
-<div class="col-sm-6">
-  <div id="files-sidebar" data-spy="affix">
+<div id="all-files">
+<div class="col-sm-6 files-sidebar-container">
+  <div id="files-sidebar">
     <div id="files-treeview">
       <div id="files" class="nav treeview condensed"></div>
     </div>
     <div class="tab-content">
-      <%= render "files", sub_files: @submission_files %>
+      <%= render "files", sub_files: @submission_files, root: "all-files" %>
     </div>
   </div>
   <script>
-    <%= render partial: "render_comments.js", locals: {vertical: true} %>
+    <%= render "render_comments.js", sub_dirs: @submission_dirs, vertical: true, root: "all-files" %>
   </script>
+</div>
 </div>
 <% end %>
 
@@ -55,7 +57,7 @@
 <% else %>
 <div id="responses" class="form-group col-sm-6">
 <% end %>
-<%= render "render_questions" %>  
+<%= render "render_questions", start: 0, root: "all-files" %>  
 <script>
   <%= render partial: "render_questions.js" %>
 </script>

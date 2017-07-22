@@ -22,14 +22,15 @@
 //= require bootstrap-datetimepicker
 //= require bootstrap.treeview
 //= require bootstrap-toggle
-//= require codemirror
-//= require codemirror/addons/runmode/runmode
-//= require codemirror/addons/selection/active-line
-//= require codemirror/modes/clike
-//= require codemirror/modes/mllike
-//= require codemirror/modes/ebnf
-//= require codemirror/modes/javascript
-//= require codemirror/modes/scheme
+//= require codemirror/lib/codemirror
+//= require codemirror/addon/runmode/runmode
+//= require codemirror/addon/selection/active-line
+//= require codemirror/mode/clike/clike
+//= require codemirror/mode/mllike/mllike
+//= require codemirror/mode/ebnf/ebnf
+//= require codemirror/mode/javascript/javascript
+//= require codemirror/mode/scheme/scheme
+//= require pyret-codemirror-mode/mode/pyret
 //= require_tree .
 
 // Based on https://stackoverflow.com/questions/14324919/status-of-rails-link-to-function-deprecation
@@ -277,12 +278,3 @@ function makeSpinner(options) {
   activateSpinner(div, options);
   return div;
 }
-
-$(function() {
-  function fixSizes() {
-    var $affixElement = $('[data-spy="affix"]');
-    $affixElement.width($affixElement.parent().width());
-  }
-  $(window).resize(fixSizes);
-  fixSizes();
-});

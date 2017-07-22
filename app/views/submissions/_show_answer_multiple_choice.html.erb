@@ -1,33 +1,31 @@
 <div class="form-group">
-  <% if @answers and @answers[index]
-     value = @answers[index]["main"]
-     value = value.to_i if value
-     detail = @answers[index]["detail"]
-     end %>
+  <% value = @answers&.dig(sub_id.to_s, index, "main")&.to_i
+     detail = @answers&.dig(sub_id.to_s, index, "detail")
+     %>
   <% q["options"].each_with_index do |opt, opt_idx| %>
   <div class="radio">
     <% if opt == "other" %>
     <label>
-      <input name="answers[<%= index %>][main]" disabled id="answer_<%= index %>_<%= opt_idx %>"
+      <input name="answers[<%= sub_id %>][<%= index %>][main]" disabled id="answer_<%= sub_id %>_<%= index %>_<%= opt_idx %>"
              type="radio" value="<%= opt_idx %>" <%= if value == opt_idx then 'checked' end %> >
       Other:
     </label>
-    <input name="answers[<%= index %>][detail]" disabled type="text" id="answer_<%= index %>_other"
+    <input name="answers[<%= sub_id %>][<%= index %>][detail]" disabled type="text" id="answer_<%= sub_id %>_<%= index %>_other"
            style="display: inline-block; width: 90%;" class="form-control"
            <% unless detail.to_s.empty? %>value="<%= detail %>"<% end %> >
     <% else %>
     <label>
-      <input name="answers[<%= index %>][main]" disabled id="answer_<%= index %>_<%= opt_idx %>"
+      <input name="answers[<%= sub_id %>][<%= index %>][main]" disabled id="answer_<%= sub_id %>_<%= index %>_<%= opt_idx %>"
              type="radio" value="<%= opt_idx %>" <%= if value == opt_idx then 'checked' end %> >
       <%= sanitize_question(opt, allow_code: true) %>
     </label>
     <% end %>
     <script>
       $(function() {
-        $("input[name^='answers[<%= index %>][main]']").on("focus",
-          function() { $("input#answer_<%= index %>_other").removeClass("unanswered"); });
-        $("input#answer_<%= index %>_other").on("focus",
-          function() { $("input#answer_<%= index %>_<%= q['options'].count - 1 %>").prop('checked', true).change(); });
+        $("input[name^='answers[<%= sub_id %>][<%= index %>][main]']").on("focus",
+          function() { $("input#answer_<%= sub_id %>_<%= index %>_other").removeClass("unanswered"); });
+        $("input#answer_<%= sub_id %>_<%= index %>_other").on("focus",
+          function() { $("input#answer_<%= sub_id %>_<%= index %>_<%= q['options'].count - 1 %>").prop('checked', true).change(); });
       });
     </script>
   </div>

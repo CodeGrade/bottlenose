@@ -10,8 +10,7 @@ class Assignment < ApplicationRecord
   attr_accessor :teamset_source_copy
   attr_accessor :current_user
 
-  before_create :setup_teamsets
-  before_update :update_teamsets
+  before_validation :establish_teamsets
 
   belongs_to :blame, :class_name => "User", :foreign_key => "blame_id"
 
@@ -27,8 +26,10 @@ class Assignment < ApplicationRecord
   has_many :submissions, :dependent => :restrict_with_error
   has_many :used_subs, :dependent => :destroy
 
-  has_many :graders, dependent: :destroy
+  has_many :graders, dependent: :destroy, autosave: true
   accepts_nested_attributes_for :graders, allow_destroy: true
+
+  has_many :interlocks, dependent: :destroy
 
   validates :name,      :uniqueness => { :scope => :course_id }
   validates :name,      :presence => true
@@ -93,6 +94,13 @@ class Assignment < ApplicationRecord
     end
   end
 
+  def establish_teamsets
+    if self.new_record?
+      setup_teamsets
+    else
+      update_teamsets
+    end
+  end
   def setup_teamsets
     # Options are:
     # None -- create a (unique, ignored) teamset
@@ -151,7 +159,13 @@ class Assignment < ApplicationRecord
       return false
     end
     if @teamset_plan == "none"
-      # nothing to do
+      if self.team_subs #still the original value
+        # was a teamset; now changing to be individual subs
+        self.teamset = Teamset.create(course: self.course, name: "Team set for #{self.name}")
+        self.teamset.make_solo_teams_for(self)
+      else
+        # nothing to do        
+      end
     elsif @teamset_plan == "new"
       self.teamset.make_solo_teams_for(self)
     elsif @teamset_plan == "copy"

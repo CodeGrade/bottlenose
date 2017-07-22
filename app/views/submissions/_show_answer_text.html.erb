@@ -1,7 +1,5 @@
 <div class="form-group">
-  <% if @answers and @answers[index]
-     value = @answers[index]["main"]
-     end %>
-  <textarea name="answers[<%= index %>][main]" id="answer_<%= index %>"
+  <% value = @answers&.dig(sub_id.to_s, index, "main") %>
+  <textarea name="answers[<%= sub_id %>][<%= index %>][main]" id="answer_<%= sub_id %>_<%= index %>"
             disabled rows="5" class="form-control"><%= value %></textarea>
 </div>
