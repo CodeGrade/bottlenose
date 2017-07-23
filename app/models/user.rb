@@ -78,9 +78,9 @@ class User < ApplicationRecord
     self.errors.add(:base, "Could not read profile file #{Upload.upload_path_for(profile)}: #{e}")
     return false
   end
-
-  def make_profile_thumbnail
-    if self.profile_changed? && self.profile && File.file?(self.profile)
+  
+  def make_profile_thumbnail(force=false)
+    if (force || self.profile_changed?) && self.profile && File.file?(self.profile)
       old_file = self.profile
       secret = SecureRandom.urlsafe_base64
       new_file = Upload.base_upload_dir.join("#{secret}_#{self.username}_profile_thumb.jpg")
@@ -89,10 +89,12 @@ class User < ApplicationRecord
       output, err, status = Open3.capture3("convert",
                                            "#{type}:#{old_file}",
                                            "-resize", "200x300",
+                                           "-delete", "1--1", # ignore all but the first frame of gifs
                                            "-define", "jpeg:extent=50KB",
                                            "jpg:#{new_file}")
       if status.success?
         self.profile = new_file
+        self.save! if force
         FileUtils.rm(old_file)
         return true
       else
