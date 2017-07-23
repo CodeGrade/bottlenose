@@ -89,7 +89,7 @@ class User < ApplicationRecord
       output, err, status = Open3.capture3("convert",
                                            "#{type}:#{old_file}",
                                            "-resize", "200x300",
-                                           "-define", "jpeg:extent=40KB",
+                                           "-define", "jpeg:extent=50KB",
                                            "jpg:#{new_file}")
       if status.success?
         self.profile = new_file
