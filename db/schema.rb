@@ -52,7 +52,7 @@ ActiveRecord::Schema.define(version: 20170718000106) do
     t.integer "team_min"
     t.integer "team_max"
     t.integer "total_late_days"
-    t.integer "lateness_config_id", default: 0
+    t.integer "lateness_config_id", default: 0, null: false
   end
 
   create_table "delayed_jobs", id: :serial, force: :cascade do |t|
