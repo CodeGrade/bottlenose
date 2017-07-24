@@ -262,7 +262,7 @@ class ArchiveUtils
     Zip::File.open(file) do |zf|
       seen_symlinks = false
       zf.each do |entry|
-        out = File.join(dest, entry.name)
+        out = File.join(dest, entry.name.gsub("\\", "/"))
         if (safe_realdir(out).starts_with?(dest.to_s) rescue false)
           if entry.directory?
             FileUtils.rm_rf out unless File.directory? out
@@ -310,7 +310,7 @@ class ArchiveUtils
     puts e.backtrace
     raise FileReadError.new(file, 'zip', e)
   end
-
+  
   def self.tar_extract(file, dest)
     File.open(file) do |source| helper_extract(file, source, dest) end
     return true
@@ -340,7 +340,7 @@ class ArchiveUtils
           dest = File.join destination, entry.read.strip
           next
         end
-        dest ||= (File.join destination, entry.full_name).sub(/\/$/, "")
+        dest ||= (File.join destination, entry.full_name.gsub("\\", "/")).sub(/\/$/, "")
         if (File.realdirpath(dest).to_s.starts_with?(destination.to_s) rescue false)
           if entry.directory?
             FileUtils.rm_rf dest unless File.directory? dest
@@ -372,7 +372,7 @@ class ArchiveUtils
             dest = File.join destination, entry.read.strip
             next
           end
-          dest ||= File.join destination, entry.full_name
+          dest ||= File.join destination, entry.full_name.gsub("\\", "/")
           if entry.header.typeflag == '2' #Symlink!
             # Be careful: symlinks should not escape the destination directory
             if File.realdirpath(entry.header.linkname, destination)
