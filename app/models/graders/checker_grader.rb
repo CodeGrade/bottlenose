@@ -123,7 +123,7 @@ class CheckerGrader < Grader
 
             Audit.log("#{prefix}: Running Checker")
             test_out, test_err, test_status =
-                                Open3.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000", "-cp", classpath, "tester.Main", "-secmon", "-tap", self.test_class)
+                                Open3.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000", "-cp", classpath, "tester.Main", "-secmon", "-tap", "-enforceTimeouts", self.test_class)
             details.write("Checker output: (exit status #{test_status})\n")
             details.write(test_out)
             if !test_status.success?
