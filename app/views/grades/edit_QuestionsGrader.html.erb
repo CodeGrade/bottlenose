@@ -13,8 +13,6 @@
 <%= render 'submissions/sub_info' %>
 
 <h1>Response Grading</h1>
-<p>The treeview to the left shows the files in this submission.  Click
-  on each one to show that file's content.</p>
 <p>Student responses are shown inline with the questions.  The
   grading rubrics for each question follow.</p>
 
@@ -44,7 +42,6 @@
 </div>
 <% end %>
 
-<% if @assignment.related_assignment_id.nil? %>
 <script>
   $(function() {
   $("textarea.sourceCode").each(function(index, code) {
@@ -60,16 +57,13 @@
     $(code).addClass("cm-s-mdn-like cm-s-default");
   });
   });
+  <%= render "submissions/render_questions.js", root: "sub_#{@submission.id}" %>
 </script>
 <div id="responses" class="form-group container">
-<% else %>
-<div id="responses" class="form-group col-sm-6">
-<% end %>
-<%= render "submissions/render_questions", start: 0, root: "all-files" %>
-<script>
-  <%= render partial: "submissions/render_questions.js" %>
-</script>
+<%= render "submissions/render_questions", start: 0, root: "all-files", sub_id: @submission.id %>
+<span class="col-sm-12 text-center">
 <%= f.submit "Submit grade", id: "completed", class: "btn btn-success" %>
+</span>
 <script>$("form").submit(ensureValidNumericInputOnSubmit);</script>
 </div>
 <% end %>

@@ -540,6 +540,7 @@ HEADER
   def edit_QuestionsGrader
     @questions = @assignment.questions
     @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = [[@submission.id.to_s, @answers]].to_h
 
     if @assignment.related_assignment
       related_sub = @assignment.related_assignment.used_sub_for(@submission.user)
@@ -557,10 +558,12 @@ HEADER
       @answers_are_newer = true
     end
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-    pregrades = @submission.inline_comments
-    pregrades = pregrades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
-    @grades = []
-    pregrades.each do |g| @grades[g["line"]] = g end
+    @grades = @submission.inline_comments
+    @grades = @grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
+    @grades = [["grader", @grades.first.user.name],
+               [@submission.id.to_s,
+                @grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
+    
     @show_grades = true
     render "edit_QuestionsGrader"
   end

@@ -1,6 +1,5 @@
 <% @page_title = "View Response" %>
 <% cur_reg = current_user.registration_for(@course) %>
-<% content_for :wide_content_before do %>
 
 <p>
   <%= link_to "Back to submission",
@@ -15,51 +14,26 @@
 <h3>These responses are for an outdated submission!</h3>
 <% end %>
 
-<% end %>
-
-<% content_for :wide_content do %>
-<% if @assignment.related_assignment_id %>
-<div id="all-files">
-<div class="col-sm-6 files-sidebar-container">
-  <div id="files-sidebar">
-    <div id="files-treeview">
-      <div id="files" class="nav treeview condensed"></div>
-    </div>
-    <div class="tab-content">
-      <%= render "files", sub_files: @submission_files, root: "all-files" %>
-    </div>
-  </div>
+<div id="sub_<%= @submission.id %>" class="container" style="padding: 0px;">
+  <% if @assignment.related_assignment_id %>
+  <% debugger %>
+  <% end %>
+  <div id="responses" class="form-group">
+  <%= render "render_questions", start: 0, root: "sub_#{@submission.id}", sub_id: @submission.id %>  
   <script>
-    <%= render "render_comments.js", sub_dirs: @submission_dirs, vertical: true, root: "all-files" %>
+    <%= render "render_questions.js", root: "sub_#{@submission.id}" %>
+    $("textarea.sourceCode").each(function(index, code) {
+      if ($(code).data("lang")) {
+        var cm = CodeMirror.fromTextArea(code, {
+          readOnly: true, indentUnit: 2,
+          mode: $(code).data("lang"),
+          theme: 'mdn-like', viewportMargin: Infinity,
+          lineNumbers: true, lineWrapping: false,
+          styleActiveLine: true
+        });
+      }
+      $(code).addClass("cm-s-mdn-like cm-s-default");
+    });
   </script>
+  </div>
 </div>
-</div>
-<% end %>
-
-<% if @assignment.related_assignment_id.nil? %>
-<script>
-  $(function() {
-  $("textarea.sourceCode").each(function(index, code) {
-    if ($(code).data("lang")) {
-      var cm = CodeMirror.fromTextArea(code, {
-        readOnly: true, indentUnit: 2,
-        mode: $(code).data("lang"),
-        theme: 'mdn-like', viewportMargin: Infinity,
-        lineNumbers: true, lineWrapping: false,
-        styleActiveLine: true
-      });
-    }
-    $(code).addClass("cm-s-mdn-like cm-s-default");
-  });
-  });
-</script>
-<div id="responses" class="form-group container">
-<% else %>
-<div id="responses" class="form-group col-sm-6">
-<% end %>
-<%= render "render_questions", start: 0, root: "all-files" %>  
-<script>
-  <%= render partial: "render_questions.js" %>
-</script>
-</div>
-<% end %>
