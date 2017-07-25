@@ -52,8 +52,10 @@ class ArchiveUtils
   class SafeExtractionError < Exception
     attr_accessor :file
     attr_accessor :link
-    def initialize(file, link)
+    attr_accessor :dest
+    def initialize(file, dest, link)
       @file = file
+      @dest = dest
       if link.is_a? Array
         @link = link
       else
@@ -62,7 +64,7 @@ class ArchiveUtils
     end
     def to_s
       do_does = (@link.length == 1 ? "does" : "do")
-      "Could not extract #{file}: #{link.join(', ')} #{do_does} not stay within the extraction directory"
+      "Could not extract #{file} to #{dest}: #{link.join(', ')} #{do_does} not stay within the extraction directory"
     end
   end
 
@@ -126,7 +128,7 @@ class ArchiveUtils
       gzip_extract(file, dest)
     else
       if File.symlink?(file)
-        raise SafeExtractionError.new(file, dest)
+        raise SafeExtractionError.new(file, dest, nil)
       end
       FileUtils.cp(file, dest)
     end
@@ -285,7 +287,7 @@ class ArchiveUtils
           puts dest
           puts file
           puts entry.name
-          raise SafeExtractionError.new(file, entry.name)
+          raise SafeExtractionError.new(file, dest, entry.name)
         end
       end
       if seen_symlinks
@@ -298,7 +300,7 @@ class ArchiveUtils
             if (File.realdirpath(link_target, dest).to_s.starts_with?(dest.to_s) rescue false)
               File.symlink link_target, out
             else
-              raise SafeExtractionError.new(file, entry.name)
+              raise SafeExtractionError.new(file, dest.to_s, entry.name)
             end
           end
         end
@@ -341,7 +343,7 @@ class ArchiveUtils
           next
         end
         dest ||= (File.join destination, entry.full_name.gsub("\\", "/")).sub(/\/$/, "")
-        if (File.realdirpath(dest).to_s.starts_with?(destination.to_s) rescue false)
+        if (safe_realdir(dest).to_s.starts_with?(destination.to_s) rescue false)
           if entry.directory?
             FileUtils.rm_rf dest unless File.directory? dest
             FileUtils.mkdir_p dest, :mode => entry.header.mode, :verbose => false
@@ -359,7 +361,10 @@ class ArchiveUtils
             # skip creating the symlink for now
           end
         else
-          raise SafeExtractionError.new(file, entry.full_name)
+          puts "Problem 1"
+          puts safe_realdir(dest).to_s
+          puts destination.to_s
+          raise SafeExtractionError.new(file, dest, entry.full_name)
         end
         dest = nil
       end
@@ -381,7 +386,8 @@ class ArchiveUtils
               File.symlink entry.header.linkname, dest
             else
               # where = File.realdirpath(entry.header.linkname, destination)
-              raise SafeExtractionError.new(file, entry.full_name)
+              puts "Problem 2"
+              raise SafeExtractionError.new(file, dest, entry.full_name)
             end
           end
           dest = nil
