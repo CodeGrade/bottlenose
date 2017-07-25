@@ -29,7 +29,7 @@
   <div class="for-type row">
     <div class="form-group col-sm-6">
       <p>
-      <%= f.label :assignment_file, "Assignment questions" %>
+      <%= f.label :assignment_file, "Codereview questions" %>
       </p>
       <p>This file contains the questions for
         this assignment, in YAML format.
@@ -40,15 +40,11 @@
       <%= render "assignment_file_picker", f: f, asgn: asgn, id: "questions" %>
     </div>
     <div class="form-group col-sm-6">
-      <%= f.label :related_assignment_id %>
-      <p>Please select the underlying assignment for this code review.</p>
-      <% related_assns = @course.assignments
-                                .where(type: "Files").where.not(id: asgn.id)
-                                .order(due_date: :desc) %>
-      <%= f.select :related_assignment_id,
-          options_from_collection_for_select(related_assns, "id", "name", asgn.related_assignment_id&.to_i),
-          prompt: [asgn.related_assignment&.name, "Choose a related assignment"].find(&:presence)
-          %>
+      <%= f.label :points_available %>
+      <p>
+        This is the percentage of the final grade that this
+        assignment is worth.  Default: same as previous assignment.</p>
+      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
     </div>
 
     <%= render 'questions_schema', id: "review-schema" %>
@@ -62,16 +58,16 @@
         <%= gr.select :review_target,
             [["Self review", "self"], ["Peer review", "peer"]],
             selected: gr.object.review_target || "self", html: {class: "col-sm-4"} %>
-        <p class="col-sm-5">Either review students' own submission, or their peers'</p>
+        <p class="col-sm-6">Either review students' own submission, or their peers'</p>
       </div>
       <div class="form-group row">
         <%= gr.label :review_count, "How many reviews?", class: "col-sm-3" %>
-        <p class="col-sm-5">If peer reviews, how many review should each student complete?</p>
+        <p class="col-sm-6">If peer reviews, how many review should each student complete?</p>
         <%= gr.spinner :review_count, gr.object.review_count || 1, min: 1, delta: 1, class: "col-sm-4" %>
       </div>
       <div class="form-group row">
         <%= gr.label :review_threshold, "Review quality threshold", class: "col-sm-3" %>
-        <p class="col-sm-5">Reviews with an overall score below this percentage will be
+        <p class="col-sm-6">Reviews with an overall score below this percentage will be
           censored from the reviewee.</p>
         <%= gr.spinner :review_threshold, gr.object.review_threshold || 75, 
             min: 0, max: 100, delta: 5, class: "col-sm-4" %>
@@ -79,11 +75,15 @@
       <% end %>
     </div>
     <div class="form-group col-sm-6">
-      <%= f.label :points_available %>
-      <p>
-        This is the percentage of the final grade that this
-        assignment is worth.  Default: same as previous assignment.</p>
-      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+      <%= f.label :related_assignment_id %>
+      <p>Please select the underlying assignment for this code review.</p>
+      <% related_assns = @course.assignments
+                                .where(type: "Files").where.not(id: asgn.id)
+                                .order(due_date: :desc) %>
+      <%= f.select :related_assignment_id,
+          options_from_collection_for_select(related_assns, "id", "name", asgn.related_assignment_id&.to_i),
+          prompt: [asgn.related_assignment&.name, "Choose a related assignment"].find(&:presence)
+          %>
     </div>
   </div>
 
@@ -145,5 +145,6 @@
          .find("#teamset_new, #teamset_copy, #assignment_teamset_source_copy")
          .prop("disabled", false);
     }
-  }).change();
+  })
+  $("#type-codereview").find("input[name$='[review_count]']").prop("disabled", true);
 </script>

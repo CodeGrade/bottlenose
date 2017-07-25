@@ -39,22 +39,6 @@
       <div>&nbsp;</div>
       <%= render "assignment_file_picker", f: f, asgn: asgn, id: "questions" %>
     </div>
-
-    <%= render 'questions_schema', id: "questions-schema" %>
-  </div>
-  
-  <div class="for-type row">
-    <div class="form-group col-sm-6">
-      <%= f.label :related_assignment_id %>
-      <p>If this assignment is a reflection on a previous one, please
-        select it</p>
-      <% related_assns = @course.assignments
-                                .where(type: "Files").where.not(id: asgn.id)
-                                .order(due_date: :desc) %>
-      <%= f.select :related_assignment_id,
-          [["<none>", nil]] + (related_assns.to_a.map do |a| [a.name, a.id] end),
-          selected: asgn.related_assignment_id&.to_i %>
-    </div>
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>
       <p>
@@ -62,8 +46,10 @@
         assignment is worth.  Default: same as previous assignment.</p>
       <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
     </div>
-  </div>
 
+    <%= render 'questions_schema', id: "questions-schema" %>
+  </div>
+  
   <div class="for-type row">
     <div class="form-group col-sm-6">
       <%= f.label :due_date do %>

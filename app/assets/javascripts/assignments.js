@@ -104,6 +104,9 @@
     $('.graders-list').on('cocoon:after-insert', on_add_grader);
     $('.spinner').each(function (_ii, div) {
       activateSpinner(div);
+      if ($(div).find("input").prop("disabled")) {
+        disableSpinner(div);
+      }
     });
 
     $("#files-graders").sortable({
