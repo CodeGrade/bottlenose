@@ -558,15 +558,13 @@ HEADER
     end
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
     pregrades = @submission.inline_comments
-    pregrades = pregrades.select(:line, :name, :weight, :comment).joins(:user).sort_by(&:line).to_a
+    pregrades = pregrades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
     @grades = []
     pregrades.each do |g| @grades[g["line"]] = g end
     @show_grades = true
     render "edit_QuestionsGrader"
   end
   def show_QuestionsGrader
-    @questions = @assignment.questions
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
   end
   def details_QuestionsGrader
@@ -597,8 +595,6 @@ HEADER
     render "edit_CodereviewGrader"
   end
   def show_CodereviewGrader
-    @questions = @assignment.questions
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
   end
   def details_CodereviewGrader
