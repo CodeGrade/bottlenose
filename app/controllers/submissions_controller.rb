@@ -520,6 +520,7 @@ class SubmissionsController < CoursesController
   def details_Questions
     @questions = @assignment.questions
     @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = [[@submission.id.to_s, @answers]].to_h
     if current_user_site_admin? || current_user_staff_for?(@course)
       @grades = @submission.inline_comments
     else
@@ -528,7 +529,10 @@ class SubmissionsController < CoursesController
 
     @show_grades = false
 
-    @grades = @grades.select(:line, :name, :weight, :comment).joins(:user).sort_by(&:line).to_a
+    @grades = @grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
+    @grades = [["grader", @grades.first.user.name],
+               [@submission.id.to_s,
+                @grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
     if @assignment.related_assignment
       @related_sub = @assignment.related_assignment.used_sub_for(@submission.user)
       if @related_sub.nil?
@@ -565,7 +569,7 @@ class SubmissionsController < CoursesController
     end
 
     @show_grades = false
-
+    
     @related_subs = @submission.review_feedbacks.map(&:submission)
     @answers_are_newer = []
     @submission_info = @related_subs.map do |sub, answers|
