@@ -26,11 +26,11 @@ class CodereviewGrader < Grader
   end
 
   def display_type
-    "Question Grading"
+    "Codereview Grading"
   end
 
   def to_s
-    "Question grading"
+    "Codereview grading"
   end
 
   def partial_grade_for_sub(assignment, g, sub_id)
