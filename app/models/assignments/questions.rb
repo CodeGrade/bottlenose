@@ -1,4 +1,5 @@
 class Questions < Assignment
+  validates :related_assignment_id, :absence => true
   validate :set_questions_graders
 
   def set_questions_graders

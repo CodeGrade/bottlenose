@@ -1,4 +1,5 @@
 class Exam < Assignment
+  validates :related_assignment_id, :absence => true
   validate :set_exam_graders
   before_update :update_exam_submission_times
 
