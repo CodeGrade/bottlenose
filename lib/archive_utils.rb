@@ -265,6 +265,9 @@ class ArchiveUtils
       seen_symlinks = false
       zf.each do |entry|
         out = File.join(dest, entry.name.gsub("\\", "/"))
+        if out.to_s.match?("__MACOSX") || out.to_s.match?(".DS_Store")
+          next
+        end
         if (safe_realdir(out).starts_with?(dest.to_s) rescue false)
           if entry.directory?
             FileUtils.rm_rf out unless File.directory? out
@@ -343,6 +346,10 @@ class ArchiveUtils
           next
         end
         dest ||= (File.join destination, entry.full_name.gsub("\\", "/")).sub(/\/$/, "")
+        if dest.to_s.match?("__MACOSX") || dest.to_s.match?(".DS_Store")
+          dest = nil
+          next
+        end
         if (safe_realdir(dest).to_s.starts_with?(destination.to_s) rescue false)
           if entry.directory?
             FileUtils.rm_rf dest unless File.directory? dest
@@ -361,7 +368,6 @@ class ArchiveUtils
             # skip creating the symlink for now
           end
         else
-          puts "Problem 1"
           puts safe_realdir(dest).to_s
           puts destination.to_s
           raise SafeExtractionError.new(file, dest, entry.full_name)
@@ -386,7 +392,6 @@ class ArchiveUtils
               File.symlink entry.header.linkname, dest
             else
               # where = File.realdirpath(entry.header.linkname, destination)
-              puts "Problem 2"
               raise SafeExtractionError.new(file, dest, entry.full_name)
             end
           end
