@@ -1,7 +1,7 @@
 <% if q["parts"] %>
   <div class="parts" data-qnum="<%= i + count %>">
   <% q["parts"].each_with_index do |part, part_i| %>
-    <% part_ans = @answers&.dig(sub_id.to_s, i, "parts", part_i) %>
+    <% part_ans = @answers&.dig(sub_id.to_s, i + count, "parts", part_i) %>
     <% if part["codeTag"] %>
     <p><%= sanitize_question(part["codeTag"]) %></p>
     <% if part_ans['file'] == "<none>" %>
