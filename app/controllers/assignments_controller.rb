@@ -57,7 +57,7 @@ class AssignmentsController < ApplicationController
                        lateness_config_id: @course.lateness_config_id,
                        points_available: last_assn&.points_available,
                        request_time_taken: false)
-      @exam.graders = [ExamGrader.new]
+      @exam.graders = [ExamGrader.new(order: 1)]
     end
 
     if @assignment.is_a? Questions
@@ -69,7 +69,7 @@ class AssignmentsController < ApplicationController
                              lateness_config_id: @course.lateness_config_id,
                              points_available: last_assn&.points_available,
                              request_time_taken: false)
-      @quest.graders = [QuestionsGrader.new]
+      @quest.graders = [QuestionsGrader.new(order: 1)]
     end
 
     if @assignment.is_a? Codereview
@@ -81,7 +81,7 @@ class AssignmentsController < ApplicationController
                                    lateness_config_id: @course.lateness_config_id,
                                    points_available: last_assn&.points_available,
                                    request_time_taken: false)
-      @codereview.graders = [CodereviewGrader.new]
+      @codereview.graders = [CodereviewGrader.new(order: 1)]
     end
 
     @assignment = @files if @assignment.nil?
@@ -122,6 +122,11 @@ class AssignmentsController < ApplicationController
     ap[:course_id] = @course.id
     ap[:blame_id] = current_user.id
     ap[:current_user] = current_user
+    if ap[:prevent_late_submissions] == "1" # i.e., true
+      ap[:prevent_late_submissions] = ap[:related_assignment_id]
+    else
+      ap.delete(:prevent_late_submissions)
+    end
     @assignment = Assignment.new(ap)
 
     if @assignment.save_upload && @assignment.save
@@ -236,6 +241,10 @@ class AssignmentsController < ApplicationController
                                :course_id, :team_subs, :request_time_taken,
                                :removefile,
                                :teamset_plan, :teamset_source_use, :teamset_source_copy,
+                               :prevent_late_submissions,
+                               interlocks_attributes: [
+                                 :id, :_destroy, :constraint, :related_assignment_id
+                               ],
                                lateness_config_attributes: [
                                  :type, :percent_off, :frequency,
                                  :max_penalty, :days_per_assignment,

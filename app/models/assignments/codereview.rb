@@ -3,14 +3,23 @@ class Codereview < Assignment
   validates :related_assignment_id, :presence => true
   validate :teamset_consistency
 
+  def prevent_late_submissions
+    !self.interlocks.where(constraint: Interlock::constraints[:no_submission_after_viewing]).empty?
+  end
+  def prevent_late_submissions=(aid)
+    i = self.interlocks.find_or_initialize_by(related_assignment: self,
+                                              constraint: Interlock::constraints[:no_submission_after_viewing])
+    i.assignment_id = aid
+  end
+
   def review_count
-    self.graders.first.review_count
+    self.graders.first.review_count.to_i
   end
   def review_target
     self.graders.first.review_target
   end
   def review_threshold
-    self.graders.first.review_threshold
+    self.graders.first.review_threshold.to_i
   end
   
   def questions
@@ -34,6 +43,9 @@ class Codereview < Assignment
   end
 
   protected
+  def setup_interlocks
+    debugger
+  end
   def teamset_consistency
     if self.review_target == "self"
       if (self.team_subs && (self.teamset_id != self.related_assignment.teamset_id)) ||

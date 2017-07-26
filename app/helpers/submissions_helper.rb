@@ -1,8 +1,4 @@
 module SubmissionsHelper
-  def student_names_for_select(students)
-    options_for_select(students.map{|s| [s.id, s.name]})
-  end
-
   def check_questions_schema(questions, answers, questions_count)
     questions.keys.each_with_index do |sub_id, sub_num|
       questions[sub_id].zip(answers[sub_id]).each_with_index do |(q, a), i|

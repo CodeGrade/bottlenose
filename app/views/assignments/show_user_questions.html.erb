@@ -11,20 +11,11 @@
   (<%= @gradesheet.submissions.count %>)
   <% end %>
   <% if @user.id == current_user.id %>
-  <% if @assignment.related_assignment.nil?
-     confirmation = {}
-     else
-     confirmation = {confirm:
-                      "Once you view the questions on the self-eval, " +
-                      "you are not allowed to resubmit your files. " +
-                      "Are you sure you want to continue?"}
-
-     end %>
+  <% confirmation = interlock_confirmation(@assignment) %>
   <% if true %>
   <%= link_to "New Response",
-      new_course_assignment_submission_path(@course,
-      @gradesheet.assignment), class: "btn btn-success",
-      data: confirmation %>
+        new_course_assignment_submission_path(@course, @gradesheet.assignment), 
+        class: "btn btn-success", data: confirmation %>
   <% else %>
   <div class="btn btn-warning">Submissions are temporarily disabled; they will resume later today.</div>
   <% end %>

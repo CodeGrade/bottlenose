@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170718000106) do
+ActiveRecord::Schema.define(version: 20170726231116) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -128,7 +128,7 @@ ActiveRecord::Schema.define(version: 20170718000106) do
   create_table "interlocks", force: :cascade do |t|
     t.integer "assignment_id", null: false
     t.integer "related_assignment_id", null: false
-    t.string "constraint", null: false
+    t.integer "constraint", null: false
     t.index ["assignment_id"], name: "index_interlocks_on_assignment_id"
     t.index ["related_assignment_id"], name: "index_interlocks_on_related_assignment_id"
   end
@@ -204,6 +204,12 @@ ActiveRecord::Schema.define(version: 20170718000106) do
     t.integer "type", default: 0, null: false
     t.index ["course_id"], name: "index_sections_on_course_id"
     t.index ["crn"], name: "index_sections_on_crn", unique: true
+  end
+
+  create_table "submission_views", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.integer "team_id"
+    t.integer "assignment_id", null: false
   end
 
   create_table "submissions", id: :serial, force: :cascade do |t|

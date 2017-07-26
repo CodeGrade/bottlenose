@@ -320,7 +320,7 @@ class Submission < ApplicationRecord
   end
 
   def get_submission_files(current_user, line_comments = nil, show_deductions = false)
-    show_hidden = (current_user&.site_admin? || current_user&.staff_for?(@course))
+    show_hidden = (current_user&.site_admin? || current_user&.course_staff?(@course))
     @lineCommentsByFile = line_comments || self.grade_line_comments(nil, show_hidden)
     @submission_files = []
     @show_deductions = show_deductions

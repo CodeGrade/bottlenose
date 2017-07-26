@@ -1,0 +1,27 @@
+<%= f.label :request_time_taken, "Request time taken?" %>
+<p>If selected, ask students on each submission how long they've
+  worked on the assignment.</p>
+<%= f.check_box :request_time_taken, checked: asgn.request_time_taken,
+    data: {toggle: "toggle", on: "Yes", off: "No"} %>
+<p></p>
+<p><strong>Interlocks</strong></p>
+<p>Specify restrictions on submissions based on activity between <i>this</i> assignment 
+  and <i>other</i> assignments</p>
+<o id="<%= asgn.type %>_interlocks" class="graders-list grader-defns"
+   style="list-style-type: none;">
+  <%= f.fields_for :interlocks, asgn.interlocks do |il| %>
+  <li><div style="position: relative; vertical-align: middle;"><%= il.object.to_s %>
+    <%= link_to_remove_association "Remove", il, class: 'btn btn-danger pull-right',
+        style: "vertical-align: initial, margin: -6pt -8pt;" %>
+    </div>
+    <span style="clear: both;">&nbsp;</span>
+  </li>
+  <% end %>
+</o>
+<%= link_to_add_association("Add interlock",
+    f, :interlocks, partial: 'assignments/interlock',
+    render_options: {"constraint" => Interlock::constraints[:no_submission_unless_submitted],
+                     locals: {asgn: asgn}},
+    "data-association-insertion-node" => "##{asgn.type}_interlocks",
+    "data-association-insertion-method" => 'append',
+    class: 'btn btn-default' ) %>

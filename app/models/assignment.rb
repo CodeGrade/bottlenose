@@ -30,6 +30,8 @@ class Assignment < ApplicationRecord
   accepts_nested_attributes_for :graders, allow_destroy: true
 
   has_many :interlocks, dependent: :destroy
+  has_many :related_interlocks, :foreign_key => "related_assignment_id", :class_name => "Interlock"
+  accepts_nested_attributes_for :interlocks, allow_destroy: true
 
   validates :name,      :uniqueness => { :scope => :course_id }
   validates :name,      :presence => true
@@ -39,7 +41,25 @@ class Assignment < ApplicationRecord
   validates :blame_id,  :presence => true
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
+  validates :graders, :presence => true
 
+
+  def submissions_blocked(user)
+    subs = self.submissions_for(user)
+    nsus = self.interlocks.find_by(constraint: Interlock::constraints[:no_submission_unless_submitted])
+    if nsus
+      if subs.empty?
+        return "You have not submitted to #{nsus.related_assignment.name}, and so cannot submit to this assignment"
+      end
+    end
+    nsav = self.related_interlocks.find_by(constraint: Interlock::constraints[:no_submission_after_viewing])
+    if nsav
+      if !subs.empty?
+        return "You (or a teammate) have already viewed #{nsav.related_assignment.name}, and so cannot submit to this assignment"
+      end
+    end
+    return false
+  end
 
   def legal_teamset_actions
     # Returns the set of actions on teamsets that are legal as of the saved values in the database

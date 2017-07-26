@@ -47,6 +47,17 @@ class SubmissionsController < CoursesController
       @submission.team = @team
     end
 
+    if current_user.id == true_user&.id
+      SubmissionView.create!(user: current_user, assignment: @assignment, team: @team)
+    end
+
+    sub_blocked = @assignment.submissions_blocked(current_user)
+    if sub_blocked && !current_user.course_staff?(@course)
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: sub_blocked
+      return
+    end
+
     self.send("new_#{@assignment.type.capitalize}")
   end
 
@@ -61,6 +72,12 @@ class SubmissionsController < CoursesController
     else
       redirect_to course_assignment_path(@course, @assignment),
                   alert: "That submission type (#{sub_type}) does not match the assignment type (#{asgn_type})."
+      return
+    end
+    sub_blocked = @assignment.submissions_blocked(current_user)
+    if sub_blocked && !current_user.course_staff?(@course)
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: sub_blocked
       return
     end
 

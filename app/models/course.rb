@@ -48,6 +48,10 @@ class Course < ApplicationRecord
           show_in_lists: false,
           new_sections: [sec.id]
         )
+        rs = RegistrationSection.create!(
+          registration: r,
+          section: sec
+        )
       end
     end
   end

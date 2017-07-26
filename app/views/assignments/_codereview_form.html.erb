@@ -54,6 +54,8 @@
     <div class="form-group col-sm-6">
       <%= f.fields_for :graders, asgn.graders do |gr| %>
       <div class="form-group row">
+        <%= gr.hidden_field :type %>
+        <%= gr.hidden_field :order %>
         <%= gr.label :review_target, "Who to review?", class: "col-sm-3" %>
         <%= gr.select :review_target,
             [["Self review", "self"], ["Peer review", "peer"]],
@@ -84,38 +86,24 @@
           options_from_collection_for_select(related_assns, "id", "name", asgn.related_assignment_id&.to_i),
           prompt: [asgn.related_assignment&.name, "Choose a related assignment"].find(&:presence)
           %>
+      <p></p>      
+      <%= f.label :prevent_late_submissions, "Prevent re-submission to related assignment?" %>
+      <p>If selected, prevent students from submitting to the related
+        assignment once they've viewed this assignment</p>
+      <%= f.check_box :prevent_late_submissions, checked: asgn.prevent_late_submissions,
+          data: {toggle: "toggle", on: "Yes", off: "No"} %>
+      <p>
     </div>
   </div>
 
-  <div class="for-type row">
-    <div class="form-group col-sm-6">
-      <%= f.label :due_date do %>
-      Due date
-      <% end %>
-      <p>Assignment should not be submitted after this time. Default: one week from today.</p>
-      <div>
-        <%= f.text_field :due_date, class: 'form-control datetime-picker' %>
-      </div>
-    </div>
-    <div class="form-group col-sm-6">
-      <%= f.label :available_date %>
-      <p>Assignment will not be visible until this time. Default: today.</p>
-      <div>
-        <%= f.text_field :available, class: 'form-control datetime-picker' %>
-      </div>
-    </div>
-  </div>
-
+  <%= render 'due_date', f: f %>
+  
   <div class="for-type row">
     <div class="form-group col-sm-6">
       <%= render "edit_teamset", course: @course, asgn: asgn %>
     </div>
     <div class="form-group col-sm-6">
-      <%= f.label :request_time_taken, "Request time taken?" %>
-      <p>If selected, ask students on each submission how long they've
-        worked on the assignment.</p>
-      <%= f.check_box :request_time_taken, checked: asgn.request_time_taken,
-          data: {toggle: "toggle", on: "Yes", off: "No"} %>
+      <%= render "time_and_interlocks", f: f, asgn: asgn %>
     </div>
   </div>
 
@@ -147,4 +135,7 @@
     }
   })
   $("#type-codereview").find("input[name$='[review_count]']").prop("disabled", true);
+  $("form").submit(function() {
+    enableSpinner($("#type-codereview").find("input[name$='[review_count]']"));
+  });
 </script>

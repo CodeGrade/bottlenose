@@ -1,5 +1,7 @@
 <% default_tab =
-     if f.object.lateness_config_id.nil? || f.object.lateness_config_id == @course&.lateness_config_id
+     if !within_course
+       "LatePerDayConfig"
+     elsif f.object.lateness_config_id.nil? || f.object.lateness_config_id == @course&.lateness_config_id
        'default'
      else
        f.object.lateness_config.type
