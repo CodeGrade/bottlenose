@@ -173,6 +173,9 @@ GEM
     nokogiri (1.8.0)
       mini_portile2 (~> 2.2.0)
     orm_adapter (0.5.0)
+    passenger (5.1.6)
+      rack
+      rake (>= 0.8.1)
     pg (0.21.0)
     pretender (0.3.1)
       actionpack
@@ -312,6 +315,7 @@ DEPENDENCIES
   launchy
   listen
   momentjs-rails (>= 2.9.0)
+  passenger (>= 5.0.25)
   pg
   pretender
   pry
