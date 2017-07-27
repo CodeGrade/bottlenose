@@ -10,6 +10,6 @@ class Interlock < ApplicationRecord
   
   def self.constraint_to_s(con)
     {no_submission_unless_submitted: "Prohibit submission unless submitted to",
-     no_submission_after_viewing: "Viewing this prohibits submission to"}[con.to_sym]
+     no_submission_after_viewing: "Submissions are prohibited after viewing"}[con.to_sym]
   end
 end

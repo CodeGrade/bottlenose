@@ -4,11 +4,11 @@ class Codereview < Assignment
   validate :teamset_consistency
 
   def prevent_late_submissions
-    !self.interlocks.where(constraint: Interlock::constraints[:no_submission_after_viewing]).empty?
+    !self.related_interlocks.where(constraint: Interlock::constraints[:no_submission_after_viewing]).empty?
   end
   def prevent_late_submissions=(aid)
-    i = self.interlocks.find_or_initialize_by(related_assignment: self,
-                                              constraint: Interlock::constraints[:no_submission_after_viewing])
+    i = self.related_interlocks.find_or_initialize_by(assignment: self,
+                                                      constraint: Interlock::constraints[:no_submission_after_viewing])
     i.assignment_id = aid
   end
 

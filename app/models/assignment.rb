@@ -46,16 +46,17 @@ class Assignment < ApplicationRecord
 
   def submissions_blocked(user)
     subs = self.submissions_for(user)
-    nsus = self.interlocks.find_by(constraint: Interlock::constraints[:no_submission_unless_submitted])
-    if nsus
+    locks = self.interlocks.group_by(&:constraint)
+    if locks["no_submission_unless_submitted"]
       if subs.empty?
-        return "You have not submitted to #{nsus.related_assignment.name}, and so cannot submit to this assignment"
+        lock = locks["no_submission_unless_submitted"].first
+        return "You have not submitted to #{lock.related_assignment.name}, and so cannot submit to this assignment"
       end
     end
-    nsav = self.related_interlocks.find_by(constraint: Interlock::constraints[:no_submission_after_viewing])
-    if nsav
+    if locks["no_submission_after_viewing"]
+      lock = locks["no_submission_after_viewing"].first
       if !subs.empty?
-        return "You (or a teammate) have already viewed #{nsav.related_assignment.name}, and so cannot submit to this assignment"
+        return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
       end
     end
     return false

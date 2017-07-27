@@ -5,12 +5,12 @@
     data: {toggle: "toggle", on: "Yes", off: "No"} %>
 <p></p>
 <p><strong>Interlocks</strong></p>
-<p>Specify restrictions on submissions based on activity between <i>this</i> assignment 
-  and <i>other</i> assignments</p>
+<p>Restrict submissions to <i>this</i> assignment based on activity 
+  in <i>other</i> assignments.</p>
 <o id="<%= asgn.type %>_interlocks" class="graders-list grader-defns"
    style="list-style-type: none;">
   <%= f.fields_for :interlocks, asgn.interlocks do |il| %>
-  <li><div style="position: relative; vertical-align: middle;"><%= il.object.to_s %>
+  <li class="nested-fields"><div style="position: relative; vertical-align: middle;"><%= il.object.to_s %>
     <%= link_to_remove_association "Remove", il, class: 'btn btn-danger pull-right',
         style: "vertical-align: initial, margin: -6pt -8pt;" %>
     </div>

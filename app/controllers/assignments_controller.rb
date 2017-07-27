@@ -123,7 +123,7 @@ class AssignmentsController < ApplicationController
     ap[:blame_id] = current_user.id
     ap[:current_user] = current_user
     if ap[:prevent_late_submissions] == "1" # i.e., true
-      ap[:prevent_late_submissions] = ap[:related_assignment_id]
+      ap[:prevent_late_submissions] = ap.delete(:related_assignment_id)
     else
       ap.delete(:prevent_late_submissions)
     end
@@ -149,6 +149,11 @@ class AssignmentsController < ApplicationController
     # Assign the current user to all file uploads for grader configs
     ap[:graders_attributes]&.each do |k, v|
       v[:upload_by_user_id] = current_user.id
+    end
+    if ap[:prevent_late_submissions] == "1" # i.e., true
+      ap[:prevent_late_submissions] = ap.delete(:related_assignment_id)
+    else
+      ap.delete(:prevent_late_submissions)
     end
     @assignment.assign_attributes(ap)
     @assignment.current_user = current_user

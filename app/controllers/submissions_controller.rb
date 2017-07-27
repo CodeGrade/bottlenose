@@ -48,7 +48,7 @@ class SubmissionsController < CoursesController
     end
 
     if current_user.id == true_user&.id
-      SubmissionView.create!(user: current_user, assignment: @assignment, team: @team)
+      SubmissionView.find_or_create_by!(user: current_user, assignment: @assignment, team: @team)
     end
 
     sub_blocked = @assignment.submissions_blocked(current_user)
