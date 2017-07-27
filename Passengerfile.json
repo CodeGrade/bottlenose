@@ -1,0 +1,5 @@
+{
+  "log_file": "log/passenger.log",
+  "environment": "production",
+  "min_instances": 2
+}
