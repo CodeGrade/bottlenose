@@ -4,7 +4,6 @@ module SubmissionsHelper
       questions[sub_id].zip(answers[sub_id]).each_with_index do |(q, a), i|
         prefix = "Section #{sub_num + 1}, question #{i + 1}"
         if a.nil? || a["main"].nil?
-          debugger
           self.errors.add(:base, "#{prefix} is missing an answer")
           next
         end
