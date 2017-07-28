@@ -70,6 +70,16 @@ Bottlenose::Application.routes.draw do
           post 'bulk' => 'grades#bulk_update'
         end
       end
+      resources :matchings, only: [] do
+        collection do
+          get 'edit' => 'matching_allocations#edit', as: 'edit'
+          patch 'edit' => 'matching_allocations#patch', as: 'patch'
+          patch 'update' => 'matching_allocations#update', as: 'update'
+        end
+        member do
+          delete 'delete' => 'matching_allocations#delete', as: 'delete'
+        end
+      end
       resources :submissions, except: [:edit, :update, :destroy] do
         collection do
           post 'rerun/:grader_id', to: 'submissions#rerun_grader', as: 'rerun_grader'

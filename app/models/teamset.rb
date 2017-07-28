@@ -99,7 +99,7 @@ class Teamset < ActiveRecord::Base
   end
 
   def active_teams
-    self.teams.select(&:active?)
+    self.teams.where(Team.active_query, Date.current, Date.current)
   end
 
   def students_without_active_team

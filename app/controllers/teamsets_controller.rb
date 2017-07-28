@@ -18,7 +18,7 @@ class TeamsetsController < ApplicationController
   end
 
   def edit
-    @teams = @teamset.teams.includes(:users).select(&:active?)
+    @teams = @teamset.teams.includes(:users).select(Team.active_query, Date.current, Date.current)
     @others = @teamset.students_without_active_team
   end
 
@@ -32,7 +32,7 @@ class TeamsetsController < ApplicationController
       redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
         notice: "Team #{@team.id} was successfully created."
     else
-      @teams = @course.teams.select(&:active?)
+      @teams = @course.teams.select(Team.active_query, Date.current, Date.current)
       @others = @teamset.students_without_active_team
       @team.errors.full_messages.each do |e|
         @teamset.errors.add(:base, e)

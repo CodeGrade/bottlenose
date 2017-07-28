@@ -380,15 +380,26 @@ class SubmissionsController < CoursesController
   end
 
   def new_Codereview
-    used_subs = current_user.used_submissions_for([@assignment.related_assignment]).map(&:submission)
     if @assignment.review_target == "self"
       @subs_to_review = used_subs
     else
-      @subs_to_review = @assignment.related_assignment
-                        .used_submissions
-                        .where.not(id: used_subs.map(&:id))
-                        .to_a.shuffle!
-                        .take(@assignment.review_count)
+      matchings =
+        if @assignment.team_subs?
+          matchings = CodereviewMatching.where(assignment: @assignment, team: @team)
+        else
+          matchings = CodereviewMatching.where(assignment: @assignment, user: @user)
+        end
+      users = matchings.map(&:target_team).compact.map(&:users).flatten +
+              matchings.map(&:target_user).compact
+      @subs_to_review = Assignment.submissions_for(users, [@assignment.related_assignment])
+      if @subs_to_review.count < @assignment.review_count
+        used_subs = current_user.used_submissions_for([@assignment.related_assignment]).map(&:submission)
+        @subs_to_review += @assignment.related_assignment
+                          .used_submissions
+                          .where.not(id: used_subs.map(&:id))
+                          .to_a.shuffle!
+                          .take(@assignment.review_count - @subs_to_review.count)
+      end
     end
     @submission.related_subs = @subs_to_review
     @submission_info = @subs_to_review.map do |s|

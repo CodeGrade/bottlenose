@@ -32,6 +32,9 @@ class Team < ApplicationRecord
       true
     end
   end
+  def self.active_query
+    "((end_date IS NULL) OR (start_date >= ? AND ? < end_date))"
+  end
 
   def dissolve(as_of)
     return unless self.end_date.nil? || (self.end_date > as_of)
@@ -39,6 +42,8 @@ class Team < ApplicationRecord
     stale_subs = self.submissions.joins(:assignment).where('due_date >= ?', as_of)
     stale_subs.update_all(stale_team: true)
     UsedSub.where(submission: stale_subs).delete_all
+    CodereviewMatching.where(team: self).delete_all
+    CodereviewMatching.where(target_team: self).delete_all
   end
 
   private

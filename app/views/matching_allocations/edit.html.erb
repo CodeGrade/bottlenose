@@ -1,0 +1,77 @@
+<% @page_title = "Edit review matchings for #{@assignment.name}" %>
+<h3>Edit review matchings for 
+  <%= link_to @assignment.name, course_assignment_path(@course,
+      @assignment) %></h3>
+
+<div class="well">
+  <%= form_for([@course, @assignment.becomes(Assignment)],
+               :url => { action: :update, method: :patch }) do |f| %>
+  <h3>Bulk review matchings</h3>
+  <p>
+    By default, if you do not specify any matchings at all, then all
+    students will be assigned to randomly review other students.  <b><i>You
+        do not have to explicitly assign everyone to specific
+        reviews.</i></b>  However, if it is convenient, you can randomly
+    assign everyone, then break up specific unwanted pairings and try
+    re-randomizing the matchings.
+  </p>
+  <p>
+    <b>If you want to assign some students to review some specific
+    target students,</b> do so <i>first</i> in the section below, then
+    return to this section once those matchings have been assigned.
+  </p>
+  <p></p>
+  <div class="row text-center">
+    <%= f.submit "Assign review matchings", class: 'btn btn-primary' %>
+  </div>
+  <% end %>
+
+  <h3 class="middle-separator">OR</h3>
+
+  <h3>Assign individual review <%= 'matching'.pluralize(@assignment.review_count) %></h3>
+  <p>
+    Choose a reviewer from the left and a reviewee from the right,
+    then click the middle button to create that reivew allocation.
+    (The number in parentheses before the target name is the number of
+    reviews the target is already scheduled to receive.)
+  </p>
+  <%= form_for([@course, @assignment.becomes(Assignment)],
+               :url => { action: :patch, method: :patch }) do |f| %>
+
+  <div class="row form-group" style="vertical-align: middle;">
+    <div class="col-sm-4">
+      <%= select_tag(:reviewer,
+          options_for_select(@reviewers),
+          size: 10,
+          multiple: false, class: "form-control") %>
+    </div>
+    <div class="col-sm-4 text-center">
+      <%= f.submit "Assign review #{'matching'.pluralize(@assignment.review_count)}", class: 'btn btn-primary' %>
+    </div>
+    <div class="col-sm-4">
+      <%= select_tag(:target,
+          options_for_select(@targets.sort),
+          size: 10,
+          multiple: true, class: "form-control") %>
+    </div>
+  </div>
+  <% end %>
+</div>
+
+
+<h3>Existing review matchings</h3>
+<div class="row">
+  <% @existing_matchings.each do |m| %>
+  <div class="col-md-6" style="margin: 6px 0;">
+    <%= link_to "Unmatch",
+        delete_course_assignment_matching_path(@course, @assignment, m),
+        class: "btn btn-sm btn-warning pull-right", method: :delete %>
+    <%= @needed_teams[m.team_id] || @needed_users[m.user_id] %>
+    <b>reviews</b> <br/>
+    <%= @needed_teams[m.target_team_id] || @needed_teams[m.target_user_id] %>
+  </div>
+  <% end %>
+</div>
+<script>
+  $(".spinner").each(function() { activateSpinner(this, {precision: 1}); });
+</script>

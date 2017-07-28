@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170726231116) do
+ActiveRecord::Schema.define(version: 20170727203859) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -39,6 +39,16 @@ ActiveRecord::Schema.define(version: 20170726231116) do
     t.boolean "request_time_taken", default: false
     t.integer "teamset_id", null: false
     t.index ["course_id"], name: "index_assignments_on_course_id"
+  end
+
+  create_table "codereview_matchings", force: :cascade do |t|
+    t.integer "assignment_id", null: false
+    t.integer "user_id"
+    t.integer "team_id"
+    t.integer "target_user_id"
+    t.integer "target_team_id"
+    t.index ["team_id"], name: "index_codereview_matchings_on_team_id"
+    t.index ["user_id"], name: "index_codereview_matchings_on_user_id"
   end
 
   create_table "courses", id: :serial, force: :cascade do |t|
