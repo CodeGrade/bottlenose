@@ -387,7 +387,7 @@ class SubmissionsController < CoursesController
         if @assignment.team_subs?
           matchings = CodereviewMatching.where(assignment: @assignment, team: @team)
         else
-          matchings = CodereviewMatching.where(assignment: @assignment, user: @user)
+          matchings = CodereviewMatching.where(assignment: @assignment, user: current_user)
         end
       users = matchings.map(&:target_team).compact.map(&:users).flatten +
               matchings.map(&:target_user).compact
@@ -409,9 +409,9 @@ class SubmissionsController < CoursesController
             end
           else
             if @assignment.related_assignment.team_subs?
-              CodereviewMatching.create!(assignment: @assignment, user: @user, target_team: ns.team)
+              CodereviewMatching.create!(assignment: @assignment, user: current_user, target_team: ns.team)
             else
-              CodereviewMatching.create!(assignment: @assignment, user: @user, target_user: ns.user)
+              CodereviewMatching.create!(assignment: @assignment, user: current_user, target_user: ns.user)
             end
           end
         end
