@@ -394,11 +394,27 @@ class SubmissionsController < CoursesController
       @subs_to_review = Assignment.submissions_for(users, [@assignment.related_assignment])
       if @subs_to_review.count < @assignment.review_count
         used_subs = current_user.used_submissions_for([@assignment.related_assignment]).map(&:submission)
-        @subs_to_review += @assignment.related_assignment
-                          .used_submissions
-                          .where.not(id: used_subs.map(&:id))
-                          .to_a.shuffle!
-                          .take(@assignment.review_count - @subs_to_review.count)
+        new_subs = @assignment.related_assignment
+                   .used_submissions
+                   .where.not(id: used_subs.map(&:id))
+                   .to_a.shuffle!
+                   .take(@assignment.review_count - @subs_to_review.count)
+        # Reserve the matchings for the new subs, so reviews stay evenly distributed
+        new_subs.each do |ns|
+          if @assignment.team_subs?
+            if @assignment.related_assignment.team_subs?
+              CodereviewMatching.create!(assignment: @assignment, team: @team, target_team: ns.team)
+            else
+              CodereviewMatching.create!(assignment: @assignment, team: @team, target_user: ns.user)
+            end
+          else
+            if @assignment.related_assignment.team_subs?
+              CodereviewMatching.create!(assignment: @assignment, user: @user, target_team: ns.team)
+            else
+              CodereviewMatching.create!(assignment: @assignment, user: @user, target_user: ns.user)
+            end
+          end
+        @subs_to_review += new_subs
       end
     end
     @submission.related_subs = @subs_to_review
