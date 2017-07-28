@@ -49,7 +49,7 @@ module SubmissionsHelper
                     puts file[:contents].lines.count
                     if file.nil? || line_num.nil?
                       self.errors.add(:base, "#{prefix} part #{j + 1} has an invalid code-tag")
-                    elsif (line_num <= 1 || line_num > file[:contents].lines.count)
+                    elsif (line_num < 1 || line_num > file[:contents].lines.count)
                       self.errors.add(:base, "#{prefix} part #{j + 1} has an invalid line number")
                     end
                   end
