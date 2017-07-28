@@ -414,6 +414,7 @@ class SubmissionsController < CoursesController
               CodereviewMatching.create!(assignment: @assignment, user: @user, target_user: ns.user)
             end
           end
+        end
         @subs_to_review += new_subs
       end
     end
