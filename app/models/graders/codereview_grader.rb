@@ -34,13 +34,17 @@ class CodereviewGrader < Grader
   end
 
   def partial_grade_for_sub(assignment, g, sub_id)
-    @responses ||= YAML.load(File.read(g.grading_output))
-    questions = assignment.flattened_questions
-    score = @responses[sub_id.to_s].zip(questions).reduce(0) do |sum, (a, q)|
-      sum + (q["weight"].to_f.clamp(0, 1) * a["score"].to_f)
+    if g.grading_output
+      @responses ||= YAML.load(File.read(g.grading_output))
+      questions = assignment.flattened_questions
+      score = @responses[sub_id.to_s].zip(questions).reduce(0) do |sum, (a, q)|
+        sum + (q["weight"].to_f.clamp(0, 1) * a["score"].to_f)
+      end
+      total = questions.reduce(0){|sum, q| sum + q["weight"].to_f}
+      return score, total
+    else
+      return nil, nil
     end
-    total = questions.reduce(0){|sum, q| sum + q["weight"].to_f}
-    return score, total
   end
 
   protected
