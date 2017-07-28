@@ -358,7 +358,6 @@ class GradesController < ApplicationController
     questions_params.map do |k, v|
       feedback = all_feedbacks.find{|f| f.submission_id == k.to_i}
       if feedback.nil?
-        debugger
         redirect_to :back, alert: "Submitted feedback for an unexpected submission #{k}"
       else
         feedback.grade_id = @grade.id
