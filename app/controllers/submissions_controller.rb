@@ -429,9 +429,10 @@ class SubmissionsController < CoursesController
 
     related_sub = @assignment.related_assignment.used_sub_for(@current_user)
     if related_sub.nil?
-      @submission.related_files = []
+      @submission.related_files = {}
     else
-      @submission_dirs, @submission.related_files = related_sub.get_submission_files(current_user)
+      @submission_dirs, files = related_sub.get_submission_files(current_user)
+      @submission.related_files[related_sub.id] = files
     end
 
     if @submission.save_upload && @submission.save
@@ -452,10 +453,10 @@ class SubmissionsController < CoursesController
 
   def create_Codereview
     @submission.answers = answers_params
-    @submission.related_files = []
+    @submission.related_files = {}
     @submission.related_subs.each do |id|
       _, files = Submission.find(id).get_submission_files(current_user)
-      @submission.related_files << files
+      @submission.related_files[id.to_i] = files
     end
     if @submission.save_upload && @submission.save
       @submission.set_used_sub!
@@ -518,10 +519,10 @@ class SubmissionsController < CoursesController
     comments = comments[@submission.upload.extracted_path.to_s] || []
     @answers = YAML.load(File.open(@submission.upload.submission_path))
     @related_subs = @submission.review_feedbacks.map(&:submission)
-    @submission.related_files = []
+    @submission.related_files = {}
     @related_subs.each do |sub|
       _, files = sub.get_submission_files(current_user)
-      @submission.related_files << files
+      @submission.related_files[sub.id] = files
     end    
     @plagiarized = comments.select{|c| c.label == "Plagiarism"}
     @split = comments.any?{|c| c.label == "Split submission"}

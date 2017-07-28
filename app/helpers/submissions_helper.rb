@@ -42,7 +42,7 @@ module SubmissionsHelper
                   if ap["file"].to_s == "<none>"
                   # nothing
                   else
-                    file = @related_files[sub_num].find{|f| f[:link] == ap["file"].to_s}
+                    file = @related_files[sub_id.to_i].find{|f| f[:link] == ap["file"].to_s}
                     line_num = (Integer(ap["line"]) rescue nil)
                     puts file[:link]
                     puts line_num

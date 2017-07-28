@@ -34,7 +34,7 @@ class CodereviewGrader < Grader
   end
 
   def partial_grade_for_sub(assignment, g, sub_id)
-    if g.grading_output
+    if g&.grading_output
       @responses ||= YAML.load(File.read(g.grading_output))
       questions = assignment.flattened_questions
       score = @responses[sub_id.to_s].zip(questions).reduce(0) do |sum, (a, q)|

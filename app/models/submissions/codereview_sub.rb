@@ -34,11 +34,11 @@ class CodereviewSub < Submission
   def load_answers_related_files
     return if @answers
     @answers ||= YAML.load(File.read(self.upload.submission_path))
-    @related_files = []
+    @related_files = {}
     @related_subs = self.review_feedbacks.map(&:submission)
     @related_subs.each do |s|
       _, files = s.get_submission_files(self.user)
-      @related_files << files
+      @related_files[s.id] = files
     end
   end
   
@@ -90,7 +90,7 @@ class CodereviewSub < Submission
         review_up.save!
 
         self.review_feedbacks << ReviewFeedback.new(grade: nil,
-                                                    submission_id: sub,
+                                                    submission_id: sub.id,
                                                     review_submission_id: self.id,
                                                     upload_id: review_up.id,
                                                     score: nil,
