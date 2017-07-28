@@ -92,7 +92,7 @@ class CodereviewSub < Submission
         # Preserve grades if we have them
         grade = self.grades.first
         if grade
-          score, out_of = grade.grader.partial_grade_for_sub(self.assignment, grade, sub)
+          score, out_of = grade.grader.partial_grade_for_sub(self.assignment, grade, sub.id)
         else
           score, out_of = nil, nil
         end
