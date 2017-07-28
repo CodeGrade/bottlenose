@@ -91,12 +91,12 @@ class CodereviewSub < Submission
 
         grade = self.grades.first
         if grade
-          score, out_of = grade.grader.partial_grade_for_sub(self.assignment, grade, sub.id)
+          score, out_of = grade.grader.partial_grade_for_sub(self.assignment, grade, sub)
         else
           score, out_of = nil, nil
         end
         self.review_feedbacks << ReviewFeedback.new(grade: grade,
-                                                    submission_id: sub.id,
+                                                    submission_id: sub,
                                                     review_submission_id: self.id,
                                                     upload_id: review_up.id,
                                                     score: score,
