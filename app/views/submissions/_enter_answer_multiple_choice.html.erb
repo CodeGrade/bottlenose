@@ -1,9 +1,7 @@
 <div class="form-group">
-  <% if @answers and @answers[index]
-     value = @answers[index]["main"]
-     value = value.to_i if value
-     detail = @answers[index]["detail"]
-     end %>
+  <% value = @answers&.dig(sub_id.to_s, index, "main")&.to_i
+     detail = @answers&.dig(sub_id.to_s, index, "detail")
+     %>
   <% q["options"].each_with_index do |opt, opt_idx| %>
   <div class="radio">
     <% if opt == "other" %>
