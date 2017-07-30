@@ -107,6 +107,8 @@ class ApplicationController < ActionController::Base
 
   def require_registered_user
     require_current_user
+    return if current_user.nil?
+    
     find_course
 
     return if current_user_site_admin?
