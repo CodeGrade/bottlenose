@@ -7,7 +7,7 @@ Note: for settingup Bottlenose on *Ubuntu*, please go here: [README.md](https://
 Bottlenose is built expecting the following environment:
 
   * macOS
-  * A BTRFS (or ZFS) filesystem for /var
+  * A BTRFS (or ZFS) filesystem for /var (if possible)
   * PostgreSQL
   * Ruby + Bundler
 
@@ -52,8 +52,8 @@ Currently the bigest weirdness is the use of delayed job.
 rails db:create
 rails db:migrate
 
-# Start delayed job worker.
-bin/delayed_job start
+# Start background job worker
+rake backburner:work
 
 # Start the server
 rails s

@@ -63,12 +63,12 @@ FactoryGirl.define do
     course
     sequence(:name) {|n| "Default teamset #{n}"}
   end
-  
+
   factory :assignment do
     type "Files"
     teamset
     association :blame, factory: :user
-    
+
     lateness_config
     available (Time.now - 10.days)
     points_available 100
@@ -78,9 +78,9 @@ FactoryGirl.define do
     after(:build) do |assn|
       assn.course = assn.teamset.course
     end
-    after(:create) do |assn, evaluator|
-      assn.graders << create(:grader, assignment: assn)
-    end
+    #after(:create) do |assn, evaluator|
+    #  assn.graders << create(:grader, assignment: assn)
+    #end
   end
 
   factory :upload do

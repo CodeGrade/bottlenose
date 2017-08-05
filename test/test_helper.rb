@@ -4,6 +4,8 @@ require 'rails/test_help'
 require 'capybara/rails'
 require 'fake_upload'
 require 'simplecov'
+require 'backburner'
+
 SimpleCov.start
 
 class ActionController::TestCase
@@ -106,6 +108,14 @@ class ActiveSupport::TestCase
     sub.save!
 
     sub
+  end
+
+  def run_background_job
+    conf = Backburner.configuration
+    conf.max_job_retries = 0
+    worker = conf.default_worker.new
+    worker.prepare
+    worker.work_one_job
   end
 end
 

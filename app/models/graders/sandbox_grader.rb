@@ -23,6 +23,8 @@ class SandboxGrader < Grader
   protected
 
   def do_grading(assignment, sub)
+    puts "== do grading? =="
+
     g = self.grade_for sub
 
     sandbox = Sandbox.create(name: "Manual grader", submission: sub)

@@ -3,6 +3,8 @@ require 'tap_parser'
 require 'audit'
 
 class Grader < ApplicationRecord
+  include Backburner::Performable
+
   belongs_to :submission
   belongs_to :assignment
   belongs_to :upload
@@ -21,18 +23,29 @@ class Grader < ApplicationRecord
     select(column_names - ["id"]).distinct
   end
 
-  def grade(assignment, submission)
+  def really_grade(asn_id, sub_id)
+    puts "XX really grade"
+    puts self.inspect
+
+    assignment = Assignment.find(asn_id)
+    submission = Submission.find(sub_id)
+
     ans = do_grading(assignment, submission)
     submission.compute_grade! if submission.grade_complete?
-    ans
+  end
+
+  def grade(assignment, submission, prio = 0)
+    if autograde? 
+      self.async(prio: 1000 + prio, ttr: 1200).really_grade(assignment.id, submission.id)
+    end
   end
 
   def autograde?
     false
   end
 
-  def autograde!(assignment, submission)
-    grade(assignment, submission)
+  def autograde!(assignment, submission, prio = 0)
+    grade(assignment, submission, prio)
   end
 
   def grade_exists_for(sub)
@@ -84,7 +97,7 @@ class Grader < ApplicationRecord
     self.upload_by_user_id = attrs[:upload_by_user_id]
     super(attrs)
   end
-  
+
   protected
 
   def do_grading(assignment, submission)
@@ -121,7 +134,7 @@ class Grader < ApplicationRecord
     if !status.success?
       Audit.log "#{prefix}: #{self.type} checker failed: status #{status}, error: #{err}\n"
       InlineComment.where(submission: sub, grade: g).destroy_all
-      
+
       g.score = 0
       g.out_of = self.avail_score
       g.updated_at = DateTime.now
