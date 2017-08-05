@@ -1,3 +1,5 @@
+dist: xenial
+sudo: true
 language:
     - ruby
 before_script:
