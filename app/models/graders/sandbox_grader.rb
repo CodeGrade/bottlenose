@@ -91,6 +91,7 @@ class SandboxGrader < Grader
       return
     end
     Audit.log("#{prefix}: Starting sandbox grader with secret #{secret}\n");
+    puts("XX #{prefix}: Starting sandbox grader with secret #{secret}\n");
     stdout, stderr, rv = cont.exec_driver(driver, secret, sandbox_sub_path, sandbox_gra_path)
 
     parts = stdout.split("#{secret}\n")
@@ -101,6 +102,7 @@ class SandboxGrader < Grader
     makefile_tap = grader_dir.join("makefile.tap")
     File.open(details_log, "w") do |details|
       details.write "== stdout ==\n\n#{stdout}\n\n== stderr ==\n\n#{stderr}\n\n== end of output ==\n"
+      puts "XX\n== stdout ==\n\n#{stdout}\n\n== stderr ==\n\n#{stderr}\n\n== end of output ==\n"
     end
     if parts.size >= 3
       begin

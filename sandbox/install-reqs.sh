@@ -20,7 +20,7 @@ apt-get upgrade -y
 
 adduser --disabled-password --gecos "" student
 
-su student -c "cd ~student ; opam init -y"
-su student -c "echo \". /home/student/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true\" >> ~student/.profile"
-su student -c "cd ~student ; opam install -y ounit extlib ocamlfind"
+#su student -c "cd ~student ; opam init -y"
+#su student -c "echo \". /home/student/.opam/opam-init/init.sh > /dev/null 2> /dev/null || true\" >> ~student/.profile"
+#su student -c "cd ~student ; opam install -y ounit extlib ocamlfind"
 

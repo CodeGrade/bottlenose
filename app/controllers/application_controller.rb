@@ -8,6 +8,7 @@ class ApplicationController < ActionController::Base
 
   before_action :set_mailer_host
   before_action :configure_permitted_parameters, if: :devise_controller?
+  before_action :get_queue_info
 
   protected
 
@@ -22,6 +23,16 @@ class ApplicationController < ActionController::Base
   def set_mailer_host
     ActionMailer::Base.default_url_options[:host] = request.host_with_port
     ActionMailer::Base.default_url_options[:protocol] = request.protocol
+  end
+
+  def get_queue_info
+    begin
+      bean = Beaneater.new("localhost:11300")
+      tube = bean.tubes["bottlenose.#{Rails.env}.backburner-jobs"]
+      @queue_stats = tube.stats
+    rescue
+      @queue_stats = nil
+    end
   end
 
   def require_site_admin

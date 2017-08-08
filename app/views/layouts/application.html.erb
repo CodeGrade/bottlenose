@@ -63,5 +63,17 @@ window.current_page_name = "<%= params[:controller] %>/<%= params[:action] %>";
 
 <%= render "layouts/footer" %>
 
+<% if @queue_stats %>
+  <div class="container">
+    <div class="row">
+      <div class="col-sm-4" style="padding-top: 4em">
+        <p>Job Queue:</p>
+        <p>Waiting Jobs: <%= @queue_stats.current_jobs_ready %></p>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+
 </body>
 </html>

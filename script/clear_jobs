@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+require 'beaneater'
+
+bean = Beaneater.new("localhost:11300")
+puts bean.stats.inspect
+
+bean.tubes.each do |tube|
+  puts "=== Tube: #{tube.name} ==="
+
+  while tube.peek(:ready)
+    job = tube.reserve
+    puts "Clearing:"
+    puts job.inspect
+    puts job.delete
+  end
+end
+
