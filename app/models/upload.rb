@@ -96,6 +96,19 @@ class Upload < ApplicationRecord
     Upload.upload_path_for(submission_path)
   end
 
+  def url
+    proto = ActionMailer::Base.default_url_options[:protocol] || "http://"
+    host  = Settings["site_ip"] || "localhost"
+    port  = 80
+
+    req_host = ActionMailer::Base.default_url_options[:host]
+    if req_host && req_host =~ /:/
+      (_, port) = req_host.split(":")
+    end
+
+    "#{proto}#{host}:#{port}#{path}"
+  end
+
   def store_upload!(upload, metadata)
     self.file_name = upload.original_filename
 
@@ -121,7 +134,7 @@ class Upload < ApplicationRecord
       upload_path = submission_path.to_s
     end
     effective_mime = metadata[:mimetype] || upload.content_type
-    
+
     ArchiveUtils.too_many_files?(upload_path, effective_mime, Upload.MAX_FILES)
     ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
 

@@ -20,6 +20,15 @@
   </div>
 
   <div class="form-group">
+    <%= label_tag :site_url, "Site URL" %>
+    <%= text_field_tag :site_url, @cfg["site_url"], class: 'form-control' %>
+
+    <p>This is the root URL of the Bottlenose server used to fetch uploads for
+      sandbox autograding. We need a non-loopback IP for technical reasons, even
+      if grading sandboxes run locally.</p>
+  </div>
+
+  <div class="form-group">
     <%= submit_tag "Save Settings", class: 'btn btn-primary' %>
   </div>
 <% end %>

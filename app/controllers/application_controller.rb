@@ -23,6 +23,10 @@ class ApplicationController < ActionController::Base
   def set_mailer_host
     ActionMailer::Base.default_url_options[:host] = request.host_with_port
     ActionMailer::Base.default_url_options[:protocol] = request.protocol
+
+    if Settings["site_url"].blank?
+      Settings.set_site_url!(request)
+    end
   end
 
   def get_queue_info

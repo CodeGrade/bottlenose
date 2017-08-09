@@ -1,5 +1,6 @@
 
 require 'open3'
+require 'tempfile'
 
 class Container
   def initialize(name)
@@ -51,11 +52,34 @@ class Container
     run(%Q{lxc exec #{@name} -- chmod -R 0#{mode.to_s(8)} "#{path}"})
   end
 
-  def exec_driver(path, secret, sub, gra)
-    push(path, "/root/bn_driver.rb")
-    command = %Q{lxc exec "#{@name}" -- bash -c \
-                   '(cd && BN_KEY="#{secret}" BN_SUB="#{sub}" BN_GRA="#{gra}" \
-                   ruby -I /tmp/bn/lib bn_driver.rb)'}
+  def exec_driver(path, secret, sub_up, gra_up, ext_up = nil)
+    FileUtils.mkdir_p("/tmp/bn")
+    Tempfile.new("driver.", "/tmp/bn") do |drv|
+      tmpl = Rails.root.join("sandbox", "driver.pl.erb")
+      erb  = ERB.new(File.read(tmpl))
+      erb.filename = tmpl.to_s
+
+      data = {
+        cookie: secret,
+        timeout: 60, # Timeout is per step, e.g. unpack, build, test
+        sub_url: sub_up.url,
+        sub_name: sub_up.file_name,
+        gra_url: gra_up.url,
+        gra_name: gra_up.file_name,
+      }
+
+      if ext_up
+        data[:ext_url]  = ext_up.url
+        data[:ext_name] = ext_up.file_name,
+      end
+
+      drv.write(erb.result_with_hash(data))
+      drv.sync
+
+      push(drv.path, "/root/driver.pl")
+    end
+
+    command = %Q{lxc exec "#{@name}" -- bash -c "perl /root/driver.pl"}
     puts "Run driver: #{command}"
 
     Thread.new do

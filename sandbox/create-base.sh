@@ -44,6 +44,6 @@ END
 
 echo "Stopping; Publishing..."
 lxc stop $NAME
-lxc publish $NAME --alias steno-base
+lxc publish $NAME --alias $NAME
 lxc delete $NAME
 
