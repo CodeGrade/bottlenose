@@ -17,14 +17,14 @@ export TIMEOUT="<%= timeout %>"
 export SUB="<%= sub_name %>"
 export GRA="<%= gra_name %>"
 
-<%= if xtr_name do %>
+<% if xtr_name %>
 export XTR="<%= xtr_name %>"
 <% end %>
 
 cd ~
 wget -O "$SUB" "<%= sub_url %>"
 wget -O "$GRA" "<%= gra_url %>"
-<%= if xtr_name && xtr_url do %>
+<% if xtr_name && xtr_url %>
 wget -O "$XTR" "<%= xtr_url %>"
 <% end %>
 tar xzvf "$GRA"

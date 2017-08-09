@@ -14,9 +14,4 @@
       <% end %>
     </td>
   </tr>
-  <tr class="form-group">
-    <td><%= f.label "params", "Grading driver:" %></td>
-    <td><%= f.select("params", grading_drivers.map { |dd| [dd, dd] },
-                      selected: f.object.params || 'makefile.rb' )%></td>
-  </tr>
 </table>

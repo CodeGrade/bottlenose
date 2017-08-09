@@ -97,16 +97,7 @@ class Upload < ApplicationRecord
   end
 
   def url
-    proto = ActionMailer::Base.default_url_options[:protocol] || "http://"
-    host  = Settings["site_ip"] || "localhost"
-    port  = 80
-
-    req_host = ActionMailer::Base.default_url_options[:host]
-    if req_host && req_host =~ /:/
-      (_, port) = req_host.split(":")
-    end
-
-    "#{proto}#{host}:#{port}#{path}"
+    "#{Settings['site_url']}#{path}"
   end
 
   def store_upload!(upload, metadata)

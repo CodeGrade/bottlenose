@@ -52,13 +52,18 @@ class Container
     run(%Q{lxc exec #{@name} -- chmod -R 0#{mode.to_s(8)} "#{path}"})
   end
 
-  def exec_driver(path, secret, sub_up, gra_up, ext_up = nil)
+  def exec_driver(secret, sub_up, gra_up, xtr_up = nil)
+    puts "XX In exec_driver"
+
     FileUtils.mkdir_p("/tmp/bn")
-    Tempfile.new("driver.", "/tmp/bn") do |drv|
+    Tempfile.create("driver.", "/tmp/bn") do |drv|
+      puts "XX in block"
+
       tmpl = Rails.root.join("sandbox", "driver.pl.erb")
-      erb  = ERB.new(File.read(tmpl))
+      erb  = Erubis::Eruby.new(File.read(tmpl))
       erb.filename = tmpl.to_s
 
+      puts "XX in block 2"
       data = {
         cookie: secret,
         timeout: 60, # Timeout is per step, e.g. unpack, build, test
@@ -66,21 +71,29 @@ class Container
         sub_name: sub_up.file_name,
         gra_url: gra_up.url,
         gra_name: gra_up.file_name,
+        xtr_url: nil,
+        xtr_name: nil,
       }
 
-      if ext_up
-        data[:ext_url]  = ext_up.url
-        data[:ext_name] = ext_up.file_name,
+      if xtr_up
+        data[:xtr_url]  = ext_up.url
+        data[:xtr_name] = ext_up.file_name
       end
+      puts "XX in block 4"
 
-      drv.write(erb.result_with_hash(data))
-      drv.sync
+      driver_text = erb.result(data)
+      puts "XX driver:\n#{driver_text}"
+
+      drv.write(driver_text)
+      drv.close
+
+      puts "XX Tempfile path: #{drv.path}"
 
       push(drv.path, "/root/driver.pl")
     end
 
     command = %Q{lxc exec "#{@name}" -- bash -c "perl /root/driver.pl"}
-    puts "Run driver: #{command}"
+    puts "XX Run driver: #{command}"
 
     Thread.new do
       sleep 10.minutes
