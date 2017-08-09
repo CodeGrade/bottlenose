@@ -21,6 +21,17 @@ Notes for setting up Bottlenose dev on Mac, please go here: [setup_mac](../maste
 
 ### Basics
 
+First, make sure you have an active software firewall. Beanstalkd is a network service
+with no authentication, so you want to make sure its port is blocked.
+
+```sh
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+# ... any other external incoming ports
+sudo ufw enable
+```
+
 Some packages are generally good to have, and needed by many future steps in
 the setup process.
 
@@ -28,8 +39,11 @@ the setup process.
 sudo apt-get install build-essential git postgresql libpq-dev beanstalkd
 ```
 
-Some of the autograders require a synthetic X connection; for that,
-Bottlenose uses xvfb:
+After installing beanstalkd, double check that "telnet [server] 11300" doesn't
+work from an external machine. Otherwise you got your firewall wrong.
+
+Some of the autograders (e.g. Racket) require a synthetic X connection; for
+that, Bottlenose uses xvfb:
 
 ```sh
 sudo apt-get install xvfb
