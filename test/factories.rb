@@ -78,9 +78,11 @@ FactoryGirl.define do
     after(:build) do |assn|
       assn.course = assn.teamset.course
     end
-    #after(:create) do |assn, evaluator|
-    #  assn.graders << create(:grader, assignment: assn)
-    #end
+    after(:create) do |assn, evaluator|
+      if assn.graders.empty?
+        assn.graders << create(:grader, assignment: assn)
+      end
+    end
   end
 
   factory :upload do
