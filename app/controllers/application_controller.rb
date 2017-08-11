@@ -8,7 +8,6 @@ class ApplicationController < ActionController::Base
 
   before_action :set_mailer_host
   before_action :configure_permitted_parameters, if: :devise_controller?
-  before_action :get_queue_info
 
   protected
 

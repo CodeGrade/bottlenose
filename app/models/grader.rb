@@ -8,6 +8,8 @@ class Grader < ApplicationRecord
   belongs_to :submission
   belongs_to :assignment
   belongs_to :upload
+  belongs_to :extra_upload, class_name: 'Upload'
+
   has_many :grades
   validates_presence_of :assignment
   validates :order, presence: true, uniqueness: {scope: :assignment_id}
@@ -23,20 +25,18 @@ class Grader < ApplicationRecord
     select(column_names - ["id"]).distinct
   end
 
-  def really_grade(asn_id, sub_id)
-    puts "XX really grade"
-    puts self.inspect
-
+  def grade_sync!(asn_id, sub_id)
     assignment = Assignment.find(asn_id)
     submission = Submission.find(sub_id)
 
     ans = do_grading(assignment, submission)
     submission.compute_grade! if submission.grade_complete?
+    ans
   end
 
   def grade(assignment, submission, prio = 0)
     if autograde? 
-      self.async(prio: 1000 + prio, ttr: 1200).really_grade(assignment.id, submission.id)
+      self.async(prio: 1000 + prio, ttr: 1200).grade_sync!(assignment.id, submission.id)
     end
   end
 
@@ -72,6 +72,10 @@ class Grader < ApplicationRecord
     end
   end
 
+  def extra_upload_file
+      self.extra_upload&.file_name
+  end
+
   def upload_file=(data)
     if data.nil?
       errors.add(:base, "You need to submit a file.")
@@ -91,6 +95,26 @@ class Grader < ApplicationRecord
       return
     end
     self.upload_id = up.id
+  end
+
+  def extra_upload_file=(data)
+    if data.nil?
+      return
+    end
+
+    up = Upload.new
+    up.user = User.find_by(id: self.upload_by_user_id)
+    up.store_upload!(data, {
+                       type: "#{type} Extra Configuration",
+                       date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+                       mimetype: data.content_type
+                     })
+
+    unless up.save
+      self.errors.add(:upload_file, "could not save upload")
+      return
+    end
+    self.extra_upload_id = up.id
   end
 
   def assign_attributes(attrs)

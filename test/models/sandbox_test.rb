@@ -6,58 +6,33 @@ class SandboxTest < ActiveSupport::TestCase
     make_standard_course
  end
 
-  test "run a sandbox grader lazy mode" do
+  test "run a sandbox grader mode" do
     skip unless ENV['TEST_SANDBOX']
+    # FIXME: This test design can't work.
+    # We need to spin up a webserver for the sandbox to pull down the files.
 
     assign = create(:assignment, type: "Files", course: @cs101, name: "Test Assignment")
-    grdtar = Rails.root.join('test', 'fixtures', 'files', 'TestScript', 'test.pl')
+
+    grdtar = Rails.root.join('sandbox', 'examples', 'demo', 'demo-grading.tar.gz')
     upload = simulated_upload(@fred, grdtar)
     upload.save!
-    grdcfg = build(:grader, type: "SandboxGrader", upload: upload, params: "lazy.rb",
+    grdcfg = create(:grader, type: "SandboxGrader", upload: upload, params: "",
                    assignment: assign, order: 1)
 
-    subprg = Rails.root.join('test', 'fixtures', 'files', 'TestScript', 'hello.c')
+    subprg = Rails.root.join('sandbox', 'examples', 'demo', 'hello.tar.gz')
     sub = build(:submission, user: @john, assignment: assign, 
                 upload_id: nil, ignore_late_penalty: true)
     sub.upload_file = FakeUpload.new(subprg)
     sub.save_upload
     sub.save!
+
+    puts sub.assignment.graders.inspect
+
     sub.autograde!
 
-    run_background_job
+    run_background_jobs
 
     sub.reload
     assert_equal 100, sub.score
   end
-
-  test "run a sandbox grader makefile mode" do
-    skip unless ENV['TEST_SANDBOX']
-
-    assign = create(:assignment, type: "Files", course: @cs101, name: "Test Assignment")
-
-    grdtar = Rails.root.join('test', 'fixtures', 'files', 'HelloSingle', 'HelloSingle-grading.tar.gz')
-    upload = simulated_upload(@fred, grdtar)
-    upload.save!
-    grdcfg = create(:grader, type: "SandboxGrader", upload: upload,
-                    params: "makefile.rb", assignment: assign, order: 2)
-    puts grdcfg.inspect
-
-    subprg = Rails.root.join('test', 'fixtures', 'files', 'HelloSingle', 'hello.c')
-    sub = build(:submission, user: @john, assignment: assign, 
-                upload_id: nil, ignore_late_penalty: true)
-    sub.upload_file = FakeUpload.new(subprg)
-    sub.save_upload
-    sub.save!
-    sub.autograde!
-
-    run_background_job
-
-    sub.reload
-    sub.grades.each do |g|
-      puts g.inspect
-      puts g.grading_output
-    end
-    assert_equal 100, sub.score
-  end
-
 end

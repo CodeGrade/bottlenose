@@ -40,34 +40,10 @@ class MainController < ApplicationController
       render "landing"
       return
     end
-    backlog = Delayed::Job.all.to_a
-    now = DateTime.now
 
-    @backlog = backlog.map do |b|
-      job_info = b.payload_object
-      if job_info.is_a? Delayed::PerformableMethod
-        w = now.to_time - b.created_at.to_time
-        {
-          sub: job_info.object,
-          job_start: b.created_at,
-          wait: w,
-          wait_s: "#{(w / 60).to_i} minutes, #{(w % 60).to_i} seconds",
-          method: job_info.method_name,
-          args: job_info.args
-        }
-      else
-        nil
-      end
-    end.reject(&:nil?)
-    waits = @backlog.reduce(0) do |acc, b| acc + b[:wait] end
-    if @backlog.length == 0
-      avg_wait = 0
-    else
-      avg_wait = waits / @backlog.length
-    end
-    @avg_wait = "#{(avg_wait / 60).to_i} minutes, #{(avg_wait % 60).to_i} seconds"
+    get_queue_info
   end
-  
+
   protected
 
   def profile_notice

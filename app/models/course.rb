@@ -37,7 +37,7 @@ class Course < ApplicationRecord
   def sections_by_type
     self.sections.group_by(&:type)
   end
-  
+
   def register_profs
     if registrations.empty?
       sections.each do |sec|

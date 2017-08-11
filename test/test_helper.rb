@@ -5,6 +5,7 @@ require 'capybara/rails'
 require 'fake_upload'
 require 'simplecov'
 require 'backburner'
+require 'beaneater'
 
 SimpleCov.start
 
@@ -110,12 +111,20 @@ class ActiveSupport::TestCase
     sub
   end
 
-  def run_background_job
+  def run_background_jobs
+    bean = Beaneater.new("localhost:11300")
     conf = Backburner.configuration
     conf.max_job_retries = 0
     worker = conf.default_worker.new
-    worker.prepare
-    worker.work_one_job
+
+    bean.tubes.each do |tube|
+      next unless tube.name == 'bottlenose.test.backburner-jobs'
+
+      while tube.peek(:ready)
+        worker.prepare
+        worker.work_one_job
+      end
+    end
   end
 end
 

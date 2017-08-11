@@ -53,17 +53,12 @@ class Container
   end
 
   def exec_driver(secret, sub_up, gra_up, xtr_up = nil)
-    puts "XX In exec_driver"
-
     FileUtils.mkdir_p("/tmp/bn")
     Tempfile.create("driver.", "/tmp/bn") do |drv|
-      puts "XX in block"
-
       tmpl = Rails.root.join("sandbox", "driver.pl.erb")
       erb  = Erubis::Eruby.new(File.read(tmpl))
       erb.filename = tmpl.to_s
 
-      puts "XX in block 2"
       data = {
         cookie: secret,
         timeout: 60, # Timeout is per step, e.g. unpack, build, test
@@ -76,24 +71,19 @@ class Container
       }
 
       if xtr_up
-        data[:xtr_url]  = ext_up.url
-        data[:xtr_name] = ext_up.file_name
+        data[:xtr_url]  = xtr_up.url
+        data[:xtr_name] = xtr_up.file_name
       end
-      puts "XX in block 4"
 
       driver_text = erb.result(data)
-      puts "XX driver:\n#{driver_text}"
 
       drv.write(driver_text)
       drv.close
-
-      puts "XX Tempfile path: #{drv.path}"
 
       push(drv.path, "/root/driver.pl")
     end
 
     command = %Q{lxc exec "#{@name}" -- bash -c "perl /root/driver.pl"}
-    puts "XX Run driver: #{command}"
 
     Thread.new do
       sleep 10.minutes

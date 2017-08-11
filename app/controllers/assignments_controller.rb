@@ -212,7 +212,7 @@ class AssignmentsController < ApplicationController
                                  :_destroy, :id
                                ],
                                graders_attributes: [
-                                 :avail_score, :upload_file, :params,
+                                 :avail_score, :upload_file, :extra_upload_file, :params,
                                  :type, :id, :_destroy, :errors_to_show, :test_class,
                                  :upload_by_user_id, :order
                                ]
