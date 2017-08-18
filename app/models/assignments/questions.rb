@@ -65,7 +65,7 @@ class Questions < Assignment
                     else
                       q["rubric"].each_with_index do |guide, i|
                         if !(guide.is_a? Object) || guide.keys.count != 1
-                          self.errors.add(:base, "Question #{question_count}, rubric entry #{i} is ill-formed")
+                          self.errors.add(:base, "Question #{question_count}, rubric entry #{i} is ill-formed: expect an object with exactly one key")
                         else
                           guide.each do |weight, desc|
                             if !is_float(weight)

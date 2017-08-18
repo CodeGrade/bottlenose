@@ -1,5 +1,6 @@
 <% @page_title = "New Response: #{@assignment.name}" %>
 <% content_for :wide_content do %>
+<% sub_id = "newsub" %>
 
 <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)] do |f| %>
   <% f.object = @submission.becomes(@submission.class)
@@ -66,20 +67,20 @@
                 <%= sanitize_question(q["prompt"], allow_code: true) %>
                 <small>(<%= pluralize(q["weight"], "point") %>)</small>
               </p>
-              <%= render "enter_answer_#{type.underscore}", q: q, index: i + count %>
+              <%= render "enter_answer_#{type.underscore}", q: q, index: i + count, sub_id: sub_id %>
               <p></p>
               <% if q["parts"] %>
                 <div class="parts" data-qnum="<%= i + count %>">
                 <% q["parts"].each_with_index do |part, part_i| %>
-                  <% part_ans = @answers&.dig(i + count, "parts", part_i) %>
+                  <% part_ans = @answers&.dig(sub_id, i + count, "parts", part_i) %>
                   <% if part["codeTag"] %>
                   <p><%= sanitize_question(part["codeTag"], allow_code: true) %></p>
                   <%= render partial: "code_tag",
-                      locals: {i: i, sub_id: @submission.id, count: count, part_ans: part_ans, part_i: part_i, sub_files: @submission_files} %>
+                      locals: {i: i, sub_id: sub_id, count: count, part_ans: part_ans, part_i: part_i, sub_files: @submission_files} %>
                   <% elsif part["text"] %>
                   <p><%= sanitize_question(part["text"], allow_code: true) %></p>
                   <textarea class="form-control" rows="5"
-                            name="answers[<%= sub_id %>][<%= i + count %>][parts][<%= part_i %>][info]"><%= if part_ans&.dig("info") %></textarea>
+                            name="answers[<%= sub_id %>][<%= i + count %>][parts][<%= part_i %>][info]"><%= part_ans&.dig("info") %></textarea>
                   <% elsif part["requiredText"] %>
                   <p><%= sanitize_question(part["requiredText"], allow_code: true) %></p>
                   <textarea class="form-control <%= if @answers && part_ans&.dig('info').blank? then 'unanswered' end %>" rows="5"

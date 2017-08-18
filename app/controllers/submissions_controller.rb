@@ -442,15 +442,9 @@ class SubmissionsController < CoursesController
   end
 
   def create_Questions
-    @submission.answers = answers_params
+    @submission.answers = answers_params["newsub"]
 
-    related_sub = @assignment.related_assignment.used_sub_for(@current_user)
-    if related_sub.nil?
-      @submission.related_files = {}
-    else
-      @submission_dirs, files = related_sub.get_submission_files(current_user)
-      @submission.related_files[related_sub.id] = files
-    end
+    @submission.related_files = {}
 
     if @submission.save_upload && @submission.save
       @submission.set_used_sub!
@@ -576,7 +570,7 @@ class SubmissionsController < CoursesController
     @show_grades = false
 
     @grades = @grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
-    @grades = [["grader", @grades.first.user.name],
+    @grades = [["grader", @grades&.first&.user&.name],
                [@submission.id.to_s,
                 @grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
     if @assignment.related_assignment

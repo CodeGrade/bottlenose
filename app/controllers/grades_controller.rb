@@ -314,7 +314,7 @@ class GradesController < ApplicationController
     end
   end
   def update_Questions
-    missing, qp = questions_params.partition{|q| q["score"].nil? or q["score"].empty? }
+    missing, qp = questions_params[@submission.id.to_s].partition{|q| q["score"].nil? or q["score"].empty? }
     missing = missing.map{|q| q["index"].to_i + 1}
 
     save_all_comments(qp, :question_to_inlinecomment)
@@ -559,7 +559,7 @@ HEADER
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
     @grades = @submission.inline_comments
     @grades = @grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
-    @grades = [["grader", @grades.first.user.name],
+    @grades = [["grader", (@grades&.first&.user&.name || @current_user.name)],
                [@submission.id.to_s,
                 @grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
     
