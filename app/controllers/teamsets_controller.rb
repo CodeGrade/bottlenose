@@ -18,7 +18,7 @@ class TeamsetsController < ApplicationController
   end
 
   def edit
-    @teams = @teamset.teams.includes(:users).select(Team.active_query, Date.current, Date.current)
+    @teams = @teamset.teams.includes(:users).where(Team.active_query, Date.current, Date.current)
     @others = @teamset.students_without_active_team
   end
 
