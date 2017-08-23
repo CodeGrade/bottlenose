@@ -10,8 +10,7 @@ class Assignment < ApplicationRecord
   attr_accessor :teamset_source_copy
   attr_accessor :current_user
 
-  before_create :setup_teamsets
-  before_update :update_teamsets
+  before_validation :establish_teamsets
 
   belongs_to :blame, :class_name => "User", :foreign_key => "blame_id"
 
@@ -27,8 +26,12 @@ class Assignment < ApplicationRecord
   has_many :submissions, :dependent => :restrict_with_error
   has_many :used_subs, :dependent => :destroy
 
-  has_many :graders, dependent: :destroy
+  has_many :graders, dependent: :destroy, autosave: true
   accepts_nested_attributes_for :graders, allow_destroy: true
+
+  has_many :interlocks, dependent: :destroy
+  has_many :related_interlocks, :foreign_key => "related_assignment_id", :class_name => "Interlock"
+  accepts_nested_attributes_for :interlocks, allow_destroy: true
 
   validates :name,      :uniqueness => { :scope => :course_id }
   validates :name,      :presence => true
@@ -38,7 +41,26 @@ class Assignment < ApplicationRecord
   validates :blame_id,  :presence => true
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
+  validates :graders, :presence => true
 
+
+  def submissions_blocked(user)
+    subs = self.submissions_for(user)
+    locks = self.interlocks.group_by(&:constraint)
+    if locks["no_submission_unless_submitted"]
+      if subs.empty?
+        lock = locks["no_submission_unless_submitted"].first
+        return "You have not submitted to #{lock.related_assignment.name}, and so cannot submit to this assignment"
+      end
+    end
+    if locks["no_submission_after_viewing"]
+      lock = locks["no_submission_after_viewing"].first
+      if !subs.empty?
+        return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
+      end
+    end
+    return false
+  end
 
   def legal_teamset_actions
     # Returns the set of actions on teamsets that are legal as of the saved values in the database
@@ -93,6 +115,13 @@ class Assignment < ApplicationRecord
     end
   end
 
+  def establish_teamsets
+    if self.new_record?
+      setup_teamsets
+    else
+      update_teamsets
+    end
+  end
   def setup_teamsets
     # Options are:
     # None -- create a (unique, ignored) teamset
@@ -151,7 +180,13 @@ class Assignment < ApplicationRecord
       return false
     end
     if @teamset_plan == "none"
-      # nothing to do
+      if self.team_subs #still the original value
+        # was a teamset; now changing to be individual subs
+        self.teamset = Teamset.create(course: self.course, name: "Team set for #{self.name}")
+        self.teamset.make_solo_teams_for(self)
+      else
+        # nothing to do        
+      end
     elsif @teamset_plan == "new"
       self.teamset.make_solo_teams_for(self)
     elsif @teamset_plan == "copy"

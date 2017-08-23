@@ -1,4 +1,81 @@
 (function() {
+  function renderComments(lineComments) {
+    $(".file-pane").each(function(index) {
+      var theseComments = lineComments[index] || {};
+      if (theseComments["noCommentsFor"]) return;
+      var cm = $(this).find(".CodeMirror")[0].CodeMirror;
+      cm.operation(function() {
+        Object.keys(theseComments).forEach(function(type, _) {
+          var commentsByType = theseComments[type] || {};
+          Object.keys(commentsByType).forEach(function(line, _) {
+            var commentsOnLine = commentsByType[line] || {};
+            commentsOnLine.forEach(function(comment, _) {
+              renderComment(cm, type, line, comment);
+            });
+          });
+        });
+      });
+    });
+  }
+  window.renderComments = renderComments;
+
+  function renderComment(cm, type, line, comment) {
+    var widget = $("<div>").addClass(comment.severity).addClass(type);
+    var table = $("<table>");
+    widget.append(table);
+    var row = $("<tr>");
+    table.append(row);
+    var td = $("<td>").addClass("nowrap");
+    row.append(td);
+    var label = $("<span>").text(comment.label || comment.author).addClass("label label-default");
+    td.append(label);
+    if (comment.suppressed) {
+      var icon = $("<span>").addClass("glyphicon glyphicon-flag")
+          .data("toggle", "toolip").data("placement", "top")
+          .attr("title", "Too many errors of this type were found; no further points were deducted");
+      td.append(icon);
+      var deduction = $("<span>").addClass("label label-default")
+          .data("toggle", "tooltip").data("placement", "top")
+          .attr("title", "This problem would normally deduct " + comment.deduction + " points");
+      if (comment.deduction < 0)
+        deduction.text("[+" + Math.abs(comment.deduction) + "]");
+      else {
+        deduction.text("[-" + comment.deduction + "]");
+      }
+      td.append(deduction);
+    } else {
+      var icon = $("<span>").addClass("glyphicon")
+          .data("toggle", "tooltip").data("placement", "top");
+      if (comment.severity === "Error")
+        icon.addClass("glyphicon-ban-circle").attr("title", "Error");
+      else if (comment.severity === "Warning")
+        icon.addClass("glyphicon-warning-sign").attr("title", "Warning");
+      else
+        icon.addClass("glyphicon-info-sign").attr("title", "Suggestion");
+      td.append(icon);
+      var deduction = $("<span>").addClass("label label-danger");
+      if (comment.deduction < 0)
+        deduction.text("[+" + Math.abs(comment.deduction) + "]");
+      else {
+        deduction.text("[-" + comment.deduction + "]");
+      }
+      if (comment.deduction < 0)
+        deduction.text("+" + Math.abs(comment.deduction));
+      else {
+        deduction.text("-" + comment.deduction);
+      }    
+      td.append(deduction);
+    }
+    td = $("<td>");
+    row.append(td);
+    if (comment.title !== "" && comment.title !== undefined) {
+      td.append($("<span>").addClass("description").text(comment.title + ": " + comment.comment));
+    } else {
+      td.append($("<span>").addClass("description").text(comment.comment));
+    }
+    cm.addLineWidget(parseInt(line) - 1, widget[0], {coverGutter: false, noHScroll: true});
+  }
+
   function init_datetime() {
     $('.datetime-picker').datetimepicker({
       sideBySide: true,
@@ -27,6 +104,9 @@
     $('.graders-list').on('cocoon:after-insert', on_add_grader);
     $('.spinner').each(function (_ii, div) {
       activateSpinner(div);
+      if ($(div).find("input").prop("disabled")) {
+        disableSpinner(div);
+      }
     });
 
     $("#files-graders").sortable({

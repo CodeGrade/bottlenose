@@ -1,0 +1,16 @@
+<% @page_title = "View Response" %>
+<% cur_reg = current_user.registration_for(@course) %>
+<% content_for :wide_content_before do %>
+
+<p>
+  <%= link_to "Back to submission",
+      course_assignment_submission_path(@course, @assignment, @submission) %>
+</p>
+
+<h1>Response</h1>
+
+<%= render 'submissions/sub_info' %>
+
+<% end %>
+
+<%= render "submissions/codereview_details" %>

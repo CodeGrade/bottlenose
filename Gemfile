@@ -10,6 +10,7 @@ gem 'erubis'
 gem 'devise_ldap_authenticatable' # needed to use LDAP instead of email auth
 
 gem 'pg'
+gem "passenger", ">= 5.0.25", require: "phusion_passenger/rack_handler"
 
 gem 'execjs'
 gem 'therubyracer'
@@ -28,7 +29,7 @@ gem 'cocoon' # used for dynamically generating nested forms
 
 gem 'rubyzip' # used for reading submitted zip files
 
-gem 'bootstrap-sass', '~> 3.3.5'
+gem 'bootstrap-sass', '~> 3.3.7'
 gem 'sass-rails', '>= 3.2'
 gem 'bootstrap-sass-extras'
 gem 'bootstrap3-datetimepicker-rails' # for the datetime widget
@@ -49,8 +50,6 @@ gem 'write_xlsx' # needed to export grade spreadsheet
 gem 'whenever', :require => false
 
 gem 'pretender'
-
-gem 'codemirror-rails' # needed for the code-rendering
 
 group :development do
   #gem "flatten_migrations"

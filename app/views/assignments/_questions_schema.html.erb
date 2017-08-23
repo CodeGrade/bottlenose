@@ -1,6 +1,6 @@
 <div class="row">
   <div class="col-sm-12">
-    <div id="questions-schema" class="well-sm collapse">
+    <div id="<%= id %>" class="well-sm collapse">
       <h5>YAML Question schema:</h5>
       <ul>
         <li>A question file contains a list of sections.</li>
@@ -23,9 +23,14 @@
               question is the 0-based index of the intended answer.</li>
           </ul>
         </li>
-        <li>Question rubrics are a list of <code>value: hint</code>
+        <li>Question rubrics are a list of <code>value: {hint:
+          string, feedback: string}</code>
           pairs, suggesting various levels of grading for different
-          kinds of mistakes.</li>
+          kinds of mistakes.  The hint is shown to graders to explain
+          what the rubric is used for, while the feedback is the
+          suggested text to be shown to students.  If the hint and
+          the feedback are the exact same thing, you may write this
+          in shorthand as simply <code>value: string</code></li>
         <li>Question parts are optional, derivative parts of the
           question that might elaborate on the answer or help
           scaffold the response.  They may
@@ -54,10 +59,18 @@
         - codeTag: "Tag the line defining the interface"
         - codeTag: "Tag the line implementing that interface."
       rubric:
-        - 1: if Yes, and their code is correctly tagged
-        - 0.75: if they answered No, but their code is actually correct
-        - 0.25: if Yes, but their code is wrong
-        - 0.1: if they answered No and their code is wrong
+        - 1: 
+            hint: if Yes, and their code is correctly tagged
+            feedback: Well done
+        - 0.75: 
+            hint: if they answered No, but their code is actually correct
+            feedback: Your code is actually correct; reread the question!
+        - 0.25: 
+            hint: if Yes, but their code is wrong
+            feedback: Your code is actually incorrect; reread the problem.
+        - 0.1:
+            hint: if they answered No and their code is wrong
+            feedback: You recognize that your code is wrong.
   - Numeric:
       weight: 3
       correctAnswer: 1
@@ -70,10 +83,10 @@
       parts:
         - text: Describe what you might change in the future.
       rubric:
-        - 1: flawless
+        - 1: Flawless
         - 0.8: well-separated concepts, but some oddly-tight coupling between them
-        - 0.5: "it works, but it's not well designed"
-        - 0.1: "it doesn't appear to work, but something was submitted"
+        - 0.5: "It works, but it's not well designed"
+        - 0.1: "It doesn't appear to work, but something was submitted"
   - MultipleChoice:
       weight: 1
       correctAnswer: 0
@@ -96,9 +109,15 @@
             Tag the first line in the interface that declare the methods that
             accomplish this.
       rubric:
-        - 1: if Easy, and it is in fact easy
-        - 0.5: if Medium, and it is in fact medium
-        - 0: if Impossible, and it is in fact impossible
+        - 1: 
+            hint: if Easy, and it is in fact easy
+            feedback: Nicely done
+        - 0.5: 
+            hint: if Medium, and it is in fact medium
+            feedback: Correct, but perhaps reconsider your design to improve this.
+        - 0: 
+            hint: if Impossible, and it is in fact impossible
+            feedback: It is indeed impossible in your current design.  Try to correct this!
 - Testing:
   - YesNo:
       weight: 1
@@ -108,7 +127,11 @@
         - codeTag: Tag it.
       rubric:
         - 1: "Yes"
-        - 0.5: Maybe -- they might have something that incidentally tests an empty model
+        - 0.5: 
+            hint: Maybe -- they might have something that incidentally tests an empty model
+            feedback: >-
+              You seem to inadvertently test the empty model.
+              Try making your tests more explicit
         - 0: "No"
       </pre>
     </div>

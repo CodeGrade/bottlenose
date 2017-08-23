@@ -33,25 +33,11 @@
       </p>
       <p>This file contains the questions for
         this assignment, in YAML format.
-        <span class="btn btn-info btn-sm" data-toggle="collapse"
+        <span class="btn btn-info btn-sm pull-right" data-toggle="collapse"
               data-target="#questions-schema">See schema</span>
       </p>
+      <div>&nbsp;</div>
       <%= render "assignment_file_picker", f: f, asgn: asgn, id: "questions" %>
-    </div>
-
-    <%= render 'questions_schema' %>
-  </div>
-  
-  <div class="for-type row">
-    <div class="form-group col-sm-6">
-      <%= f.label :related_assignment_id %>
-      <p>If this assignment is a reflection on a previous one, please
-        select it</p>
-      <% related_assns = @course.assignments
-                                .where(type: "Files").where.not(id: asgn.id)
-                                .order(due_date: :desc) %>
-      <%= f.select :related_assignment_id,
-          [["<none>", nil]] + (related_assns.to_a.map do |a| [a.name, a.id] end) %>
     </div>
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>
@@ -60,37 +46,18 @@
         assignment is worth.  Default: same as previous assignment.</p>
       <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
     </div>
-  </div>
 
-  <div class="for-type row">
-    <div class="form-group col-sm-6">
-      <%= f.label :due_date do %>
-      Due date
-      <% end %>
-      <p>Assignment should not be submitted after this time. Default: one week from today.</p>
-      <div>
-        <%= f.text_field :due_date, class: 'form-control datetime-picker' %>
-      </div>
-    </div>
-    <div class="form-group col-sm-6">
-      <%= f.label :available_date %>
-      <p>Assignment will not be visible until this time. Default: today.</p>
-      <div>
-        <%= f.text_field :available, class: 'form-control datetime-picker' %>
-      </div>
-    </div>
+    <%= render 'questions_schema', id: "questions-schema" %>
   </div>
+  
+  <%= render 'due_date', f: f %>
 
   <div class="for-type row">
     <div class="form-group col-sm-6">
       <%= render "edit_teamset", course: @course, asgn: asgn %>
     </div>
     <div class="form-group col-sm-6">
-      <%= f.label :request_time_taken, "Request time taken?" %>
-      <p>If selected, ask students on each submission how long they've
-        worked on the assignment.</p>
-      <%= f.check_box :request_time_taken, checked: asgn.request_time_taken,
-          data: {toggle: "toggle", on: "Yes", off: "No"} %>
+      <%= render "time_and_interlocks", f: f, asgn: asgn %>
     </div>
   </div>
 
@@ -100,6 +67,10 @@
       <%= render 'lateness/picker', within_course: true, f: f %>
     </div>
   </div>
+  <%= f.fields_for :graders, asgn.graders do |gr| %>
+  <%= gr.hidden_field :type, value: "QuestionsGrader" %>
+  <%= gr.hidden_field :order, value: gr.object.order %>
+  <% end %>
   <div class="form-group">
   <%= f.submit nil, class: 'btn btn-primary' %>
   </div>

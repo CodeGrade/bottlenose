@@ -1,3 +1,4 @@
+# coding: utf-8
 class ApplicationController < ActionController::Base
   impersonates :user
 
@@ -36,15 +37,6 @@ class ApplicationController < ActionController::Base
   def require_current_user
     if current_user.nil?
       redirect_to root_path, alert: "You need to log in first."
-      return
-    end
-  end
-
-  def require_valid_course
-    find_course
-
-    if @course.nil?
-      redirect_back courses_path, alert: "No such course"
       return
     end
   end
@@ -100,134 +92,6 @@ class ApplicationController < ActionController::Base
       ans
     end
   end
-
-
-  def get_submission_files(sub, line_comments = nil, show_deductions = false)
-    show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-    @lineCommentsByFile = line_comments || sub.grade_line_comments(nil, show_hidden)
-    @submission_files = []
-    @show_deductions = show_deductions
-    def with_extracted(item)
-      return nil if item.nil?
-      if item[:public_link]
-        return nil if File.basename(item[:full_path].to_s) == ".DS_Store"
-        comments = @lineCommentsByFile[item[:public_link].to_s] || {noCommentsFor: item[:public_link].to_s}
-        @submission_files.push({
-          link: item[:public_link],
-          name: item[:public_link].sub(/^.*extracted\//, ""),
-          contents: File.read(item[:full_path].to_s),
-          type: mime_type(item[:full_path]),
-          href: @submission_files.count + 1,
-          lineComments: comments
-          })
-        deductions =
-          if comments[:noCommentsFor]
-            nil
-          elsif @show_deductions
-            comments.reduce(nil) do |sum, (type, commentsByType)|
-              if commentsByType.is_a? String
-                sum
-              elsif @show_deductions.is_a? String and @show_deductions != type
-                sum
-              else
-                commentsByType.reduce(sum) do |sum, (line, comments)|
-                  comments.reduce(sum) do |sum, comment|
-                    (sum || 0) - comment[:deduction]
-                  end
-                end
-              end
-            end
-          end
-        { text:
-            if deductions
-              "#{item[:path]} (#{deductions})"
-            else
-              item[:path]
-            end,
-          href: @submission_files.count,
-          #icon: @lineCommentsByFile[item[:public_link].to_s] ? "glyphicon glyphicon-flash" : ""
-        }
-      elsif item[:link_to]
-        @submission_files.push({
-          link_to: item[:link_to].sub(/^.*extracted\//, ""),
-          name: item[:path],
-          type: "symlink",
-          href: @submission_files.count + 1,
-          lineComments: {noCommentsFor: item[:path].to_s},
-          broken: item[:broken]
-          })
-        {
-          text: item[:path],
-          href: @submission_files.count
-        }
-      else
-        return nil if item[:path] == "__MACOSX"
-        {
-          text: item[:path] + "/",
-          state: {selectable: true},
-          nodes: item[:children].map{|i| with_extracted(i)}.compact
-        }
-      end
-    end
-
-    @submission_dirs = sub.upload.extracted_files.map{|i| with_extracted(i)}.compact
-    @submission_files.each do |sf|
-      if sf[:type] == "symlink" && !sf[:broken]
-        sf[:link_href] = @submission_files.find{|f| f[:link]&.ends_with?(sf[:link_to])}[:href]
-      end
-    end
-
-    @count = @submission_files.count.to_s.length
-
-    def fix_hrefs(node)
-      if node[:href].is_a? Integer
-        node[:href] = "#file_" + node[:href].to_s.rjust(@count, '0')
-      end
-      if node[:link_href].is_a? Integer
-        node[:link_href] = "#file_" + node[:link_href].to_s.rjust(@count, '0')
-      end
-      if node[:nodes]
-        node[:nodes].each do |n| fix_hrefs(n) end
-      end
-    end
-    fix_hrefs({nodes: @submission_dirs})
-    fix_hrefs({nodes: @submission_files})
-  end
-
-  def mime_type(full_path)
-    case File.extname(full_path).downcase
-    when ".java"
-      "text/x-java"
-    when ".js"
-      "text/javascript"
-    when ".arr"
-      "pyret"
-    when ".rkt", ".ss"
-      "scheme"
-    when ".ml", ".mli"
-      "mllike"
-    when ".mly"
-      "text/x-ebnf"
-    when ".c", ".h"
-      "text/x-csrc"
-    when ".cpp", ".c++"
-      "text/x-c++src"
-    when ".cs"
-      "text/x-csharp"
-    when ".jpg", ".jpeg", ".png"
-      "image"
-    when ".jar"
-      "jar"
-    when ".zip"
-      "zip"
-    else
-      if File.basename(full_path.to_s) == "Makefile"
-        "text/x-makefile"
-      else
-        "text/unknown"
-      end
-    end
-  end
   
   # Course stuff
 
@@ -242,6 +106,9 @@ class ApplicationController < ActionController::Base
   end
 
   def require_registered_user
+    require_current_user
+    return if current_user.nil?
+    
     find_course
 
     return if current_user_site_admin?

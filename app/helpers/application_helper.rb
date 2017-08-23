@@ -145,4 +145,51 @@ module ApplicationHelper
       ent =~ /\.rb$/
     end
   end
+
+  def sanitize_question(html, options = {})
+    options[:tags] = %w(b strong i em textarea code pre) unless options[:tags]
+    if options[:allow_code]
+      options.delete(:allow_code)
+      attrs = (options[:attributes] || []) + %w"class data-lang"
+      options[:attributes] = attrs
+    end
+    sanitize(html, options)
+  end
+
+  def self.mime_type(full_path)
+    case File.extname(full_path).downcase
+    when ".java"
+      "text/x-java"
+    when ".js"
+      "text/javascript"
+    when ".arr"
+      "pyret"
+    when ".rkt", ".ss"
+      "scheme"
+    when ".ml", ".mli"
+      "mllike"
+    when ".mly"
+      "text/x-ebnf"
+    when ".c", ".h"
+      "text/x-csrc"
+    when ".cpp", ".c++"
+      "text/x-c++src"
+    when ".cs"
+      "text/x-csharp"
+    when ".jpg", ".jpeg", ".png"
+      "image"
+    when ".jar"
+      "jar"
+    when ".zip"
+      "zip"
+    when ".tap"
+      "text/plain"
+    else
+      if File.basename(full_path.to_s) == "Makefile"
+        "text/x-makefile"
+      else
+        "text/unknown"
+      end
+    end
+  end
 end

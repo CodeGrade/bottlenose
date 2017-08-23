@@ -1,5 +1,5 @@
-//= require codemirror
-//= require codemirror/themes/mdn-like
+//= require codemirror/lib/codemirror
+//= require codemirror/theme/mdn-like
 //= require jquery-tablesorter/theme.bootstrap_2
 //= require bootstrap-toggle
 
@@ -14,7 +14,6 @@
 @import "bootstrap-treeview";
 
 // Internal stylesheets.
-@import "old";  // TODO: Delete me.
 @import "footer";
 @import "actions";
 @import "page-header";
@@ -48,6 +47,10 @@ div.CodeMirror .highlightLine {
 .gradeD { color: firebrick; }
 .gradeF { color: darkred; }
 
+
+.prose {
+   max-width: 50em;
+}
 
 ol.grader-defns {
    list-style: none;
@@ -103,6 +106,35 @@ div.grader-config {
     padding: 10px;
 }
 
+.review-navbar .navbar-header { width: 100%; vertical-align: middle; }
+.review-navbar h3 {
+   margin-top: 10px;
+   vertical-align: middle; 
+   width: 100%;
+   line-height: unset;
+   padding: 0;
+}
+
+
+@media(min-width: 768px) {
+   nav.review-navbar {
+      position: sticky;
+      top: -1px;
+      z-index: 1000;
+   }
+   .files-sidebar-container {
+      position: sticky;
+   }
+   div.spacer {
+      height: 150px;
+   }
+}
+@media(max-width: 767px) {
+   .files-sidebar-container {
+      top: unset !important;
+   }
+}
+
 .panel-tab-pane {
     border: 1px solid $table-border-color;
     border-radius: 5px;
@@ -117,17 +149,6 @@ div.grader-config {
 
 .list-group-item.active:hover {
    color: black;
-}
-
-@media(min-width: 768px) {
-   .affix {
-      top: 0;
-   }
-}
-@media(max-width: 767px) {
-   .affix {
-      position: initial;
-   }
 }
 
 .middle-separator {

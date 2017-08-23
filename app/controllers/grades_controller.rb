@@ -86,7 +86,7 @@ class GradesController < ApplicationController
     end
   end
   def questions_params
-    array_from_hash(params[:grades].to_unsafe_h)
+    params[:grades].to_unsafe_h.map{|k, v| [k, array_from_hash(v)]}.to_h
   end
 
   def require_admin_or_staff
@@ -296,6 +296,10 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade updating for that assignment type is not supported"
   end
+  def bulk_update_Codereview
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
+  end
 
   # Individual updates, mostly of comments
   def update_Files
@@ -310,7 +314,7 @@ class GradesController < ApplicationController
     end
   end
   def update_Questions
-    missing, qp = questions_params.partition{|q| q["score"].nil? or q["score"].empty? }
+    missing, qp = questions_params[@submission.id.to_s].partition{|q| q["score"].nil? or q["score"].empty? }
     missing = missing.map{|q| q["index"].to_i + 1}
 
     save_all_comments(qp, :question_to_inlinecomment)
@@ -327,6 +331,57 @@ class GradesController < ApplicationController
       redirect_to :back, alert: msg
     end
   end
+  def update_Codereview
+    flat_questions = @assignment.flattened_questions
+    qcount = flat_questions.count
+    total = flat_questions.reduce(0){|sum, q| sum + q["weight"].to_f}
+    flat_responses = questions_params.map.with_index.map do |(k, v), i|
+      v.each do |q|
+        q["index"] = q["index"].to_i + i * qcount
+      end
+      v
+    end.flatten
+    missing, qp = flat_responses.partition{|q| q["score"].nil? or q["score"].empty? }
+    missing = missing.map{|q| q["index"].to_i + 1}
+
+    if !missing.empty?
+      if missing.count > 1
+        msg = "Questions #{missing.join(', ')} do not have grades"
+      else
+        msg = "Question #{missing[0]} does not have a grade"
+      end
+      redirect_to :back, alert: msg
+      return
+    end
+
+    all_feedbacks = @submission.review_feedbacks.to_a
+    questions_params.map do |k, v|
+      feedback = all_feedbacks.find{|f| f.submission_id == k.to_i}
+      if feedback.nil?
+        redirect_to :back, alert: "Submitted feedback for an unexpected submission #{k}"
+      else
+        feedback.grade_id = @grade.id
+        feedback.score, feedback.out_of = @grade.grader.partial_grade_for_sub(@assignment, @grade, k)
+        feedback.save
+      end
+    end
+
+    grader_dir = @submission.upload.grader_path(@grade)
+    grader_dir.mkpath
+    File.open(grader_dir.join("grades.yaml"), "w") do |grades|
+      to_write = questions_params
+      to_write["grader"] = current_user.id
+      grades.write(YAML.dump(to_write))
+      @grade.grading_output = grades.path
+      @grade.save
+    end
+
+    @grade.grader.grade(@assignment, @submission)
+    @submission.compute_grade! if @submission.grade_complete?
+    mark_grading_allocation_completed
+    redirect_to course_assignment_submission_path(@course, @assignment, @submission),
+                notice: "Comments saved; grading completed"
+  end
   def update_Exam
     update_exam_grades
     redirect_to course_assignment_submission_path(@course, @assignment, @submission),
@@ -336,10 +391,9 @@ class GradesController < ApplicationController
   ###################################
   # Grader responses, by grader type
 
-  # JavaStyleGrader
-  def show_JavaStyleGrader
-    get_submission_files(@submission, nil, "JavaStyleGrader")
-    @commentType = "JavaStyleGrader"
+  def show_inline_comment_grader(type)
+    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, type)
+    @commentType = type
     if @grade.grading_output
       begin
         @grading_output = File.read(@grade.grading_output)
@@ -356,7 +410,9 @@ class GradesController < ApplicationController
       end
     end
     num_comments = @grade.inline_comments.where.not(line: 0).count
-    if @tests.nil? or @tests.count != num_comments
+    cur_reg = current_user.registration_for(@course)
+    @sub_comments = @submission.grade_submission_comments(current_user.site_admin? || cur_reg.staff?)
+    if @sub_comments.empty? && (@tests.nil? || @tests.count != num_comments)
       @error_header = <<HEADER.html_safe
 <p>There seems to be a problem displaying the style-checker's feedback on this submission.</p>
 <p>Please email the professor, with the following information:</p>
@@ -369,9 +425,12 @@ class GradesController < ApplicationController
 </li>
 HEADER
     end
-    render "show_JavaStyleGrader"
-    # debugger
-    # redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
+    render "submissions/details_files"
+  end
+  
+  # JavaStyleGrader
+  def show_JavaStyleGrader
+    show_inline_comment_grader "JavaStyleGrader"
   end
   def edit_JavaStyleGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -413,7 +472,7 @@ HEADER
         @tests = @grading_output.tests
       else
         @grading_header = "Selected test results"
-        @tests = @grading_output.tests.delete_if{|t| t[:passed]}.shuffle.take(@grade.grader.errors_to_show || 3)
+        @tests = @grading_output.tests.reject{|t| t[:passed]}.shuffle!.take(@grade.grader.errors_to_show || 3)
       end
     end
 
@@ -455,7 +514,7 @@ HEADER
         @grading_header = "All tests passed"
       else
         @grading_header = "Selected test results"
-        @tests = @grading_output.tests.delete_if{|t| t[:passed]}.shuffle.take(@grade.grader.errors_to_show || 3)
+        @tests = @grading_output.tests.reject{|t| t[:passed]}.shuffle!.take(@grade.grader.errors_to_show || 3)
       end
     end
 
@@ -467,40 +526,7 @@ HEADER
 
   # RacketStyleGrader
   def show_RacketStyleGrader
-    get_submission_files(@submission, nil, "RacketStyleGrader")
-    @commentType = "RacketStyleGrader"
-    if @grade.grading_output
-      begin
-        @grading_output = File.read(@grade.grading_output)
-        begin
-          tap = TapParser.new(@grading_output)
-          @grading_output = tap
-          @tests = tap.tests
-        rescue Exception
-          @tests = []
-        end
-      rescue Errno::ENOENT
-        @grading_output = "Grading output file is missing or could not be read"
-        @tests = []
-      end
-    end
-    num_comments = @grade.inline_comments.where.not(line: 0).count
-    if @tests.nil? or @tests.count != num_comments
-      @error_header = <<HEADER.html_safe
-<p>There seems to be a problem displaying the style-checker's feedback on this submission.</p>
-<p>Please email the professor, with the following information:</p>
-<ul>
-<li>Course: #{@course.id}</li>
-<li>Assignment: #{@assignment.id}</li>
-<li>Submission: #{@submission.id}</li>
-<li>Grader: #{@grade.id}</li>
-<li>User: #{current_user.name} (#{current_user.id})</li>
-</li>
-HEADER
-    end
-    render "show_RacketStyleGrader"
-    # debugger
-    # redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
+    show_inline_comment_grader "RacketStyleGrader"
   end
   def edit_RacketStyleGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -513,50 +539,82 @@ HEADER
   def edit_QuestionsGrader
     @questions = @assignment.questions
     @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = [[@submission.id.to_s, @answers]].to_h
 
-    @submission_dirs = []
     if @assignment.related_assignment
       related_sub = @assignment.related_assignment.used_sub_for(@submission.user)
       if related_sub.nil?
         @submission_files = []
+        @submission_dirs = []
         @answers_are_newer = true
       else
-        get_submission_files(related_sub)
+        @submission_dirs, @submission_files = related_sub.get_submission_files(current_user)
         @answers_are_newer = (related_sub.created_at < @submission.created_at)
       end
     else
       @submission_files = []
+      @submission_dirs = []
       @answers_are_newer = true
     end
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-    pregrades = @submission.inline_comments
-    pregrades = pregrades.select(:line, :name, :weight, :comment).joins(:user).sort_by(&:line).to_a
-    @grades = []
-    pregrades.each do |g| @grades[g["line"]] = g end
+    @grades = @submission.inline_comments
+    @grades = @grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
+    @grades = [["grader", (@grades&.first&.user&.name || @current_user.name)],
+               [@submission.id.to_s,
+                @grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
+    
     @show_grades = true
     render "edit_QuestionsGrader"
   end
   def show_QuestionsGrader
-    @questions = @assignment.questions
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
   end
   def details_QuestionsGrader
     "No details to show for Questions grader"
   end
 
+  # CodereviewGrader
+  def edit_CodereviewGrader
+    @questions = @assignment.questions
+    @num_questions = @assignment.flattened_questions.count
+    @answers = YAML.load(File.open(@submission.upload.submission_path))
+
+    @related_subs = @submission.review_feedbacks.map(&:submission)
+    @answers_are_newer = []
+    @submission_info = @related_subs.map do |sub, answers|
+      d, f = sub.get_submission_files(current_user)
+      @answers_are_newer << (sub.created_at < @submission.created_at)
+      [d, f, sub.id]
+    end
+
+    if @grade.grading_output
+      @grades = YAML.load(File.open(@grade.grading_output))
+      @grades["grader"] = User.find(@grades["grader"]).name
+    else
+      @grades = {}
+    end
+    @show_grades = true
+    render "edit_CodereviewGrader"
+  end
+  def show_CodereviewGrader
+    redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
+  end
+  def details_CodereviewGrader
+    "No details to show for Codereview grader"
+  end
+
   # ManualGrader
   def edit_ManualGrader
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
     @lineCommentsByFile = @submission.grade_line_comments(current_user, show_hidden)
-    get_submission_files(@submission, @lineCommentsByFile)
+    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, @lineCommentsByFile)
     render "edit_ManualGrader"
   end
   def show_ManualGrader
-    get_submission_files(@submission, nil, "ManualGrader")
+    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, "ManualGrader")
     @commentType = "ManualGrader"
+    @grading_output = @grade
     render "submissions/details_files"
-#    redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
   end
   def details_ManualGrader
     GradesController.pretty_print_comments(@grade.inline_comments)
@@ -573,7 +631,7 @@ HEADER
   def show_ExamGrader
     redirect_to course_assignment_submission_path(@course, @assignment, @submission)
   end
-  def details_QuestionsGrader
+  def details_ExamGrader
     "No details to show for Exam grader"
   end
 
@@ -612,7 +670,7 @@ HEADER
         @tests = @grading_output.tests
       else
         @grading_header = "Selected test results"
-        @tests = @grading_output.tests.delete_if{|t| t[:passed]}.shuffle.take(3)
+        @tests = @grading_output.tests.reject{|t| t[:passed]}.shuffle!.take(3)
       end
     end
 

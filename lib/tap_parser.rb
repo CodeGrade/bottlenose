@@ -1,9 +1,11 @@
 require 'yaml'
 
 class TapParser
-  attr_reader :text, :test_count, :tests, :commentary, :passed_count
+  attr_reader :text, :test_count, :tests, :commentary, :passed_count, :time_taken
+  attr_reader :filename
 
-  def initialize(text)
+  def initialize(text, filename=nil)
+    @filename = filename
     @text = text
     @test_count = 0
     @passed_count = 0
@@ -20,7 +22,7 @@ class TapParser
         parse_test
         if count == @lines.count # no progress
           print 
-          raise "Could not parse TAP file at line #{@line}: #{@lines[0]}"
+          raise "Could not parse TAP file (#{@filename}) at line #{@line}: #{@lines[0]}"
         end
       end
       @tests.length.upto(@test_count - 1) do |i|
@@ -56,7 +58,12 @@ class TapParser
 
   def parse_commentary
     while @lines.length > 0 && @lines[0].match(/^# /)
-      @commentary.push(next_line[2..-1])
+      line = next_line[2..-1]
+      @commentary.push(line)
+      mm = line.match(/^Time: (.*)$/)
+      if mm
+        @time_taken = mm[1].to_f
+      end
     end
   end
 
@@ -110,7 +117,7 @@ class TapParser
       YAML.load(info.join("\n"))
     rescue Exception => ee
       # triple-backtick snarled things up
-      print "Couldn't parse YAML for:\n``" + "`\n"
+      print "Couldn't parse YAML (#{@filename}) for:\n``" + "`\n"
       print info.join("\n")
       print "\n`" + "``\n"
       print "Error was #{ee}\n"

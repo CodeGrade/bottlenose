@@ -14,12 +14,12 @@
 </style>
 <% sub_files.each_with_index do |f, i| %>
 <% index = (i + 1).to_s.rjust(sub_files.count.to_s.length, '0') %>
-<div class="file-pane tab-pane panel-tab-pane <%= if i == 0; 'active' end %>" id="file_<%= index %>">
+<div class="file-pane tab-pane panel-tab-pane <%= if i == 0; 'active' end %>" id="file_<%= index %>_<%= root %>">
   <% if f[:type] == "image" %>
   <div class="nonCMwrapper" style="position: relative; display: inline-block;">
     <%= image_tag f[:link], id: "image_#{index}", alt: f[:name], style: "max-width: 100%; max-height: 100%;",
         skip_pipeline: true %>
-    <a href="<%= f[:link] %>" target="_blank"
+    <a href="<%= f[:link] %>_<%= root %>" target="_blank"
        class="magnify-image btn btn-default" data-target="image_<%= index %>" data-container="file_<%= index %>"
        style="position: absolute; display: block; float: right; right: 0; top: 0; font-size: 300%;">
       <i class="glyphicon glyphicon-zoom-in"></i>
@@ -32,7 +32,7 @@
     <% if f[:broken] %>
     <%= f[:link_to] %>, which is an invalid link
     <% else %>
-    <%= link_to f[:link_to], f[:link_href], class: "symlink-jump" %>
+    <%= link_to f[:link_to], f[:link_href], class: "symlink-jump", data: {root: root} %>
     <% end %>
   </div>
   <% else %>
@@ -41,7 +41,7 @@
   <div>
     <textarea class="sourceCode" data-lang="<%= f[:type] %>"
               data-source="<%= f[:link] %>"
-              id="contents_<%= i %>"><%= contents %></textarea>
+              id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
   </div>
   <% rescue Exception %>
   <div class="nonCMwrapper">

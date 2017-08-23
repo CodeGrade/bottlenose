@@ -1,5 +1,6 @@
 <% @page_title = "New Response: #{@assignment.name}" %>
 <% content_for :wide_content do %>
+<% sub_id = "newsub" %>
 
 <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)] do |f| %>
   <% f.object = @submission.becomes(@submission.class)
@@ -16,18 +17,20 @@
 
 <% if (allowed && not_following && !rate_limit) || staff_override %>
 <% if @assignment.related_assignment_id %>
-<div class="col-sm-6">
-  <div id="files-sidebar" data-spy="affix">
-    <div id="files-treeview">
+<div id="all-files">
+<div class="col-sm-6 files-sidebar-container">
+  <div class="files-sidebar">
+    <div class="files-treeview">
       <div id="files" class="nav treeview condensed"></div>
     </div>
     <div class="tab-content">
-      <%= render "files", sub_files: @submission_files %>
+      <%= render "files", sub_files: @submission_files, root: "all-files" %>
     </div>
   </div>
   <script>
-    <%= render partial: "render_comments.js", locals: {vertical: true} %>
+    <%= render "render_comments.js", sub_dirs: @submission_dirs, vertical: true, root: "all-files" %>
   </script>
+</div>
 </div>
 <% end %>
 
@@ -61,37 +64,27 @@
           <% question.each do |type, q| %>
             <li>
               <p>
-                <%= sanitize(q["prompt"],
-                    tags: %w(b strong i em p code pre textarea),
-                    attributes: %w(class data-lang)) %>
+                <%= sanitize_question(q["prompt"], allow_code: true) %>
                 <small>(<%= pluralize(q["weight"], "point") %>)</small>
               </p>
-              <%= render "enter_answer_#{type.underscore}", q: q, index: i + count %>
+              <%= render "enter_answer_#{type.underscore}", q: q, index: i + count, sub_id: sub_id %>
               <p></p>
               <% if q["parts"] %>
                 <div class="parts" data-qnum="<%= i + count %>">
                 <% q["parts"].each_with_index do |part, part_i| %>
-                  <% part_ans = @answers
-                     part_ans = part_ans[i + count] if part_ans
-                     part_ans = part_ans["parts"] if part_ans
-                     part_ans = part_ans[part_i] if part_ans %>
+                  <% part_ans = @answers&.dig(sub_id, i + count, "parts", part_i) %>
                   <% if part["codeTag"] %>
-                  <p><%= sanitize(part["codeTag"], 
-                         tags: %w(b strong i em code pre),
-                         attributes: %w(class data-lang)) %></p>
-                  <%= render partial: "code_tag", locals: {i: i, count: count, part_ans: part_ans, part_i: part_i} %>
+                  <p><%= sanitize_question(part["codeTag"], allow_code: true) %></p>
+                  <%= render partial: "code_tag",
+                      locals: {i: i, sub_id: sub_id, count: count, part_ans: part_ans, part_i: part_i, sub_files: @submission_files} %>
                   <% elsif part["text"] %>
-                  <p><%= sanitize(part["text"], 
-                         tags: %w(b strong i em code pre),
-                         attributes: %w(class data-lang)) %></p>
+                  <p><%= sanitize_question(part["text"], allow_code: true) %></p>
                   <textarea class="form-control" rows="5"
-                            name="answers[<%= i + count %>][parts][<%= part_i %>][info]"><%= if part_ans then part_ans['info'] end %></textarea>
+                            name="answers[<%= sub_id %>][<%= i + count %>][parts][<%= part_i %>][info]"><%= part_ans&.dig("info") %></textarea>
                   <% elsif part["requiredText"] %>
-                  <p><%= sanitize(part["requiredText"], 
-                         tags: %w(b strong i em code pre),
-                         attributes: %w(class data-lang)) %></p>
-                  <textarea class="form-control <%= if @answers and (part_ans.nil? or part_ans['info'].to_s.empty?) then 'unanswered' end %>" rows="5"
-                            name="answers[<%= i + count %>][parts][<%= part_i %>][info]"><%= if part_ans then part_ans['info'] end %></textarea>
+                  <p><%= sanitize_question(part["requiredText"], allow_code: true) %></p>
+                  <textarea class="form-control <%= if @answers && part_ans&.dig('info').blank? then 'unanswered' end %>" rows="5"
+                            name="answers[<%= sub_id %>][<%= i + count %>][parts][<%= part_i %>][info]"><%= part_ans&.dig("info") %></textarea>
                   <% end %>
                 <% end %>
                 </div>

@@ -1,0 +1,7 @@
+<% @page_title = "View Submission" %>
+<% cur_reg = current_user.registration_for(@course) %>
+
+<%= render "show_common", cur_reg: cur_reg, kind: "responses",
+    show_download: false %>
+
+<%= render "scoring_common", cur_reg: cur_reg %>

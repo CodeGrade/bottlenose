@@ -3,8 +3,7 @@
    cur_reg_staff = cur_reg&.staff? %>
 
 <p>
-  <%= link_to "Back to submission",
-      course_assignment_submission_path(@course, @assignment, @submission) %>
+  <%= link_to "< Back to submission", course_assignment_submission_path(@course, @assignment, @submission) %>
 </p>
 
 <h1>Submission</h1>

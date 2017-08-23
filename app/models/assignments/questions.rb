@@ -1,4 +1,5 @@
 class Questions < Assignment
+  validates :related_assignment_id, :absence => true
   validate :set_questions_graders
 
   def set_questions_graders
@@ -64,13 +65,18 @@ class Questions < Assignment
                     else
                       q["rubric"].each_with_index do |guide, i|
                         if !(guide.is_a? Object) || guide.keys.count != 1
-                          self.errors.add(:base, "Question #{question_count}, rubric entry #{i} is ill-formed")
+                          self.errors.add(:base, "Question #{question_count}, rubric entry #{i} is ill-formed: expect an object with exactly one key")
                         else
-                          guide.each do |weight, hint|
+                          guide.each do |weight, desc|
                             if !is_float(weight)
                               self.errors.add(:base, "Question #{question_count}, rubric entry #{i} has non-numeric weight")
                             elsif Float(weight) < 0 || Float(weight) > 1
                               self.errors.add(:base, "Question #{question_count}, rubric entry #{i} has out-of-bounds weight")
+                            end
+                            if desc.is_a? String
+                              # ok
+                            elsif (desc.is_a? Object) && !((desc["hint"].is_a? String) || (desc["feedback"].is_a? String))
+                              self.errors.add(:base, "Question #{question_count}, rubric entry #{i} has malformed feedback")
                             end
                           end
                         end
@@ -143,8 +149,13 @@ class Questions < Assignment
         end
       end
       return false if self.errors.count > 0
-      self.graders << Grader.new(type: "QuestionsGrader", avail_score: @total_weight,
-                                 assignment: self, order: self.graders.count + 1)
+      grader = self.graders.first
+      if grader.nil?
+        grader = Grader.new(type: "QuestionsGrader", assignment: self)
+        self.graders << grader
+      end
+      grader.avail_score = @total_weight
+      grader.order = self.graders.count + 1
     end
   end
 

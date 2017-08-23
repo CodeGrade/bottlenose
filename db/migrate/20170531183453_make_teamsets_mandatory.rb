@@ -1,4 +1,11 @@
 class MakeTeamsetsMandatory < ActiveRecord::Migration[5.1]
+  Assignment.inheritance_column = nil
+  class TeamSet < ApplicationRecord
+    belongs_to :course
+    has_many   :teams
+    has_many   :submissions, through: :teams
+    has_many   :assignments
+  end
   def self.up
     courses_needing_teamsets = Course.find(Assignment.where(team_set_id: nil).map(&:course_id))
     courses_needing_teamsets.each do |c|

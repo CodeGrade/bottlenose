@@ -31,7 +31,7 @@
     <% if dropped %>
     <h3 style="font-size: 21px;"><%= course.name %></h3>
     <div class="row">
-      <p class="col-sm-12">Withdrawn on <span class="local-time"><%= dropped %></span></p>
+      <p class="col-sm-12">Withdrawn on <span class="local-time"><%= dropped.iso8601 %></span></p>
     </div>
     <% else %>
     <h3 class="courseHeader">

@@ -22,14 +22,15 @@
 //= require bootstrap-datetimepicker
 //= require bootstrap.treeview
 //= require bootstrap-toggle
-//= require codemirror
-//= require codemirror/addons/runmode/runmode
-//= require codemirror/addons/selection/active-line
-//= require codemirror/modes/clike
-//= require codemirror/modes/mllike
-//= require codemirror/modes/ebnf
-//= require codemirror/modes/javascript
-//= require codemirror/modes/scheme
+//= require codemirror/lib/codemirror
+//= require codemirror/addon/runmode/runmode
+//= require codemirror/addon/selection/active-line
+//= require codemirror/mode/clike/clike
+//= require codemirror/mode/mllike/mllike
+//= require codemirror/mode/ebnf/ebnf
+//= require codemirror/mode/javascript/javascript
+//= require codemirror/mode/scheme/scheme
+//= require pyret-codemirror-mode/mode/pyret
 //= require_tree .
 
 // Based on https://stackoverflow.com/questions/14324919/status-of-rails-link-to-function-deprecation
@@ -177,20 +178,21 @@ function activateSpinner(obj, options) {
   function validate() {
     max = input.data("max");
     min = input.data("min");
+    var disabled = input.prop("disabled");
     var val = parseFloat(input.val(), 10);
     if (max !== undefined && val >= max) {
       upArrow.addClass("disabled");
       clearInterval(upInterval);
       upInterval = undefined;
     }
-    if (min === undefined || val > min)
+    if (!disabled && (min === undefined || val > min))
       downArrow.removeClass("disabled");
     if (min !== undefined && val <= min) {
       downArrow.addClass("disabled");
       clearInterval(downInterval);
       downInterval = undefined;
     }
-    if (max === undefined || val < max)
+    if (!disabled && (max === undefined || val < max))
       upArrow.removeClass("disabled");
   }
   input.on("change", validate);
@@ -209,6 +211,7 @@ function activateSpinner(obj, options) {
     input.val(newVal.toFixed(precision)).change();
   }
   input.on("keydown", function(e) {
+    if (input.prop("disabled")) return;
     validateNumericInput(e);
     if (e.key === "ArrowUp") { increment(); return; }
     if (e.key === "ArrowDown") { decrement(); return; }
@@ -219,12 +222,23 @@ function activateSpinner(obj, options) {
     if (max !== undefined && newVal > max) { e.preventDefault(); }
     if (min !== undefined && newVal < min) { e.preventDefault(); }
   });
+  input.on("deactivate", function(e) {
+    input.prop("disabled", true);
+    upArrow.addClass("disabled");
+    downArrow.addClass("disabled");
+  });
+  input.on("reactivate", function(e) {
+    input.prop("disabled", false);
+    validate();
+  });
 
   $(upArrow).on('mousedown', function() {
+    if (input.prop("disabled")) return;
     upInterval = setInterval(increment, 200);
     increment();
   });
   $(downArrow).on('mousedown', function() {
+    if (input.prop("disabled")) return;
     downInterval = setInterval(decrement, 200);
     decrement();
   });
@@ -236,6 +250,12 @@ function activateSpinner(obj, options) {
     return false;
   });
   return input;
+}
+function disableSpinner(divOrInput) {
+  $(divOrInput).find("input").addBack().trigger("deactivate");
+}
+function enableSpinner(divOrInput) {
+  $(divOrInput).find("input").addBack().trigger("reactivate");
 }
 
 function makeSpinner(options) {
@@ -258,12 +278,3 @@ function makeSpinner(options) {
   activateSpinner(div, options);
   return div;
 }
-
-$(function() {
-  function fixSizes() {
-    var $affixElement = $('[data-spy="affix"]');
-    $affixElement.width($affixElement.parent().width());
-  }
-  $(window).resize(fixSizes);
-  fixSizes();
-});

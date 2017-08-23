@@ -1,0 +1,135 @@
+<% @page_title = "#{@course.name} / #{@gradesheet.assignment.name}" %>
+<style>
+  h3 i.glyphicon { font-size: 80%; margin-left: 0.5em; }
+  h3 i.glyphicon-chevron-up { display: none; }
+  h3 i.glyphicon-chevron-down { display: initial; }
+  h3.collapsed i.glyphicon-chevron-up { display: initial; }
+  h3.collapsed i.glyphicon-chevron-down { display: none; }
+</style>
+<% cur_reg = current_user.registration_for(@course) %>
+<% if cur_reg&.professor? %>
+<p class="pull-right">
+  <%= link_to "Edit review matchings",
+      edit_course_assignment_matchings_path(@course, @gradesheet.assignment),
+      class: "btn btn-default" %>
+  <%= link_to "Edit Assignment", 
+      edit_course_assignment_path(@course, @gradesheet.assignment), class: "btn btn-default" %>
+</p>
+<% end %>
+
+<%= render 'assignment_questions_info', gradesheet: @gradesheet,
+    cur_reg: cur_reg %>
+<div class="row">
+  <div class="col-md-6">
+    <p>
+      Complete <b><%= pluralize(@gradesheet.assignment.review_count,
+                                @gradesheet.assignment.review_target + " review") %></b>
+      of <%= link_to @gradesheet.assignment.related_assignment.name,
+             course_assignment_path(@course, @gradesheet.assignment.related_assignment) %>
+    </p>
+    <% if (current_user.site_admin? || cur_reg&.professor?) %>
+      <p>
+        <b>Threshold:</b> Only show reviews of quality
+        <%= @gradesheet.assignment.review_threshold %>% or higher.
+      </p>
+    <% end %>
+  </div>
+</div>
+<h3 data-toggle="collapse" class="collapsed" data-target="#questions">
+  Codereview questions
+  <i class="glyphicon glyphicon-chevron-down"></i>
+  <i class="glyphicon glyphicon-chevron-up"></i>
+</h3>
+<div id="questions" class="collapse">
+<% count = 1 %>
+<% @questions.each do |section| %>
+  <% section.each do |name, qs| %>
+  <h4><%= name %></h4>
+  <ol start="<%= count %>">
+    <% qs.each do |question| %>
+    <% question.each do |type, q| %>
+    <li><b><%= type %> </b><small>(<%= pluralize(q["weight"], "point") %>)</small>:
+      <p><%= sanitize_question(q["prompt"], allow_code: true) %></p>
+      <% if q["options"] %>
+      <ul>
+        <% q["options"].each do |opt| %>
+        <li><%= sanitize_question(opt, allow_code: true) %></li>
+        <% end %>
+      </ul>
+      <% end %>
+      <% if q["parts"] %>
+        <% q["parts"].each do |part| %>
+          <% if part["codeTag"] %>
+          <p>(CodeTag) <%= sanitize_question(part["codeTag"], allow_code: true) %></p>
+          <% elsif part["codeTags"] %>
+          <p>(Multiple CodeTags) <%= sanitize_question(part["codeTags"], allow_code: true) %></p>
+          <% elsif part["requiredText"] %>
+          <p>(Required text) <%= sanitize_question(part["requiredText"], allow_code: true) %></p>
+          <% elsif part["text"] %>
+          <p>(Text) <%= sanitize_question(part["text"], allow_code: true) %></p>
+          <% end %>
+        <% end %>
+      <% end %>
+      <div class="panel panel-info">
+      <div class="panel-heading"><i><b>Rubric:</b></i></div>
+      <div class="panel-body">
+      <% if !q["correctAnswer"].nil? %>
+      <p style="font-style: italic;"><b>Correct answer:</b>
+                    <%= sanitize_question(
+                        case type
+                        when "YesNo"
+                          if q["correctAnswer"] then "Yes" else "No" end
+                        when "TrueFalse"
+                          q["correctAnswer"].to_s.capitalize
+                        when "MultipleChoice"
+                          q["options"][q["correctAnswer"].to_i]
+                        else
+                          q["correctAnswer"].to_s
+                        end)
+                        %></p>      
+      <% end %>
+      <% if q["rubric"] %>
+      <ul>
+      <% q["rubric"].each do |entry| %>
+        <% entry.each do |val, desc| %>
+        <li><b><%= val %>:</b> <%= sanitize_question(desc["hint"] || desc) %></li>
+        <% end %>
+      <% end %>
+      </ul>
+      <% end %>
+      </div>
+      </div>
+    </li>
+    <% end %>
+    <% end %>
+  </ol>
+  <% count += qs.count %>
+  <% end %>
+<% end %>
+<script>
+  $(function() {
+    $("textarea.sourceCode").each(function(index, code) {
+      if ($(code).data("lang")) {
+        var cm = CodeMirror.fromTextArea(code, {
+          readOnly: true, indentUnit: 2,
+          mode: $(code).data("lang"),
+          theme: 'mdn-like', viewportMargin: Infinity,
+          lineNumbers: true, lineWrapping: false,
+          styleActiveLine: true
+        });
+        cm.setSize(null, 0);
+      }
+      $(code).addClass("cm-s-mdn-like cm-s-default");
+    });
+  });
+  $("#questions").one("shown.bs.collapse", function() {
+    $(".CodeMirror").each(function(index, code) {
+      if (code.CodeMirror) {
+        code.removeAttribute("style");
+        code.CodeMirror.refresh();
+      }
+    });
+  });
+</script>
+</div>
+<%= render 'admin_subs', type: {noun: "response", verb: "respond", gerund: "responding" } %>

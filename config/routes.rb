@@ -70,6 +70,16 @@ Bottlenose::Application.routes.draw do
           post 'bulk' => 'grades#bulk_update'
         end
       end
+      resources :matchings, only: [] do
+        collection do
+          get 'edit' => 'matching_allocations#edit', as: 'edit'
+          patch 'edit' => 'matching_allocations#patch', as: 'patch'
+          patch 'update' => 'matching_allocations#update', as: 'update'
+        end
+        member do
+          delete 'delete' => 'matching_allocations#delete', as: 'delete'
+        end
+      end
       resources :submissions, except: [:edit, :update, :destroy] do
         collection do
           post 'rerun/:grader_id', to: 'submissions#rerun_grader', as: 'rerun_grader'
@@ -82,8 +92,9 @@ Bottlenose::Application.routes.draw do
           post 'recreate/:grader_id', to: 'submissions#recreate_grade', as: 'recreate_grade'
           get 'plagiarism', to: 'submissions#edit_plagiarism', as: 'edit_plagiarism'
           patch 'plagiarism', to: 'submissions#update_plagiarism', as: 'update_plagiarism'
-          patch 'split', to: 'submissions#split_submission', as: 'split'
+          patch 'split', to: 'submissions#split_submission', as: 'split'          
         end
+        resources :reviews, only: [:show] 
         resources :grades, only: [:show, :edit, :update] do
           member do
             post :regrade

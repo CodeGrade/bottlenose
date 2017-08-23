@@ -37,7 +37,7 @@
             <td></td>
             <td>0</td>
             <% else %>
-            <td><span class="local-time"><%= used.created_at %></span></td>
+            <td><span class="local-time"><%= used.created_at.iso8601 %></span></td>
             <td><%= used.submission.days_late %></td>
             <% end %>
           </tr>

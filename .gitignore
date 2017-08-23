@@ -15,6 +15,9 @@
 /db/*.sqlite3
 /db/data.yml
 
+# npm
+/node_modules
+
 # Ignore all logfiles and tempfiles.
 /log/*.log
 /log/*
@@ -48,3 +51,4 @@ db/dump.sql.gz
 .vagrant
 
 *.class
+lib/assets/*.jar

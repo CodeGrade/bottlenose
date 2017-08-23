@@ -1,0 +1,11 @@
+<li class="nested-fields">
+  <% interlocked_assns = @course.assignments.where.not(id: asgn.id)
+                                .order(due_date: :desc) %>
+  <%= f.select :constraint,
+      options_for_select(Interlock::constraints.map{|c, cid| [Interlock.constraint_to_s(c), c]},
+                         :no_submission_unless_submitted) %>
+  <%= f.select :assignment_id,
+      options_from_collection_for_select(interlocked_assns, "id", "name") %>
+  <%= link_to_remove_association "Remove", f, class: 'btn btn-danger pull-right',
+      style: "vertical-align: initial, margin: -6pt -8pt;" %>
+</li>
