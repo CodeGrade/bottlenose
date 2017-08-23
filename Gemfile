@@ -39,8 +39,8 @@ gem 'momentjs-rails', '>= 2.9.0' # needed for human-friendly textual dates
 gem 'font-awesome-rails'
 
 # needed to run graders in the background
-gem 'delayed_job', github: 'dsander/delayed_job', branch: 'rails51' # FIXME: github
-gem 'delayed_job_active_record', github: 'gogovan/delayed_job_active_record', branch: 'rails-5.1' # FIXME
+gem 'backburner'
+gem 'beaneater'
 gem 'daemons'
 
 gem 'headless' # needed to run Racket from BN, and xvfb-run (the shell script) merges stdout and stderr

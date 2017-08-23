@@ -31,4 +31,8 @@ class Grade < ApplicationRecord
       ans
     end
   end
+
+  def full_log
+    self.grading_output.sub(/makefile\.tap$/, "details.log")
+  end
 end

@@ -18,7 +18,10 @@
   <%= @grading_header %>
   <% if cur_reg_staff && @grading_output.kind_of?(TapParser) %>
   <%= link_to Upload.upload_path_for(@grade.grading_output), class: "btn btn-default" do %>
-    <i class="glyphicon glyphicon-download-alt"></i> Download raw output
+    <i class="glyphicon glyphicon-download-alt"></i> Download raw test output
+  <% end %>
+  <%= link_to Upload.upload_path_for(@grade.full_log), class: "btn btn-default" do %>
+    <i class="glyphicon glyphicon-download-alt"></i> Download full log
   <% end %>
 
   <span class="pull-right">Total score:

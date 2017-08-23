@@ -9,13 +9,9 @@ require File.expand_path(File.dirname(__FILE__) + "/environment")
 
 set :output, "#{Rails.root}/log/cron.log"
 
-every :hour do
-  rake "backup_and_reap"
-end
-
-every 5.minutes do
-  rake "start_delayed_job"
-end
+#every :hour do
+#  rake "backup_and_reap"
+#end
 
 # Example:
 #

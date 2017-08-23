@@ -120,7 +120,7 @@ class SubmissionsController < CoursesController
     @grader = Grader.find(params[:grader_id])
     count = 0
     @assignment.used_submissions.each do |sub|
-      @grader.delay.grade(@assignment, sub)
+      @grader.grade(@assignment, sub)
       count += 1
     end
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
@@ -432,7 +432,7 @@ class SubmissionsController < CoursesController
     if (@submission.save_upload and @submission.save)
       @submission.set_used_sub!
       @submission.create_grades!
-      @submission.delay.autograde!
+      @submission.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)
       redirect_to(path, notice: 'Submission was successfully created.')
     else

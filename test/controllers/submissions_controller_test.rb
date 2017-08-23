@@ -49,9 +49,9 @@ class SubmissionsControllerTest < ActionController::TestCase
     ["zip", "tar", "tar.gz", "tgz"].each do |ext|
       upload_file = fixture_file_upload(
         "files/HelloWorld/HelloWorld.#{ext}",'application/octet-stream')
-      
+
       sign_in @john
-      
+
       assert_difference('Submission.count') do
         post :create, params: {
                course_id: @cs101.id,
@@ -63,7 +63,7 @@ class SubmissionsControllerTest < ActionController::TestCase
                  upload_file: upload_file },
              }
       end
-      
+
       assert_redirected_to [@cs101, @hello.becomes(Assignment), assigns(:submission).becomes(Submission)]
 
       upload = assigns(:submission).upload
@@ -80,9 +80,9 @@ class SubmissionsControllerTest < ActionController::TestCase
   test "should handle non-archive" do
     upload_file = fixture_file_upload(
       "files/HelloSingle/hello.c",'application/octet-stream')
-    
+
     sign_in @john
-    
+
     assert_difference('Submission.count') do
       post :create, params: {
              course_id: @cs101.id,
@@ -94,7 +94,7 @@ class SubmissionsControllerTest < ActionController::TestCase
                upload_file: upload_file },
            }
     end
-    
+
     assert_redirected_to [@cs101, @hello.becomes(Assignment), assigns(:submission).becomes(Submission)]
 
     upload = assigns(:submission).upload

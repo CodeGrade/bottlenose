@@ -6,17 +6,15 @@
 require File.expand_path('../config/application', __FILE__)
 
 require 'single_test/tasks'
+require 'backburner/tasks'
 
 Bottlenose::Application.load_tasks
 
 task :upgrade do
-  #system("bin/delayed_job stop")
   system("rake db:migrate")
   system("bundle exec rake assets:precompile")
-  system("whenever -i")
-  #system("rake install")
+  #system("whenever -i")
   system("rake restart")
-  #system("bin/delayed_job run")
 end
 
 task :restart do
@@ -26,14 +24,6 @@ end
 task :install do
   system("cd sandbox/src && make")
   system("cd sandbox/src && make install")
-end
-
-task :start_delayed_job do
-  system("cd #{Rails.root} && bin/delayed_job start > /dev/null")
-end
-
-task :reap do
-  system("cd #{Rails.root} && script/sandbox-reaper")
 end
 
 task :backup do

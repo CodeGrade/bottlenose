@@ -37,7 +37,7 @@ class Course < ApplicationRecord
   def sections_by_type
     self.sections.group_by(&:type)
   end
-  
+
   def register_profs
     # Can't do this before create, because self.id isn't set yet
     # Can't do this using just Registration.new and RegistrationSection.new, because

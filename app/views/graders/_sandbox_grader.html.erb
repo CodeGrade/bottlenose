@@ -15,8 +15,12 @@
     </td>
   </tr>
   <tr class="form-group">
-    <td><%= f.label "params", "Grading driver:" %></td>
-    <td><%= f.select("params", grading_drivers.map { |dd| [dd, dd] },
-                      selected: f.object.params || 'makefile.rb' )%></td>
+    <td><%= f.label "extra_upload_file", "Extra file:" %></td>
+    <td><%= f.file_field "extra_upload_file" %>
+      <% if f.object.extra_upload_file %>
+        <br>Current file: <%= link_to f.object.extra_upload_file, f.object.extra_upload.path %>
+      <% end %>
+    </td>
   </tr>
+
 </table>

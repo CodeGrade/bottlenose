@@ -236,7 +236,7 @@ class Submission < ApplicationRecord
       # Students will have their delayed jobs de-prioritized based on how many submissions
       # they've spammed the system with in the past hour
       num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
-      config.delay(priority: num_recent_attempts).autograde!(assignment, self)
+      config.autograde!(assignment, self, num_recent_attempts)
       true
     end
   end

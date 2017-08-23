@@ -8,30 +8,42 @@ of programming assignments.
 
 Bottlenose is built expecting the following environment:
 
- * Ubuntu 16.04 (Note: for settingup Bottlenose on Mac, please go here: [setup_mac](../master/doc/setup-mac.md)
- * A BTRFS (or ZFS) filesystem for /var
+ * Ubuntu 16.04 
+ * A BTRFS (or ZFS) filesystem for at least /var (although a btrfs root is easiest)
  * PostgreSQL
  * Ruby + Bundler
 
 For deployment, Phusion Passenger + Nginx is recommended.
 
+Notes for setting up Bottlenose dev on Mac, please go here: [setup_mac](../master/doc/setup-mac.md)
+
 ## Bottlenose Setup
 
-The goal of this section is to have a working web-server running Bottlenose and
-all of it's dependencies. All scripts in this sections start in the
-`$BOTTLENOSE` directory unless explicitly stated otherwise.
-
 ### Basics
+
+First, make sure you have an active software firewall. Beanstalkd is a network service
+with no authentication, so you want to make sure its port is blocked.
+
+```sh
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+# ... any other external incoming ports
+sudo ufw enable
+```
 
 Some packages are generally good to have, and needed by many future steps in
 the setup process.
 
 ```sh
-sudo apt-get install build-essential git postgresql libpq-dev
+sudo apt-get install build-essential git postgresql libpq-dev beanstalkd
 ```
 
-Some of the autograders require a synthetic X connection; for that,
-Bottlenose uses xvfb:
+After installing beanstalkd, double check that "telnet [server] 11300" doesn't
+work from an external machine. Otherwise you got your firewall wrong.
+
+Some of the autograders (e.g. Racket) require a synthetic X connection; for
+that, Bottlenose uses xvfb:
 
 ```sh
 sudo apt-get install xvfb
@@ -89,53 +101,17 @@ bundle install
 
 Bottlenose is mostly a standard Rails app.
 
-Currently the bigest weirdness is the use of delayed job.
-
 ```sh
-# Get a fresh database
-rails db:create
-rails db:migrate
+# Make sure you've got the database set up.
 
-# Start delayed job worker.
-bin/delayed_job start [-n #of workers]
+# Start background task worker
+# This'll need a dedicated terminal
+rake backburner:work
 
 # Start the server
+# This'll also need a dedicated terminal
 rails s
 
 # App should be at localhost:3000, as per usual.
 ```
 
-### Troubleshooting
-
-**Problem 1**:
-
-When you run `rails db:create`, and if you get the following error message:
-
-```sh
-FATAL:  role "bottlenose" does not exist
-Couldn't create database for {"adapter"=>"postgresql", "encoding"=>"unicode", "database"=>"bottlenose_development", "pool"=>5, "username"=>"bottlenose", "password"=>nil}
-rake aborted!
-ActiveRecord::NoDatabaseError: FATAL:  role "bottlenose" does not exist
-```
-
-You will need to create the user (AKA "role") inside PostgreSQL using psql.exe:
-
-```sh
-# Start psql.exe
-$ psql -d postgres
-
-# Create the user: bottlenose (this should be the application name)
-postgres=# create role bottlenose login createdb;
-
-# Quit psql.exe
-postgres=# \q
-```
-
-Expect terminal to return:
-
-```sh
-Created database 'bottlenose_development'
-Created database 'bottlenose_test'
-```
-
-Then continue by running `rails db:create`.

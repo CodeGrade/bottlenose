@@ -1,21 +1,4 @@
 GIT
-  remote: git://github.com/dsander/delayed_job.git
-  revision: ec16c569ff0af1a71272b87ab8e070f113653c2d
-  branch: rails51
-  specs:
-    delayed_job (4.1.2)
-      activesupport (>= 3.0, < 5.2)
-
-GIT
-  remote: git://github.com/gogovan/delayed_job_active_record.git
-  revision: 3ca88883fe3881fda11174f03261e7e017bc7cf1
-  branch: rails-5.1
-  specs:
-    delayed_job_active_record (4.1.1)
-      activerecord (>= 3.0, < 5.2)
-      delayed_job (>= 3.0, < 5)
-
-GIT
   remote: git://github.com/plataformatec/devise.git
   revision: 71fc5b351a8e8473733b0ca29d60c06e43a0efe1
   specs:
@@ -83,7 +66,12 @@ GEM
     arel (8.0.0)
     autoprefixer-rails (7.1.2.3)
       execjs
+    backburner (1.4.1)
+      beaneater (~> 1.0)
+      concurrent-ruby (~> 1.0.1)
+      dante (> 0.1.5)
     bcrypt (3.1.11)
+    beaneater (1.0.0)
     binding_of_caller (0.7.2)
       debug_inspector (>= 0.0.1)
     bootstrap-sass (3.3.7)
@@ -119,6 +107,7 @@ GEM
     coffee-script-source (1.12.2)
     concurrent-ruby (1.0.5)
     daemons (1.2.4)
+    dante (0.2.0)
     database_cleaner (1.6.1)
     debug_inspector (0.0.3)
     devise_ldap_authenticatable (0.8.5)
@@ -286,6 +275,8 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord-import
+  backburner
+  beaneater
   better_errors!
   binding_of_caller
   bootstrap-sass (~> 3.3.7)
@@ -299,8 +290,6 @@ DEPENDENCIES
   coffee-rails-source-maps
   daemons
   database_cleaner
-  delayed_job!
-  delayed_job_active_record!
   devise!
   devise_ldap_authenticatable
   erubis
