@@ -10,4 +10,6 @@
 
 <p><strong>Edit Existing <%= @assignment.type.titlecase %> Assignment</strong></p>
 
+<div id="type-<%= @assignment.type.underscore %>">
 <%= render "#{@assignment.type.underscore}_form", asgn: @assignment %>
+</div>

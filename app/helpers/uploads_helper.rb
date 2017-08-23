@@ -7,10 +7,13 @@ module UploadsHelper
     private
     PROCS = {}
     public
-    def self.create_handler(name)
+    def self.create_handler(name, &block)
       name = name.to_s
-      # from http://blog.gsamokovarov.com/ruby-tips-tricks-1, this works despite the warning
-      PROCS[name] = lambda
+      # slight shenanigans to access the private :define_method and :remove_method methods
+      # but this avoids the icky "warning: tried to create Proc object without a block"
+      PROCS.class.send(:define_method, :temp_method, &block)
+      PROCS[name] = PROCS.class.instance_method(:temp_method).bind(PROCS)
+      PROCS.class.send(:remove_method, :temp_method)
     end
     def self.alias_handler(new_name, old_name)
       new_name = new_name.to_s

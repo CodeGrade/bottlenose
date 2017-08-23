@@ -23,17 +23,19 @@ class Gradesheet
     @graders = @assignment.graders_ordered
     @max_score = @graders.sum(&:avail_score)
     raw_grades = Grade.where(submission_id: @submissions.map(&:id))
-    @raw_grades = raw_grades.group_by(&:submission_id)
-    @missing_graders = (raw_grades.to_a.count < @graders.count * @submissions.count)
+    @raw_grades = raw_grades
+                  .group_by(&:submission_id)
+                  .map{|sid, gs| [sid, gs.map{|g| [g.grader_id, g]}.to_h]}
+                  .to_h
 
     @raw_score = 0
-    @grades = {graders: @graders, grades: []}
+    @grades = {graders: @graders, grades: {}}
     @submissions.each do |s|
       s_scores = {raw_score: 0.0, scores: []}
       b_scores = {raw_score: 0.0, scores: []}
       res = {sub: s, staff_scores: s_scores, blind_scores: b_scores}
       @graders.each do |c|
-        g = if @raw_grades[s.id].nil? then nil else @raw_grades[s.id].find do |g| g.grader_id == c.id end end
+        g = @raw_grades[s.id] && @raw_grades[s.id][c.id]
         if g
           if g.out_of.nil?
             scaled = g.score
@@ -59,7 +61,7 @@ class Gradesheet
           b_scores[:scores].push "Missing"
         end
       end
-      @grades[:grades].push res
+      @grades[:grades][s.id] = res
     end
   end
 end

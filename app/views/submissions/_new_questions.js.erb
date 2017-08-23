@@ -7,7 +7,8 @@ $(function() {
   $('.spinner').each(function() { activateSpinner(this, {precision: 2}) });
   $('select.pick-file').change(function() {
     // -1 for the "--select a file--" option, -1 for the "<none>" option
-    selectTreeviewFileByIndex(this.selectedIndex - 2);
+    var pieces = $(this)[0].name.match(/(\[[_a-z0-9]+\])/g);
+    selectTreeviewFileByIndex("sub_" + pieces[0].slice(1, -1), this.selectedIndex - 2);
     $(this).next("input").prop('disabled', this.selectedIndex === 1);
     if (this.selectedIndex === 1)
       $(this).next("input").removeClass("badAnswer");
@@ -55,7 +56,8 @@ $(function() {
     })(i);
   }
   $(".spinner input").each(function() {
-    var pieces = $(this)[0].name.match(/(\[[a-z0-9]+\])/g);
+    var pieces = $(this)[0].name.match(/(\[[_a-z0-9]+\])/g);
+    if (pieces === null || pieces.length != 2) return;
     answered[pieces[0].slice(1, -1)].answered[pieces[1].slice(1, -1)] = true;
   });  
 

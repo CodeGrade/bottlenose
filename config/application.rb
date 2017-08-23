@@ -21,6 +21,7 @@ module Bottlenose
     # config.i18n.default_locale = :de
 
     config.autoload_paths << Rails.root.join('lib')
+    config.assets.paths << Rails.root.join('node_modules')
 
     # Add subdirectories of models
     config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]

@@ -8,9 +8,7 @@
           <% index = count + i %>
           <li id="question_<%= index %>">
             <p>
-              <%= sanitize(q["prompt"],
-                  tags: %w(b strong i em p textarea pre code),
-                  attributes: %w(class data-lang)) %>
+              <%= sanitize_question(q["prompt"], allow_code: true) %>
               <small>(<%= pluralize(q["weight"], "point") %>)</small>
             </p>
             <% if @show_grades %>
@@ -18,20 +16,22 @@
               <div class="panel-heading" data-toggle="collapse" data-target="#student_ans<%= index %>">Student answer:</div>
               <div class="panel-body collapse in" id="student_ans<%= index %>">
             <% end %>
-              <%= render "submissions/show_answer_#{type.underscore}", q: q, index: index %>
+              <%= render "submissions/show_answer_#{type.underscore}", q: q, index: index, root: root, sub_id: sub_id %>
               <p></p>
-              <%= render "submissions/show_parts", q: q, i: i, count: count %>
+              <%= render "submissions/show_parts", q: q, i: i, count:
+              count, root: root, sub_id: sub_id %>
             <% if @show_grades %>
               </div>
             </div>
             <% end %>
+            <% grade = @grades&.dig(sub_id.to_s, index) %>
             <% if @show_grades %>
             <div class="panel panel-info">
               <div class="panel-heading"><i><b>Rubric:</b></i></div>
               <div class="panel-body">
                 <% if !q["correctAnswer"].nil? %>
                 <p style="font-style: italic;"><b>Correct answer:</b>
-                    <%= sanitize(
+                    <%= sanitize_question(
                         case type
                         when "YesNo"
                           if q["correctAnswer"] then "Yes" else "No" end
@@ -41,26 +41,31 @@
                           q["options"][q["correctAnswer"].to_i]
                         else
                           q["correctAnswer"].to_s
-                        end,
-                        tags: %w(b strong i em code pre))
+                        end)
                         %></p>
                 <% end %>
                 <% if q["rubric"] %>
                 <div class="form-group col-sm-4">
-                  <input type="hidden" value="<%= index %>" name="grades[<%= index %>][index]">
+                  <input type="hidden" value="<%= index %>" name="grades[<%= sub_id %>][<%= index %>][index]">
                   <label>Score<br>(0 = no credit; 1 = full credit): </label>
-                  <%= spinner_tag "", (@grades[index] ? @grades[index]["weight"].to_f : ""),
-                      text: {name: "grades[#{index}][score]", id: "grades_#{index}_score"},
+                  <%= spinner_tag "", @grades&.dig(sub_id.to_s, index, "score").to_s,
+                      text: {name: "grades[#{sub_id}][#{index}][score]", id: "grades_#{sub_id}_#{index}_score"},
                       min: 0, max: 1, delta: 0.05  %>
                 </div>
                 <div class="form-group col-sm-8">
                   <label>Presets:</label>
                   <% q["rubric"].each_with_index do |entry, e_i| %>
-                    <% entry.each do |val, hint| %>
+                    <% entry.each do |val, desc| %>
+                    <% hint = ((desc.is_a? String) ? desc : desc["hint"])
+                       feedback = ((desc.is_a? String) ? desc : desc["feedback"]) %>
                     <div class="radio">
                     <label>
-                      <input name="grades[<%= index %>][score-preset]" id="grades_<%= index %>_<%= e_i %>"
-                             type="radio" value="<%= val %>"><span><b><%= val %>:</b> <span><%= hint %></span></span>
+                      <input name="grades[<%= sub_id %>][<%= index %>][score-preset]" id="grades_<%= sub_id %>_<%= index %>_<%= e_i %>"
+                             type="radio" value="<%= val %>"
+                             data-feedback="<%= feedback %>">
+                      <span><b><%= val %>:</b>
+                        <span><%= sanitize_question(hint) %></span>
+                      </span>
                     </label>
                     </div>
                     <% end %>
@@ -68,34 +73,36 @@
                 </div>
                 <div class="form-group col-sm-12">
                   <label>Comments:</label>
-                  <textarea rows="5" class="form-control" name="grades[<%= index %>][comment]", id="grades_<%= index %>_comment"><%= if @grades[index] then @grades[index]["comment"] end %></textarea>
+                  <textarea rows="5" class="form-control"
+                  name="grades[<%= sub_id %>][<%= index %>][comment]",
+                  id="grades_<%= sub_id %>_<%= index %>_comment"><%= @grades&.dig(sub_id.to_s, index, "comment") %></textarea>
                 </div>
                 <% end %>
               </div>
             </div>
             <script>
-              $("input[name^='grades[<%= index %>][score-preset]'").on("change", function() { 
-                $("input#grades_<%= index %>_score").val($(this).val()).change(); 
-                $("textarea#grades_<%= index %>_comment").val($(this).next("span").find("span").text()).change();
+              $("input[name^='grades[<%= sub_id %>][<%= index %>][score-preset]'").on("change", function() { 
+                $("input#grades_<%= sub_id %>_<%= index %>_score").val($(this).val()).change(); 
+                var feedback = $(this).data("feedback");
+                if (feedback === undefined) { feedback = $(this).next("span").find("span").text(); }
+                $("textarea#grades_<%= sub_id %>_<%= index %>_comment").val(feedback).change();
               });
-              $("input#grades_<%= index %>_score").on("change",
+              $("input#grades_<%= sub_id %>_<%= index %>_score").on("change",
                 function() { 
-                  var checked = $("input[name^='grades[<%= index %>][score-preset]']:checked");
+                  var checked = $("input[name^='grades[<%= sub_id %>][<%= index %>][score-preset]']:checked");
                   if (checked.val() != $(this).val()) 
                     checked.prop('checked', false);
                 });
             </script>
-            <% end %>
-            <% if @grades and @grades[index] %>
-            <% grade = @grades[index] %>
+            <% elsif grade %>
             <p></p>
             <div class="panel panel-info">
               <div class="panel-heading">
-                <%= to_fixed(grade.weight * 100) %>%
-                <span class="pull-right">(Grader: <%= grade.name %>)</span>
+                <%= to_fixed(grade["score"].to_f * 100) %>%
+                <span class="pull-right">(Grader: <%= @grades["grader"] %>)</span>
               </div>
-              <% unless grade.comment.to_s.empty? %>
-              <div class="panel-body"><b>Comments:</b> <%= grade.comment %></div>
+              <% unless grade["comment"].blank? %>
+              <div class="panel-body"><b>Comments:</b> <%= grade["comment"] %></div>
               <% end %>
             </div>
             <% end %>

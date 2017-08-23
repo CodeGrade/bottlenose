@@ -20,7 +20,7 @@
       <th class="text-right" style="width: 6.5em;">Action</th>
     </tr>
 
-  <% gradesheet.grades[:grades].each do |grade| %>
+  <% gradesheet.grades[:grades].each do |id, grade| %>
     <% sub = grade[:sub] %>
     <% used_sub = gradesheet.assignment.used_sub_for(user) %>
     <% used = (!used_sub.nil? && used_sub.id == sub.id) %>
@@ -44,7 +44,7 @@
       </td>
       <td><%= maybe_link_user(cur_reg_staff, sub.user) %></td>
       <td><%= sub.team %></td>
-      <td><span class="local-time"><%= sub.created_at %></span></td>
+      <td><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
       <% scores = if cur_reg_staff then grade[:staff_scores] else grade[:blind_scores] end %>
       <% if scores[:raw_score]
          score = scores[:raw_score] / gradesheet.max_score

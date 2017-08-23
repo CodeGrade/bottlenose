@@ -119,11 +119,11 @@ class JunitGrader < Grader
               end
             end
 
-            if any_problems
-              local_build_dir = grader_dir.join("build")
-              local_build_dir.mkpath
-              FileUtils.cp_r("#{build_dir}/.", "#{local_build_dir}/")
-            end
+            # if any_problems
+            #   local_build_dir = grader_dir.join("build")
+            #   local_build_dir.mkpath
+            #   FileUtils.cp_r("#{build_dir}/.", "#{local_build_dir}/")
+            # end
             
             # details.write "Contents of temp directory are:\n"
             # output, status = Open3.capture2("ls", "-R", build_dir.to_s)

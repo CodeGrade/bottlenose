@@ -322,7 +322,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
+    assert_response :success
     assert_match "Impossible state: cannot unique", assigns(:assignment).errors.full_messages.join("\n")
   end
   
@@ -353,7 +353,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
+    assert_response :success
     assert_match "The teamset to be copied was not specified", assigns(:assignment).errors.full_messages.join("\n")
   end
   
@@ -429,7 +429,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
+    assert_response :success
     assert_match "Impossible state: cannot use teamset because: Cannot reuse", assigns(:assignment).errors.full_messages.join("\n")
   end
 
@@ -503,7 +503,7 @@ class AssignmentsControllerTest < ActionController::TestCase
             }
           }
     end
-    assert_redirected_to [@cs101, assigns(:assignment).becomes(Assignment)]
+    assert_response :success
     assert_match "Impossible state: cannot clone", assigns(:assignment).errors.full_messages.join("\n")
   end
 

@@ -1,0 +1,26 @@
+{
+  "name": "bottlenose",
+  "version": "1.0.0",
+  "description": "Course hand-in server",
+  "main": "index.js",
+  "dependencies": {
+    "codemirror": "latest",
+    "pyret-codemirror-mode": "git://github.com/brownplt/pyret-codemirror-mode#master"
+  },
+  "devDependencies": {
+    "babel-preset-es2015": "^6.24.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CodeGrade/bottlenose.git"
+  },
+  "author": "Benjamin Lerner, Nat Tuck",
+  "license": "AGPL-3.0",
+  "bugs": {
+    "url": "https://github.com/CodeGrade/bottlenose/issues"
+  },
+  "homepage": "https://github.com/CodeGrade/bottlenose#readme"
+}

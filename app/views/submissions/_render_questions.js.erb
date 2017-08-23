@@ -2,7 +2,7 @@ $(function() {
   $('.spinner').each(function() { activateSpinner(this, {precision: 2}) });
   var prevLine = {};
   function showFile(href, line) {
-    selectTreeviewFileByHref(href);
+    selectTreeviewFileByHref("<%= root %>", href);
     var cm = $(href).find(".CodeMirror")[0].CodeMirror;
     var newY = cm.charCoords({line: line - 10, ch: 1}, "local"); // minus 10, for visual context
     cm.scrollTo(null, newY.top);
@@ -11,7 +11,7 @@ $(function() {
     cm.addLineClass(line - 1, "background", "highlightLine");
     prevLine[href] = line;
   }
-  $('[data-showFile]').each(function(d) {
+  $('[data-show-file]').click(function(d) {
     var args = $(this).data('showFile');
     showFile(args[0], args[1]);
   });

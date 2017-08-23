@@ -270,7 +270,7 @@ class CourseSpreadsheet
       users.each_with_index do |u, i|
         sub_id = subs_by_user[u.id]
         begin
-          sub = grades.grades[:grades].find{|grade_row| grade_row[:sub].id == sub_id.submission_id} unless sub_id.nil?
+          sub = grades.grades[:grades][sub_id.submission_id] unless sub_id.nil?
         rescue Exception => e
           sub = nil
           Audit.log("Failed in query: #{grades.grades} and #{sub_id and sub_id.submission_id}\n#{e}\n")
@@ -392,7 +392,7 @@ class CourseSpreadsheet
 
       users.each_with_index do |u, i|
         sub_id = subs_by_user[u.id]
-        sub = grades.grades[:grades].find{|grade_row| grade_row[:sub].id == sub_id.submission_id} unless sub_id.nil?
+        sub = grades.grades[:grades][sub_id.submission_id] unless sub_id.nil?
         if sub.nil?
           grades.graders.each do |g| sheet.push_row(i, "") end
           sheet.push_row(i, [0, "No submission", 0, 0])

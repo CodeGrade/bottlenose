@@ -30,34 +30,24 @@
     <% qs.each do |question| %>
     <% question.each do |type, q| %>
     <li><b><%= type %> </b><small>(<%= pluralize(q["weight"], "point") %>)</small>:
-      <p><%= sanitize(q["prompt"],
-             tags: %w(b strong i em p code pre textarea),
-             attributes: %w(class data-lang)) %></p>
+      <p><%= sanitize_question(q["prompt"], allow_code: true) %></p>
       <% if q["options"] %>
       <ul>
         <% q["options"].each do |opt| %>
-        <li><%= sanitize(opt, tags: %w(b strong i em code pre), attributes: %w(class data-lang)) %></li>
+        <li><%= sanitize_question(opt, allow_code: true) %></li>
         <% end %>
       </ul>
       <% end %>
       <% if q["parts"] %>
         <% q["parts"].each do |part| %>
           <% if part["codeTag"] %>
-          <p>(CodeTag) <%= sanitize(part["codeTag"], 
-                           tags: %w(b strong i em code pre),
-                           attributes: %w(class data-lang)) %></p>
+          <p>(CodeTag) <%= sanitize_question(part["codeTag"], allow_code: true) %></p>
           <% elsif part["codeTags"] %>
-          <p>(Multiple CodeTags) <%= sanitize(part["codeTags"], 
-                                     tags: %w(b strong i em code pre),
-                                     attributes: %w(class data-lang)) %></p>
+          <p>(Multiple CodeTags) <%= sanitize_question(part["codeTags"], allow_code: true) %></p>
           <% elsif part["requiredText"] %>
-          <p>(Required text) <%= sanitize(part["requiredText"], 
-                                 tags: %w(b strong i em code pre),
-                                 attributes: %w(class data-lang)) %></p>
+          <p>(Required text) <%= sanitize_question(part["requiredText"], allow_code: true) %></p>
           <% elsif part["text"] %>
-          <p>(Text) <%= sanitize(part["text"], 
-                        tags: %w(b strong i em code pre),
-                        attributes: %w(class data-lang)) %></p>
+          <p>(Text) <%= sanitize_question(part["text"], allow_code: true) %></p>
           <% end %>
         <% end %>
       <% end %>
@@ -66,7 +56,7 @@
       <div class="panel-body">
       <% if !q["correctAnswer"].nil? %>
       <p style="font-style: italic;"><b>Correct answer:</b>
-                    <%= sanitize(
+                    <%= sanitize_question(
                         case type
                         when "YesNo"
                           if q["correctAnswer"] then "Yes" else "No" end
@@ -76,15 +66,14 @@
                           q["options"][q["correctAnswer"].to_i]
                         else
                           q["correctAnswer"].to_s
-                        end,
-                        tags: %w(b strong i em code pre))
+                        end)
                         %></p>      
       <% end %>
       <% if q["rubric"] %>
       <ul>
       <% q["rubric"].each do |entry| %>
-        <% entry.each do |val, hint| %>
-        <li><b><%= val %>:</b> <%= hint %></li>
+        <% entry.each do |val, desc| %>
+        <li><b><%= val %>:</b> <%= sanitize_question(desc["hint"] || desc) %></li>
         <% end %>
       <% end %>
       </ul>

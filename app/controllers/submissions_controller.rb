@@ -31,7 +31,7 @@ class SubmissionsController < CoursesController
   end
 
   def new
-    @submission = Submission.new
+    @submission = Submission.new(type: @assignment.type + "Sub")
     @submission.assignment_id = @assignment.id
     @submission.user_id = current_user.id
 
@@ -47,6 +47,17 @@ class SubmissionsController < CoursesController
       @submission.team = @team
     end
 
+    if current_user.id == true_user&.id
+      SubmissionView.find_or_create_by!(user: current_user, assignment: @assignment, team: @team)
+    end
+
+    sub_blocked = @assignment.submissions_blocked(current_user)
+    if sub_blocked && !current_user.course_staff?(@course)
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: sub_blocked
+      return
+    end
+
     self.send("new_#{@assignment.type.capitalize}")
   end
 
@@ -57,9 +68,16 @@ class SubmissionsController < CoursesController
     when ["Files", "FilesSub"] then true
     when ["Questions", "QuestionsSub"] then true
     when ["Exam", "ExamSub"] then true
+    when ["Codereview", "CodereviewSub"] then true
     else
       redirect_to course_assignment_path(@course, @assignment),
                   alert: "That submission type (#{sub_type}) does not match the assignment type (#{asgn_type})."
+      return
+    end
+    sub_blocked = @assignment.submissions_blocked(current_user)
+    if sub_blocked && !current_user.course_staff?(@course)
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: sub_blocked
       return
     end
 
@@ -270,15 +288,17 @@ class SubmissionsController < CoursesController
                                  :grading_output, :grading_uid, :team_id,
                                  :teacher_score, :teacher_notes,
                                  :ignore_late_penalty, :upload_file,
-                                 :comments_upload_file, :time_taken)
+                                 :comments_upload_file, :time_taken,
+                                 related_subs: [])
     else
       params[:submission].permit(:assignment_id, :user_id, :student_notes, :type,
-                                 :upload, :upload_file, :time_taken)
+                                 :upload, :upload_file, :time_taken,
+                                 related_subs: [])
     end
   end
 
   def answers_params
-    array_from_hash(params[:answers].to_unsafe_h)
+    params[:answers].to_unsafe_h.map{|k, v| [k, array_from_hash(v)]}.to_h
   end
 
   def require_admin_or_staff
@@ -333,17 +353,18 @@ class SubmissionsController < CoursesController
 
   def new_Questions
     @questions = @assignment.questions
-    @submission_dirs = []
     if @assignment.related_assignment
       related_sub = @assignment.related_assignment.used_sub_for(current_user)
       Audit.log("User #{current_user.id} (#{current_user.name}) is viewing the self-eval for assignment #{@assignment.related_assignment.id} and has agreed not to submit further files to it.\n")
       if related_sub.nil?
         @submission_files = []
+        @submission_dirs = []
       else
-        get_submission_files(related_sub)
+        @submission_dirs, @submission_files = related_sub.get_submission_files(current_user)
       end
     else
       @submission_files = []
+      @submission_dirs = []
     end
     render "new_#{@assignment.type.underscore}"
   end
@@ -356,6 +377,54 @@ class SubmissionsController < CoursesController
     end
     @grader = @assignment.graders.first
     redirect_to bulk_course_assignment_grader_path(@course, @assignment, @grader)
+  end
+
+  def new_Codereview
+    if @assignment.review_target == "self"
+      @subs_to_review = used_subs
+    else
+      matchings =
+        if @assignment.team_subs?
+          matchings = CodereviewMatching.where(assignment: @assignment, team: @team)
+        else
+          matchings = CodereviewMatching.where(assignment: @assignment, user: current_user)
+        end
+      users = matchings.map(&:target_team).compact.map(&:users).flatten +
+              matchings.map(&:target_user).compact
+      @subs_to_review = Assignment.submissions_for(users, [@assignment.related_assignment])
+      if @subs_to_review.count < @assignment.review_count
+        used_subs = current_user.used_submissions_for([@assignment.related_assignment]).map(&:submission)
+        new_subs = @assignment.related_assignment
+                   .used_submissions
+                   .where.not(id: used_subs.map(&:id))
+                   .to_a.shuffle!
+                   .take(@assignment.review_count - @subs_to_review.count)
+        # Reserve the matchings for the new subs, so reviews stay evenly distributed
+        new_subs.each do |ns|
+          if @assignment.team_subs?
+            if @assignment.related_assignment.team_subs?
+              CodereviewMatching.create!(assignment: @assignment, team: @team, target_team: ns.team)
+            else
+              CodereviewMatching.create!(assignment: @assignment, team: @team, target_user: ns.user)
+            end
+          else
+            if @assignment.related_assignment.team_subs?
+              CodereviewMatching.create!(assignment: @assignment, user: current_user, target_team: ns.team)
+            else
+              CodereviewMatching.create!(assignment: @assignment, user: current_user, target_user: ns.user)
+            end
+          end
+        end
+        @subs_to_review += new_subs
+      end
+    end
+    @submission.related_subs = @subs_to_review
+    @submission_info = @subs_to_review.map do |s|
+      d, f = s.get_submission_files(current_user)
+      [d, f, s.id]
+    end
+    @questions = @assignment.questions
+    render "new_#{@assignment.type.underscore}"
   end
 
   # CREATE
@@ -373,14 +442,9 @@ class SubmissionsController < CoursesController
   end
 
   def create_Questions
-    @submission.answers = answers_params
+    @submission.answers = answers_params["newsub"]
 
-    related_sub = @assignment.related_assignment.used_sub_for(@current_user)
-    if related_sub.nil?
-      @submission.related_files = []
-    else
-      @submission.related_files = get_submission_files(related_sub)
-    end
+    @submission.related_files = {}
 
     if @submission.save_upload && @submission.save
       @submission.set_used_sub!
@@ -398,6 +462,29 @@ class SubmissionsController < CoursesController
     # The grades are configured in the GradesController, in update_exam_grades
   end
 
+  def create_Codereview
+    @submission.answers = answers_params
+    @submission.related_files = {}
+    @submission.related_subs.each do |id|
+      _, files = Submission.find(id).get_submission_files(current_user)
+      @submission.related_files[id.to_i] = files
+    end
+    if @submission.save_upload && @submission.save
+      @submission.set_used_sub!
+      @submission.autograde!
+      path = course_assignment_submission_path(@course, @assignment, @submission)
+      redirect_to(path, notice: 'Response was successfully created.')
+    else
+      @submission.cleanup!
+      @answers = @submission.answers
+      @questions = @assignment.questions
+      @submission_info = @submission.related_subs.map do |s|
+        d, f = Submission.find(s).get_submission_files(current_user)
+        [d, f, s]
+      end
+      render "new_#{@assignment.type.underscore}"
+    end
+  end
 
   # SHOW
   def show_Files
@@ -411,18 +498,19 @@ class SubmissionsController < CoursesController
     @gradesheet = Gradesheet.new(@assignment, [@submission])
     @questions = @assignment.questions
     @answers = YAML.load(File.open(@submission.upload.submission_path))
-    @submission_dirs = []
     if @assignment.related_assignment
       @related_sub = @assignment.related_assignment.used_sub_for(@submission.user)
       if @related_sub.nil?
         @submission_files = []
+        @submission_dirs = []
         @answers_are_newer = true
       else
-        get_submission_files(@related_sub)
+        @submission_dirs, @submission_files = @related_sub.get_submission_files(current_user)
         @answers_are_newer = (@related_sub.created_at < @submission.created_at)
       end
     else
       @submission_files = []
+      @submission_dirs = []
       @answers_are_newer = true
     end
     comments = @submission.grade_submission_comments(true) || {}
@@ -436,13 +524,27 @@ class SubmissionsController < CoursesController
     @grade = Grade.find_by(grader_id: @grader.id, submission_id: @submission.id)
     @grade_comments = InlineComment.where(submission_id: @submission.id).order(:line).to_a
   end
+  def show_Codereview
+    @gradesheet = Gradesheet.new(@assignment, [@submission])
+    comments = @submission.grade_submission_comments(true) || {}
+    comments = comments[@submission.upload.extracted_path.to_s] || []
+    @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @related_subs = @submission.review_feedbacks.map(&:submission)
+    @submission.related_files = {}
+    @related_subs.each do |sub|
+      _, files = sub.get_submission_files(current_user)
+      @submission.related_files[sub.id] = files
+    end    
+    @plagiarized = comments.select{|c| c.label == "Plagiarism"}
+    @split = comments.any?{|c| c.label == "Split submission"}
+  end
 
   # DETAILS
   def details_Files
     respond_to do |f|
       f.html {
-        get_submission_files(@submission, nil, true)
-        render "details_#{@assignment.type.underscore}"
+        @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, true)
+        render "details_files"
       }
       f.text {
         show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
@@ -458,6 +560,7 @@ class SubmissionsController < CoursesController
   def details_Questions
     @questions = @assignment.questions
     @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = [[@submission.id.to_s, @answers]].to_h
     if current_user_site_admin? || current_user_staff_for?(@course)
       @grades = @submission.inline_comments
     else
@@ -466,24 +569,54 @@ class SubmissionsController < CoursesController
 
     @show_grades = false
 
-    @grades = @grades.select(:line, :name, :weight, :comment).joins(:user).sort_by(&:line).to_a
-    @submission_dirs = []
+    @grades = @grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
+    @grades = [["grader", @grades&.first&.user&.name],
+               [@submission.id.to_s,
+                @grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
     if @assignment.related_assignment
       @related_sub = @assignment.related_assignment.used_sub_for(@submission.user)
       if @related_sub.nil?
         @submission_files = []
+        @submission_dirs = []
         @answers_are_newer = true
       else
-        get_submission_files(@related_sub)
+        @submission_dirs, @submission_files = @related_sub.get_submission_files(current_user)
         @answers_are_newer = (@related_sub.created_at < @submission.created_at)
       end
     else
       @submission_files = []
+      @submission_dirs = []
       @answers_are_newer = true
     end
     render "details_questions"
   end
   def details_Exam
     render "details_exam"
+  end
+  def details_Codereview
+    @questions = @assignment.questions
+    @num_questions = @assignment.flattened_questions.count
+    @answers = YAML.load(File.open(@submission.upload.submission_path))
+    if current_user_site_admin? || current_user_staff_for?(@course) || @submission.grades.first.available?
+      if @submission.grades.first.grading_output
+        @grades = YAML.load(File.open(@submission.grades.first.grading_output))
+        @grades["grader"] = User.find(@grades["grader"]).name
+      else
+        @grades = {}
+      end
+    else
+      @grades = {}
+    end
+
+    @show_grades = false
+    
+    @related_subs = @submission.review_feedbacks.map(&:submission)
+    @answers_are_newer = []
+    @submission_info = @related_subs.map do |sub, answers|
+      d, f = sub.get_submission_files(current_user)
+      @answers_are_newer << (sub.created_at < @submission.created_at)
+      [d, f, sub.id]
+    end
+    render "details_codereview"
   end
 end

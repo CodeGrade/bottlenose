@@ -172,7 +172,7 @@ $(function() {
     this.CodeMirror.on("gutterClick", function(cm, line, gutter, e) { return insertComment(cm, line); });
   });
 
-  var filesTree = $("#files");
+  var filesTree = $("#<%= root %> .files");
   filesTree.on("nodeChecked", function(e, data) {
     if (data.href !== undefined && data.href !== "#") {
       var cm = $(data.href).find(".CodeMirror");
@@ -197,6 +197,6 @@ $(function() {
     filesTree.treeview("uncheckNode", data);
   });
   filesTree.treeview("uncheckNode", filesTree.treeview("getCollapsed")[0]);
-  selectTreeviewFileByIndex(0);
+  selectTreeviewFileByIndex("<%= root %>", 0);
   
 });

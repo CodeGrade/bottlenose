@@ -36,28 +36,55 @@ class AssignmentsController < ApplicationController
   end
 
   def new
-    @files = Assignment.new
-    @files.course_id = @course.id
-    @files.due_date = (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M")
-    @files.available = Time.now.strftime("%Y/%m/%d %H:%M")
-    @files.lateness_config_id = @course.lateness_config_id
-    @files.request_time_taken = true
-
-    @exam = @files.dup
-    @exam.graders = [ExamGrader.new]
-    @exam.request_time_taken = false
-
-    @quest = @files.dup
-    @quest.lateness_config_id = @course.lateness_config_id
-    @quest.request_time_taken = false
-
     last_assn = @course.assignments.order(created_at: :desc).first
-    if last_assn
-      @files.points_available = last_assn.points_available
-      @exam.points_available  = last_assn.points_available
-      @quest.points_available = last_assn.points_available
+    if @assignment.is_a? Files
+      @files = @assignment
+    else
+      @files = Files.new(course_id: @course.id,
+                         due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
+                         available: Time.now.strftime("%Y/%m/%d %H:%M"),
+                         lateness_config_id: @course.lateness_config_id,
+                         points_available: last_assn&.points_available,
+                         request_time_taken: true)
     end
 
+    if @assignment.is_a? Exam
+      @exam = @assignment
+    else
+      @exam = Exam.new(course_id: @course.id,
+                       due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
+                       available: Time.now.strftime("%Y/%m/%d %H:%M"),
+                       lateness_config_id: @course.lateness_config_id,
+                       points_available: last_assn&.points_available,
+                       request_time_taken: false)
+      @exam.graders = [ExamGrader.new(order: 1)]
+    end
+
+    if @assignment.is_a? Questions
+      @quest = @assignment
+    else
+      @quest = Questions.new(course_id: @course.id,
+                             due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
+                             available: Time.now.strftime("%Y/%m/%d %H:%M"),
+                             lateness_config_id: @course.lateness_config_id,
+                             points_available: last_assn&.points_available,
+                             request_time_taken: false)
+      @quest.graders = [QuestionsGrader.new(order: 1)]
+    end
+
+    if @assignment.is_a? Codereview
+      @codereview = @assignment
+    else
+      @codereview = Codereview.new(course_id: @course.id,
+                                   due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
+                                   available: Time.now.strftime("%Y/%m/%d %H:%M"),
+                                   lateness_config_id: @course.lateness_config_id,
+                                   points_available: last_assn&.points_available,
+                                   request_time_taken: false)
+      @codereview.graders = [CodereviewGrader.new(order: 1)]
+    end
+
+    @assignment = @files if @assignment.nil?
     @legal_actions = @files.legal_teamset_actions.reject{|k, v| v.is_a? String}
   end
 
@@ -95,6 +122,11 @@ class AssignmentsController < ApplicationController
     ap[:course_id] = @course.id
     ap[:blame_id] = current_user.id
     ap[:current_user] = current_user
+    if ap[:prevent_late_submissions] == "1" # i.e., true
+      ap[:prevent_late_submissions] = ap.delete(:related_assignment_id)
+    else
+      ap.delete(:prevent_late_submissions)
+    end
     @assignment = Assignment.new(ap)
 
     if @assignment.save_upload && @assignment.save
@@ -102,6 +134,7 @@ class AssignmentsController < ApplicationController
     else
       @assignment.destroy
       @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
+      new
       render action: "new"
     end
   end
@@ -117,9 +150,14 @@ class AssignmentsController < ApplicationController
     ap[:graders_attributes]&.each do |k, v|
       v[:upload_by_user_id] = current_user.id
     end
+    if ap[:prevent_late_submissions] == "1" # i.e., true
+      ap[:prevent_late_submissions] = ap.delete(:related_assignment_id)
+    else
+      ap.delete(:prevent_late_submissions)
+    end
     @assignment.assign_attributes(ap)
     @assignment.current_user = current_user
-
+    
     if @assignment.save_upload && @assignment.save
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully updated.'
     else
@@ -166,6 +204,7 @@ class AssignmentsController < ApplicationController
   def publish
     publish_all = (params[:all] == "true")
     used = @assignment.used_submissions
+    count = 0
     used.each do |u|
       ungraded = u.grades.where(score: nil)
       if !publish_all && ungraded.count > 0
@@ -174,10 +213,11 @@ class AssignmentsController < ApplicationController
       ungraded.each do |g| g.grader.grade(@assignment, u) end
       u.grades.update_all(:available => true)
       u.compute_grade!
+      count += 1
     end
 
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  notice: 'Grades successfully published'
+                  notice: "#{pluralize(count, 'grades')} successfully published"
   end
 
   def recreate_grades
@@ -206,6 +246,10 @@ class AssignmentsController < ApplicationController
                                :course_id, :team_subs, :request_time_taken,
                                :removefile,
                                :teamset_plan, :teamset_source_use, :teamset_source_copy,
+                               :prevent_late_submissions,
+                               interlocks_attributes: [
+                                 :id, :_destroy, :constraint, :related_assignment_id
+                               ],
                                lateness_config_attributes: [
                                  :type, :percent_off, :frequency,
                                  :max_penalty, :days_per_assignment,
@@ -214,6 +258,7 @@ class AssignmentsController < ApplicationController
                                graders_attributes: [
                                  :avail_score, :upload_file, :extra_upload_file, :params,
                                  :type, :id, :_destroy, :errors_to_show, :test_class,
+                                 :review_target, :review_count, :review_threshold,
                                  :upload_by_user_id, :order
                                ]
                               )
@@ -246,6 +291,10 @@ class AssignmentsController < ApplicationController
   def show_Exam
     @questions = @assignment.questions
     @grader = @assignment.graders.first
+  end
+
+  def show_Codereview
+    @questions = @assignment.questions
   end
 
   def find_assignment

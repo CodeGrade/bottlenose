@@ -22,7 +22,7 @@
     <% else %>
     <%= link_to usernames,
         course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
-      (completed <span class="local-time"><%= grade.updated_at %></span>)
+      (completed <span class="local-time"><%= grade.updated_at.iso8601 %></span>)
     <% end %>
   </li>
   <% end %>
@@ -57,11 +57,11 @@
          end
          %>
       <span class="<%= textclass %>">
-        <br>assigned <span class="local-time"><%= alloc.grading_assigned %>
+        <br>assigned <span class="local-time"><%= alloc.grading_assigned.iso8601 %>
       </span></span>
       <% end %>
     <% else %>
-      <span class="text-muted"><br>completed <span class="local-time"><%= grade.updated_at %></span></span>
+      <span class="text-muted"><br>completed <span class="local-time"><%= grade.updated_at.iso8601 %></span></span>
     <% end %>
   </li>
   <% end %>
