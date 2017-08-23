@@ -39,21 +39,31 @@ class Course < ApplicationRecord
   end
   
   def register_profs
+    # Can't do this before create, because self.id isn't set yet
+    # Can't do this using just Registration.new and RegistrationSection.new, because
+    # they aren't owned by anything owned by self, so they don't get saved
     if registrations.empty?
       sections.each do |sec|
-        r = Registration.create!(
-          course_id: self.id,
-          user_id: sec.instructor_id,
-          role: "professor",
-          show_in_lists: false,
-          new_sections: [sec.id]
-        )
-        rs = RegistrationSection.create!(
-          registration: r,
-          section: sec
-        )
+        begin
+          r = Registration.find_or_create_by(user_id: sec.instructor_id, course_id: self.id)
+          r.role = "professor"
+          r.show_in_lists = false
+          r.new_sections = [sec.id]
+          r.save!
+        rescue Exception => e
+          errors[:base] << "Could not register #{sec.instructor.name} for course: #{e}"
+        end
+        begin
+          rs = RegistrationSection.create!(
+            registration: r,
+            section: sec
+          )
+        rescue Exception => e
+          errors[:base] << "Could not register #{sec.instructor.name} for section #{sec.id}: #{e}"
+        end
       end
     end
+    raise ActiveRecord::Rollback if errors[:base].count > 0
   end
 
   def registered_by?(user, as: nil)

@@ -71,6 +71,14 @@ class CoursesController < ApplicationController
     if @course.save
       redirect_to course_path(@course), notice: 'Course was successfully created.'
     else
+      new_course = @course.dup
+      new_course.lateness_config = @course.lateness_config.dup
+      new_course.sections = @course.sections.map(&:dup)
+      @course.errors.each do |attr, err|
+        new_course.errors[attr] << err
+      end
+      @course.destroy
+      @course = new_course
       render :new, layout: 'application'
     end
   end
