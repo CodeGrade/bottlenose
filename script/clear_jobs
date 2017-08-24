@@ -9,7 +9,13 @@ bean.tubes.each do |tube|
 
   while tube.peek(:ready)
     job = tube.reserve
-    puts "Clearing:"
+    puts "Clearing ready:"
+    puts job.inspect
+    puts job.delete
+  end
+  while tube.peek(:buried)
+    job = tube.peek(:buried)
+    puts "Clearing buried:"
     puts job.inspect
     puts job.delete
   end

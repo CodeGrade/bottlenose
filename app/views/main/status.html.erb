@@ -2,12 +2,31 @@
 
 <h2>Bottlenose Grading Queue</h2>
 
-<% if @queue_stats %>
-  <% require 'yaml' %>
-  <pre>
-    <%= @queue_stats.to_yaml %>
-  </pre>
-<% else %>
-  <p>No stats available.</p>
-<% end %>
-
+<table class="table">
+  <tr>
+    <td><strong>Queue length</strong></td>
+    <td><%= @queue_stats.count %></td>
+  </tr>
+  <tr>
+    <td><strong>Average wait</strong></td>
+    <td><%= @avg_wait_msg %></td>
+  </tr>
+  <tr>
+    <td><strong>Submissions</strong></td>
+    <td>
+      <% if current_user&.site_admin? && (@queue_stats.count >= 50 || @avg_wait > 30 * 60) %>
+      <p>
+        <%= link_to "Clear all pending jobs", clear_queue_path, method: "patch",
+            class: 'btn btn-large btn-danger' %>
+      </p>
+      <% end %>
+           
+      <% @queue_stats.each do |_, job| %>
+      <p>Grading <%= job[:grader_type] %> for <%= link_to "#{job[:user_name]}",
+             course_assignment_submission_path(job[:course], job[:assn], job[:sub]) %>
+        (<%= job[:wait_s] %>)
+      </p>
+      <% end %>
+    </td>
+  </tr>
+</table>

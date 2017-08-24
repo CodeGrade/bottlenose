@@ -3,7 +3,67 @@ require 'tap_parser'
 require 'audit'
 
 class Grader < ApplicationRecord
-  include Backburner::Performable
+  class GradingJob
+    # This job class helps keeps track of all jobs that go into the beanstalk system
+    # It keeps track of starting times for them, and the arguments passed in.
+    # It prunes dead jobs every now and then (250jobs, by default), or whenever
+    # the status page is visited.
+    # Change this one job class to change the integration with beanstalk.
+    include Backburner::Queue
+    def self.enqueue(grader, assn, sub, opts = {})
+      job = Backburner::Worker.enqueue GradingJob, [grader.id, assn.id, sub.id], opts
+
+      Grader.delayed_grades[job[:id]] = {
+        start_time: Time.now,
+        grader_type: grader.display_type,
+        user_name: sub.user.display_name,
+        course: assn.course.id,
+        assn: assn.id,
+        sub: sub.id
+      }
+      job[:id]
+    end
+    def self.perform(grader_id, assn_id, sub_id)
+      Grader.find(grader_id).grade_sync!(assn_id, sub_id)
+    end
+
+    def self.prune(threshold = 250)
+      begin
+        job_ids = Grader.delayed_grades.keys
+        return if job_ids.count <= threshold
+        bean = Backburner::Connection.new(Backburner.configuration.beanstalk_url)
+        job_id.each do |k|
+          job = bean.jobs.find(k)
+          if job.nil?
+            Grader.delayed_grades.delete k
+          elsif job.stats["state"] == "buried"
+            Grader.delayed_grades.delete k
+            job.delete
+          end
+        end
+      rescue
+        # nothing to do
+      end
+    end
+    def self.clear_all!
+      begin
+        count = 0
+        bean = Backburner::Connection.new(Backburner.configuration.beanstalk_url)
+        bean.tubes.each do |tube|
+          [:ready, :delayed, :buried].each do |status|
+            while tube.peek(status)
+              tube.peek(status).delete
+              count += 1
+            end
+          end
+        end
+        Grader.delayed_grades.clear
+        return count
+      rescue Exception => e
+        return "Error clearing queue: #{e}"
+      end
+    end
+  end
 
   belongs_to :submission
   belongs_to :assignment
@@ -13,6 +73,21 @@ class Grader < ApplicationRecord
   has_many :grades
   validates_presence_of :assignment
   validates :order, presence: true, uniqueness: {scope: :assignment_id}
+
+  
+  class << self
+    attr_accessor :delayed_grades
+    attr_accessor :delayed_count
+  end
+  @delayed_grades = {}
+  @delayed_count = 0
+  
+  def self.delayed_grades
+    @delayed_grades
+  end
+  def self.delayed_count
+    @delayed_count
+  end
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
   # subtype they are, yet
@@ -35,8 +110,8 @@ class Grader < ApplicationRecord
   end
 
   def grade(assignment, submission, prio = 0)
-    if autograde? 
-      self.async(prio: 1000 + prio, ttr: 1200).grade_sync!(assignment.id, submission.id)
+    if autograde?
+      GradingJob.enqueue self, assignment, submission, prio: 1000 + prio, ttr: 1200
     end
   end
 

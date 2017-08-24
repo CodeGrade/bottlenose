@@ -30,13 +30,18 @@ class ApplicationController < ActionController::Base
   end
 
   def get_queue_info
-    begin
-      bean = Beaneater.new("localhost:11300")
-      tube = bean.tubes["bottlenose.#{Rails.env}.backburner-jobs"]
-      @queue_stats = tube.stats
-    rescue
-      @queue_stats = nil
+    Grader::GradingJob.prune(0)
+    @queue_stats = Grader.delayed_grades
+    now = Time.now
+    @avg_wait = @queue_stats.reduce(0) do |sum, (k, v)|
+      delay = now - v[:start_time]
+      v[:wait_s] = "#{(delay / 60).to_i} minutes, #{(delay % 60).to_i} seconds"
+      sum + delay
     end
+    if @queue_stats.length != 0
+      @avg_wait = @avg_wait / @queue_stats.length
+    end
+    @avg_wait_msg = "#{(@avg_wait / 60).to_i} minutes, #{(@avg_wait % 60).to_i} seconds"
   end
 
   def require_site_admin

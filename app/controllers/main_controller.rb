@@ -1,6 +1,9 @@
 require 'junit_grader'
 
 class MainController < ApplicationController
+  before_action :require_site_admin, only: [:clear_queue]
+  before_action :require_admin_or_prof, only: [:status]
+  
   # GET /
   def home
     if current_user
@@ -42,6 +45,16 @@ class MainController < ApplicationController
     end
 
     get_queue_info
+  end
+
+  def clear_queue
+    require_site_admin
+    cleared = Grader::GradingJob.clear_all!
+    if cleared.is_a? String
+      redirect_to server_status_path, alert: cleared
+    else
+      redirect_to server_status_path, notice: "#{pluralize(cleared, 'job')} cleared"
+    end
   end
 
   protected
