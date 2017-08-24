@@ -57,6 +57,8 @@ function enableReflectiveCalls() {
 var validKeys = {
   "ArrowLeft": true,
   "ArrowRight": true,
+  "ArrowUp": true,
+  "ArrowDown": true,
   "Backspace": true,
   "Delete": true,
   "End": true,
@@ -75,8 +77,10 @@ function validateNumericInput(e) {
     case 9: e.key = "Tab"; break;
     case 35: e.key = "End"; break;
     case 36: e.key = "Home"; break;
-    case 37: e.key = "Left"; break;
-    case 39: e.key = "Right"; break;
+    case 37: e.key = "ArrowLeft"; break;
+    case 38: e.key = "ArrowUp"; break;
+    case 39: e.key = "ArrowRight"; break;
+    case 40: e.key = "ArrowDown"; break;
     case 46: e.key = "Delete"; break;
     case 48: case 49: case 50: case 51: case 52: case 53: case 54: case 55: case 56: case 57:
       e.key = String.fromCharCode(e.which); break;
@@ -216,6 +220,7 @@ function activateSpinner(obj, options) {
     if (e.key === "ArrowUp") { increment(); return; }
     if (e.key === "ArrowDown") { decrement(); return; }
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") { return; }
+    if (e.key === "Backspace" || e.key === "Delete") { return; }
     var curVal = $(this).val();
     var newVal = curVal.slice(0, this.selectionStart) + e.key + curVal.slice(this.selectionEnd, curVal.length);
     newVal = parseFloat(newVal, 10);
@@ -231,6 +236,7 @@ function activateSpinner(obj, options) {
     input.prop("disabled", false);
     validate();
   });
+  input.bind("paste", function(e) { e.preventDefault(); });
 
   $(upArrow).on('mousedown', function() {
     if (input.prop("disabled")) return;
