@@ -12,6 +12,7 @@ Bottlenose is built expecting the following environment:
  * A BTRFS (or ZFS) filesystem for at least /var (although a btrfs root is easiest)
  * PostgreSQL
  * Ruby + Bundler
+ * Nodejs + npm
 
 For deployment, Phusion Passenger + Nginx is recommended.
 
@@ -36,7 +37,7 @@ Some packages are generally good to have, and needed by many future steps in
 the setup process.
 
 ```sh
-sudo apt-get install build-essential git postgresql libpq-dev beanstalkd
+sudo apt-get install build-essential git postgresql libpq-dev beanstalkd imagemagick
 ```
 
 After installing beanstalkd, double check that "telnet [server] 11300" doesn't
@@ -48,6 +49,14 @@ that, Bottlenose uses xvfb:
 ```sh
 sudo apt-get install xvfb
 ```
+
+Make certain that the following programs are available in your path
+(configured in whatever login shell the `bottlenose` user uses):
+
+ * `javac` and `java` (needed for Java-related graders)
+ * `xvfb-run` and `racket` (needed for Racket autograder)
+ * `ip`, `ls`, `hostname` (needed for general configuration)
+ * `convert` (from imagemagick, needed for profile photos)
 
 ### Postgres
 
@@ -95,6 +104,7 @@ gem install bundler
 # Install Bottlenose's dependencies.
 # (from the bottlenose directory checked out from git)
 bundle install
+npm install
 ```
 
 ### Running Bottlenose
