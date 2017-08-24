@@ -57,6 +57,39 @@ class CoursesControllerTest < ActionController::TestCase
     assert_redirected_to course_path(assigns(:course))
   end
 
+  test "should create course where 1 prof teaches 2 sections" do
+    lateness = create(:lateness_config)
+
+    sign_in @ken
+    assert_difference('Course.count') do
+      post :create, params: {
+             course: {
+               name: "Worst Course Ever", 
+               term_id: @term.id,
+               sections_attributes: {
+                 "0" => {
+                   prof_name: @fred.username,
+                   crn: "999",
+                   meeting_time: "TBD",
+                 },
+                 "1" => {
+                   prof_name: @fred.username,
+                   crn: "888",
+                   meeting_time: "TBD",
+                 }
+               },
+               lateness_config_attributes: {
+                 type: "FixedDaysConfig",
+                 days_per_assignment: 1,
+               }
+             }
+           }
+    end
+
+    assert_redirected_to course_path(assigns(:course))
+  end
+
+  
   test "should show course" do
     sign_in @john
     get :show, params: {id: @course1}
