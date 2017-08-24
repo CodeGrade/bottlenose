@@ -26,7 +26,7 @@ class LatenessConfig < ApplicationRecord
     return 0 unless raw or late?(assignment, submission)
     due_on = assignment.due_date
     sub_on = submission.created_at || DateTime.current
-    late_days = ((sub_on.to_f - due_on.to_f) / 1.day.to_f)
+    late_days = ((sub_on.to_f - due_on.to_f) / 1.day.seconds)
     late_days.ceil
   end
 

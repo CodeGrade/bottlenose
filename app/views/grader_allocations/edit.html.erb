@@ -102,7 +102,7 @@
         <% if alloc.abandoned? %>
         <span class="bg-warning text-danger"><br>abandoned</span></span>
         <% else %>
-          <% days_assigned = (Time.now - alloc.grading_assigned) / 1.day 
+          <% days_assigned = (Time.now - alloc.grading_assigned) / 1.day.seconds
              if 3 >= days_assigned
              textclass = ""
              elsif 5 >= days_assigned
