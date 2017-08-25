@@ -107,7 +107,7 @@ bundle install
 npm install
 ```
 
-### Running Bottlenose
+### Running Bottlenose in Development
 
 Bottlenose is mostly a standard Rails app.
 
@@ -125,3 +125,60 @@ rails s
 # App should be at localhost:3000, as per usual.
 ```
 
+### Running Bottlenose in Production
+Configure nginx with Passenger:
+```
+server {
+        listen 443 ssl;
+        listen [::]:443 ssl;
+
+        server_name <your server name here, e.g. handins.edu>;
+        ssl_certificate     /path/to/your/server-cert.cer;
+        ssl_certificate_key /path/to/your/private-key.pem;
+        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+        client_max_body_size 10M;
+
+        root /path/to/bottlenose/src/public;
+
+        # First attempt to serve request as file, then
+        # as directory, then fall back to displaying a 404.
+        try_files $uri @passenger;
+
+        error_page 502 /502.html;
+
+        location @passenger {
+            # logic adapted from https://lincolnloop.com/blog/pro-tip-redirecting-custom-nginx-maintenance-page/
+            if (-f /path/to/bottlenose/src/public/maintenance.html) {
+                return 503;
+            }
+            passenger_enabled on;
+            passenger_ruby /path/to/bottlenose/.rbenv/versions/2.4.1/bin/ruby;
+            passenger_sticky_sessions on;
+            rails_env production;
+        }
+
+        location = /502.html {
+            internal;
+            root /path/to/bottlenose/src/public/;
+        }
+        error_page 503 @maintenance;
+        location @maintenance {
+            root /path/to/bottlenose/src/public/;
+            rewrite ^(.*)$ /maintenance.html break;
+        }
+}
+```
+
+You can then restart the server with
+
+```sh
+(cd /path/to/bottlenose/src ; bundle exec passenger-config restart-app /path/to/bottlenose/src)
+```
+
+and you can start or restart the background graders with
+
+```sh
+(cd /path/to/bottlenose/src ; screen -S backburner -X quit ; screen -d -m -S backburner env RAILS_ENV=production bundle exec backburner -l log/backburner.log)
+```
+Once the server has been started, go to the Settings > Edit page,
+ensure that the Site URL is filled in, and click Save Settings.
