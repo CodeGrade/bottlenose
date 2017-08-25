@@ -30,9 +30,9 @@ class Grader < ApplicationRecord
     def self.prune(threshold = 250)
       begin
         job_ids = Grader.delayed_grades.keys
-        return if job_ids.count <= threshold
+        return if job_ids.count < threshold
         bean = Backburner::Connection.new(Backburner.configuration.beanstalk_url)
-        job_id.each do |k|
+        job_ids.each do |k|
           job = bean.jobs.find(k)
           if job.nil?
             Grader.delayed_grades.delete k
