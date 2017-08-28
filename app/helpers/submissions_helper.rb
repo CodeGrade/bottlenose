@@ -44,9 +44,6 @@ module SubmissionsHelper
                   else
                     file = @related_files[sub_id.to_i].find{|f| f[:link] == ap["file"].to_s}
                     line_num = (Integer(ap["line"]) rescue nil)
-                    puts file[:link]
-                    puts line_num
-                    puts file[:contents].lines.count
                     if file.nil? || line_num.nil?
                       self.errors.add(:base, "#{prefix} part #{j + 1} has an invalid code-tag")
                     elsif (line_num < 1 || line_num > file[:contents].lines.count)
