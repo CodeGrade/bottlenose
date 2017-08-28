@@ -445,8 +445,8 @@ class SubmissionsController < CoursesController
       @answers = @submission.answers
       @questions = @assignment.questions
       @submission_info = @submission.related_subs.map do |s|
-        d, f = Submission.find(s).get_submission_files(current_user)
-        [d, f, s]
+        d, f = s.get_submission_files(current_user)
+        [d, f, s.id]
       end
       render "new_#{@assignment.type.underscore}"
     end
