@@ -19,4 +19,20 @@ class CodereviewMatching < ApplicationRecord
       self.errors.add(:base, "Must specify a target user or team")
     end
   end
+
+  def to_s
+    ans = ""
+    if self.user_id
+      ans += "User #{self.user_id}"
+    else
+      ans += "Team #{self.team_id}"
+    end
+    ans += " reviews "
+    if self.target_user_id
+      ans += "User #{self.target_user_id}"
+    else
+      ans += "Team #{self.target_team_id}"
+    end
+    ans
+  end
 end

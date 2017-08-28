@@ -28,6 +28,10 @@ class Submission < ApplicationRecord
   before_destroy :cleanup!
   after_save :add_user_submissions!
 
+  def to_s
+    "#{self.type} #{self.id} by #{if self.team then '(team ' + self.team_id.to_s + ') ' else '' end}" + self.users.map(&:name).join(', ')
+  end
+
   def add_user_submissions!
     if team
       team.users.each do |u|
