@@ -184,6 +184,8 @@ class User < ApplicationRecord
   def used_submissions_for(assignments)
     if assignments.is_a? Array
       assn_ids = assignments.map(&:id)
+    elsif assignments.is_a? Assignment
+      assn_ids = assignments.id
     else
       assn_ids = assignments.pluck(:id)
     end

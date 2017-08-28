@@ -46,6 +46,12 @@ class Team < ApplicationRecord
     CodereviewMatching.where(target_team: self).delete_all
   end
 
+  def self.users_for_teams(team_ids)
+    team_subs = TeamUser.where(team_id: team_ids)
+    user_ids = team_subs.select(:user_id)
+    User.where(id: user_ids).distinct
+  end
+
   private
 
   def all_enrolled

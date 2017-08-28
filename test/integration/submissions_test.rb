@@ -95,14 +95,17 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       assert_difference('CodereviewMatching.count', 2) do
         get new_course_assignment_submission_path(course_id: @largeCourse.id, assignment_id: @helloReview.id)
       end
+      sign_out t.users.first
       t.users.each do |u|
         sign_in u
         assert_no_difference('CodereviewMatching.count') do
           get new_course_assignment_submission_path(course_id: @largeCourse.id, assignment_id: @helloReview.id)
         end
+        sign_out u
       end
     end
     matchings = {rev: {}, tar: {}}
+    CodereviewMatching.connection.reconnect!
     CodereviewMatching.where(assignment: @helloReview).each do |cm|
       matchings[:rev][cm.team_id] = [] unless matchings[:rev][cm.team_id]
       matchings[:rev][cm.team_id] << cm.target_team_id
@@ -134,9 +137,12 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
 
 
     teams = @largeTs.teams.to_a
-    CodereviewMatching.create!(assignment: @helloReview, team: teams[0], target_team: teams[2])
-    CodereviewMatching.create!(assignment: @helloReview, team: teams[1], target_team: teams[3])
-    CodereviewMatching.create!(assignment: @helloReview, team: teams[2], target_team: teams[4])
+    cm1 = CodereviewMatching.create!(assignment: @helloReview, team: teams[0], target_team: teams[2])
+    cm2 = CodereviewMatching.create!(assignment: @helloReview, team: teams[1], target_team: teams[3])
+    cm3 = CodereviewMatching.create!(assignment: @helloReview, team: teams[2], target_team: teams[4])
+    # puts cm1
+    # puts cm2
+    # puts cm3
     
     # Visit the begin-codereview page for each user in each team
     @largeTs.teams.each do |t|
@@ -145,14 +151,17 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       assert_difference('CodereviewMatching.count', 2 - existing) do
         get new_course_assignment_submission_path(course_id: @largeCourse.id, assignment_id: @helloReview.id)
       end
+      sign_out t.users.first
       t.users.each do |u|
         sign_in u
         assert_no_difference('CodereviewMatching.count') do
           get new_course_assignment_submission_path(course_id: @largeCourse.id, assignment_id: @helloReview.id)
         end
+        sign_out u
       end
     end
     matchings = {rev: {}, tar: {}}
+    CodereviewMatching.connection.reconnect!
     CodereviewMatching.where(assignment: @helloReview).each do |cm|
       matchings[:rev][cm.team_id] = [] unless matchings[:rev][cm.team_id]
       matchings[:rev][cm.team_id] << cm.target_team_id

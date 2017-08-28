@@ -593,6 +593,8 @@ class SubmissionsController < CoursesController
     #  Find all the available submissions, that aren't the current @team/current_user's,
     #  group them by how many reviews they already have been allocated,
     #  then randomly select from the least-allocated ones until a sufficient count is reached.
+    @assn_review_count = @assignment.review_count
+    @rel_team_subs = @assignment.related_assignment.team_subs?
     CodereviewMatching.transaction do
       # Find all the submissions that have already been allocated to @team/current_user to review
       matchings =
@@ -601,25 +603,28 @@ class SubmissionsController < CoursesController
         else
           matchings = CodereviewMatching.where(assignment: @assignment, user: current_user)
         end
-      users = matchings.map(&:target_team).compact.map(&:users).flatten +
-              matchings.map(&:target_user).compact
+      users =
+        if @rel_team_subs
+          Team.users_for_teams(matchings.select(:target_team_id)).select(:id).map(&:id)
+        else
+          matchings.map(&:target_user_id).compact
+        end
       @subs_to_review = @assignment.related_assignment.used_submissions.where(user_id: users)
       # If there aren't enough allocations yet,
-      if @subs_to_review.count < @assignment.review_count
-        @assignment.review_count
-        used_subs = current_user.used_submissions_for([@assignment.related_assignment]).map(&:submission)
+      if @subs_to_review.count < @assn_review_count
+        used_sub_ids = current_user.used_submissions_for(@assignment.related_assignment).map(&:submission_id)
         # Find all the available subs
         available = @assignment.related_assignment.used_submissions
-                    .where.not(id: used_subs.map(&:id)) # excluding those for @team/current_user
+                    .where.not(id: used_sub_ids) # excluding those for @team/current_user
         # Select all the matchings for those
         grouped = {}
-        if @assignment.related_assignment.team_subs?
+        if @rel_team_subs
           CodereviewMatching
-            .where(assignment: @assignment, target_team: available.map(&:team_id))
-            .group_by(&:target_team_id)
-            .each do |target_team_id, cms|
-            grouped[cms.count] = [] if grouped[cms.count].nil?
-            grouped[cms.count] << target_team_id
+            .where(assignment: @assignment, target_team_id: available.select(:team_id))
+            .group(:target_team_id).count
+            .each do |target_team_id, count|
+            grouped[count] ||= []
+            grouped[count] << target_team_id
           end
           available = available.map{|a| [a.team_id, a]}.to_h
           grouped.each do |count, team_ids|
@@ -628,11 +633,11 @@ class SubmissionsController < CoursesController
           end
         else
           CodereviewMatching
-            .where(assignment: @assignment, target_user: available.map(&:user_id))
-            .group_by(&:target_user_id)
-            .each do |target_user_id, cms|
-            grouped[cms.count] = [] if grouped[cms.count].nil?
-            grouped[cms.count] << target_user_id
+            .where(assignment: @assignment, target_user_id: available.select(:user_id))
+            .group(:target_user_id).count
+            .each do |target_user_id, count|
+            grouped[count] ||= []
+            grouped[count] << target_user_id
           end
           available = available.map{|a| [a.user_id, a]}.to_h
           grouped.each do |count, user_ids|
@@ -643,25 +648,25 @@ class SubmissionsController < CoursesController
         grouped[0] = available.values
         # Starting from assignments with zero reviews allocated for them yet,
         # look for sufficiently many to specify for the current_user/@team
-        grouped.keys.to_a.sort.each do |group_count|
-          break if @subs_to_review.count >= @assignment.review_count
+        grouped.keys.sort.each do |group_count|
+          break if @subs_to_review.count >= @assn_review_count
           new_subs = grouped[group_count]
-          if new_subs.count > (@assignment.review_count - @subs_to_review.count)
-            new_subs = new_subs.to_a.shuffle!.take(@assignment.review_count - @subs_to_review.count)
+          if new_subs.count > (@assn_review_count - @subs_to_review.count)
+            new_subs = new_subs.to_a.shuffle!.take(@assn_review_count - @subs_to_review.count)
           end
           # Reserve the matchings for the new subs, so reviews stay evenly distributed
           new_subs.each do |ns|
             if @assignment.team_subs?
-              if @assignment.related_assignment.team_subs?
-                CodereviewMatching.create!(assignment: @assignment, team: @team, target_team: ns.team)
+              if @rel_team_subs
+                CodereviewMatching.create!(assignment: @assignment, team: @team, target_team_id: ns.team_id)
               else
-                CodereviewMatching.create!(assignment: @assignment, team: @team, target_user: ns.user)
+                CodereviewMatching.create!(assignment: @assignment, team: @team, target_user_id: ns.user_id)
               end
             else
-              if @assignment.related_assignment.team_subs?
-                CodereviewMatching.create!(assignment: @assignment, user: current_user, target_team: ns.team)
+              if @rel_team_subs
+                CodereviewMatching.create!(assignment: @assignment, user: current_user, target_team_id: ns.team_id)
               else
-                CodereviewMatching.create!(assignment: @assignment, user: current_user, target_user: ns.user)
+                CodereviewMatching.create!(assignment: @assignment, user: current_user, target_user_id: ns.user_id)
               end
             end
           end
@@ -669,5 +674,8 @@ class SubmissionsController < CoursesController
         end
       end
     end
+  rescue ActiveRecord::RecordInvalid => exception
+    puts exception
+    raise exception
   end
 end
