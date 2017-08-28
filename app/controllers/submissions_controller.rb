@@ -430,9 +430,10 @@ class SubmissionsController < CoursesController
   def create_Codereview
     @submission.answers = answers_params
     @submission.related_files = {}
-    @submission.related_subs.each do |id|
-      _, files = Submission.find(id).get_submission_files(current_user)
-      @submission.related_files[id.to_i] = files
+    @submission.related_subs = @submission.related_subs.map do |id| Submission.find(id) end
+    @submission.related_subs.each do |sub|
+      _, files = sub.get_submission_files(current_user)
+      @submission.related_files[sub.id] = files
     end
     if @submission.save_upload && @submission.save
       @submission.set_used_sub!
