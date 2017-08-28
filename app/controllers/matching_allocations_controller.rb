@@ -125,120 +125,52 @@ class MatchingAllocationsController < CoursesController
     end
   end
   def update
-    case [@assignment.team_subs?, @assignment.related_assignment.team_subs?]
-    when [true, true]
-      reviewer_teams = @assignment.teamset.active_teams.to_a
-      target_teams = @assignment.related_assignment.teamset.active_teams.to_a
-      review_counts = target_teams.map{|t| [t.id, 0]}.to_h
-      target_teams = target_teams.map{|t| [t.id, t]}.to_h
-      targets = review_counts.keys
-      targets.shuffle!
-      reviewer_teams.each do |rt|
-        rt_users = rt.user_ids.to_set
-        assoc = []
-        targets.each do |t|
-          t = target_teams[t]
-          break if assoc.length == @assignment.review_count
-          next if review_counts[t.id].nil?
-          if t.user_ids.to_set.disjoint?(rt_users)
-            assoc << t
-            review_counts[t.id] += 1
-            if review_counts[t.id] == @assignment.review_count
-              review_counts.delete(t.id)
-            end
-          end
-        end
-        assoc.each do |a|
-          CodereviewMatching.create!(assignment: @assignment,
-                                     team: rt, target_team: a)
-        end
+    CodereviewMatching.transaction do
+      case [@assignment.team_subs?, @assignment.related_assignment.team_subs?]
+      when [true, true]
+        reviewer_teams = @assignment.teamset.active_teams.to_a
+        target_teams = @assignment.related_assignment.teamset.active_teams.to_a
+        @count = general_update(
+          reviewer_teams, target_teams,
+          lambda {|rev_team| rev_team.user_ids.to_set},
+          lambda {|tar_team| tar_team.user_ids.to_set},
+          lambda {|rev_user_ids, tar_user_ids| tar_user_ids.disjoint?(rev_user_ids)},
+          lambda {|rev, tar| CodereviewMatching.create!(assignment: @assignment, team: rev, target_team: tar)})
+        
+      when [true, false]
+        reviewer_teams = @assignment.teamset.active_teams.to_a
+        target_users = @course.students.to_a
+        @count = general_update(
+          reviewer_teams, target_users,
+          lambda {|rev_team| rev_team.user_ids.to_set},
+          lambda {|tar_user| tar_user.id},
+          lambda {|rev_user_ids, tar_user_id| !rev_user_ids.member?(tar_user_id)},
+          lambda {|rev, tar| CodereviewMatching.create!(assignment: @assignment, team: rev, target_user: tar)})
+        
+      when [false, true]
+        reviewer_users = @course.students.to_a
+        target_teams = @assignment.related_assignment.teamset.active_teams.to_a
+        @count = general_update(
+          reviewer_users, target_teams,
+          lambda {|rev_user| rev_user.id},
+          lambda {|tar_team| tar_team.user_ids.to_set},
+          lambda {|rev_user_id, tar_user_ids| !tar_user_ids.member?(rev_user_id)},
+          lambda {|rev, tar| CodereviewMatching.create!(assignment: @assignment, user: rev, target_team: tar)})
+        
+      when [false, false]
+        reviewer_users = @course.students.to_a
+        target_users = @course.students.to_a
+        @count = general_update(
+          reviewer_users, target_users,
+          lambda {|rev_user| rev_user.id},
+          lambda {|tar_user| tar_user.id},
+          lambda {|rev_user_id, tar_user_id| rev_user_id != tar_user_id},
+          lambda {|rev, tar| CodereviewMatching.create!(assignment: @assignment, user: rev, target_user: tar)})
+        
       end
-      
-    when [true, false]
-      reviewer_teams = @assignment.teamset.active_teams.to_a
-      target_users = @course.students.to_a
-      review_counts = target_users.map{|t| [t.id, 0]}.to_h
-      target_users = target_users.map{|t| [t.id, t]}.to_h
-      targets = review_counts.keys
-      targets.shuffle!
-      reviewer_teams.each do |rt|
-        rt_users = rt.user_ids.to_set
-        assoc = []
-        targets.each do |t|
-          t = target_users[t]
-          break if assoc.length == @assignment.review_count
-          next if review_counts[t.id].nil?
-          if !rt_users.member?(t.id)
-            assoc << t
-            review_counts[t.id] += 1
-            if review_counts[t.id] == @assignment.review_count
-              review_counts.delete(t.id)
-            end
-          end
-        end
-        assoc.each do |a|
-          CodereviewMatching.create!(assignment: @assignment,
-                                     team: rt, target_user: a)
-        end
-      end
-      
-    when [false, true]
-      reviewer_users = @course.students.to_a
-      target_teams = @assignment.related_assignment.teamset.active_teams.to_a
-      review_counts = target_teams.map{|t| [t.id, 0]}.to_h
-      target_teams = target_teams.map{|t| [t.id, t]}.to_h
-      targets = review_counts.keys
-      targets.shuffle!
-      reviewer_users.each do |ru|
-        assoc = []
-        targets.each do |t|
-          t = target_teams[t]
-          break if assoc.length == @assignment.review_count
-          next if review_counts[t.id].nil?
-          if t.user_ids.to_set.member?(ru.id)
-            assoc << t
-            review_counts[t.id] += 1
-            if review_counts[t.id] == @assignment.review_count
-              review_counts.delete(t.id)
-            end
-          end
-        end
-        assoc.each do |a|
-          CodereviewMatching.create!(assignment: @assignment,
-                                     user: ru, target_team: a)
-        end
-      end
-      
-    when [false, false]
-      reviewer_users = @course.students.to_a
-      target_users = @course.students.to_a
-      review_counts = target_users.map{|t| [t.id, 0]}.to_h
-      target_users = target_users.map{|t| [t.id, t]}.to_h
-      targets = review_counts.keys
-      targets.shuffle!
-      reviewer_users.each do |ru|
-        assoc = []
-        targets.each do |t|
-          t = target_users[t]
-          break if assoc.length == @assignment.review_count
-          next if review_counts[t.id].nil?
-          if t.id != ru.id
-            assoc << t
-            review_counts[t.id] += 1
-            if review_counts[t.id] == @assignment.review_count
-              review_counts.delete(t.id)
-            end
-          end
-        end
-        assoc.each do |a|
-          CodereviewMatching.create!(assignment: @assignment,
-                                     user: ru, target_user: a)
-        end
-      end
-      
     end
     redirect_to edit_course_assignment_matchings_path(@course, @assignment),
-                notice: "#{CodereviewMatching.where(assignment: @assignment).count} matchings created"
+                notice: "#{@count} matchings created"
   end
   def delete
     m = CodereviewMatching.find(params[:id])
@@ -272,5 +204,35 @@ class MatchingAllocationsController < CoursesController
                     alert: "Must be an admin or professor."
       return
     end
+  end
+
+
+  def general_update(reviewers, targets, get_reviewer_users, get_target_users, disjoint_users, create_matching)
+    review_counts = targets.map{|t| [t.id, 0]}.to_h
+    targets_ids_map = targets.map{|t| [t.id, t]}.to_h
+    target_ids = review_counts.keys
+    target_ids.shuffle!
+    @count = 0
+    reviewers.each do |r|
+      r_users = get_reviewer_users(r)
+      assoc = []
+      target_ids.each do |t|
+        t = targets[t]
+        break if assoc.length == @assignment.review_count
+        next if review_counts[t.id].nil?
+        if disjoint_users(r_users, get_target_users(t))
+          assoc << t
+          review_counts[t.id] += 1
+          if review_counts[t.id] == @assignment.review_count
+            review_counts.delete(t.id)
+          end
+        end
+      end
+      assoc.each do |a|
+        create_matching(r, a)
+        @count += 1
+      end
+    end
+    return @count
   end
 end
