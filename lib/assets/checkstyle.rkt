@@ -41,7 +41,6 @@
 (define (process filename width)
   (begin
     (displayln filename (current-error-port))
-    (set! messages '())
     (define t (load-file filename))
     (if (not (correct-parse-text? t))
         (tap #:problem "CleanParse"
@@ -73,7 +72,9 @@
                               "This line is not properly indented: it should have ~a spaces of indentation.~a  Please reformat the code."
                               correct-indent
                               tab-warning)
-                 )))))
+                 )))))))
+(define (print-output)
+  (begin
     (displayln "TAP version 13")
     (displayln (format "1..~a" (length messages)))
     (displayln (format "# Time: ~a" (exact->inexact (/ (current-process-milliseconds) 1000))))
@@ -83,18 +84,29 @@
     ))
   
 (define (process-files start width)
-  (cond
-   [(and (file-exists? start)
-         (bytes=? (path-get-extension start) #".rkt"))
-    (process start width)]
-   [(directory-exists? start)
-    (for ([p (in-directory start)])
-      (when (and (file-exists? p)
-                 (equal? (path-get-extension p) #".rkt"))
-          (process (format "~a" p) width)))]
-   [else
-    (void)]))
-
+  (begin
+    (set! messages '())
+    (cond
+     [(and (file-exists? start)
+           (bytes=? (path-get-extension start) #".rkt"))
+      (process start width)]
+     [(directory-exists? start)
+      (define found #f)
+      (for ([p (in-directory start)])
+        (when (and (file-exists? p)
+                   (equal? (path-get-extension p) #".rkt"))
+          (set! found #t)
+          (process (format "~a" p) width)))
+      (if found (void)
+          (tap #:problem "NoFiles"
+               #:filename start
+               #:line 0
+               #:penalty (total-points)
+               #:message "No files found in this submission"))]
+     [else
+      (void)])
+    (print-output)))
+  
 (module+ main
 
   (define file-to-compile
