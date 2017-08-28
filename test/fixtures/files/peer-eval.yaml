@@ -1,0 +1,115 @@
+---
+- Peer review:
+  - MultipleChoice:
+      weight: 1
+      correctAnswer: 0
+      prompt: >-
+        How <i>correct</i> are the tests you see? (That is, based on
+        the assignment, do the tests expect the proper results?)
+      options:
+        - >-
+          Great: all tests are checking for behaviors specified by the
+          problem, and their expected answers make sense.
+        - >-
+          Good: most tests are checking for behaviors specified by the
+          problem, but some of the expected answers might be mistaken.
+        - >-
+          Ok: the tests are a mix of good answers and mistakes.
+        - >-
+          Not good: most tests have problems, or the expected answers
+          are mostly wrong.
+      parts:
+        - codeTag: >-
+            If there are particular tests you think are problematic,
+            tag the first line of them that seems to be wrong
+        - text: >-
+            If there are particular tests you think are problematic,
+            explain why.
+      rubric:
+        - 1:
+            hint: >-
+              If Great, and in fact should be Great; or if Good,
+              and in fact should be Good; or if Ok, and in fact should
+              be Ok; or if Not good and in fact should be Not good.
+            feedback: Your assessment is accurate.
+        - 0.75:
+            hint: if Great, but in fact should be only Good
+            feedback: "The tests aren't as good as you're claiming."
+        - 0.5:
+            hint: if Great or Good, but in fact should be only Ok
+            feedback: "The tests really are only Ok; read more carefully"
+        - 0.5:
+            hint: if Ok, but in fact is Good or Great
+            feedback: "These tests are better than you're giving them credit for"
+        - 0.1:
+            hint: if Great, but in fact should be only Not good
+            feedback: "These tests are not actually good at all.  Read them more carefully"
+  - MultipleChoice:
+      weight: 1
+      correctAnswer: 0
+      prompt: >-
+        How <i>thorough</i> are the tests you see? (That is, do they
+        cover the complete behavior requested by the assignment?)
+      options:
+        - >-
+          Great: all behaviors are accounted for
+        - >-
+          Good: most behaviors are tested, but some are missing
+        - >-
+          Ok: there are quite a few missing tests
+        - >-
+          Not good: there are nowhere near enough tests to cover the
+          behavior of the assignment
+      parts:
+        - text: >-
+            If there are particular tests you think are missing,
+            explain why, and give a <i>hint</i> about what they might be.
+      rubric:
+        - 1:
+            hint: >-
+              If Great, and in fact should be Great; or if Good,
+              and in fact should be Good; or if Ok, and in fact should
+              be Ok; or if Not good and in fact should be Not good.
+            feedback: Your assessment is accurate.
+        - 0.75:
+            hint: if Great, but in fact should be only Good
+            feedback: "The tests aren't as good as you're claiming."
+        - 0.5:
+            hint: if Great or Good, but in fact should be only Ok
+            feedback: "The tests really are only Ok; read more carefully"
+        - 0.5:
+            hint: if Ok, but in fact is Good or Great
+            feedback: "These tests are better than you're giving them credit for"
+        - 0.1:
+            hint: if Great, but in fact should be only Not good
+            feedback: "These tests are not actually good at all.  Read them more carefully"
+  - Text:
+      weight: 0.5
+      correctAnswer: "Anything useful, plausible, and appropriate"
+      prompt: >-
+        If you have any further feedback on this code (how readable it
+        is, how clear it is to figure out what the tests are doing, or
+        any other comments), leave them here
+      rubric:
+        - 1:
+            hint: >-
+              As long as their answer is polite, appropriate, and does not
+              give away too much information about the rest of the
+              problem, <i>and</i> their answers above are complete, give
+              full credit.
+            feedback: Well done.
+        - 0.5:
+            hint: >-
+              If they answered anything other than Great above, but
+              did not leave sufficient feedback, mention it here.
+            feedback: You should probably have left more feedback
+        - 0.5:
+            hint: Their answer is distracting or useless
+            feedback: This answer is not particularly helpful.
+        - 0:
+            hint: >-
+              Their answer is rude or offensive -- leave a <b>polite</b>
+              comment to the student, and please contact a professor
+              about it!
+            feedback: ""
+...
