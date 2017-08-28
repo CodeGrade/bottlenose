@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class TeamsetsTest < ActionDispatch::IntegrationTest
+class SubmissionsTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
   setup do
     DatabaseCleaner.clean
@@ -160,7 +160,7 @@ class TeamsetsTest < ActionDispatch::IntegrationTest
       matchings[:tar][cm.target_team_id] << cm.team_id
     end
     matchings[:tar].each do |tid, reviewers|
-      assert_equal(2, reviewers.count, "Team #{tid} should receive two reviews")
+      assert_equal(2, reviewers.count, "Team #{tid} should receive two reviews, but got #{reviewers}")
       assert_not_includes(reviewers, tid, "Team #{tid} should not be reviewed by itself")
     end
     matchings[:rev].each do |tid, targets|
