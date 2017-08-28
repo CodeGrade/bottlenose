@@ -134,7 +134,7 @@
          .prop("disabled", false);
     }
   })
-  $("#type-codereview").find("input[name$='[review_count]']").prop("disabled", <%= asgn.graders.first.review_target != "peer" %>);
+  $("#type-codereview").find("input[name$='[review_count]']").prop("disabled", <%= asgn&.graders&.first&.review_target != "peer" %>);
   $("form").submit(function() {
     enableSpinner($("#type-codereview").find("input[name$='[review_count]']"));
   });
