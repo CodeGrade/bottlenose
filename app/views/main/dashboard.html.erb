@@ -38,7 +38,7 @@
       <%= link_to course.name, course_path(course) %>
       <span class="sectionList">
         <% sections.each do |s| %>
-        <span>Section <%= s.to_s %> (<%= s.type.humanize %>)</span><br />
+        <span>Section <%= s.to_s %></span><br />
         <% end %>
       </span>
     </h3>
