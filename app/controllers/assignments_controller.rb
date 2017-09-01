@@ -132,7 +132,14 @@ class AssignmentsController < ApplicationController
     if @assignment.save_upload && @assignment.save
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully created.'
     else
+      new_assn = @assignment.dup
+      new_assn.lateness_config = @assignment.lateness_config.dup if @assignment.lateness_config.new_record?
+      new_assn.graders = @assignment.graders.map(&:dup)
+      @assignment.errors.each do |attr, err|
+        new_assn.errors[attr] << err
+      end
       @assignment.destroy
+      @assignment = new_assn
       @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
       new
       render action: "new"
