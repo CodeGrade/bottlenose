@@ -135,6 +135,7 @@ class AssignmentsController < ApplicationController
       new_assn = @assignment.dup
       new_assn.lateness_config = @assignment.lateness_config.dup if @assignment.lateness_config.new_record?
       new_assn.graders = @assignment.graders.map(&:dup)
+      new_assn.assignment_upload_id = nil # cleanup the Upload and clear out the upload_id, to force re-upload
       @assignment.errors.each do |attr, err|
         new_assn.errors[attr] << err
       end
