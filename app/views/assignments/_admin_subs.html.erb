@@ -83,6 +83,9 @@
     No <%= type[:noun].pluralize(2) %> yet.
   </div>
 <% else %>
+<% if cur_user_prof_ever %>
+<%= render "grade_distribution" %>
+<% end %>
   <table id="submissions" class="table table-striped row-vcenter">
     <thead>
       <tr>

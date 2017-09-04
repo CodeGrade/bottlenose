@@ -1,0 +1,46 @@
+<%
+@theGrades = @gradesheet.grades[:grades].values.map do |g|
+  [100.0 * g[:staff_scores][:raw_score] / @gradesheet.max_score, g[:staff_scores][:scores].map{|a| a[0]}]
+end
+%>
+var grades = <%= raw json_escape(JSON.generate(@theGrades)) %>;
+GoogleCharts.load('corechart', function() {
+  var colors = ['steelblue', 'maroon', 'gold', 'seagreen', 'orange', 'indigo']
+  var data = GoogleCharts.api.visualization.arrayToDataTable([["Grade"]].concat(grades.map((a) => [a[0]])));
+  var options = {
+    title: 'Grade distribution',
+    legend: { position: 'none' },
+    colors: [colors[0]],
+    interpolateNulls: false,
+    hAxis: {type: 'category'},
+    histogram: {bucketSize: 5, minValue: 0, hideBucketItems: true}
+  };
+  var chart = new GoogleCharts.api.visualization.Histogram(document.getElementById('histogram'));
+  chart.draw(data, options);
+
+  var graders = <%= raw json_escape(JSON.generate(@gradesheet.grades[:graders].map(&:display_type))) %>;
+  var maxes = <%= raw json_escape(JSON.generate(@gradesheet.grades[:graders].map(&:avail_score))) %>;
+  var width = Math.floor(100.0 / graders.length);
+  if (graders.length > 1) {
+    var container = document.getElementById("byGraders");
+    for (var i = 0; i < graders.length; i++) {
+      data = GoogleCharts.api.visualization.arrayToDataTable([[graders[i]]].concat(grades.map((a) => [a[1][i]])));
+      options = {
+        title: graders[i] + " grades",
+        colors: [colors[(i + 1) % colors.length]],
+        legend: { position: 'none' },
+        histogram: {
+          hideBucketItems: true,
+          lastBucketPercentile: 2
+        },
+        hAxis: {type: 'category'},
+        interpolateNulls: false,
+      };
+      var div = document.createElement("div");
+      div.style = "display: inline-block; width: " + width + "%;";
+      container.appendChild(div);
+      chart = new GoogleCharts.api.visualization.Histogram(div);
+      chart.draw(data, options);
+    }
+  }
+});
