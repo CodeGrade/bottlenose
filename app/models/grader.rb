@@ -112,6 +112,8 @@ class Grader < ApplicationRecord
   def grade(assignment, submission, prio = 0)
     if autograde?
       GradingJob.enqueue self, assignment, submission, prio: 1000 + prio, ttr: 1200
+    else
+      grade_sync!(assignment.id, submission.id)
     end
   end
 

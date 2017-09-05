@@ -98,7 +98,7 @@ $(function() {
   window.registerComment = registerComment;
   function insertComment(cm, line, comment) {
     if (comment === undefined) {
-      comment = registerCommment(cm, line, comment);
+      comment = registerComment(cm, line, comment);
     }
     var i = commentID++;
     var widget = $("<div>").attr("id", "comment_" + i).addClass("ManualGrader Error form-group");
@@ -183,7 +183,9 @@ $(function() {
   updateScore();
 
   $(".CodeMirror").each(function(i) {
-    this.CodeMirror.on("gutterClick", function(cm, line, gutter, e) { return insertComment(cm, line); });
+    this.CodeMirror.on("gutterClick", function(cm, line, gutter, e) {
+      return insertComment(cm, line, registerComment(cm, line, undefined, true));
+    });
   });
 
   var filesTree = $("#<%= root %> .files");
