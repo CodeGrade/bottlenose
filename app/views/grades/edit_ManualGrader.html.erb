@@ -96,7 +96,9 @@
           var commentsOnLine = theseComments[line];
           commentsOnLine.forEach(function(comment, _) {
             // lines are off-by-one so they appear beneath the code they comment on
-            if (comment.editable || <%= cur_reg.professor? %>)
+            var isEditable = comment.editable || <%= cur_reg.professor? %>;
+            comment = registerComment(cm, Number.parseInt(line) - 1, comment, isEditable);
+            if (isEditable)
               insertComment(cm, Number.parseInt(line) - 1, comment);
             else
               renderComment(cm, "ManualGrader", line, comment);

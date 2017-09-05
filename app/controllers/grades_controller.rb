@@ -414,7 +414,7 @@ class GradesController < ApplicationController
     @sub_comments = @submission.grade_submission_comments(current_user.site_admin? || cur_reg.staff?)
     if @sub_comments.empty? && (@tests.nil? || @tests.count != num_comments)
       @error_header = <<HEADER.html_safe
-<p>There seems to be a problem displaying the style-checker's feedback on this submission.</p>
+<p>There seems to be a problem displaying the #{type.camelcase.underscore.humanize}'s feedback on this submission.</p>
 <p>Please email the professor, with the following information:</p>
 <ul>
 <li>Course: #{@course.id}</li>
@@ -611,13 +611,21 @@ HEADER
     render "edit_ManualGrader"
   end
   def show_ManualGrader
-    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, "ManualGrader")
+    show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
+    @lineCommentsByFile = @submission.grade_line_comments(current_user, show_hidden)
+    @sub_comments = @submission.grade_submission_comments(show_hidden)
+    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, @lineCommentsByFile, "ManualGrader")
     @commentType = "ManualGrader"
     @grading_output = @grade
     render "submissions/details_files"
   end
   def details_ManualGrader
-    GradesController.pretty_print_comments(@grade.inline_comments)
+    show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
+    if show_hidden && @grade.available?
+      GradesController.pretty_print_comments(@grade.inline_comments)
+    else
+      GradesController.pretty_print_comments([])
+    end
   end
 
   # ExamGrader

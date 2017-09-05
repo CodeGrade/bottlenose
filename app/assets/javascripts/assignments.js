@@ -75,6 +75,7 @@
     }
     cm.addLineWidget(parseInt(line) - 1, widget[0], {coverGutter: false, noHScroll: true});
   }
+  window.renderComment = renderComment;
 
   function init_datetime() {
     $('.datetime-picker').datetimepicker({

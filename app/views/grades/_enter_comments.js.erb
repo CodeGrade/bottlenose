@@ -26,6 +26,9 @@ $(function() {
       if (commentObjs[i].shouldDelete) continue;
       deductions += commentObjs[i].deduction;
     }
+    for (var i = 0; i < inertComments.length; i++) {
+      deductions += inertComments[i].deduction;
+    }
     var ans = Math.max(maxScore - deductions, 0).toFixed(2);
     $("#score").text(ans);
     $("input#finalScore").val(ans);
@@ -39,6 +42,7 @@ $(function() {
 
   var autosaveHandle = undefined;
   var commentObjs = [];
+  var inertComments = [];
   var commentsById = {};
   function autosave() {
     if (autosaveHandle === undefined) {
@@ -75,7 +79,7 @@ $(function() {
   }
 
   var commentID = 0;
-  function insertComment(cm, line, comment) {
+  function registerComment(cm, line, comment, editable) {
     if (comment === undefined) {
       comment = {severity: "Error", deduction: 0, comment: "", id: Date.now()};
 
@@ -83,9 +87,19 @@ $(function() {
       comment.file = $(cm.getTextArea()).data("source");
       comment.label = "<%= current_user.name %>";
     }
-    commentObjs.push(comment);
-    commentsById[comment.id] = comment;
-    
+    if (!editable) {
+      inertComments.push(comment);
+    } else {
+      commentObjs.push(comment);
+      commentsById[comment.id] = comment;
+    }
+    return comment;
+  }
+  window.registerComment = registerComment;
+  function insertComment(cm, line, comment) {
+    if (comment === undefined) {
+      comment = registerCommment(cm, line, comment);
+    }
     var i = commentID++;
     var widget = $("<div>").attr("id", "comment_" + i).addClass("ManualGrader Error form-group");
     var table = $("<table>").addClass("container-fluid");
