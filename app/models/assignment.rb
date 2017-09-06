@@ -204,7 +204,9 @@ class Assignment < ApplicationRecord
     elsif @teamset_plan == "unique"
       # nothing to do
     elsif @teamset_plan == "use"
-      if @teamset_source_use.blank?
+      if action[:existing]
+        # nothing to do
+      elsif @teamset_source_use.blank?
         self.errors.add(:base, "The teamset to be used was not specified")
         return false
       else
