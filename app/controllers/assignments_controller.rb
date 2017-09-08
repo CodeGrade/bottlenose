@@ -231,7 +231,7 @@ class AssignmentsController < ApplicationController
   def recreate_grades
     count = do_recreate_grades @assignment
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  notice: "#{plural(count, 'grade')} created"
+                  notice: "#{pluralize(count, 'grade')} created"
   end
 
 
