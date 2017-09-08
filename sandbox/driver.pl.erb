@@ -22,10 +22,10 @@ export XTR="<%= xtr_name %>"
 <% end %>
 
 cd ~
-wget -O "$SUB" "<%= sub_url %>"
-wget -O "$GRA" "<%= gra_url %>"
+wget --no-check-certificate -O "$SUB" "<%= sub_url %>"
+wget --no-check-certificate -O "$GRA" "<%= gra_url %>"
 <% if xtr_name && xtr_url %>
-wget -O "$XTR" "<%= xtr_url %>"
+wget --no-check-certificate -O "$XTR" "<%= xtr_url %>"
 <% end %>
 tar xzvf "$GRA"
 ruby -I_grading _grading/grade.rb
