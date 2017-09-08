@@ -6,7 +6,14 @@
   h4.collapsed i.glyphicon-chevron-up, h3.collapsed i.glyphicon-chevron-up { display: initial; }
   h4.collapsed i.glyphicon-chevron-down, h3.collapsed i.glyphicon-chevron-down { display: none; }
   .team-heading { margin: 10px 15px; font-size: 16px; }
-  .sectionList { display: block; font-size: 85%; }
+  .sectionList {
+    display: block;
+    font-size: 85%;
+    line-height: normal;
+    max-height: 6.5rem;
+    overflow-y: auto;
+    flex-grow: 1;
+  }
   .courseHeader {
     font-size: 21px;
     display: flex;
@@ -35,7 +42,7 @@
     </div>
     <% else %>
     <h3 class="courseHeader">
-      <%= link_to course.name, course_path(course) %>
+      <%= link_to course.name, course_path(course), {style: "flex-grow: 50;"} %>
       <span class="sectionList">
         <% sections.each do |s| %>
         <span>Section <%= s.to_s %></span><br />
