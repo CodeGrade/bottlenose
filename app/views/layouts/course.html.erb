@@ -15,24 +15,30 @@
     overflow-y: auto;
     flex-grow: 1;
   }
+  .sectionContainer small {
+    display: block;
+    line-height: 1.1;
+    margin-bottom: 0.25em;
+  }
   .page-header h1 { width: 100%; }
 </style>
 <% cur_reg = current_user.registration_for(@course) %>
     <div class="page-header">
         <h1>
           <%= link_to @course.name, course_path(@course) %>
-          <br/>
+        </h1>
+        <h2 style="margin-top: 0px;">
           <span <% if cur_reg %>class="sectionContainer"<% end %>>
-            <small style="flex-grow: 50;"><%= @course.term.name %></small>
+            <small style="flex-grow: 50; font-size: 85%;"><%= @course.term.name %></small>
             <span class="sectionList">
               <% if cur_reg %>
               <% cur_reg.sections.order(:type).each do |r| %>
-              <small>Section <%= r.to_s %></small></br>
+              <small>Section <%= r.to_s %></small>
               <% end %>
               <% end %>
             </span>
           </span>
-        </h1>
+        </h2>
 
         <% if cur_reg %>
             <p>
