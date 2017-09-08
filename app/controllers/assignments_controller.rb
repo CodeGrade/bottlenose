@@ -159,7 +159,7 @@ class AssignmentsController < ApplicationController
       v[:upload_by_user_id] = current_user.id
     end
     if ap[:prevent_late_submissions] == "1" # i.e., true
-      ap[:prevent_late_submissions] = ap.delete(:related_assignment_id)
+      ap[:prevent_late_submissions] = ap[:related_assignment_id]
     else
       ap.delete(:prevent_late_submissions)
     end
