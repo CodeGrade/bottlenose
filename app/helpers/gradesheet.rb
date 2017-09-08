@@ -37,7 +37,7 @@ class Gradesheet
       @graders.each do |c|
         g = @raw_grades[s.id] && @raw_grades[s.id][c.id]
         if g
-          if g.out_of.nil?
+          if g.out_of.to_f.zero?
             scaled = g.score
           else
             scaled = g.score.to_f * (c.avail_score.to_f / g.out_of.to_f)

@@ -1,6 +1,13 @@
 <%
 @theGrades = @gradesheet.grades[:grades].values.map do |g|
-  [100.0 * g[:staff_scores][:raw_score] / @gradesheet.max_score, g[:staff_scores][:scores].map{|a| a[0]}]
+  [
+    if @gradesheet.max_score.zero?
+      0
+    else
+      100.0 * g[:staff_scores][:raw_score] / @gradesheet.max_score
+    end,
+    g[:staff_scores][:scores].map{|a| a[0]}
+  ]
 end
 %>
 var grades = <%= raw json_escape(JSON.generate(@theGrades)) %>;
