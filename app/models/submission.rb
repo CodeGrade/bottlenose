@@ -237,11 +237,15 @@ class Submission < ApplicationRecord
     if config.grade_exists_for(self)
       false
     else
-      # Students will have their delayed jobs de-prioritized based on how many submissions
-      # they've spammed the system with in the past hour
-      num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
-      config.autograde!(assignment, self, num_recent_attempts)
-      true
+      if config.autograde?
+        # Students will have their delayed jobs de-prioritized based on how many submissions
+        # they've spammed the system with in the past hour
+        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
+        config.autograde!(assignment, self, num_recent_attempts)
+        true
+      else
+        config.ensure_grade_exists_for!(self)
+      end
     end
   end
 

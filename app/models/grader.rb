@@ -91,8 +91,20 @@ class Grader < ApplicationRecord
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
   # subtype they are, yet
-  attr_accessor :test_class
-  attr_accessor :errors_to_show
+  def test_class
+    @test_class
+  end
+  def test_class=(value)
+    params_will_change! if test_class != value
+    @test_class = value
+  end
+  def errors_to_show
+    @errors_to_show
+  end
+  def errors_to_show=(value)
+    params_will_change! if errors_to_show != value
+    @errors_to_show = value
+  end
   # Needed to make the upload not be anonymous
   attr_accessor :upload_by_user_id
 
@@ -130,7 +142,7 @@ class Grader < ApplicationRecord
   end
 
   def ensure_grade_exists_for!(sub)
-    g = grade_for(sub)
+    g = grade_for(sub, true)
     if g.new_record?
       g.save
       true
@@ -205,11 +217,11 @@ class Grader < ApplicationRecord
     fail NotImplementedError, "Each grader should implement this"
   end
 
-  def grade_for(sub)
+  def grade_for(sub, nosave = false)
     g = Grade.find_or_initialize_by(grader_id: self.id, submission_id: sub.id)
     if g.new_record?
       g.out_of = self.avail_score
-      g.save
+      g.save unless nosave
     end
     g
   end

@@ -1,8 +1,26 @@
 require 'clamp'
 class CodereviewGrader < Grader
-  attr_accessor :review_target
-  attr_accessor :review_count
-  attr_accessor :review_threshold
+  def review_target
+    @review_target
+  end
+  def review_target=(value)
+    params_will_change! if review_target != value
+    @review_target = value
+  end
+  def review_count
+    @review_count
+  end
+  def review_count=(value)
+    params_will_change! if review_count != value
+    @review_count = value
+  end
+  def review_threshold
+    @review_threshold
+  end
+  def review_threshold=(value)
+    params_will_change! if review_threshold != value
+    @review_threshold = value
+  end
 
   after_initialize :load_review_params
   before_validation :set_review_params
