@@ -10,6 +10,9 @@ class Grader < ApplicationRecord
     # the status page is visited.
     # Change this one job class to change the integration with beanstalk.
     include Backburner::Queue
+    # With a Postgres connection limit of 100, and a pool size of 5,
+    # this needs to stay low enough to leave some headroom, and 5 * 15 == 75 < 100
+    queue_jobs_limit 15
     def self.enqueue(grader, assn, sub, opts = {})
       job = Backburner::Worker.enqueue GradingJob, [grader.id, assn.id, sub.id], opts
 
@@ -43,6 +46,8 @@ class Grader < ApplicationRecord
         end
       rescue
         # nothing to do
+      ensure
+        bean.close if bean
       end
     end
     def self.clear_all!
@@ -61,6 +66,8 @@ class Grader < ApplicationRecord
         return count
       rescue Exception => e
         return "Error clearing queue: #{e}"
+      ensure
+        bean.close if bean
       end
     end
   end
