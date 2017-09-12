@@ -255,12 +255,15 @@ class Grader < ApplicationRecord
 
     prefix = "Assignment #{assignment.id}, submission #{sub.id}"
 
-    tap_out, env, args = get_command_arguments(assignment, sub)
+    tap_out, env, args, replacements = get_command_arguments(assignment, sub)
 
     Audit.log("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Command line: #{args.join(' ')}\n")
     print("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Command line: #{args.join(' ')}\n")
     output, err, status = Open3.capture3(env, *args)
     File.open(grader_dir.join(tap_out), "w") do |style|
+      replacements&.each do |rep, with|
+        output = output.gsub(rep, with)
+      end
       style.write(Upload.upload_path_for(output))
       g.grading_output = style.path
     end

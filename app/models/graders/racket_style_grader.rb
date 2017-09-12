@@ -48,7 +48,8 @@ class RacketStyleGrader < Grader
       ["racket", Rails.root.join("lib/assets/checkstyle.rkt").to_s,
        "--max-points", self.avail_score.to_s,
        "--line-width", self.line_length.to_s,
-       @tmpdir]
+       @tmpdir],
+      [[@tmpdir, sub.upload.extracted_path]].to_h
     ]
   end
 
