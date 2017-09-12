@@ -105,6 +105,17 @@ class Grader < ApplicationRecord
     params_will_change! if errors_to_show != value
     @errors_to_show = value
   end
+  def self.default_line_length
+    102
+  end
+  def line_length
+    (@line_length || Grader.default_line_length).to_i
+  end
+  def line_length=(value)
+    params_will_change! if line_length != value
+    @line_length = value
+  end
+
   # Needed to make the upload not be anonymous
   attr_accessor :upload_by_user_id
 

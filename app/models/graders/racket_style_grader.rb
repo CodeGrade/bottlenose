@@ -20,6 +20,14 @@ class RacketStyleGrader < Grader
     end
   end
 
+  after_initialize :load_style_params
+  before_validation :set_style_params
+
+  def assign_attributes(attrs)
+    super
+    set_style_params
+  end
+  
   protected
   
   def do_grading(assignment, sub)
@@ -36,7 +44,17 @@ class RacketStyleGrader < Grader
       {"XDG_RUNTIME_DIR" => nil},
       ["racket", Rails.root.join("lib/assets/checkstyle.rkt").to_s,
        "--max-points", self.avail_score.to_s,
+       "--line-width", self.line_length.to_s,
        sub.upload.extracted_path.to_s]
     ]
+  end
+
+  def load_style_params
+    return if new_record?
+    self.line_length = self.params.to_i
+  end
+
+  def set_style_params
+    self.params = "#{self.line_length}"
   end
 end

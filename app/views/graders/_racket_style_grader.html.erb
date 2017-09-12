@@ -7,11 +7,7 @@
     <td><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>
   </tr>
   <tr>
-    <td><%= f.label "upload_file", "Custom configuration:" %></td>
-    <td><%= f.file_field "upload_file" %>
-      <% if f.object.upload %>
-        <br>Current file: <%= link_to f.object.upload_file, f.object.upload.path %>
-      <% end %>
-    </td>
+    <td><%= f.label "line_length", "Maximum line length:" %></td>
+    <td><%= f.spinner "line_length", f.object.line_length || f.object.default_line_length, :min => 0 %></td>
   </tr>
 </table>

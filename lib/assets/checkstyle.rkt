@@ -88,13 +88,15 @@
     (set! messages '())
     (cond
      [(and (file-exists? start)
-           (bytes=? (path-get-extension start) #".rkt"))
+           (or (bytes=? (path-get-extension start) #".rkt")
+               (bytes=? (path-get-extension start) #".ss")))
       (process start width)]
      [(directory-exists? start)
       (define found #f)
       (for ([p (in-directory start)])
         (when (and (file-exists? p)
-                   (equal? (path-get-extension p) #".rkt"))
+                   (or (equal? (path-get-extension p) #".rkt")
+                       (equal? (path-get-extension p) #".ss")))
           (set! found #t)
           (process (format "~a" p) width)))
       (if found (void)
@@ -118,10 +120,10 @@
              (output-filename outfile)]
      [("--max-points") maxPoints
                        "Maximum points available (optional)"
-                       (total-points maxPoints)]
+                       (total-points (string->number maxPoints))]
      [("--line-width") lineWidth
                        "Maximum allowed line width (optional)"
-                       (line-width lineWidth)]
+                       (line-width (string->number lineWidth))]
      #:args (filename)
      filename))
 

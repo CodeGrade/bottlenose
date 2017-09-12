@@ -267,7 +267,7 @@ class AssignmentsController < ApplicationController
                                  :avail_score, :upload_file, :extra_upload_file, :params,
                                  :type, :id, :_destroy, :errors_to_show, :test_class,
                                  :review_target, :review_count, :review_threshold,
-                                 :upload_by_user_id, :order
+                                 :upload_by_user_id, :order, :line_length
                                ]
                               )
   end
