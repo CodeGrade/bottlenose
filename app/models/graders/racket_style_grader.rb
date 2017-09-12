@@ -32,9 +32,12 @@ class RacketStyleGrader < Grader
   
   def do_grading(assignment, sub)
     Headless.ly do
-      sub.upload.extract_contents_to!(nil, sub.upload.extracted_path, false)
-      run_command_produce_tap assignment, sub
-      sub.upload.extract_contents_to!(nil, sub.upload.extracted_path, true)
+      g = self.grade_for sub
+      Dir.mktmpdir("grade-#{sub.id}-#{g.id}") do |tmpdir|
+        @tmpdir = tmpdir
+        sub.upload.extract_contents_to!(nil, tmpdir, false)
+        run_command_produce_tap assignment, sub
+      end
     end
   end
 
@@ -45,7 +48,7 @@ class RacketStyleGrader < Grader
       ["racket", Rails.root.join("lib/assets/checkstyle.rkt").to_s,
        "--max-points", self.avail_score.to_s,
        "--line-width", self.line_length.to_s,
-       sub.upload.extracted_path.to_s]
+       @tmpdir.to_s]
     ]
   end
 

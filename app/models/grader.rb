@@ -27,10 +27,8 @@ class Grader < ApplicationRecord
       job[:id]
     end
     def self.perform(grader_id, assn_id, sub_id)
-      begin
+      ActiveRecord::Base.connection_pool.with_connection do
         Grader.find(grader_id).grade_sync!(assn_id, sub_id)
-      ensure
-        ActiveRecord::Base.clear_active_connections!
       end
     end
 
@@ -259,8 +257,8 @@ class Grader < ApplicationRecord
 
     tap_out, env, args = get_command_arguments(assignment, sub)
 
-    Audit.log("#{prefix}: Running #{self.type}.  Command line: #{args.join(' ')}\n")
-    print("#{prefix}: Running #{self.type}.  Command line: #{args.join(' ')}\n")
+    Audit.log("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Command line: #{args.join(' ')}\n")
+    print("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Command line: #{args.join(' ')}\n")
     output, err, status = Open3.capture3(env, *args)
     File.open(grader_dir.join(tap_out), "w") do |style|
       style.write(Upload.upload_path_for(output))
