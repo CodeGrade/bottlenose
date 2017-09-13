@@ -27,9 +27,7 @@ class Grader < ApplicationRecord
       job[:id]
     end
     def self.perform(grader_id, assn_id, sub_id)
-      ActiveRecord::Base.connection_pool.with_connection do
-        Grader.find(grader_id).grade_sync!(assn_id, sub_id)
-      end
+      Grader.find(grader_id).grade_sync!(assn_id, sub_id)
     end
 
     def self.prune(threshold = 250)
