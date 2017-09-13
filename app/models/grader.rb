@@ -74,14 +74,13 @@ class Grader < ApplicationRecord
   validates_presence_of :assignment
   validates :order, presence: true, uniqueness: {scope: :assignment_id}
 
-  
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
   end
   @delayed_grades = {}
   @delayed_count = 0
-  
+
   def self.delayed_grades
     @delayed_grades
   end
@@ -111,7 +110,10 @@ class Grader < ApplicationRecord
 
   def grade(assignment, submission, prio = 0)
     if autograde?
-      GradingJob.enqueue self, assignment, submission, prio: 1000 + prio, ttr: 1200
+      GradingJob.enqueue(self, assignment, submission,
+                         prio: 1000 + prio, ttr: 1200)
+    else
+      do_grading(assignment, submission)
     end
   end
 
@@ -120,7 +122,9 @@ class Grader < ApplicationRecord
   end
 
   def autograde!(assignment, submission, prio = 0)
-    grade(assignment, submission, prio)
+    if autograde?
+      grade(assignment, submission, prio)
+    end
   end
 
   def grade_exists_for(sub)
