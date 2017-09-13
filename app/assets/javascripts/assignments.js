@@ -150,14 +150,14 @@
         var label = $(this).val().replace(/\\/g, '/').replace(/.*\//, '');
         $e.find(".current_file").text("New file: " + label);
         $e.find(".remove-assignment-file").prop('disabled', false).removeClass("btn-default").addClass("btn-warning");
-        $e.find("input.assignment_removefile").val('');
+        $e.find("input#assignment_removefile").val('');
       });
       $e.find(".remove-assignment-file").click(function() {
         $e.find("input[name='assignment_file']").replaceWith(
           $e.find("input[name='assignment_file']").val("<nothing>").clone(true));
         $(this).prop('disabled', true).addClass("btn-default").removeClass("btn-warning");
         $e.find(".current_file").text("New file: <nothing>");
-        $e.find("input.assignment_removefile").val('remove');
+        $e.find("input#assignment_removefile").val('remove');
       });
     });
   }
