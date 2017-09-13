@@ -154,7 +154,9 @@ class Grader < ApplicationRecord
   end
 
   def autograde!(assignment, submission, prio = 0)
-    grade(assignment, submission, prio)
+    if autograde?
+      grade(assignment, submission, prio)
+    end
   end
 
   def grade_exists_for(sub)
