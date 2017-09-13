@@ -102,71 +102,70 @@ class JunitGrader < Grader
 
           classpath = "junit-4.12.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*"
           
-          FileUtils.cd(build_dir) do
-            any_problems = false
-            Dir.glob("**/*.java").each do |file|
-              next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
-              Audit.log "#{prefix}: Compiling #{file}"
-              details.write("javac -cp #{classpath} #{file}\n")
-              comp_out, comp_err, comp_status = Open3.capture3("javac", "-cp", classpath, file)
-              details.write("Compiling #{file}: (exit status #{comp_status})\n")
-              details.write(comp_out)
-              if !comp_status.success?
-                details.write("Errors building #{file}:\n")
-                details.write(comp_err)
-                Audit.log("#{prefix}: #{file} failed with compilation errors; see details.log")
-                any_problems = true
-              end
-            end
-
-            # if any_problems
-            #   local_build_dir = grader_dir.join("build")
-            #   local_build_dir.mkpath
-            #   FileUtils.cp_r("#{build_dir}/.", "#{local_build_dir}/")
-            # end
-            
-            # details.write "Contents of temp directory are:\n"
-            # output, status = Open3.capture2("ls", "-R", build_dir.to_s)
-            # details.write output
-
-            Audit.log("#{prefix}: Running JUnit")
-            details.write("java -cp #{classpath} edu.neu.TAPRunner #{self.test_class}}\n")
-            test_out, test_err, test_status =
-                                Open3.capture3("java", "-cp", classpath, "edu.neu.TAPRunner", self.test_class)
-            details.write("JUnit output: (exit status #{test_status})\n")
-            details.write(test_out)
-            if !test_status.success?
-              details.write("JUnit errors:\n")
-              details.write(test_err)
-              Audit.log("#{prefix}: JUnit failed with errors; see details.log")
+          any_problems = false
+          Dir.glob("**/*.java", base: build_dir.to_s).each do |file|
+            next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
+            Audit.log "#{prefix}: Compiling #{file}"
+            details.write("javac -cp #{classpath} #{file}\n")
+            comp_out, comp_err, comp_status = Open3.capture3("javac", "-cp", classpath, file, chdir: build_dir.to_s)
+            details.write("Compiling #{file}: (exit status #{comp_status})\n")
+            details.write(comp_out)
+            if !comp_status.success?
+              details.write("Errors building #{file}:\n")
+              details.write(comp_err)
+              Audit.log("#{prefix}: #{file} failed with compilation errors; see details.log")
               any_problems = true
             end
+          end
 
-            if any_problems
-              g.grading_output = details.path
-              g.score = 0
-              g.out_of = self.avail_score
+          # if any_problems
+          #   local_build_dir = grader_dir.join("build")
+          #   local_build_dir.mkpath
+          #   FileUtils.cp_r("#{build_dir}/.", "#{local_build_dir}/")
+          # end
 
-              g.updated_at = DateTime.now
-              g.available = true
-              g.save!
+          # details.write "Contents of temp directory are:\n"
+          # output, status = Open3.capture2("ls", "-R", build_dir.to_s)
+          # details.write output
 
-              Audit.log("#{prefix}: Errors prevented grading; giving a 0")
-              return 0
-            else
-              junit.write(test_out)
-              g.grading_output = junit.path
+          Audit.log("#{prefix}: Running JUnit")
+          details.write("java -cp #{classpath} edu.neu.TAPRunner #{self.test_class}}\n")
+          test_out, test_err, test_status =
+                              Open3.capture3("java", "-cp", classpath, "edu.neu.TAPRunner", self.test_class,
+                                             chdir: build_dir.to_s)
+          details.write("JUnit output: (exit status #{test_status})\n")
+          details.write(test_out)
+          if !test_status.success?
+            details.write("JUnit errors:\n")
+            details.write(test_err)
+            Audit.log("#{prefix}: JUnit failed with errors; see details.log")
+            any_problems = true
+          end
 
-              tap = TapParser.new(test_out)
-              g.score = tap.points_earned
-              g.out_of = tap.points_available
-              g.updated_at = DateTime.now
-              g.available = true
-              g.save!
-              
-              Audit.log("#{prefix}: JUnit gives raw score of #{g.score} / #{g.out_of}")
-              return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
-            end
+          if any_problems
+            g.grading_output = details.path
+            g.score = 0
+            g.out_of = self.avail_score
+
+            g.updated_at = DateTime.now
+            g.available = true
+            g.save!
+
+            Audit.log("#{prefix}: Errors prevented grading; giving a 0")
+            return 0
+          else
+            junit.write(test_out)
+            g.grading_output = junit.path
+
+            tap = TapParser.new(test_out)
+            g.score = tap.points_earned
+            g.out_of = tap.points_available
+            g.updated_at = DateTime.now
+            g.available = true
+            g.save!
+
+            Audit.log("#{prefix}: JUnit gives raw score of #{g.score} / #{g.out_of}")
+            return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
           end
         end
       end

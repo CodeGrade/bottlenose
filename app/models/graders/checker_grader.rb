@@ -101,73 +101,77 @@ class CheckerGrader < Grader
 
           classpath = "tester-2.jar:javalib.jar:.:./*"
           
-          FileUtils.cd(build_dir) do
-            any_problems = false
-            Dir.glob("**/*.java").each do |file|
-              next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
-              Audit.log "#{prefix}: Compiling #{file}"
-              comp_out, comp_err, comp_status = Open3.capture3("javac", "-cp", classpath, file, *Dir.glob("*.java"))
-              details.write("Compiling #{file}: (exit status #{comp_status})\n")
-              details.write(comp_out)
-              if !comp_status.success?
-                details.write("Errors building student code:\n")
-                details.write(comp_err)
-                Audit.log("#{prefix}: #{file} failed with compilation errors; see details.log")
-                any_problems = true
-              end
-            end
-            
-            # details.write "Contents of temp directory are:\n"
-            # output, status = Open3.capture2("ls", "-R", build_dir.to_s)
-            # details.write output
-
-            Audit.log("#{prefix}: Running Checker")
-            test_out, test_err, test_status =
-                                Open3.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000", "-cp", classpath, "tester.Main", "-secmon", "-tap", "-enforceTimeouts", self.test_class)
-            details.write("Checker output: (exit status #{test_status})\n")
-            details.write(test_out)
-            if !test_status.success?
-              details.write("Checker errors:\n")
-              details.write(test_err)
-              Audit.log("#{prefix}: Checker failed with errors; see details.log")
+          any_problems = false
+          Dir.glob("**/*.java", base: build_dir.to_s).each do |file|
+            next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
+            Audit.log "#{prefix}: Compiling #{file}"
+            comp_out, comp_err, comp_status = Open3.capture3("javac", "-cp", classpath, file,
+                                                             *Dir.glob("*.java", base: build_dir.to_s),
+                                                             chdir: build_dir.to_s)
+            details.write("Compiling #{file}: (exit status #{comp_status})\n")
+            details.write(comp_out)
+            if !comp_status.success?
+              details.write("Errors building student code:\n")
+              details.write(comp_err)
+              Audit.log("#{prefix}: #{file} failed with compilation errors; see details.log")
               any_problems = true
             end
+          end
 
-            if any_problems
-              g.grading_output = details.path
-              g.score = 0
-              g.out_of = self.avail_score
+          # details.write "Contents of temp directory are:\n"
+          # output, status = Open3.capture2("ls", "-R", build_dir.to_s)
+          # details.write output
 
+          Audit.log("#{prefix}: Running Checker")
+          test_out, test_err, test_status =
+                              Open3.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000",
+                                             "-cp", classpath, "tester.Main",
+                                             "-secmon", "-tap", "-enforceTimeouts",
+                                             self.test_class,
+                                             chdir: build_dir.to_s)
+          details.write("Checker output: (exit status #{test_status})\n")
+          details.write(test_out)
+          if !test_status.success?
+            details.write("Checker errors:\n")
+            details.write(test_err)
+            Audit.log("#{prefix}: Checker failed with errors; see details.log")
+            any_problems = true
+          end
+
+          if any_problems
+            g.grading_output = details.path
+            g.score = 0
+            g.out_of = self.avail_score
+
+            g.updated_at = DateTime.now
+            g.available = true
+            g.save!
+
+            Audit.log("#{prefix}: Errors prevented grading; giving a 0")
+            return 0
+          else
+            begin
+              checker.write(test_out)
+              g.grading_output = checker.path
+
+              tap = TapParser.new(test_out)
+              g.score = tap.points_earned
+              g.out_of = tap.points_available
               g.updated_at = DateTime.now
               g.available = true
               g.save!
 
+              Audit.log("#{prefix}: Checker gives raw score of #{g.score} / #{g.out_of}")
+              return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
+            rescue Exception
+              g.grading_output = details.path
+              g.score = 0
+              g.out_of = self.avail_score
+              g.updated_at = DateTime.now
+              g.available = true
+              g.save!
               Audit.log("#{prefix}: Errors prevented grading; giving a 0")
               return 0
-            else
-              begin
-                checker.write(test_out)
-                g.grading_output = checker.path
-                
-                tap = TapParser.new(test_out)
-                g.score = tap.points_earned
-                g.out_of = tap.points_available
-                g.updated_at = DateTime.now
-                g.available = true
-                g.save!
-                
-                Audit.log("#{prefix}: Checker gives raw score of #{g.score} / #{g.out_of}")
-                return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
-              rescue Exception
-                g.grading_output = details.path
-                g.score = 0
-                g.out_of = self.avail_score
-                g.updated_at = DateTime.now
-                g.available = true
-                g.save!
-                Audit.log("#{prefix}: Errors prevented grading; giving a 0")
-                return 0
-              end
             end
           end
         end
