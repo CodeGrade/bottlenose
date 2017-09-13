@@ -80,10 +80,16 @@ class GradesController < ApplicationController
 
   def comments_params
     if params[:comments].is_a? String
-      JSON.parse(params[:comments])
+      comms = JSON.parse(params[:comments])
     else
-      params[:comments]
+      comms = params[:comments]
     end
+    comms.each do |c|
+      if c["file"]
+        c["file"] = Upload.full_path_for(c["file"])
+      end
+    end
+    comms
   end
   def questions_params
     params[:grades].to_unsafe_h.map{|k, v| [k, array_from_hash(v)]}.to_h

@@ -180,11 +180,21 @@ class Upload < ApplicationRecord
   end
 
   def self.upload_path_for(p)
-    p.to_s.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files")
+    p = p.to_s
+    if p.starts_with?(Rails.root.to_s)
+      p.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files")
+    else
+      p
+    end
   end
 
   def self.full_path_for(p)
-    Rails.root.join("private").to_s + self.upload_path_for(p)
+    p = p.to_s
+    if p.starts_with?("/files")
+      p.gsub("/files", Rails.root.join("private", "uploads", Rails.env).to_s)
+    else
+      p
+    end
   end
 
   def cleanup!
