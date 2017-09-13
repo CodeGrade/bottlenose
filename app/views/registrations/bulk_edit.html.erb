@@ -65,11 +65,13 @@
         data: valuesToSubmit,
         dataType: "JSON"
     }).done(function(json){
-      if (json.reg.dropped_date === null) {
-        $form.find("input[type='checkbox']").attr("disabled", true);
-        $form.find(".toggle-off").text("Already enrolled");
-      }
-      if (json.changes) {
+      if (json["no-change"] === true) {
+        // nothing
+      } else {
+        if (json.reg.dropped_date === null) {
+          $form.find("input[type='checkbox']").attr("disabled", true);
+          $form.find(".toggle-off").text("Already enrolled");
+        }
         for (var i = 0; i < json.changes.length; i++) {
           var old_section = $form.find("input[name='orig_sections[]']");
           if (old_section.val() == json.changes[i].old) {
