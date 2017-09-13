@@ -31,11 +31,11 @@ class RacketStyleGrader < Grader
   protected
   
   def do_grading(assignment, sub)
-    Headless.ly do
-      g = self.grade_for sub
-      Dir.mktmpdir("grade-#{sub.id}-#{g.id}") do |tmpdir|
-        @tmpdir = tmpdir
-        sub.upload.extract_contents_to!(nil, Pathname.new(tmpdir), false)
+    g = self.grade_for sub
+    Dir.mktmpdir("grade-#{sub.id}-#{g.id}_") do |tmpdir|
+      @tmpdir = tmpdir
+      sub.upload.extract_contents_to!(nil, Pathname.new(tmpdir), false)
+      Headless.ly(display: g.id) do
         run_command_produce_tap assignment, sub
       end
     end
