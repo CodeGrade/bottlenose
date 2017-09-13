@@ -102,11 +102,11 @@ class CheckerGrader < Grader
           classpath = "tester-2.jar:javalib.jar:.:./*"
           
           any_problems = false
-          Dir.glob("**/*.java", base: build_dir.to_s).each do |file|
+          Dir.glob("#{build_dir}/**/*.java").each do |file|
             next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
             Audit.log "#{prefix}: Compiling #{file}"
             comp_out, comp_err, comp_status = Open3.capture3("javac", "-cp", classpath, file,
-                                                             *Dir.glob("*.java", base: build_dir.to_s),
+                                                             *Dir.glob("#{build_dir}/*.java"),
                                                              chdir: build_dir.to_s)
             details.write("Compiling #{file}: (exit status #{comp_status})\n")
             details.write(comp_out)

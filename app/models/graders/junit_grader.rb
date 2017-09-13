@@ -103,7 +103,7 @@ class JunitGrader < Grader
           classpath = "junit-4.12.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*"
           
           any_problems = false
-          Dir.glob("**/*.java", base: build_dir.to_s).each do |file|
+          Dir.glob("#{build_dir}/**/*.java").each do |file|
             next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
             Audit.log "#{prefix}: Compiling #{file}"
             details.write("javac -cp #{classpath} #{file}\n")
