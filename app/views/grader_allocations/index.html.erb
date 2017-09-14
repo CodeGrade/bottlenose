@@ -57,8 +57,8 @@
          end
          %>
       <span class="<%= textclass %>">
-        <br>assigned <span class="local-time"><%= alloc.grading_assigned.iso8601 %>
-      </span></span>
+        <br>assigned <span class="local-time"><%= alloc.grading_assigned.iso8601 %></span>
+      </span>
       <% end %>
     <% else %>
       <span class="text-muted"><br>completed <span class="local-time"><%= grade.updated_at.iso8601 %></span></span>
