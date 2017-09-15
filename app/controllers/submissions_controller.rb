@@ -51,7 +51,7 @@ class SubmissionsController < CoursesController
       SubmissionView.find_or_create_by!(user: current_user, assignment: @assignment, team: @team)
     end
 
-    sub_blocked = @assignment.submissions_blocked(current_user)
+    sub_blocked = @assignment.submissions_blocked(current_user, @team)
     if sub_blocked && !current_user.course_staff?(@course)
       redirect_back fallback_location: course_assignment_path(@course, @assignment),
                     alert: sub_blocked
@@ -74,7 +74,12 @@ class SubmissionsController < CoursesController
                   alert: "That submission type (#{sub_type}) does not match the assignment type (#{asgn_type})."
       return
     end
-    sub_blocked = @assignment.submissions_blocked(current_user)
+    if @assignment.team_subs?
+      @team = current_user.active_team_for(@course, @assignment)
+    else
+      @team = nil
+    end
+    sub_blocked = @assignment.submissions_blocked(current_user, @team)
     if sub_blocked && !current_user.course_staff?(@course)
       redirect_back fallback_location: course_assignment_path(@course, @assignment),
                     alert: sub_blocked
@@ -83,10 +88,7 @@ class SubmissionsController < CoursesController
 
     @submission = Submission.new(submission_params)
     @submission.assignment = @assignment
-    if @assignment.team_subs?
-      @team = current_user.active_team_for(@course, @assignment)
-      @submission.team = @team
-    end
+    @submission.team = @team
 
     if true_user_staff_for?(@course) || current_user_staff_for?(@course)
       @submission.user ||= current_user

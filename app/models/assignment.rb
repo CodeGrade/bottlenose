@@ -32,6 +32,7 @@ class Assignment < ApplicationRecord
   has_many :interlocks, dependent: :destroy
   has_many :related_interlocks, :foreign_key => "related_assignment_id", :class_name => "Interlock"
   accepts_nested_attributes_for :interlocks, allow_destroy: true
+  has_many :submission_views
 
   validates :name,      :uniqueness => { :scope => :course_id }
   validates :name,      :presence => true
@@ -44,18 +45,21 @@ class Assignment < ApplicationRecord
   validates :graders, :presence => true
 
 
-  def submissions_blocked(user)
-    subs = self.submissions_for(user)
+  def submissions_blocked(user, team)
     locks = self.interlocks.group_by(&:constraint)
-    if locks["no_submission_unless_submitted"]
-      if subs.empty?
-        lock = locks["no_submission_unless_submitted"].first
+    locks["no_submission_unless_submitted"]&.each do |lock|
+      if lock.related_assignment.submissions_for(user).empty?
         return "You have not submitted to #{lock.related_assignment.name}, and so cannot submit to this assignment"
       end
     end
-    if locks["no_submission_after_viewing"]
-      lock = locks["no_submission_after_viewing"].first
-      if !subs.empty?
+    locks["no_submission_after_viewing"]&.each do |lock|
+      views =
+        if self.team_subs?
+          SubmissionViews.where(assignment: lock.related_assignment, team: team)
+        else
+          SubmissionViews.where(assignment: lock.related_assignment, user: user)
+        end
+      if !views.empty?
         return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
       end
     end
