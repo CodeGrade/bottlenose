@@ -55,9 +55,9 @@ class Assignment < ApplicationRecord
     locks["no_submission_after_viewing"]&.each do |lock|
       views =
         if self.team_subs?
-          SubmissionViews.where(assignment: lock.related_assignment, team: team)
+          SubmissionView.where(assignment: lock.related_assignment, team: team)
         else
-          SubmissionViews.where(assignment: lock.related_assignment, user: user)
+          SubmissionView.where(assignment: lock.related_assignment, user: user)
         end
       if !views.empty?
         return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
