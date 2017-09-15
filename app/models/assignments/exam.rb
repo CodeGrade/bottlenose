@@ -72,8 +72,8 @@ class Exam < Assignment
 
   def update_exam_submission_times
     self.available = self.due_date # for exams, there's no window in which "the assignment is available"
-    self.submissions.update_attributes({created_at: self.due_date - 1.minute,
-                                        updated_at: self.due_date - 1.minute})
+    self.submissions.update_all({created_at: self.due_date - 1.minute,
+                                 updated_at: self.due_date - 1.minute})
   end
 
   def questions
