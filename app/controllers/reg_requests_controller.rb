@@ -16,12 +16,11 @@ class RegRequestsController < ApplicationController
     @reg_request.user = current_user
 
     if @reg_request.save
-      @course.professors.each do |teacher|
-        NotificationMailer.got_reg_request(teacher,
-          @reg_request, root_url).deliver_later
-      end
-
-      redirect_to courses_path, notice: 'A registration request will be sent.'
+      # @course.professors.each do |teacher|
+      #   NotificationMailer.got_reg_request(teacher,
+      #     @reg_request, root_url).deliver_later
+      # end
+      redirect_to courses_path, notice: 'Your registration request has been sent.'
     else
       errors = @reg_request.errors
       @reg_request = @reg_request.dup
