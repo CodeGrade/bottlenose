@@ -60,7 +60,13 @@
     </div>
   </div>
 
-  <%= f.hidden_field :lateness_config_id %>
+  <%= f.fields_for :lateness_config do |l| %>
+  <%= l.hidden_field :id %>
+  <% end %>
+  <%= f.fields_for :graders, asgn.graders do |gr| %>
+  <%= gr.hidden_field :type, value: "QuestionsGrader" %>
+  <%= gr.hidden_field :order, value: gr.object.order %>
+  <% end %>
   <div class="form-group">
   <%= f.submit nil, class: 'btn btn-primary' %>
   </div>
