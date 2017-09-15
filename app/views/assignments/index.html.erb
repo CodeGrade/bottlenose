@@ -82,7 +82,7 @@
     <div class="panel-title" data-toggle="collapse" data-target="#students-table">
       Students
       <span id="all-students-count" style="display: none;">(<%= @course.score_summary.count %>)</span>
-      <span id="current-students-count">(<%= @course.score_summary.count %>)</span>
+      <span id="current-students-count">(<%= @course.score_summary.keep_if{|i| !i[:dropped]}.count %>)</span>
       <div id="toggle-dropped" class="pull-right btn-xs btn btn-default">Show dropped students</div>
       <script>
         $("#toggle-dropped").on("click", function(e) {
