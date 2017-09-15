@@ -73,6 +73,11 @@ class ApplicationController < ActionController::Base
     current_user && (current_user.site_admin? || current_user.registration_for(course).professor?)
   end
 
+  def current_user_assistant_for?(course)
+    return false if course.nil?
+    current_user && (current_user.site_admin? || current_user.registration_for(course).assistant?)
+  end
+
   def current_user_staff_for?(course)
     current_user && (current_user.site_admin? || current_user.registration_for(course).staff?)
   end
@@ -145,6 +150,13 @@ class ApplicationController < ActionController::Base
   def require_admin_or_prof
     unless current_user_site_admin? || current_user_prof_for?(@course)
       redirect_back fallback_location: root_path, alert: "Must be an admin or professor."
+      return
+    end
+  end
+
+  def require_admin_or_assistant
+    unless current_user_site_admin? || current_user_assistant_for?(@course)
+      redirect_back fallback_location: root_path, alert: "Must be an admin, professor or assistant."
       return
     end
   end

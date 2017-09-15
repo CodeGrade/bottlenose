@@ -55,13 +55,13 @@
         <div>
             <%= link_to "Teams", course_teamsets_path(@course), class: "btn btn-sm btn-default" %>
             <%= link_to "Assignments", course_assignments_path(@course), class: "btn btn-sm btn-default" %>
-            <% if current_user.site_admin? || cur_reg&.staff? %>
+            <% if current_user.site_admin? || cur_reg&.assistant? %>
                 <%= link_to "Registrations", course_registrations_path(@course), class: "btn btn-sm btn-default" %>
             <% end %>
             <% if current_user.site_admin? || cur_reg&.professor? %>
               <%= link_to "Grader info", stats_course_grades_path(@course), class: "btn btn-sm btn-default" %>
             <% end %>
-            <% if current_user.site_admin? || cur_reg&.staff? %>
+            <% if current_user.site_admin? || cur_reg&.assistant? %>
               <%= link_to "Student Facebook", facebook_course_path(@course), class: "btn btn-sm btn-default" %>
             <% end %>
             <% if current_user.site_admin? || cur_reg&.professor? %>

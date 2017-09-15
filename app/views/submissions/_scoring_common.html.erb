@@ -1,5 +1,6 @@
 <h1>Scoring Details</h1>
 <% cur_reg_staff = cur_reg&.staff? %>
+<% cur_reg_assistant = cur_reg&.assistant? %>
 
 <table class="table table-striped row-vcenter">
   <% all_grades = @gradesheet.grades[:grades][@submission.id]
@@ -150,7 +151,7 @@
       <% end %>
     </td>
     <td>
-      <% if cur_reg_staff %>
+      <% if cur_reg_assistant %>
         <% if @gradesheet.assignment.due_date > DateTime.now %>
         <span class="btn btn-default disabled">Cannot publish grades before assignment is due</span>
         <% elsif complete && unavailable %>

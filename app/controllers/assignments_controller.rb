@@ -7,7 +7,7 @@ class AssignmentsController < ApplicationController
   before_action :require_admin_or_prof, only: [:edit, :edit_weights, :update, :update_weights,
                                                :new, :create, :destroy,
                                                :recreate_grades]
-  before_action :require_admin_or_staff, only: [:tarball, :publish]
+  before_action :require_admin_or_assistant, only: [:tarball, :publish]
 
   def show
     admin_view = current_user_site_admin? || current_user_staff_for?(@course)

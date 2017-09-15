@@ -76,6 +76,10 @@ class Registration < ApplicationRecord
     (self.role == 'professor' || self.role == 'assistant' || self.role == 'grader') && self.dropped_date.nil?
   end
 
+  def assistant?
+    (self.role == 'professor' || self.role == 'assistant') && self.dropped_date.nil?
+  end
+
   def professor?
     self.role == 'professor'
   end

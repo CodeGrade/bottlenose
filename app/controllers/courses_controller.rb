@@ -8,6 +8,7 @@ class CoursesController < ApplicationController
   before_action :require_current_user, except: [:public]
   before_action :require_registered_user, except: [:public, :index, :new, :create]
   before_action :require_admin_or_prof, except: [:index, :new, :show, :public, :withdraw]
+  before_action :require_admin_or_staff, only: [:facebook]
 
   def index
     @courses_by_term = Course.order(:name).group_by(&:term)
@@ -51,10 +52,6 @@ class CoursesController < ApplicationController
   end
 
   def facebook
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_back fallback_location: root_path, alert: "Must be an admin or professor."
-      return
-    end
     @students = @course.students
                 .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
                 .order("users.last_name", "users.first_name")

@@ -3,7 +3,7 @@ class RegRequestsController < ApplicationController
 
   before_action :require_current_user
   before_action :find_course
-  before_action :require_admin_or_prof, only: [:accept, :accept_all, :reject, :reject_all]
+  before_action :require_admin_or_assistant, only: [:accept, :accept_all, :reject, :reject_all]
 
   # GET /courses/:course_id/reg_requests/new
   def new
