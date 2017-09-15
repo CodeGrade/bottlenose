@@ -81,14 +81,21 @@
   <div class="panel-heading">
     <div class="panel-title" data-toggle="collapse" data-target="#students-table">
       Students
+      <span id="all-students-count" style="display: none;">(<%= @course.score_summary.count * 2 %>)</span>
+      <span id="current-students-count">(<%= @course.score_summary.count %>)</span>
       <div id="toggle-dropped" class="pull-right btn-xs btn btn-default">Show dropped students</div>
       <script>
         $("#toggle-dropped").on("click", function(e) {
           $("#students-table").toggleClass("hide-dropped");
-          if ($("#students-table").hasClass("hide-dropped"))
+          if ($("#students-table").hasClass("hide-dropped")) {
             $(this).text("Show dropped students");
-          else
+            $("#all-students-count").hide();
+            $("#current-students-count").show();
+          } else {
             $(this).text("Hide dropped students");
+            $("#all-students-count").show();
+            $("#current-students-count").hide();
+          }
           e.stopPropagation();
           e.preventDefault();
         });

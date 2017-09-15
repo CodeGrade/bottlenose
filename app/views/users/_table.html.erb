@@ -1,9 +1,9 @@
-<% if role == :student %>
 <% link_to_students = current_user.site_admin? || current_user.professor_ever? %>
+<% if role == :student %>
 <div class="panel panel-default">
   <div class="panel-heading">
     <h3 class="panel-title">
-      <%= header %>
+      <%= header %> (<%= users.count %>)
       <%= link_to "Edit student registrations",
           bulk_edit_course_registrations_path(@course, {role: role}),
           class: "pull-right btn-xs btn btn-default" %>
@@ -43,7 +43,7 @@
 <div class="panel panel-default">
   <div class="panel-heading">
     <h3 class="panel-title">
-      <%= header %>
+      <%= header %> (<%= users.count %>)
       <%= link_to "Edit staff registrations",
           bulk_edit_course_registrations_path(@course, {role: role}),
           class: "pull-right btn-xs btn btn-default" %>
@@ -57,14 +57,20 @@
         <th><%= mail_to all_emails.join(","), "@", title: "Email everyone" %></th>
         <th>Name</th>
         <th>Role</th>
+        <th>&nbsp;</th>
       </tr>
     </thead>
     <tbody>
       <% users.sort_by(&:name).each do |user| %>
       <tr>
         <td width="1em"><%= mail_to "#{user.name} <#{user.email}>", "@" %></td>
-        <td><%= user.name %></td>
+        <td><%= maybe_link_user(link_to_students, user) %></td>
         <td><%= staff.detect{|u| u.user_id == user.id}.role.humanize %></td>
+        <td><%= if user.id != current_user.id
+                link_to 'Impersonate', impersonate_user_path(user), method: 'post'
+                else
+                "(you)"
+                end %></td>
       </tr>
       <% end %>
     </tbody>
