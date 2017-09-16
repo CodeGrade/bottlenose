@@ -38,7 +38,8 @@ GoogleCharts.load('corechart', function() {
         legend: { position: 'none' },
         histogram: {
           hideBucketItems: true,
-          lastBucketPercentile: 2
+          lastBucketPercentile: 2,
+          bucketSize: (maxes[i] < 10 ? 0.5 : (maxes[i] <= 20 ? 1 : undefined))
         },
         hAxis: {type: 'category'},
         interpolateNulls: false,
