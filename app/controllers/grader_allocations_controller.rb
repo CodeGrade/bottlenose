@@ -4,8 +4,9 @@ class GraderAllocationsController < ApplicationController
   prepend_before_action :find_course_assignment, except: [:stats, :abandon, :delete]
   prepend_before_action :find_course, only: [:stats, :abandon, :delete]
   before_action :require_current_user
-  before_action :require_staff_for_course, except: [:patch, :edit, :update, :abandon, :delete]
+  before_action :require_staff_for_course, only: [:index]
   before_action :require_ta_for_course, only: [:patch, :edit, :update, :abandon, :delete]
+  before_action :require_admin_or_prof, only: [:stats]
 
   def index
     compute_who_grades
@@ -210,7 +211,7 @@ class GraderAllocationsController < ApplicationController
   def require_staff_for_course
     unless current_user_site_admin? || current_user_staff_for?(@course)
       redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "Must be an admin or professor."
+                    alert: "Must be an admin or staff."
       return
     end
   end
@@ -220,7 +221,7 @@ class GraderAllocationsController < ApplicationController
     reg = current_user&.registration_for(@course)
     unless reg && (reg.professor? || reg.assistant?)
       redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "Must be an admin or professor."
+                    alert: "Must be an admin, professor or assistant."
       return
     end
   end
@@ -235,6 +236,13 @@ class GraderAllocationsController < ApplicationController
     end
     if @assignment.nil? or @assignment.course_id != @course.id
       redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
+      return
+    end
+    if @grader.nil? or @grader.assignment_id != @assignment.id
+      redirect_back fallback_location: course_path(@course), alert: "No such grader for this assignment"
+      return
+    elsif @grader.autograde?
+      redirect_back fallback_location: course_path(@course), alert: "That grader is automatic; no allocations needed"
       return
     end
   end

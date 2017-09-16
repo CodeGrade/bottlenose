@@ -102,7 +102,7 @@
               class: "btn btn-default no-resort",
               title: "Rerun #{c.display_type} for all used submissions",
               method: :post do %><i class="glyphicon glyphicon-refresh"></i><% end %>
-          <% elsif cur_reg && (cur_reg.professor? || cur_reg.assistant?) %>
+          <% elsif !c.autograde? && cur_reg && (cur_reg.professor? || cur_reg.assistant?) %>
           <%= link_to course_assignment_grader_allocations_path(@course, @gradesheet.assignment, c),
               class: "btn btn-default no-resort",
               title: "Assign graders" do %><i class="glyphicon glyphicon-list-alt"></i><% end %>
