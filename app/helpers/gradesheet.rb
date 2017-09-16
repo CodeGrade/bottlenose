@@ -21,6 +21,7 @@ class Gradesheet
     @assignment = assignment
     @submissions = submissions
     @graders = @assignment.graders_ordered
+    @questions = @assignment.flattened_questions
     @max_score = @graders.sum(&:avail_score)
     raw_grades = Grade.where(submission_id: @submissions.map(&:id))
     @raw_grades = raw_grades
@@ -34,9 +35,30 @@ class Gradesheet
     @submissions.each do |s|
       s_scores = {raw_score: 0.0, scores: []}
       b_scores = {raw_score: 0.0, scores: []}
-      res = {sub: s, staff_scores: s_scores, blind_scores: b_scores}
+      q_scores = []
+      res = {sub: s, staff_scores: s_scores, blind_scores: b_scores, q_scores: q_scores}
       @graders.each do |c|
         g = @raw_grades.dig(s.id, c.id)
+        if (c.is_a? ExamGrader)
+          q_grades = InlineComment.where(submission: s, grade: @raw_grades.dig(s.id, c.id), suppressed: false)
+                     .where('line < ?', @questions.count)
+                     .order(:line).pluck(:weight)
+          q_scores << q_grades
+        elsif (c.is_a? QuestionsGrader)
+          q_grades = InlineComment.where(submission: s, grade: @raw_grades.dig(s.id, c.id), suppressed: false)
+                     .where('line < ?', @questions.count)
+                     .order(:line).zip(@questions)
+                     .map{|w, q| w[:weight].clamp(0, 1) * q["weight"]}
+          q_scores << q_grades
+        elsif (c.is_a? CodereviewGrader)
+          responses = YAML.load(File.read(g.grading_output))
+          responses.delete("grader")
+          questions = @assignment.flattened_questions
+          q_grades = responses.values.flatten.zip(questions * @assignment.review_count).map do |r, q|
+            (r["score"].to_f.clamp(0, 1) * q["weight"])
+          end
+          q_scores << q_grades
+        end
         if g
           if g.out_of.to_f.zero?
             scaled = g.score
