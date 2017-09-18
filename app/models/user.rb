@@ -25,9 +25,12 @@ class User < ApplicationRecord
   validates :email, :format => { :with => /\@.*\./ }, :allow_nil => true
 
   validates :name,  length: { in: 2..30 }
-  validates :nuid, numericality: {only_integer: true,
-                                  less_than_or_equal_to: 1999999999,
-                                  greater_than_or_equal_to: 0}, :allow_blank => true
+  validates :nuid,
+            numericality: {only_integer: true,
+                           less_than_or_equal_to: 1999999999,
+                           greater_than_or_equal_to: 0},
+            :allow_blank => true,
+            :uniqueness => true
 
   validate :profile_is_image
   before_update :make_profile_thumbnail
