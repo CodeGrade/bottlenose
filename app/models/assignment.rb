@@ -1,5 +1,6 @@
 require 'securerandom'
 require 'audit'
+require 'uri'
 
 class Assignment < ApplicationRecord
   enum question_kind: [:yes_no, :true_false, :multiple_choice, :numeric, :text]
@@ -291,7 +292,7 @@ class Assignment < ApplicationRecord
     if assignment_upload_id.nil?
       ""
     else
-      assignment_upload.path
+      URI.encode(assignment_upload.path)
     end
   end
   def assignment_file=(data)

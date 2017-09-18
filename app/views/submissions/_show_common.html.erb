@@ -34,7 +34,7 @@
             details_course_assignment_submission_path(@course, @assignment, @submission),
             class: "btn btn-success" %>
       <% if show_download %>
-      <%= link_to @submission.file_path_for_url, class: "btn btn-default" do %>
+      <%= link_to @submission.file_path, class: "btn btn-default" do %>
       <i class="glyphicon glyphicon-download-alt"></i> Download  <%= @submission.file_name %> 
       <% end %>
       <% end %>

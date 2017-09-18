@@ -222,12 +222,8 @@ class Submission < ApplicationRecord
     if upload_id.nil?
       ""
     else
-      upload.path
+      URI.encode(upload.path)
     end
-  end
-
-  def file_path_for_url
-    URI.encode(file_path)
   end
 
   def file_full_path
