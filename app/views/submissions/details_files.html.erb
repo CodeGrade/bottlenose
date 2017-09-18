@@ -36,7 +36,7 @@
 <% file = file.gsub(@submission.upload.extracted_path.to_s, "") %>
 <h3 style="margin-top: 0;"><%= if file == "" then "Overall" else file end %>:</h3>
   <% comments.each do |c| %>
-  <div class="<%= "#{c.severity.humanize(capitalize: false)} #{c.grade.grader.type.humanize}" %>">
+  <div class="<%= "#{c.severity.humanize(capitalize: false)} #{c.grade&.grader&.type&.humanize}" %>">
     <span class="label label-default">- <%= to_fixed(c.weight) %></span>
     <span class="description"><%= c.title %>: <%= c.comment %></span>
   </div>
