@@ -267,6 +267,12 @@ class SubmissionsController < CoursesController
       new_g = g.dup
       new_g.submission = sub
       new_g.save
+      g.inline_comments.each do |c|
+        new_c = c.dup
+        new_c.grade = new_g
+        new_c.submission = sub
+        new_c.save
+      end
     end
     sub
   end
