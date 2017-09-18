@@ -4,7 +4,6 @@ require 'zlib'
 require 'find'
 require 'open3'
 require 'archive_utils'
-require 'uri'
 
 class Upload < ApplicationRecord
   def self.MAX_FILES
@@ -183,9 +182,9 @@ class Upload < ApplicationRecord
   def self.upload_path_for(p)
     p = p.to_s
     if p.starts_with?(Rails.root.to_s)
-      URI.encode(p.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files"))
+      p.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files")
     else
-      URI.encode(p)
+      p
     end
   end
 

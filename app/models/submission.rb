@@ -1,6 +1,7 @@
 # coding: utf-8
 require 'securerandom'
 require 'audit'
+require 'uri'
 
 class Submission < ApplicationRecord
   belongs_to :assignment
@@ -223,6 +224,10 @@ class Submission < ApplicationRecord
     else
       upload.path
     end
+  end
+
+  def file_path_for_url
+    URI.encode(file_path)
   end
 
   def file_full_path
