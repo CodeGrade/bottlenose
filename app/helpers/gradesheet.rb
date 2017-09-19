@@ -50,7 +50,7 @@ class Gradesheet
                      .order(:line).zip(@questions)
                      .map{|w, q| w[:weight].clamp(0, 1) * q["weight"]}
           q_scores << q_grades
-        elsif (c.is_a? CodereviewGrader)
+        elsif (c.is_a? CodereviewGrader) && File.file?(g.grading_output.to_s)
           responses = YAML.load(File.read(g.grading_output))
           responses.delete("grader")
           questions = @assignment.flattened_questions
