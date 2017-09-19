@@ -361,7 +361,6 @@ class SubmissionsController < CoursesController
     @questions = @assignment.questions
     if @assignment.related_assignment
       related_sub = @assignment.related_assignment.used_sub_for(current_user)
-      Audit.log("User #{current_user.id} (#{current_user.name}) is viewing the self-eval for assignment #{@assignment.related_assignment.id} and has agreed not to submit further files to it.\n")
       if related_sub.nil?
         @submission_files = []
         @submission_dirs = []
@@ -388,6 +387,7 @@ class SubmissionsController < CoursesController
   def new_Codereview
     if @assignment.review_target == "self"
       @subs_to_review = [@assignment.related_assignment.used_sub_for(current_user)]
+      Audit.log("User #{current_user.id} (#{current_user.name}) is viewing the self-eval for assignment #{@assignment.related_assignment.id} and has agreed not to submit further files to it.\n")
     else
       setup_matchings
     end
