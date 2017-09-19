@@ -387,7 +387,7 @@ class SubmissionsController < CoursesController
 
   def new_Codereview
     if @assignment.review_target == "self"
-      @subs_to_review = @current_user.used_submissions_for(@assignment.related_assignment)
+      @subs_to_review = [@assignment.related_assignment.used_sub_for(current_user)]
     else
       setup_matchings
     end
