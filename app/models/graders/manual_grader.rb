@@ -20,8 +20,7 @@ class ManualGrader < Grader
     "#{self.avail_score} points: Manual grading"
   end
 
-
-  protected
+  # protected
 
   def do_grading(assignment, sub)
     g = self.grade_for sub

@@ -112,6 +112,10 @@ class Submission < ApplicationRecord
     self.assignment.sub_days_late(self, raw)
   end
 
+  def hours_late(raw = false)
+    self.assignment.sub_hours_late(self, raw)
+  end
+
   def late_penalty
     self.assignment.sub_late_penalty(self)
   end
