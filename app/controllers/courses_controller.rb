@@ -7,7 +7,7 @@ class CoursesController < ApplicationController
   before_action :find_course, except: [:index, :new, :create]
   before_action :require_current_user, except: [:public]
   before_action :require_registered_user, except: [:public, :index, :new, :create]
-  before_action :require_admin_or_prof, except: [:index, :new, :show, :public, :withdraw]
+  before_action :require_admin_or_prof, only: [:edit, :create, :update, :gradesheet]
   before_action :require_admin_or_staff, only: [:facebook]
 
   def index
