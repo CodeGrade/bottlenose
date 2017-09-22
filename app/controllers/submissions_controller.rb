@@ -52,10 +52,15 @@ class SubmissionsController < CoursesController
     end
 
     sub_blocked = @assignment.submissions_blocked(current_user, @team)
-    if sub_blocked && !current_user.course_staff?(@course)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: sub_blocked
-      return
+    if sub_blocked
+      if current_user.course_staff?(@course) ||
+         (current_user.id != true_user&.id && true_user&.course_staff?(@course))
+        # allow submission
+      else
+        redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                      alert: sub_blocked
+        return
+      end
     end
 
     self.send("new_#{@assignment.type.capitalize}")
@@ -80,10 +85,15 @@ class SubmissionsController < CoursesController
       @team = nil
     end
     sub_blocked = @assignment.submissions_blocked(current_user, @team)
-    if sub_blocked && !current_user.course_staff?(@course)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: sub_blocked
-      return
+    if sub_blocked
+      if current_user.course_staff?(@course) ||
+         (current_user.id != true_user&.id && true_user&.course_staff?(@course))
+        # allow submission
+      else
+        redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                      alert: sub_blocked
+        return
+      end
     end
 
     @submission = Submission.new(submission_params)
