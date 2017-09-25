@@ -64,7 +64,7 @@
   <%= l.hidden_field :id %>
   <% end %>
   <%= f.fields_for :graders, asgn.graders do |gr| %>
-  <%= gr.hidden_field :type, value: "QuestionsGrader" %>
+  <%= gr.hidden_field :type, value: "ExamGrader" %>
   <%= gr.hidden_field :order, value: gr.object.order %>
   <% end %>
   <div class="form-group">
