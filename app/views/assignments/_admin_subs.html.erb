@@ -57,7 +57,7 @@
            <li><%= link_to "Publish completed grades", 
                    course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
                    method: 'patch',
-                   data: { confirm: "Are you sure you want to publish all grades?" } %></li>
+                   data: { confirm: "Are you sure you want to publish all completed grades?" } %></li>
            <li><%= link_to "Publish ALL grades", 
                    course_assignment_publish_path(@course, @gradesheet.assignment, all: 'true'),
                    method: 'patch',
