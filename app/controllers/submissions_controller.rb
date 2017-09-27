@@ -540,7 +540,7 @@ class SubmissionsController < CoursesController
         show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
         @lineCommentsByFile = @submission.grade_line_comments(current_user, show_hidden)
         @sub_comments = @submission.grade_submission_comments(show_hidden)
-        @submission_dirs, @submission_files = @submission.get_submission_files(current_user, @lineCommentsByFile, "ManualGrader")
+        @submission_dirs, @submission_files = @submission.get_submission_files(current_user, @lineCommentsByFile, true)
         render "details_files"
       }
       f.text {
