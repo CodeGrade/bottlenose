@@ -24,7 +24,7 @@ class CheckerGrader < Grader
       filename = "<no file>"
     end
     "#{self.avail_score} points: Run Checker tests in #{test_class} from #{filename}, " +
-      "and show #{errors_to_show} #{'failed test'.pluralize(errors_to_show)}"
+      "and show #{pluralize(errors_to_show, 'failed test')}"
   end
 
   protected

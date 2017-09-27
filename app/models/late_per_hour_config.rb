@@ -17,7 +17,7 @@ class LatePerHourConfig < LatenessConfig
     if self.days_per_assignment.nil?
       days_allowed = "unlimited late days"
     else
-      days_allowed = plural(self.days_per_assignment, "late day")
+      days_allowed = pluralize(self.days_per_assignment, "late day")
     end
 
     "Allow #{days_allowed}, penalizing #{self.percent_off}% each hour up to #{self.max_penalty}%"
@@ -41,15 +41,5 @@ class LatePerHourConfig < LatenessConfig
     sub_on = submission.created_at || DateTime.current
     late_hours = (sub_on.to_time - due_on.to_time) / 1.hour
     late_hours.ceil
-  end
-
-  def plural(n, sing, pl = nil)
-    if n == 1
-      "1 #{sing}"
-    elsif pl
-      "#{n} #{pl}"
-    else
-      "#{n} #{sing}s"
-    end
   end
 end

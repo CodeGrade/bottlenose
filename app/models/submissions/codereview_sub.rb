@@ -47,7 +47,7 @@ class CodereviewSub < Submission
     @questions = self.assignment.flattened_questions
     all_questions = @answers.map{|k, _| [k, @questions]}.to_h
     if @answers.count != self.assignment.review_count
-      self.errors.add(:base, "There were #{plural(@answers.count, 'review')}, but needed #{self.assignment.review_count}")
+      self.errors.add(:base, "There were #{pluralize(@answers.count, 'review')}, but needed #{self.assignment.review_count}")
       self.cleanup!
     else
       bad = @answers.find_all do |k, v|
@@ -55,7 +55,7 @@ class CodereviewSub < Submission
       end
       if bad.count > 0
         bad.each_with_index do |(_, v), i|
-          self.errors.add(:base, "Review #{i} needed #{plural(@questions.count, 'answer')}, but had #{v.count}")
+          self.errors.add(:base, "Review #{i} needed #{pluralize(@questions.count, 'answer')}, but had #{v.count}")
         end
         self.cleanup!
       else

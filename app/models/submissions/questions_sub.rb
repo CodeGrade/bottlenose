@@ -34,7 +34,7 @@ class QuestionsSub < Submission
     questions = self.assignment.flattened_questions
     num_qs = questions.count
     if @answers.count != num_qs
-      self.errors.add(:base, "There were #{plural(@answers.count, 'answer')} for #{plural(num_qs, 'question')}")
+      self.errors.add(:base, "There were #{pluralize(@answers.count, 'answer')} for #{pluralize(num_qs, 'question')}")
       self.cleanup!
     else
       check_questions_schema(questions, @answers, questions.count)
