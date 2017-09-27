@@ -2,10 +2,8 @@
   <% min = q["min"].to_f
      max = q["max"].to_f
      delta = (max - min) / 20 %>
-  <% if @answers and @answers[index]
-     value = @answers[index]["main"].capitalize
-     end %>
-  <%= spinner_tag "", value || 0.0, text: {name: "answers[#{index}][main]", id: "answer_#{index}"},
+  <% value = @answers&.dig(sub_id.to_d, index, "main")&.to_f %>
+  <%= spinner_tag "", value || 0.0, text: {name: "answers[#{sub_id}][#{index}][main]", id: "answer_#{sub_id}_#{index}_main"},
       disabled: 'disabled', min: min, max: max, delta: delta, class: (if @answers and
      value.nil? then 'unanswered' else '' end)  %>
 </div>
