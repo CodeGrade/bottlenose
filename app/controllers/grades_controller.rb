@@ -330,11 +330,17 @@ class GradesController < ApplicationController
                   notice: "Comments saved; grading completed"
     else
       if missing.count > 1
-        msg = "Questions #{missing.join(', ')} do not have grades"
+        @grade.errors.add(:base, "Questions #{missing.join(', ')} do not have grades")
       else
-        msg = "Question #{missing[0]} does not have a grade"
+        @grade.errors.add(:base, "Question #{missing[0]} does not have a grade")
       end
-      redirect_to :back, alert: msg
+      setup_QuestionsGrader
+      @grades = [["grader", @current_user.name],
+                 [@submission.id.to_s,
+                  questions_params[@submission.id.to_s].map{|q| [q.delete("index").to_i, q]}.to_h]].to_h
+      @show_grades = true
+      render "edit_QuestionsGrader"
+      return
     end
   end
   def update_Codereview
@@ -352,11 +358,13 @@ class GradesController < ApplicationController
 
     if !missing.empty?
       if missing.count > 1
-        msg = "Questions #{missing.join(', ')} do not have grades"
+        @grade.errors.add(:base, "Questions #{missing.join(', ')} do not have grades")
       else
-        msg = "Question #{missing[0]} does not have a grade"
+        @grade.errors.add(:base, "Question #{missing[0]} does not have a grade")
       end
-      redirect_to :back, alert: msg
+      setup_CodereviewGrader
+      @grades = questions_params
+      render "edit_CodereviewGrader"
       return
     end
 
@@ -543,6 +551,11 @@ HEADER
 
   # QuestionsGrader
   def edit_QuestionsGrader
+    setup_QuestionsGrader
+    @show_grades = true
+    render "edit_QuestionsGrader"
+  end
+  def setup_QuestionsGrader
     @questions = @assignment.questions
     @answers = YAML.load(File.open(@submission.upload.submission_path))
     @answers = [[@submission.id.to_s, @answers]].to_h
@@ -567,10 +580,7 @@ HEADER
     @grades = @grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
     @grades = [["grader", (@grades&.first&.user&.name || @current_user.name)],
                [@submission.id.to_s,
-                @grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
-    
-    @show_grades = true
-    render "edit_QuestionsGrader"
+                @grades.map{|g| [g.line, [["score", g.weight], ["comment", g.comment]].to_h]}.to_h]].to_h
   end
   def show_QuestionsGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -581,6 +591,10 @@ HEADER
 
   # CodereviewGrader
   def edit_CodereviewGrader
+    setup_CodereviewGrader
+    render "edit_CodereviewGrader"
+  end
+  def setup_CodereviewGrader
     @questions = @assignment.questions
     @num_questions = @assignment.flattened_questions.count
     @answers = YAML.load(File.open(@submission.upload.submission_path))
@@ -600,7 +614,6 @@ HEADER
       @grades = {}
     end
     @show_grades = true
-    render "edit_CodereviewGrader"
   end
   def show_CodereviewGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
