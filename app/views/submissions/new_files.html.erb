@@ -9,7 +9,9 @@
      %>
   <%= f.hidden_field :type, value: "FilesSub" %>
   <%= render "new_common", f: f, type: {noun: "submission", verb: "submit", gerund: "submitting" },
-      not_following: not_following, allowed: allowed, rate_limit: rate_limit, staff_override: staff_override %>
+      not_following: not_following, allowed: allowed,
+      rate_limit: rate_limit, staff_override: staff_override,
+      container_style: "col-md-12" do %>
 
 <% if (allowed && not_following && !rate_limit) || staff_override %>
 <% if @assignment.request_time_taken %>
@@ -53,5 +55,6 @@
     return num && files;
   });
 </script>
+<% end %>
 <% end %>
 <% end %>

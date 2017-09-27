@@ -1,4 +1,7 @@
 <% @page_title = "New Response: #{@assignment.name}" %>
+<% content_for :wide_content_before do %>
+<%= render "layouts/standard_course_info" %>
+<% end %>
 <% content_for :wide_content do %>
 <% sub_id = "newsub" %>
 
@@ -10,10 +13,10 @@
      staff_override = true_user.course_staff?(@course)
      %>
   <%= f.hidden_field :type, value: "QuestionsSub" %>
-<div class="container">
   <%= render "new_common", f: f, type: {noun: "response", verb: "respond", gerund: "responding" },
-      not_following: not_following, allowed: allowed, rate_limit: rate_limit, staff_override: staff_override %>
-</div>
+      not_following: not_following, allowed: allowed,
+      rate_limit: rate_limit, staff_override: staff_override,
+      container_style: "container" do %>
 
 <% if (allowed && not_following && !rate_limit) || staff_override %>
 <% if @assignment.related_assignment_id %>
@@ -124,6 +127,7 @@
     return ensureValidNumericInputOnSubmit(e, "input.numeric:not([disabled])");
   });
 </script>
+<% end %>
 <% end %>
 <% end %>
 <% end %>

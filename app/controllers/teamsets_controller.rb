@@ -4,6 +4,7 @@ class TeamsetsController < ApplicationController
   before_action :find_course
   before_action :find_teamset, except: [:index]
   before_action :require_registered_user
+  before_action :stop_impersonating_user, only: [:edit, :update, :dissolve_all, :randomize]
   before_action :require_admin_or_staff, only: [:edit, :update, :dissolve_all, :randomize]
 
   # GET /staff/courses/:course_id/teams

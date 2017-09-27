@@ -399,10 +399,20 @@ class SubmissionsController < CoursesController
       @subs_to_review = [@assignment.related_assignment.used_sub_for(current_user)]
       Audit.log("User #{current_user.id} (#{current_user.name}) is viewing the self-eval for assignment #{@assignment.related_assignment.id} and has agreed not to submit further files to it.\n")
     else
-      setup_matchings
+      @team = current_user.active_team_for(@course, @assignment)
+
+      if @team.nil? && current_user.course_staff?(@course)
+        @team = Team.new(course: @course, start_date: DateTime.now, teamset: @assignment.teamset)
+        @team.users = [current_user]
+        @team.save
+      end
+
+      if @team
+        setup_matchings
+      end
     end
     @submission.related_subs = @subs_to_review
-    @submission_info = @subs_to_review.map do |s|
+    @submission_info = @subs_to_review&.map do |s|
       d, f = s.get_submission_files(current_user)
       [d, f, s.id]
     end
