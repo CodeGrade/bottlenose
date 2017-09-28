@@ -67,6 +67,9 @@ class CodereviewSub < Submission
   before_save :setup_review_feedback
   def setup_review_feedback
     self.review_feedbacks.destroy_all
+    if self.answers.nil?
+      self.answers = YAML.load(File.read(self.upload.submission_path))
+    end
     self.related_subs.zip(self.answers.each_slice(self.assignment.flattened_questions.count)).each do |sub, answers|
       Tempfile.open('review.yaml', Rails.root.join('tmp')) do |f|
         f.write(YAML.dump(answers))
