@@ -278,12 +278,15 @@ class User < ApplicationRecord
   end
 
   def disconnect(course = nil)
+    # Dissolve any teams, if this person is a student in the course
     if course
       to_dissolve = teams.where(course_id: course.id, end_date: nil)
     else
       to_dissolve = teams.where(end_date: nil)
     end
     to_dissolve.each do |t| t.dissolve(DateTime.current) end
+    # Abandon any grading, if this person is a grader for the course
+    GraderAllocation.where(course: course, who_grades: self, grading_completed: nil).update_all(abandoned: true)
   end
 
   def course_regs_by_term
