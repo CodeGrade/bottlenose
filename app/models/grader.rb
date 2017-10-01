@@ -229,9 +229,13 @@ class Grader < ApplicationRecord
   def assign_attributes(attrs)
     self.upload_by_user_id = attrs[:upload_by_user_id]
     super(attrs)
+    self.recompute_grade_if_avail_score_changed
   end
 
   protected
+
+  def recompute_grade_if_avail_score_changed
+  end
 
   def do_grading(assignment, submission)
     fail NotImplementedError, "Each grader should implement this"

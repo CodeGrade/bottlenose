@@ -61,4 +61,9 @@ class RacketStyleGrader < Grader
   def set_style_params
     self.params = "#{self.line_length}"
   end
+
+  def recompute_grade_if_avail_score_changed
+    # nothing to do:
+    # we already compute the score here based on the TAP output
+  end
 end
