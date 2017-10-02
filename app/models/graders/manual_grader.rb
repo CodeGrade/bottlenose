@@ -44,7 +44,9 @@ class ManualGrader < Grader
       self.grades.each do |g|
         g.out_of = self.avail_score
         comments = InlineComment.where(submission: g.submission, grade: g, suppressed: false)
-        g.score = self.avail_score - comments.pluck(:weight).sum
+        if g.score # only update the computation if there's something already done to update
+          g.score = self.avail_score - comments.pluck(:weight).sum
+        end
         g.updated_at = DateTime.now
         g.save!
       end
