@@ -640,7 +640,7 @@ HEADER
   end
   def details_ManualGrader
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
-    if show_hidden && @grade.available?
+    if show_hidden || @grade.available?
       GradesController.pretty_print_comments(@grade.inline_comments)
     else
       GradesController.pretty_print_comments([])
