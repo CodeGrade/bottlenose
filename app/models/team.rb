@@ -33,7 +33,7 @@ class Team < ApplicationRecord
     end
   end
   def self.active_query
-    "((end_date IS NULL) OR (start_date >= ? AND ? < end_date))"
+    "((end_date IS NULL) OR (start_date <= ? AND ? < end_date))"
   end
 
   def dissolve(as_of)
