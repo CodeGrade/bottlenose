@@ -107,7 +107,7 @@ module ApplicationHelper
   end
   def maybe_link_user(show, user)
     if show
-      link_to(user.name, user_path(user), class: "user-link", data: user_link_data(user))
+      link_to(user.display_name, user_path(user), class: "user-link", data: user_link_data(user))
     else
       content_tag :span, user.name, class: "user-link", data: user_link_data(user)
     end

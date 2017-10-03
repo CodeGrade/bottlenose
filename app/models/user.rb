@@ -141,7 +141,7 @@ class User < ApplicationRecord
 
   def display_name
     if self.first_name && self.last_name
-      if !self.nickname.to_s.empty?
+      if !self.nickname.blank? && self.nickname != self.first_name
         disp = "#{self.first_name} (#{self.nickname}) #{self.last_name}"
       else
         disp = "#{self.first_name} #{self.last_name}"
