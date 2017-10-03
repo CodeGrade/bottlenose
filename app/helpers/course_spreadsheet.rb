@@ -237,7 +237,7 @@ class CourseSpreadsheet
 
     exam_cols = []
 
-    course.assignments.where(type: "exam").order(:due_date).each do |exam|
+    course.assignments.where(type: ["Exam", "Questions"]).order(:due_date).each do |exam|
       used_subs = exam.all_used_subs.to_a
       grades = Gradesheet.new(exam, used_subs)
       subs_for_grading = UsedSub.where(assignment: exam).to_a
@@ -246,7 +246,11 @@ class CourseSpreadsheet
       questions = exam.flattened_questions
       questions.each_with_index do |q, i|
         sheet.columns.push(Col.new("", "Number")) if i > 0
-        labels.push(Cell.new(q["name"] + (if q["extra"] then " (E.C.)" else "" end)))
+        if q["name"]
+          labels.push(Cell.new(q["name"] + (if q["extra"] then " (E.C.)" else "" end)))
+        else
+          labels.push(Cell.new("Question #{i + 1}"))
+        end
         weight.push(Cell.new(q["weight"]))
       end
       sheet.columns.push(Col.new("", "Number"), Col.new("", "Percent"), Col.new("", "Percent"), Col.new("", "Percent"))
@@ -368,7 +372,7 @@ class CourseSpreadsheet
 
     hw_cols = []
 
-    course.assignments.where.not(type: "exam").order(:due_date).each do |assn|
+    course.assignments.where.not(type: ["Exam", "Questions"]).order(:due_date).each do |assn|
       used_subs = assn.all_used_subs.to_a
       grades = Gradesheet.new(assn, used_subs)
       subs_for_grading = UsedSub.where(assignment: assn).to_a
