@@ -44,8 +44,8 @@ $(function (){
     if (!sel) return;
     sel = sel[0].href;
     var sib = -10;
-    for (var i = 0; i < fileMap.length; i++) {
-      if (fileMap[i] === sel) {
+    for (var i = 0; i < fileMap["<%= root %>"].length; i++) {
+      if (fileMap["<%= root %>"][i] === sel) {
         sib = i;
         break;
       }
@@ -58,7 +58,7 @@ $(function (){
       sib--;
       move = true;
     }
-    if (move && sib >= 0 && sib < fileMap.length) {
+    if (move && sib >= 0 && sib < fileMap["<%= root %>"].length) {
       selectTreeviewFileByIndex(<%= root %>, sib);
       e.preventDefault();
       e.stopPropagation();
