@@ -8,7 +8,7 @@ class Teamset < ActiveRecord::Base
     "Teamset #{self.id}"
   end
   
-  def dup(revise_subs_for_assn = nil)
+  def dup(revise_subs_for_assn = nil, name = nil)
     # This method duplicates this team set, and duplicates all the
     # active teams associated with this teamset (assuming the relevant
     # students are still enrolled).  If an assignment is supplied,
@@ -19,7 +19,7 @@ class Teamset < ActiveRecord::Base
     # copy teams and modify assignments, anyway).
     
     # TODO: should this be in a transaction?
-    new_ts = Teamset.new(course: self.course, name: "Copy of #{self.name}")
+    new_ts = Teamset.new(course: self.course, name: name || "Copy of #{self.name}")
     new_ts.save!
     new_ts.copy_from(self, revise_subs_for_assn)
     return new_ts

@@ -154,7 +154,7 @@ class Assignment < ApplicationRecord
           self.errors.add(:base, "The specified teamset to be copied does not exist")
           return false
         end
-        self.teamset = ts.dup
+        self.teamset = ts.dup(nil, "Teamset for #{self.name}")
       end
     elsif @teamset_plan == "use"
       if @teamset_source_use.empty?
@@ -204,7 +204,7 @@ class Assignment < ApplicationRecord
         self.errors.add(:base, "The specified teamset to be copied does not exist")
         return false
       end
-      self.teamset = ts.dup
+      self.teamset = ts.dup(nil, "Teamset for #{self.name}")
       self.teamset.make_solo_teams_for(self)
     elsif @teamset_plan == "unique"
       # nothing to do
@@ -220,7 +220,7 @@ class Assignment < ApplicationRecord
       end
     elsif @teamset_plan == "clone"
       if self.teamset.assignments.count > 1 # no need to dup if it's already unique
-        self.teamset = self.teamset.dup(self)
+        self.teamset = self.teamset.dup(self, "Teamset for #{self.name}")
       end
     end
     self.team_subs = (@teamset_plan != "none")
