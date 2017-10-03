@@ -337,8 +337,8 @@ class CourseSpreadsheet
       sheet.columns.push(Col.new("#{type.humanize} section", "Number"))
     end
     sheet.columns.push(Col.new("Withdrawn?", "DateTime"), Col.new(""), Col.new(""))
-    labels = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""])
-    weight = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""])
+    labels = sheet.push_header_row(nil, ["", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
+    weight = sheet.push_header_row(nil, ["", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
 
     users = course.students.order(:last_name, :first_name).to_a
 
