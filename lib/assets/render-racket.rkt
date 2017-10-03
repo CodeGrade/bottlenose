@@ -6,7 +6,6 @@
 (require stepper/private/xml-snip-helpers)
 (require framework)
 (require racket/string)
-(require (only-in 2htdp/image empty-image))
 
 (provide render)
 
@@ -134,11 +133,15 @@
           ;;    (display-all (send (send snip get-editor) find-first-snip) out
           ;;                 #:verbose? verbose?)]
           [(convertible? snip)
-           (if (equal? snip empty-image)
-               (display (add-empty-image "")
-                        out)
-               (display (add-image (convert snip 'png-bytes))
-                        out))]
+           (let ((converted
+                  (with-handlers ([exn:fail:contract?
+                                   (λ(e) 'conversion-failure)])
+                    (convert snip 'png-bytes 'conversion-failure))))
+             (if (equal? converted 'conversion-failure)
+                 (display (add-empty-image "")
+                          out)
+                 (display (add-image (convert snip 'png-bytes))
+                          out)))]
           [(syntax? snip)
            (display (syntax->datum snip) out)]
           [else
