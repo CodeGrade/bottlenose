@@ -6,6 +6,7 @@
 (require stepper/private/xml-snip-helpers)
 (require framework)
 (require racket/string)
+(require (only-in 2htdp/image empty-image))
 
 (provide render)
 
@@ -58,6 +59,7 @@
 (define add-number (add-patch "number"))
 (define add-racket (add-patch "racket"))
 (define add-splice (add-patch "splice"))
+(define add-empty-image (add-patch "empty"))
 (define add-image
   (let ((img-cache (make-hash))
         (cache-count 0))
@@ -132,8 +134,11 @@
           ;;    (display-all (send (send snip get-editor) find-first-snip) out
           ;;                 #:verbose? verbose?)]
           [(convertible? snip)
-           (display (add-image (convert snip 'png-bytes))
-                    out)]
+           (if (equal? snip empty-image)
+               (display (add-empty-image "")
+                        out)
+               (display (add-image (convert snip 'png-bytes))
+                        out))]
           [(syntax? snip)
            (display (syntax->datum snip) out)]
           [else

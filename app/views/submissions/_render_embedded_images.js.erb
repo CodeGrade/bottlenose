@@ -32,6 +32,11 @@ function processEmbeds(embeds) {
   var ans = [];
   var lines = embeds.split(/\r\n?|\n/);
   var Processors = {}
+  Processors["empty"] = function(ignored) {
+    return $("<img>").attr("width", 1).attr("height", 1)
+      .addClass("embed-replaced").addClass("embed-empty")
+      .attr("title", "<Empty image>");
+  };
   Processors["image-data"] = function(content) {
     return $("<img>").attr("src", "data:image/png;base64," + content)
       .addClass("embed-replaced").addClass("embed-image");
