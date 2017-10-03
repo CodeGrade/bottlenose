@@ -59,7 +59,7 @@ $(function (){
       move = true;
     }
     if (move && sib >= 0 && sib < fileMap["<%= root %>"].length) {
-      selectTreeviewFileByIndex(<%= root %>, sib);
+      selectTreeviewFileByIndex("<%= root %>", sib);
       e.preventDefault();
       e.stopPropagation();
       sel = filesTreeview.getSelected();
