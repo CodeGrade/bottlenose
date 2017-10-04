@@ -289,7 +289,7 @@ class CourseSpreadsheet
           sheet.push_row(i, [curved, 0])
         else
           grade_comments = all_grade_comments[sub_id.submission_id]&.map{|c| [c.line, c]}.to_h
-          q_grades = grade_comments.slice(0..questions.count-1).map{|c| (c && c["weight"])}
+          q_grades = grade_comments.slice(*(0..questions.count-1)).map{|c| (c && c["weight"])}
           q_grades.each do |g|
             sheet.push_row(i, g || "<none>")
           end
