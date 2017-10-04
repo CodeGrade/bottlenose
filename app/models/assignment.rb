@@ -386,8 +386,16 @@ class Assignment < ApplicationRecord
     UsedSub.find_by(user_id: user.id, assignment_id: self.id)&.submission
   end
 
+  def self.cached_grades_complete(assns, subs)
+    completed_grades = Grade.where(submission: subs, available: true).group(:submission_id).count
+    graders = Grader.where(assignment: assns).group(:assignment_id).count
+    subs.map do |s|
+      [s.id, completed_grades[s.id] == graders[s.assignment_id]]
+    end.to_h
+  end
+  
   def main_submissions
-    used_subs.map do |sfg|
+    used_subs.includes(:subsmissions).map do |sfg|
       sfg.submission
     end
   end

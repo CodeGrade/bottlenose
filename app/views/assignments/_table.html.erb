@@ -24,18 +24,23 @@
            assns = assignments
          else
            assns = assignments.where("available <= ?", DateTime.current)
-         end %>
-      <% used_subs_for_user = for_user.used_submissions_for(assns)
+         end
+         assns = assns.order(due_date: :desc, available: :desc)
+         %>
+      <% used_subs_for_user = for_user.used_submissions_for(assns).includes(:submission)
                                       .map{|us| [us.assignment_id, us] }.to_h %>
-      <% subs_for_user = Assignment.submissions_for([for_user], assns).group_by(&:assignment_id) %>
-      <% assns.order(due_date: :desc, available: :desc).each do |assignment| %>
-        <%
+      <% subs_for_user = Assignment.submissions_for([for_user], assns)
+         cached_grades_complete = Assignment.cached_grades_complete(assns, subs_for_user)
+         subs_for_user = subs_for_user.group_by(&:assignment_id)
+         %>
+      <% assns.each do |assignment| %>
+      <%
            submissions = subs_for_user[assignment.id] || []
            used = used_subs_for_user[assignment.id]&.submission
            score =
              if used.nil?
                nil
-             elsif used.grade_complete?
+             elsif cached_grades_complete[used.id]
                used.score
              else
                image_tag("question-mark.png", height: 16, title: "Grading is not yet complete")
@@ -57,16 +62,11 @@
                <span class="label label-success"
                   data-toggle="tooltip" data-placement="top"
                   title="This submission is used for grading">
-                 <%= if submission.grade_complete? then to_fixed(submission.score) else "?" end%>
+                 <%= if cached_grades_complete[submission.id] then to_fixed(submission.score) else "?" end %>
                </span>
               <% else %>
                <span class="label label-default">
-                 <%= if submission.grade_complete?
-                       to_fixed(submission.score)
-                     else
-                       "?"
-                     end
-                  %>
+                 <%= if cached_grades_complete[submission.id] then to_fixed(submission.score) else "?" end %>
                </span>
               <% end %>
              <% end %>
