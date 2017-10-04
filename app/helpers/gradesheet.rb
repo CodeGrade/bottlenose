@@ -32,6 +32,11 @@ class Gradesheet
 
     @raw_score = 0
     @grades = {graders: @graders, grades: {}}
+    if @questions
+      @comments = InlineComment.where(submission: @submissions, suppressed: false)
+                  .where('line < ?', @questions.count)
+                  .group_by(&:submission_id)
+    end
     @submissions.each do |s|
       s_scores = {raw_score: 0.0, scores: []}
       b_scores = {raw_score: 0.0, scores: []}
@@ -40,14 +45,22 @@ class Gradesheet
       @graders.each do |c|
         g = @raw_grades.dig(s.id, c.id)
         if (c.is_a? ExamGrader)
-          q_grades = InlineComment.where(submission: s, grade: @raw_grades.dig(s.id, c.id), suppressed: false)
-                     .where('line < ?', @questions.count)
-                     .order(:line).pluck(:weight)
+          # q_grades = InlineComment.where(submission: s, grade: @raw_grades.dig(s.id, c.id), suppressed: false)
+          #            .where('line < ?', @questions.count)
+          #            .order(:line).pluck(:weight)
+          q_grades = @comments[s.id]
+                     .select{|comm| comm[:grade_id] == g.id}
+                     .sort_by!{|comm| comm[:line]}
+                     .map(&:weight)
           q_scores << q_grades
         elsif (c.is_a? QuestionsGrader)
-          q_grades = InlineComment.where(submission: s, grade: @raw_grades.dig(s.id, c.id), suppressed: false)
-                     .where('line < ?', @questions.count)
-                     .order(:line).zip(@questions)
+          # q_grades = InlineComment.where(submission: s, grade: @raw_grades.dig(s.id, c.id), suppressed: false)
+          #            .where('line < ?', @questions.count)
+          #            .order(:line).zip(@questions)
+          #            .map{|w, q| w[:weight].clamp(0, 1) * q["weight"]}
+          q_grades = @comments[s.id]
+                     .select{|comm| comm[:grade_id] == g.id}
+                     .sort_by!{|comm| comm[:line]}.zip(@questions)
                      .map{|w, q| w[:weight].clamp(0, 1) * q["weight"]}
           q_scores << q_grades
         elsif (c.is_a? CodereviewGrader) && File.file?(g.grading_output.to_s)

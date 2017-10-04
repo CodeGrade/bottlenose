@@ -378,6 +378,7 @@ class CourseSpreadsheet
       subs_for_grading = UsedSub.where(assignment: assn).to_a
       
       sheet.columns.push(Col.new(sanitize(assn.name), "Number"))
+      @graders_count = grades.graders.count
       grades.graders.each_with_index do |g, i|
         sheet.columns.push(Col.new("", "Number")) if i > 0
         labels.push(Cell.new(g.type))
@@ -387,7 +388,7 @@ class CourseSpreadsheet
       labels.push(Cell.new("Total"), Cell.new("Lateness"), Cell.new("Computed%"), Cell.new("OnServer%"))
       tot_weight = grades.graders.map(&:avail_score).sum()
       weight.push(Cell.new(nil, Formula.new(tot_weight, "SUM",
-                                            Range.new(col_name(weight.count - grades.graders.count), true, 3, true,
+                                            Range.new(col_name(weight.count - @graders_count), true, 3, true,
                                                       col_name(weight.count - 1), true, 3, true))),
                   Cell.new(""), Cell.new(""), Cell.new(""))
       hw_cols.push [assn, weight.count - 2]
@@ -405,7 +406,7 @@ class CourseSpreadsheet
             sheet.push_row(i, ss[0] || "<none>")
           end
           sum_grade = Formula.new(sub[:sub].score, "SUM",
-                                  Range.new(col_name(weight.count - grades.graders.count - 4), true,
+                                  Range.new(col_name(weight.count - @graders_count - 4), true,
                                             i + sheet.header_rows.length + 2, false,
                                             col_name(weight.count - 5), true,
                                             i + sheet.header_rows.length + 2, false))
