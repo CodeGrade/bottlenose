@@ -1,5 +1,7 @@
 <% cur_reg = current_user.registration_for(@course)
-   cur_reg_staff = cur_reg&.staff? %>
+   cur_reg_staff = cur_reg&.staff?
+   used_sub = gradesheet.assignment.used_sub_for(user)
+   %>
 <% if gradesheet.submissions.empty? %>
   <div class="well">
     No submissions yet.
@@ -22,7 +24,6 @@
 
   <% gradesheet.grades[:grades].each do |id, grade| %>
     <% sub = grade[:sub] %>
-    <% used_sub = gradesheet.assignment.used_sub_for(user) %>
     <% used = (!used_sub.nil? && used_sub.id == sub.id) %>
     <% if sub.stale_team? %>
     <tr class='muted'>

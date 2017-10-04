@@ -3,7 +3,9 @@
      assns = assignments
    else
      assns = assignments.where("available <= ?", DateTime.current)
-   end %>
+   end
+   assns = assns.order(due_date: :desc, available: :desc)
+   %>
 <% used_subs = for_user.used_submissions_for(assns).to_a %>
 <% total_latedays = used_subs.reduce(0) do |acc, s| acc + s.submission.days_late end %>
     <div class="panel panel-default">
@@ -29,7 +31,7 @@
           </tr>
         </thead>
         <tbody>
-          <% assns.order(due_date: :desc, available: :desc).each do |assignment| %>
+          <% assns.each do |assignment| %>
           <% used = used_subs.detect{|u| u.assignment_id == assignment.id} %>
           <tr>
             <td><%= link_to assignment.name, course_assignment_path(assignment.course, assignment) %></td>
