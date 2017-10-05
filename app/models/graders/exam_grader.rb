@@ -56,6 +56,10 @@ class ExamGrader < Grader
     g.available = false
     g.save!
 
+    if g.score != sub.score
+      sub.update(score: nil) # wipe out score until it's republished
+    end
+
     return g.score
   end
 end
