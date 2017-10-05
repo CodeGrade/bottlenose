@@ -2,9 +2,8 @@ class AssignmentsController < ApplicationController
   layout 'course'
 
   before_action :find_course
-  before_action -> { find_assignment(params[:id]) }, except: [:new, :create]
+  before_action -> { find_assignment(params[:id]) }, except: [:index, :new, :create, :edit_weights, :update_weights]
   before_action :require_registered_user
-  before_action :find_assignment, except: [:index, :new, :create, :edit_weights, :update_weights]
   before_action -> { require_admin_or_prof(course_assignments_path) },
                 only: [:edit, :edit_weights, :update, :update_weights,
                        :new, :create, :destroy, :recreate_grades]
