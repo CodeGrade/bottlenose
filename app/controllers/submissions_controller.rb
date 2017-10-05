@@ -604,7 +604,7 @@ class SubmissionsController < ApplicationController
         else
           matchings.map(&:target_user_id).compact
         end
-      @subs_to_review = @assignment.related_assignment.used_submissions.where(user_id: users)
+      @subs_to_review = @assignment.related_assignment.used_submissions.where(user_id: users).to_a
       # If there aren't enough allocations yet,
       if @subs_to_review.count < @assn_review_count
         used_sub_ids = current_user.used_submissions_for(@assignment.related_assignment).map(&:submission_id)
