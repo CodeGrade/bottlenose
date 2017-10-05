@@ -1,7 +1,10 @@
-class MatchingAllocationsController < CoursesController
-  prepend_before_action :find_course_assignment
+class MatchingAllocationsController < ApplicationController
+  layout 'course'
+  
+  before_action :find_course
+  before_action :find_assignment
   before_action :require_current_user
-  before_action :require_admin_or_prof
+  before_action -> { require_admin_or_prof(course_assignment_path(@course, @assignment)) }
 
   def edit
     @existing_matchings = CodereviewMatching.where(assignment: @assignment)
@@ -185,28 +188,6 @@ class MatchingAllocationsController < CoursesController
   end
 
   private
-  def find_course_assignment
-    @course = Course.find_by(id: params[:course_id])
-    @assignment = Assignment.find_by(id: params[:assignment_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
-      return
-    end
-    if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
-      return
-    end
-  end
-
-  def require_admin_or_prof
-    unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "Must be an admin or professor."
-      return
-    end
-  end
-
-
   def general_update(reviewers, targets, get_reviewer_users, get_target_users, disjoint_users, create_matching)
     review_counts = targets.map{|t| [t.id, 0]}.to_h
     targets_ids_map = targets.map{|t| [t.id, t]}.to_h

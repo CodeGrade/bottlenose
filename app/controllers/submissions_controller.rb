@@ -1,12 +1,17 @@
 require 'tempfile'
 require 'audit'
 
-class SubmissionsController < CoursesController
-  prepend_before_action :find_submission, except: [:index, :new, :create, :rerun_grader]
-  prepend_before_action :find_course_assignment
+class SubmissionsController < ApplicationController
+  layout 'course'
+  
+  before_action :find_course
+  before_action :find_assignment
+  before_action -> { find_submission(params[:id]) }, except: [:index, :new, :create, :rerun_grader]
   before_action :require_current_user, only: [:show, :files, :new, :create]
-  before_action :require_admin_or_staff, only: [:recreate_grade, :rerun_grader, :use_for_grading, :publish]
-  before_action :require_admin_or_prof, only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
+  before_action -> { require_admin_or_staff(course_assignment_submission_path(@course, @assignment, @submission)) },
+                only: [:recreate_grade, :rerun_grader, :use_for_grading, :publish]
+  before_action -> { require_admin_or_prof(course_assignment_submission_path(@course, @assignment, @submission)) },
+                only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
   def show
     unless @submission.visible_to?(current_user)
       redirect_to course_assignment_path(@course, @assignment), alert: "That's not your submission."
@@ -316,49 +321,6 @@ class SubmissionsController < CoursesController
   def answers_params
     params[:answers].to_unsafe_h.map{|k, v| [k, array_from_hash(v)]}.to_h
   end
-
-  def require_admin_or_staff
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
-                    alert: "Must be an admin or staff."
-      return
-    end
-  end
-
-  def require_admin_or_prof
-    unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
-                    alert: "Must be an admin or professor."
-      return
-    end
-  end
-
-  def find_course_assignment
-    @course = Course.find_by(id: params[:course_id])
-    @assignment = Assignment.find_by(id: params[:assignment_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
-      return
-    end
-    if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
-      return
-    end
-  end
-
-  def find_submission
-    @submission = Submission.find_by(id: params[:id])
-    if @submission.nil?
-      redirect_back fallback_location: course_assignment_path(params[:course_id], params[:assignment_id]),
-                    alert: "No such submission"
-      return
-    end
-    if @submission.assignment_id != @assignment.id
-      redirect_back fallback_location: course_assignment_path(@course, @assignment), alert: "No such submission for this assignment"
-      return
-    end
-  end
-
 
   ######################
   # Assignment types

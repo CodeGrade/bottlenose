@@ -4,10 +4,11 @@ require 'course_spreadsheet'
 class CoursesController < ApplicationController
   layout 'course'
 
-  before_action :find_course, except: [:index, :new, :create]
+  before_action -> { find_course(params[:id])}, except: [:index, :new, :create]
   before_action :require_current_user, except: [:public]
   before_action :require_registered_user, except: [:public, :index, :new, :create]
-  before_action :require_admin_or_prof, only: [:edit, :create, :update, :gradesheet]
+  before_action :require_admin_or_prof, only: [:edit, :update, :gradesheet]
+  before_action :require_admin_or_prof_ever, only: [:new, :create]
   before_action :require_admin_or_staff, only: [:facebook]
 
   def index

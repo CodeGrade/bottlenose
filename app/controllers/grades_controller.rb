@@ -1,10 +1,14 @@
 require 'tap_parser'
 
 class GradesController < ApplicationController
-  prepend_before_action :find_grade
-  prepend_before_action :find_submission, except: [:bulk_edit, :bulk_update]
-  prepend_before_action :find_course_assignment
-  before_action :require_admin_or_staff, except: [:show, :update, :details]
+  before_action :find_course
+  before_action :find_assignment
+  before_action :find_submission, except: [:bulk_edit, :bulk_update]
+  before_action :find_grade
+  before_action -> {
+    require_admin_or_staff(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                           : course_assignment_path(@course, @assignment))
+  }, except: [:show, :update, :details]
   before_action :require_current_user
   def edit
     if @grade.grader.autograde?
@@ -93,48 +97,6 @@ class GradesController < ApplicationController
   end
   def questions_params
     params[:grades].to_unsafe_h.map{|k, v| [k, array_from_hash(v)]}.to_h
-  end
-
-  def require_admin_or_staff
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      msg = "Must be an admin or staff."
-      if @course
-        if @assignment
-          if @submission
-            redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
-                          alert: msg
-          else
-            redirect_back fallback_location: course_assignment_path(@course, @assignment), alert: msg
-          end
-        else
-          redirect_back fallback_location: course_path(@course), alert: msg
-        end
-      else
-          redirect_back fallback_location: root_path, alert: msg
-      end
-      return
-    end
-  end
-
-  def find_course_assignment
-    @course = Course.find_by(id: params[:course_id])
-    @assignment = Assignment.find_by(id: params[:assignment_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
-      return
-    end
-    if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
-      return
-    end
-  end
-  def find_submission
-    @submission = Submission.find_by(id: params[:submission_id])
-    if @submission.nil? or @submission.assignment_id != @assignment.id
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "No such submission for this assignment"
-      return
-    end
   end
 
   def find_grade

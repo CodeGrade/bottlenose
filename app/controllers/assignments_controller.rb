@@ -2,11 +2,12 @@ class AssignmentsController < ApplicationController
   layout 'course'
 
   before_action :find_course
+  before_action -> { find_assignment(params[:id]) }, except: [:new, :create]
   before_action :require_registered_user
   before_action :find_assignment, except: [:index, :new, :create, :edit_weights, :update_weights]
-  before_action :require_admin_or_prof, only: [:edit, :edit_weights, :update, :update_weights,
-                                               :new, :create, :destroy,
-                                               :recreate_grades]
+  before_action -> { require_admin_or_prof(course_assignments_path) },
+                only: [:edit, :edit_weights, :update, :update_weights,
+                       :new, :create, :destroy, :recreate_grades]
   before_action :require_admin_or_assistant, only: [:tarball, :publish]
 
   def show
@@ -272,20 +273,6 @@ class AssignmentsController < ApplicationController
                               )
   end
 
-  def require_admin_or_prof
-    unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_back fallback_location: course_assignments_path, alert: "Must be an admin or professor."
-      return
-    end
-  end
-
-  def require_admin_or_staff
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_to root_path, alert: "Must be an admin or staff."
-      return
-    end
-  end
-
 
   ####################
   # Per-assignment-type actions, by action
@@ -303,17 +290,5 @@ class AssignmentsController < ApplicationController
 
   def show_Codereview
     @questions = @assignment.questions
-  end
-
-  def find_assignment
-    @assignment = Assignment.find_by(id: params[:id])
-    if @assignment.nil?
-      redirect_back fallback_location: course_assignments_path, alert: "No such assignment"
-      return
-    end
-    if @assignment.course_id != params[:course_id].to_i
-      redirect_back fallback_location: course_assignments_path, alert: "No such assignment for this course"
-      return
-    end
   end
 end

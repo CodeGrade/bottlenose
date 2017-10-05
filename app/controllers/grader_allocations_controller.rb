@@ -1,8 +1,9 @@
 class GraderAllocationsController < ApplicationController
   layout 'course'
 
-  prepend_before_action :find_course_assignment, except: [:stats, :abandon, :delete]
-  prepend_before_action :find_course, only: [:stats, :abandon, :delete]
+  before_action :find_course
+  before_action :find_assignment, except: [:stats, :abandon, :delete]
+  before_action :find_grader, except: [:stats, :abandon, :delete]
   before_action :require_current_user
   before_action :require_staff_for_course, only: [:index]
   before_action :require_ta_for_course, only: [:patch, :edit, :update, :abandon, :delete]
@@ -226,31 +227,13 @@ class GraderAllocationsController < ApplicationController
     end
   end
   
-  def find_course_assignment
-    @course = Course.find_by(id: params[:course_id])
-    @assignment = Assignment.find_by(id: params[:assignment_id])
+  def find_grader
     @grader = Grader.find_by(id: params[:grader_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
-      return
-    end
-    if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
-      return
-    end
     if @grader.nil? or @grader.assignment_id != @assignment.id
       redirect_back fallback_location: course_path(@course), alert: "No such grader for this assignment"
       return
     elsif @grader.autograde?
       redirect_back fallback_location: course_path(@course), alert: "That grader is automatic; no allocations needed"
-      return
-    end
-  end
-
-  def find_course
-    @course = Course.find_by(id: params[:course_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
       return
     end
   end
