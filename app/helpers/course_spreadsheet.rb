@@ -350,17 +350,17 @@ class CourseSpreadsheet
     end.to_h
     users.each do |u|
       reg = regs[u.id]
-      lecture = reg[Section::types["lecture"]][:section]
+      lecture = reg[Section::types["lecture"]]
       row = [ sanitize(u.last_name || u.name),
               sanitize(u.first_name || ""),
-              sanitize(lecture&.instructor&.last_name || ""),
+              sanitize(lecture&.dig(:section)&.instructor&.last_name || ""),
               u.nuid || "",
               sanitize(u.email)]
       course_section_types.each do |type|
         section = reg[Section::types[type]]&.fetch(:section)
         row.push(section&.crn || "")
       end
-      row.push(lecture[:dropped_date] || "", "", "")
+      row.push(lecture&.dig(:dropped_date) || "", "", "")
       sheet.push_row(nil, row)
     end
 
