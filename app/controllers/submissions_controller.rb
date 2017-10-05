@@ -588,7 +588,8 @@ class SubmissionsController < CoursesController
     render "details_questions"
   end
   def details_Exam
-    render "details_exam"
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                  alert: "No more detailed information about this exam"
   end
   def details_Codereview
     @questions = @assignment.questions
