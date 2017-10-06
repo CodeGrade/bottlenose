@@ -10,6 +10,7 @@
   #grades-table.show_one .sec_<%= s.crn %> { display: none; }
   #grades-table.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
   <% end %>
+  #grades-table td { vertical-align: middle; }
 </style>
 <h4>Select a section: <select id="sections">
     <option value="show_all">Show all sections</option>
@@ -21,6 +22,7 @@
 <table id="grades-table" class="table table-striped col-sm-12">
   <thead>
     <tr style="vertical-align: top;">
+      <th>NUID<% if any_parts %><br>&nbsp;<% end %></th>
       <th>Last name<% if any_parts %><br>&nbsp;<% end %></th>
       <th>First name<% if any_parts %><br>&nbsp;<% end %></th>
       <% questions.each do |q| %>
@@ -43,6 +45,7 @@
   <% @student_info.order("LOWER(last_name)", "LOWER(first_name)").each do |u| %>
     <% sections = @students_by_section[u.id].map{|u| "sec_#{u.crn}"}.join(' ') %>
     <tr id="<%= u.id %>" class="<%= sections %>">
+      <td class="text-muted small "><%= u.nuid %></td>
       <td>
         <form id="grade_<%= u.id %>">
           <input type="hidden" name="user_id" value="<%= u.id %>" />

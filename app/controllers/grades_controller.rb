@@ -673,7 +673,7 @@ HEADER
   ##############################
   def edit_exam_grades_for(students)
     # NOTE: students must be joined to the registrations table already, to provide section information
-    @student_info = students.select(:username, :last_name, :first_name, :nickname, :id)
+    @student_info = students.select(:username, :last_name, :first_name, :nickname, :nuid, :id)
     @students_by_section = @course.students_with_registrations.select(:id, "registration_sections.section_id AS crn").group_by(&:id)
     @used_subs = @assignment.used_submissions
     @grade_comments = InlineComment.where(submission_id: @used_subs.map(&:id)).group_by(&:submission_id)
