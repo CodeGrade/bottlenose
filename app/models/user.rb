@@ -269,7 +269,9 @@ class User < ApplicationRecord
         if by_term.nil? then by_term = by_role[term.name] = [] end
         regs_by_term&.select{|r| r.role == role_name}&.each do |r|
           r_sections = sections.values_at(*reg_sections[r.id].map(&:section_id))
-          by_term.push({course: courses[r.course_id], sections: r_sections.group_by(&:type)})
+          by_term.push({course: courses[r.course_id],
+                        sections: r_sections.group_by(&:type),
+                        withdrawn: r.dropped_date})
           by_role[:count] += 1
         end
       end

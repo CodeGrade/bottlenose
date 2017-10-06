@@ -74,6 +74,9 @@
       <%= info[:sections].map do |sec_type, sections| 
          "#{sec_type} #{'section'.pluralize(sections.count)} #{sections.map(&:crn).join(", ")}"
          end.join(", ") %>
+      <% if info[:withdrawn] %>
+      (withdrawn <span class="local-time"><%= info[:withdrawn].iso8601 %></span>)
+      <% end %>
     </p>
     <% end %>
   </li>
