@@ -371,9 +371,7 @@ class SubmissionsController < ApplicationController
         @team.save
       end
 
-      if @team
-        setup_matchings
-      end
+      setup_matchings
     end
     @submission.related_subs = @subs_to_review
     @submission_info = @subs_to_review&.map do |s|
