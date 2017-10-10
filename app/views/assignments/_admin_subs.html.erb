@@ -89,10 +89,10 @@
   <% end %>
 </div>
   <span style="flex-grow: 1;">&nbsp;</span>  
-  <span class="btn btn-default collapsed" data-toggle="collapse"
-        data-target="#grade-histograms">
+  <button class="btn btn-default collapsed" data-toggle="collapse" disabled
+        data-target="#grade-histograms" id="toggle-histograms">
     Show/hide grade histograms
-  </span>
+  </button>
 </div>
 
 <% if @gradesheet.submissions.empty? %>
