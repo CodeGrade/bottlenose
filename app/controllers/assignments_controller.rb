@@ -229,7 +229,7 @@ class AssignmentsController < ApplicationController
     end
 
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  notice: "#{pluralize(count, 'grades')} successfully published"
+                  notice: "#{pluralize(count, 'grade')} successfully published"
   end
 
   def recreate_grades
