@@ -21,6 +21,10 @@ class TeamsetsController < ApplicationController
   def edit
     @teams = @teamset.teams.includes(:users).where(Team.active_query, Date.current, Date.current)
     @others = @teamset.students_without_active_team
+    @students = @course.students
+                .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
+                .map{|s| [s.id, s]}.to_h
+    @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
   end
 
   def update

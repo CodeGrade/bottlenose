@@ -1,3 +1,11 @@
+<style>
+  <% @course.sections.each do |s| %>
+  table#users.show_one .sec_<%= s.crn %> { display: none; }
+  table#users.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  table#teams.show_one .sec_<%= s.crn %> { display: none; }
+  table#teams.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  <% end %>
+</style>
 <div class="row">
   <% if @teamset.errors.any? %>
   <div id="error_explanation" class="alert alert-danger">
@@ -152,6 +160,15 @@
 </div>
 
 <div class="row">
+  <div class="col-md-12">
+    <h4>Filter teams and students by section: <select id="sections">
+        <option value="show_all">Show all sections</option>
+        <% @course.sections.each do |s| %>
+        <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
+        <% end %>
+      </select>
+    </h4>
+  </div>
   <div class="col-md-6">
     <h3>Active Teams
       <%= link_to "Dissolve all",
@@ -170,7 +187,10 @@
       </thead>
       <tbody>
         <% @teams.each do |team| %>
-        <tr>
+        <% classes = team.users.map do |user|
+             (@sections_by_student[@students[user.id]&.reg_id] || []).map{|sec| "sec_#{sec.section_id}"}
+           end.flatten.uniq.compact.join(" ") %>
+        <tr class="<%= classes %>">
           <td><%= show_team team %></td>
           <td>
             <%= link_to "Dissolve",
@@ -203,7 +223,9 @@
       </thead>
       <tbody>
 	<% @others.sort_by(&:sort_name).each do |user| %>
-	<%= content_tag("tr", class: "user", data: { id: user.id, name: user.name }) do %>
+        <% classes = (@sections_by_student[@students[user.id]&.reg_id] || [])
+                        .map{|sec| "sec_#{sec.section_id}"}.join(" ") %>
+	<%= content_tag("tr", class: "user #{classes}", data: { id: user.id, name: user.name }) do %>
 	<td><%= show_user user %></td>
         <td><div class="add-user-btn btn btn-success btn-xs pull-right">Add</div></td>
 	<% end %>
@@ -216,5 +238,13 @@
 <script>
   $(function() {
     $('.spinner').each(function() { activateSpinner(this) });
+  });
+  $(function() {
+    var prevSection = "show_all";
+    $("#sections").change(function(e) {
+      $("table#users").removeClass(prevSection).addClass($(this).val());
+      $("table#teams").removeClass(prevSection).addClass($(this).val());
+      prevSection = $(this).val();
+    });
   });
 </script>
