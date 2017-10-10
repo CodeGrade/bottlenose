@@ -8,8 +8,10 @@ class SubmissionsController < ApplicationController
   before_action :find_assignment
   before_action -> { find_submission(params[:id]) }, except: [:index, :new, :create, :rerun_grader]
   before_action :require_current_user, only: [:show, :files, :new, :create]
+  before_action -> { require_admin_or_staff(course_assignment_path(@course, @assignment)) },
+                only: [:rerun_grader]
   before_action -> { require_admin_or_staff(course_assignment_submission_path(@course, @assignment, @submission)) },
-                only: [:recreate_grade, :rerun_grader, :use_for_grading, :publish]
+                only: [:recreate_grade, :use_for_grading, :publish]
   before_action -> { require_admin_or_prof(course_assignment_submission_path(@course, @assignment, @submission)) },
                 only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
   def show
