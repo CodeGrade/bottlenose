@@ -22,6 +22,10 @@ class AssignmentsController < ApplicationController
     end
     @gradesheet = Gradesheet.new(@assignment, submissions)
 
+    @students = @course.students
+                .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
+                .map{|s| [s.id, s]}.to_h
+    @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
 
     self.send("show_#{@assignment.type.capitalize}")
     if admin_view
