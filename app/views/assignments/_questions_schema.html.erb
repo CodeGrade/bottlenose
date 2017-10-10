@@ -11,7 +11,7 @@
           or <code>Text</code>.  Every question has
           a <code>weight</code>, a <code>correctAnswer</code>,
           a <code>rubric</code> and a <code>prompt</code>.  A
-          question may also contain <code>parts</code>.
+          question may also have a <code>name</code>, and may contain <code>parts</code>.
           <ul>
             <li><code>Numeric</code> questions also
               contain <code>min</code> and <code>max</code> values.</li>
@@ -51,6 +51,7 @@
 ---
 - Design:
   - YesNo:
+      name: "Public/private distinction?"
       weight: 1
       prompt: >-
         Does your code make a distinction between public interfaces and private implementation?
@@ -72,6 +73,7 @@
             hint: if they answered No and their code is wrong
             feedback: You recognize that your code is wrong.
   - Numeric:
+      name: "Design quality"
       weight: 3
       correctAnswer: 1
       prompt: >-
@@ -88,6 +90,7 @@
         - 0.5: "It works, but it's not well designed"
         - 0.1: "It doesn't appear to work, but something was submitted"
   - MultipleChoice:
+      name: "Ease of retrieval"
       weight: 1
       correctAnswer: 0
       prompt: >-

@@ -8,10 +8,11 @@
   <% end %>
 </style>
 <% end %>
+<div style="display: flex; flex-direction: row; align-items: baseline; justify-content: space-between;">
 <h3 style="display: inline-block">
   <%= type[:noun].pluralize(2).capitalize %> (<%= @gradesheet.submissions.count %>)
 </h3>
-<div style="padding-bottom: 0.5em; display: inline-block;">
+<div style="padding-bottom: 0.5em; display: inline-block; flex-grow: 1;">
   <% if @gradesheet.assignment.due_date <= DateTime.now %>
      <div class="btn-group" style="white-space: nowrap;">
        <%= link_to "Download all", 
@@ -86,6 +87,12 @@
         %>
     <% end %>
   <% end %>
+</div>
+  <span style="flex-grow: 1;">&nbsp;</span>  
+  <span class="btn btn-default collapsed" data-toggle="collapse"
+        data-target="#grade-histograms">
+    Show/hide grade histograms
+  </span>
 </div>
 
 <% if @gradesheet.submissions.empty? %>

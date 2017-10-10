@@ -77,8 +77,9 @@ class Exam < Assignment
   end
 
   def questions
-    qs = YAML.load(File.read(self.assignment_upload.submission_path))
-    qs.each_with_index do |q, q_num|
+    return @questions if @questions
+    @questions = YAML.load(File.read(self.assignment_upload.submission_path))
+    @questions.each_with_index do |q, q_num|
       q["name"] = "Problem #{q_num + 1}" unless q["name"]
       if q["parts"]
         grade = 0
@@ -89,7 +90,7 @@ class Exam < Assignment
         q["weight"] = grade unless q["weight"]
       end
     end
-    qs
+    @questions
   end
 
   def flattened_questions
@@ -105,5 +106,9 @@ class Exam < Assignment
       end
     end
     flat
+  end
+
+  def sections
+    [{name: "", count: self.questions.count}]
   end
 end

@@ -29,15 +29,17 @@ GoogleCharts.load('corechart', function() {
   var graders = <%= raw json_escape(JSON.generate(@gradesheet.grades[:graders].map(&:display_type))) %>;
   var maxes = <%= raw json_escape(JSON.generate(@gradesheet.grades[:graders].map(&:avail_score))) %>;
   <% question_names = @gradesheet.assignment.flattened_questions || []
+     question_sections = @gradesheet.assignment.sections || {}
      question_maxes = question_names.map{|a| a["weight"].to_f }
      question_names = question_names.zip(1..question_names.length).map do |a, i| a["name"] || "Question #{i}" end %>
   var questions = <%= raw json_escape(JSON.generate(question_names)) %>;
+  var sections = <%= raw json_escape(JSON.generate(question_sections)) %>;
   var question_maxes = <%= raw json_escape(JSON.generate(question_maxes)) %>;
   if (graders.length > 1) {
     var width = Math.floor(100.0 / graders.length);
     var container = document.getElementById("byGraders");
     for (var i = 0; i < graders.length; i++) {
-      data = GoogleCharts.api.visualization.arrayToDataTable([[graders[i]]].concat(grades.map((a) => [a[1][i]])));
+      data = GoogleCharts.api.visualization.arrayToDataTable([[graders[i]]].concat(grades.map((a) => [(a[1] || [])[i]])));
       options = {
         title: graders[i] + " grades",
         colors: [colors[(i + 1) % colors.length]],
@@ -60,27 +62,40 @@ GoogleCharts.load('corechart', function() {
     var qgrades = <%= raw json_escape(JSON.generate(@gradesheet.grades[:grades].map{|_, g| g[:q_scores]})) %>;
     var container = document.getElementById("byGraders");
     var width = Math.max(20, Math.floor(100.0 / questions.length));
-    for (var i = 0; i < qgrades.length; i++) {
-      data = GoogleCharts.api.visualization.arrayToDataTable([[questions[i]]].concat(qgrades.map((a) => [a[0][i]])));
-      options = {
-        title: questions[i],
-        colors: [colors[(i + 1) % colors.length]],
-        legend: { position: 'none' },
-        histogram: {
-          hideBucketItems: true,
-          lastBucketPercentile: 2,
-          bucketSize: (question_maxes[i] <= 3 ? 0.25 :
-                       (question_maxes[i] <= 10 ? 0.5 :
-                        (question_maxes[i] <= 20 ? 1 : undefined)))
-        },
-        hAxis: {type: 'category'},
-        interpolateNulls: false,
-      };
-      var div = document.createElement("div");
-      div.style = "display: inline-block; width: " + width + "%;";
-      container.appendChild(div);
-      chart = new GoogleCharts.api.visualization.Histogram(div);
-      chart.draw(data, options);
+    var offset = 0;
+    for (var section = 0; section < sections.length; section++) {
+      var secContainer = container;
+      if (sections[section].name !== "") {
+        var header = document.createElement("h4");
+        header.innerText = sections[section].name;
+        secContainer = document.createElement("div");
+        secContainer.appendChild(header);
+        container.append(secContainer);
+      }
+      for (var i = offset; i < sections[section].count + offset; i++) {
+        data = GoogleCharts.api.visualization.arrayToDataTable([[questions[i]]].concat(qgrades.map((a) => [(a[0] || [])[i]])));
+        options = {
+          title: questions[i],
+          colors: [colors[(i + 1) % colors.length]],
+          legend: { position: 'none' },
+          histogram: {
+            hideBucketItems: true,
+            lastBucketPercentile: 2,
+            bucketSize: (question_maxes[i] <= 3 ? 0.25 :
+                         (question_maxes[i] <= 10 ? 0.5 :
+                          (question_maxes[i] <= 20 ? 1 : undefined)))
+          },
+          hAxis: {type: 'category'},
+          interpolateNulls: false,
+        };
+        var div = document.createElement("div");
+        div.style = "display: inline-block; width: " + width + "%;";
+        secContainer.appendChild(div);
+        chart = new GoogleCharts.api.visualization.Histogram(div);
+        chart.draw(data, options);
+      }
+      offset += sections[section].count;
     }
   }
+  document.getElementById("grade-histograms").classList.remove("in");
 });

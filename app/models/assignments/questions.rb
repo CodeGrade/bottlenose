@@ -160,7 +160,9 @@ class Questions < Assignment
   end
 
   def questions
-    YAML.load(File.read(self.assignment_upload.submission_path))
+    return @questions if @questions
+    @questions = YAML.load(File.read(self.assignment_upload.submission_path))
+    @questions
   end
 
   def flattened_questions
@@ -177,5 +179,11 @@ class Questions < Assignment
       end
     end
     flat
+  end
+
+  def sections
+    self.questions.map do |section|
+      {name: section.to_a[0][0], count: section.to_a[0][1].count}
+    end
   end
 end
