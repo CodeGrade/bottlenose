@@ -21,7 +21,7 @@ class GradesController < ApplicationController
   end
 
   def show
-    if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grade.available
+    if !(current_user_site_admin? || current_user_staff_for?(@course)) && !@grade.available
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "That grader is not yet available"
       return
@@ -58,7 +58,7 @@ class GradesController < ApplicationController
   end
 
   def details
-    if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grade.available
+    if !(current_user_site_admin? || current_user_staff_for?(@course)) && !@grade.available
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "That grader is not yet available"
       return
@@ -107,7 +107,7 @@ class GradesController < ApplicationController
                                                                         params[:submission_id]),
                   alert: "No such grader"
       return
-    elsif @submission and @grade.submission_id != @submission.id
+    elsif @submission && (@grade.submission_id != @submission.id)
       redirect_to fallback_location: course_assignment_submission_path(params[:course_id],
                                                                        params[:assignment_id],
                                                                        params[:submission_id]),
@@ -148,7 +148,7 @@ class GradesController < ApplicationController
       assignment: @assignment,
       course: @course,
       submission: @submission)
-    if alloc and alloc.grading_completed.nil?
+    if alloc && alloc.grading_completed.nil?
       if alloc.who_grades_id != current_user.id
         alloc.abandoned = true
         alloc.grading_completed = DateTime.now
@@ -282,7 +282,7 @@ class GradesController < ApplicationController
     end
   end
   def update_Questions
-    missing, qp = questions_params[@submission.id.to_s].partition{|q| q["score"].nil? or q["score"].empty? }
+    missing, qp = questions_params[@submission.id.to_s].partition{|q| q["score"].nil? || q["score"].empty? }
     missing = missing.map{|q| q["index"].to_i + 1}
 
     save_all_comments(qp, :question_to_inlinecomment)
@@ -315,7 +315,7 @@ class GradesController < ApplicationController
       end
       v
     end.flatten
-    missing, qp = flat_responses.partition{|q| q["score"].nil? or q["score"].empty? }
+    missing, qp = flat_responses.partition{|q| q["score"].nil? || q["score"].empty? }
     missing = missing.map{|q| q["index"].to_i + 1}
 
     if !missing.empty?

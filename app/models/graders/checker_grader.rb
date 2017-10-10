@@ -54,7 +54,7 @@ class CheckerGrader < Grader
     # to.join("src").mkpath
     # to.join("test").mkpath
     
-    if Dir.exists?(from.join("src")) and Dir.exists?(from.join("test"))
+    if Dir.exists?(from.join("src")) && Dir.exists?(from.join("test"))
       Audit.log("#{prefix}From = #{from} and contains src/ and test/")
       # FileUtils.cp_r("#{from.join('src')}/.", "#{to.join('src')}/")
       # FileUtils.cp_r("#{from.join('test')}/.", "#{to.join('test')}/")
@@ -84,14 +84,14 @@ class CheckerGrader < Grader
           # build_dir = grader_dir.join("build")
           # build_dir.mkpath
             Audit.log("#{prefix}: Grading in #{build_dir}")
-            if (Dir.exists?(self.upload.extracted_path.join("starter")) and
+            if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
                 Dir.exists?(self.upload.extracted_path.join("testing")))
               copy_srctest_from_to(self.upload.extracted_path.join("starter"), build_dir, prefix)
             end
             copy_srctest_from_to(u.extracted_path, build_dir, prefix)
             FileUtils.cp("#{assets_dir}/tester-2.jar", build_dir)
             FileUtils.cp("#{assets_dir}/javalib.jar", build_dir)
-            if (Dir.exists?(self.upload.extracted_path.join("starter")) and
+            if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
                 Dir.exists?(self.upload.extracted_path.join("testing")))
               copy_srctest_from_to(self.upload.extracted_path.join("testing"), build_dir, prefix)
             else

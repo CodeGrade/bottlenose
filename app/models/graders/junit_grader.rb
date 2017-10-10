@@ -53,7 +53,7 @@ class JunitGrader < Grader
     # to.join("src").mkpath
     # to.join("test").mkpath
     
-    if Dir.exists?(from.join("src")) and Dir.exists?(from.join("test"))
+    if Dir.exists?(from.join("src")) && Dir.exists?(from.join("test"))
       Audit.log("#{prefix}From = #{from} and contains src/ and test/")
       # FileUtils.cp_r("#{from.join('src')}/.", "#{to.join('src')}/")
       # FileUtils.cp_r("#{from.join('test')}/.", "#{to.join('test')}/")
@@ -81,7 +81,7 @@ class JunitGrader < Grader
       File.open(grader_dir.join("details.log"), "w") do |details|
         Dir.mktmpdir("grade-#{sub.id}-#{g.id}") do |build_dir|
           Audit.log("#{prefix}: Grading in #{build_dir}")
-          if (Dir.exists?(self.upload.extracted_path.join("starter")) and
+          if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
               Dir.exists?(self.upload.extracted_path.join("testing")))
             copy_srctest_from_to(self.upload.extracted_path.join("starter"), build_dir, prefix)
           end
@@ -90,7 +90,7 @@ class JunitGrader < Grader
           FileUtils.cp("#{assets_dir}/junit-4.12.jar", build_dir)
           FileUtils.cp("#{assets_dir}/junit-tap.jar", build_dir)
           FileUtils.cp("#{assets_dir}/hamcrest-core-1.3.jar", build_dir)
-          if (Dir.exists?(self.upload.extracted_path.join("starter")) and
+          if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
               Dir.exists?(self.upload.extracted_path.join("testing")))
             copy_srctest_from_to(self.upload.extracted_path.join("testing"), build_dir, prefix)
           else

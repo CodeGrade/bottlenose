@@ -6,11 +6,11 @@
   <% all_grades = @gradesheet.grades[:grades][@submission.id]
      all_scores = if cur_reg_staff then all_grades[:staff_scores] else all_grades[:blind_scores] end
      grades = @gradesheet.raw_grades[@submission.id]&.values
-     unavailable = (!grades or !(grades.all?(&:available)))
-     complete = (grades and grades.all?(&:complete?))
+     unavailable = (!grades || !(grades.all?(&:available)))
+     complete = grades&.all?(&:complete?)
      @gradesheet.graders.each_with_index do |gr, i|
        scores = all_scores[:scores][i]
-       grade = (grades and grades.find{|g| g.grader_id == gr.id})
+       grade = grades&.find{|g| g.grader_id == gr.id}
      %>
   <tr>
     <td><%= gr.display_type %></td>
@@ -117,7 +117,7 @@
     <td><%= @plagiarized[0].comment %></td>
   </tr>
   <% end %>
-  <% if @submission.late? or @submission.ignore_late_penalty %>
+  <% if @submission.late? || @submission.ignore_late_penalty %>
   <tr>
     <td>Days Late:</td>
     <td><%= @submission.days_late(true) %></td>

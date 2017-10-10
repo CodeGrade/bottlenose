@@ -11,7 +11,7 @@
 <table id="grades-table" class="table col-sm-12">
   <% q_count = @assignment.flattened_questions.count %>
   <% grades = (0..q_count).map do |i|
-       (@grade_comments.find do |g| g.line == i end) or InlineComment.new
+       (@grade_comments.find do |g| g.line == i end) || InlineComment.new
      end %>
   <% i = 0 %>
   <% @assignment.questions.each_with_index do |q, q_num| %>
@@ -19,7 +19,7 @@
     <td>Problem <%= q_num + 1 %>: <%= q["name"] %><% if q["extra"] %> (Extra Credit)<% end %></td>
     <% if q["parts"] %>
     <% q_score = (grades[i .. (i - 1 + q["parts"].length)]).map do |g|
-         ((g and g["weight"]) or 0.0).to_f
+         g&.dig("weight").to_f
        end.sum %>
     <td>
       <%= show_score(q_score, @assignment, cur_reg_staff) %> / <%= show_score(q["weight"]) %></td>
@@ -48,7 +48,7 @@
     <td><h4><%= show_score(grades[0..@assignment.flattened_questions.count - 1].map(&:weight).map(&:to_f).sum,
                 @assignment, cur_reg_staff) %> / <%= show_score(@grader.avail_score) %></h4></td>
   </tr>
-  <% if grades[@assignment.flattened_questions.count] and !grades[@assignment.flattened_questions.count].new_record? %>
+  <% if grades[@assignment.flattened_questions.count] && !grades[@assignment.flattened_questions.count].new_record? %>
   <tr>
     <td><h4>Curved score:</h4></td>
     <td><h4><%= show_score(grades[@assignment.flattened_questions.count].weight,

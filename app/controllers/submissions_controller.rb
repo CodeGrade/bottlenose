@@ -110,7 +110,7 @@ class SubmissionsController < ApplicationController
     if true_user_staff_for?(@course) || current_user_staff_for?(@course)
       @submission.user ||= current_user
       @submission.ignore_late_penalty = (submission_params[:ignore_late_penalty].to_i > 0)
-      if submission_params[:created_at] and !@submission.ignore_late_penalty
+      if submission_params[:created_at] && !@submission.ignore_late_penalty
         @submission.created_at = submission_params[:created_at]
       end
     else
@@ -305,7 +305,7 @@ class SubmissionsController < ApplicationController
   private
 
   def submission_params
-    if true_user_prof_for?(@course) or current_user_prof_for?(@course)
+    if true_user_prof_for?(@course) || current_user_prof_for?(@course)
       params[:submission].permit(:assignment_id, :user_id, :student_notes, :type,
                                  :auto_score, :calc_score, :created_at, :updated_at, :upload,
                                  :grading_output, :grading_uid, :team_id,
@@ -384,7 +384,7 @@ class SubmissionsController < ApplicationController
 
   # CREATE
   def create_Files
-    if (@submission.save_upload and @submission.save)
+    if (@submission.save_upload && @submission.save)
       @submission.set_used_sub!
       @submission.create_grades!
       @submission.autograde!

@@ -2,9 +2,9 @@
   <% value = @answers&.dig(sub_id.to_s, index, "main")&.capitalize %>
   <input type="hidden" name="answers[<%= sub_id %>][<%= index %>][main]" disabled
          id="answer_<%= index %>" <% if value %>value="<%= value %>"<% end %>>
-  <button type="button" disabled class="answer btn btn-default <%= if value == 'Yes' then 'active' elsif @answers and value.to_s.empty? then 'unanswered' end %>"
+  <button type="button" disabled class="answer btn btn-default <%= if value == 'Yes' then 'active' elsif @answers && value.to_s.empty? then 'unanswered' end %>"
           data-id="answer_<%= sub_id %>_<%= index %>">Yes</button>
-  <button type="button" disabled class="answer btn btn-default <%= if value == 'No' then 'active' elsif @answers and value.to_s.empty? then 'unanswered' end %>"
+  <button type="button" disabled class="answer btn btn-default <%= if value == 'No' then 'active' elsif @answers && value.to_s.empty? then 'unanswered' end %>"
           data-id="answer_<%= sub_id %>_<%= index %>">No</button>
 </div>
 

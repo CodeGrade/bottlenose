@@ -61,7 +61,7 @@ class RegistrationsController < ApplicationController
     respond_to do |f|
       f.json {
         @reg = Registration.find(params[:id])
-        if @reg.nil? or @reg.course.id != @course.id
+        if @reg.nil? || (@reg.course.id != @course.id)
           render :json => {failure: "Unknown registration"}
         else
           changed = false

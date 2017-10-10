@@ -179,7 +179,7 @@ class Codereview < Assignment
                       else
                         ans = ans.to_f
                       end
-                      if is_float(min) && is_float(max) && is_float(ans) && !(min <= ans and ans <= max)
+                      if is_float(min) && is_float(max) && is_float(ans) && !(min <= ans && ans <= max)
                         self.errors.add(:base, "Numeric question #{question_desc} has a correctAnswer outside the specified range")
                       end
                     when "MultipleChoice"

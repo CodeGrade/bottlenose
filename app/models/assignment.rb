@@ -251,10 +251,10 @@ class Assignment < ApplicationRecord
   end
 
   def rate_limit?(sub)
-    if self.max_attempts.to_i > 0 and self.submissions.count >= self.max_attempts.to_i
+    if (self.max_attempts.to_i > 0) && (self.submissions.count >= self.max_attempts.to_i)
       "permanent"
-    elsif self.rate_per_hour.to_i > 0 and
-         self.submission.where('created_at >= ?', DateTime.now - 1.hour).count > self.rate_per_hour.to_i
+    elsif (self.rate_per_hour.to_i > 0) &&
+          (self.submission.where('created_at >= ?', DateTime.now - 1.hour).count > self.rate_per_hour.to_i)
       "temporary"
     else
       false

@@ -17,7 +17,7 @@
       <b>Teams:</b>
       <%= gradesheet.assignment.team_subs? ? "Yes" : "No" %>
     </p>
-    <% if (current_user.site_admin? || cur_reg&.professor?) and !gradesheet.assignment.assignment_file_name.blank? %>
+    <% if (current_user.site_admin? || cur_reg&.professor?) && !gradesheet.assignment.assignment_file_name.blank? %>
       <p>
         <b>Questions Download:</b>
         <%= link_to gradesheet.assignment.assignment_file_name, gradesheet.assignment.assignment_file_path %>

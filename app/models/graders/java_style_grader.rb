@@ -26,7 +26,7 @@ class JavaStyleGrader < Grader
   end
   def get_command_arguments(assignment, sub)
     files_dir = sub.upload.extracted_path
-    if self.upload and self.upload.submission_path and File.file?(self.upload.submission_path)
+    if self.upload && self.upload.submission_path && File.file?(self.upload.submission_path)
       [
         "style.tap",
         {},

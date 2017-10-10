@@ -267,8 +267,8 @@ class Submission < ApplicationRecord
   def autograde!
     complete = true
     assignment.graders.each do |gr|
+      complete = complete && gr.autograde?
       begin
-        complete = complete and gr.autograde?
         gr.autograde!(assignment, self) # make sure we create all needed grades
       rescue Exception => e
         Audit.log "Assignment #{assignment.id}, submission #{self.id} failed autograding:"

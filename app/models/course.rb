@@ -228,7 +228,7 @@ class Course < ApplicationRecord
       used = used_subs[a.id]
       people.each do |p|
         subs = a_subs[p.id]
-        if (subs and subs.count > 0) and (used.nil? or used.find{|us| us.user_id == p.id}.nil?)
+        if (subs&.count.to_i > 0) && (used.nil? || used.find{|us| us.user_id == p.id}.nil?)
           abnormals[a] = [] unless abnormals[a]
           abnormals[a].push p
         end

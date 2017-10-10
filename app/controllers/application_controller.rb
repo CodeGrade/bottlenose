@@ -133,7 +133,7 @@ class ApplicationController < ActionController::Base
     return unless @assignment.nil?
 
     @assignment = Assignment.find_by(id: id || params[:assignment_id])
-    if @assignment.nil? or @assignment.course_id != @course.id
+    if @assignment.nil? || (@assignment.course_id != @course.id)
       redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
       return
     end

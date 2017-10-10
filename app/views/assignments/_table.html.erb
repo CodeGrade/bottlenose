@@ -58,7 +58,7 @@
           <td style="white-space: nowrap;">
             <% submissions.take(5).each do |submission| %>
              <%= link_to course_assignment_submission_path(assignment.course, assignment, submission) do %>
-              <% if used and submission.id == used.id %>
+              <% if used && submission.id == used.id %>
                <span class="label label-success"
                   data-toggle="tooltip" data-placement="top"
                   title="This submission is used for grading">

@@ -47,7 +47,7 @@ class CourseSpreadsheet
       @args = args
     end
     def to_s
-      if @function.length == 1 and @args.length == 2
+      if (@function.length == 1) && (@args.length == 2)
         "(#{@args[0]} #{@function} #{@args[1]})"
       else
         "#{@function}(#{@args.map(&:to_s).join(',')})"
@@ -102,7 +102,7 @@ class CourseSpreadsheet
     end
     def contains(col, row)
       print "col: #{col}, row: #{row}, from_col/row: #{@from_col}/#{@from_row}, to_col/row: #{@to_col}/#{@to_row}\n"
-      (@from_row <= row) and (row <= @to_row) and (@from_col <= col) and (col <= @to_col)
+      (@from_row <= row) && (row <= @to_row) && (@from_col <= col) && (col <= @to_col)
     end
   end
   
@@ -113,22 +113,22 @@ class CourseSpreadsheet
     attr_accessor :row
     attr_accessor :col
     def initialize(value=nil, formula=nil)
-      debugger if value.nil? and formula.nil?
+      debugger if (value.nil? && formula.nil?)
       @value = value
       @formula = formula
     end
 
     def sanity_check
       return if @value
-      return unless @row and @col
+      return unless (@row && @col)
       if @formula.is_a? Formula
         @formula.args.each do |a|
-          if a.is_a? Range and a.contains(@col, @row)
+          if (a.is_a? Range) && (a.contains(@col, @row))
             raise RangeError, "Cell at #{@sheet_name}!#{@col}#{@row} contains formula #{@formula} that overlaps itself"
           end
         end
       elsif @formula.is_a? CellRef
-        if @sheet_name == @formula.sheet_name and @row == @formula.row and @col == @formula.col
+        if (@sheet_name == @formula.sheet_name) && (@row == @formula.row) && (@col == @formula.col)
           raise RangeError, "CellRef at #{@formula} refers to itself"
         end
       end
@@ -514,7 +514,7 @@ class CourseSpreadsheet
           ws.write_formula(r_num + row_offset, c_num, "=#{c.formula}", format)
         elsif c.value.is_a? Numeric
           ws.write_number(r_num + row_offset, c_num, c.value, format)
-        elsif c.value.is_a? DateTime or c.value.is_a? Time
+        elsif (c.value.is_a? DateTime) || (c.value.is_a? Time)
           ws.write_date_time(r_num + row_offset, c_num, c.value.to_formatted_s(:db), format)
         else
           ws.write_string(r_num + row_offset, c_num, c.value, format)

@@ -8,7 +8,7 @@ class CodereviewSub < Submission
   def check_time_taken
     if self.assignment.request_time_taken && self.time_taken.blank?
       self.errors.add(:base, "Please specify how long you have worked on this assignment")
-    elsif self.time_taken and !(Float(self.time_taken) rescue false)
+    elsif self.time_taken && !(Float(self.time_taken) rescue false)
       self.errors.add(:base, "Please specify a valid number for how long you have worked on this assignment")
     end
     return self.errors.count == 0

@@ -101,7 +101,7 @@
         <pre><%= t[:info]["stack"].join("\n") %></pre>        
         <% else %>
         <div class="row">
-          <% if t[:info]["actual"][0] == "" and t[:info]["expected"][0] == ""
+          <% if (t[:info]["actual"][0] == "") && (t[:info]["expected"][0] == "")
              t[:info]["actual"].shift
              t[:info]["expected"].shift
              end %>

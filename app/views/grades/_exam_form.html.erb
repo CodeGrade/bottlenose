@@ -59,13 +59,13 @@
       <% sub = used_subs[u.id].first if used_subs[u.id] %>
       <% grades = @grade_comments[sub.id] if sub %>
       <% grades = (0..col_count).map do |i|
-           (grades and grades.find do |g| g.line == i end) or {weight: nil}
+           (grades&.find do |g| g.line == i end) || {weight: nil}
          end %>
       <% score = 0 %>
       <% col_count.times do |i| %>
       <td class="question">
         <input form="grade_<%= u.id %>" type="hidden" name="student[<%= u.id %>][<%= i %>]" />
-        <span><% if grades and grades[i] and grades[i]["weight"] %>
+        <span><% if grades&.dig(i, "weight") %>
         <% score += grades[i]["weight"] %>
         <%= show_score(grades[i]["weight"]) %>
         <% end %></span>
