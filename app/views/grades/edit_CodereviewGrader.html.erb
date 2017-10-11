@@ -36,7 +36,7 @@
 <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission), @grade] do |f| %>
 <%= f.hidden_field :related_sub_ids, value: @submission_info.map{|si| si[2]} %>
 <% @count = 0 %>
-<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id), index|
+<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id, sub_team, sub_user), index|
    @submission_dirs = sub_dirs
    @submission_files = sub_files %>
 <% if @submission_info.length != 1 %>
@@ -80,6 +80,10 @@
   </div>
 
   <div class="responses form-group col-sm-6">
+    <span class="well well-sm well-info col-sm-12 text-center">This review is for the
+    <%= link_to "submission from #{sub_team || sub_user}",
+        course_assignment_submission_path(@course, @assignment.related_assignment, sub_id) %>
+    </span>
     <%= render "submissions/render_questions", root: "sub_#{sub_id}", sub_id: sub_id %>
     <div class="spacer">&nbsp;</div>
   </div>

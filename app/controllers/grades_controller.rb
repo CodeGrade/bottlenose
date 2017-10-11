@@ -566,7 +566,7 @@ HEADER
     @submission_info = @related_subs.map do |sub, answers|
       d, f = sub.get_submission_files(current_user)
       @answers_are_newer << (sub.created_at < @submission.created_at)
-      [d, f, sub.id]
+      [d, f, sub.id, sub.team&.to_s, sub.user.display_name]
     end
 
     if @grade.grading_output
