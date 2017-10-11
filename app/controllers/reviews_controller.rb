@@ -33,7 +33,7 @@ class ReviewsController < ApplicationController
     @submission_info = @related_subs.map do |sub, answers|
       d, f = sub.get_submission_files(current_user)
       @answers_are_newer << (sub.created_at < @review_submission.created_at)
-      [d, f, sub.id]
+      [d, f, sub.id, @review_submission.team&.to_s, @review_submission.user.display_name]
     end    
   end
 

@@ -45,10 +45,17 @@
 
   <div class="responses form-group col-sm-6">
     <% if cur_reg&.staff? %>
+    <% if @assignment.related_assignment %>
     <span class="well well-sm well-info col-sm-12 text-center">This review is for the
     <%= link_to "submission from #{sub_team || sub_user}",
         course_assignment_submission_path(@course, @assignment.related_assignment, sub_id) %>
     </span>
+    <% elsif @review_assignment %>
+    <span class="well well-sm well-info col-sm-12 text-center">This review is 
+    <%= link_to "from #{sub_team || sub_user}",
+        course_assignment_submission_path(@course, @review_assignment, @review_submission) %>
+    </span>
+    <% end %>
     <% end %>
     <%= render "submissions/render_questions", root: "sub_#{sub_id}", sub_id: sub_id %>
     <div class="spacer">&nbsp;</div>
