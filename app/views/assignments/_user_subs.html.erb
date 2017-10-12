@@ -39,7 +39,7 @@
         <span class="well-sm glyphicon glyphicon-exclamation-sign" 
               data-toggle="tooltip" data-placement="top"
               title="Team was dissolved before homework was due, but submission is being used anyway"></span>
-        <% if sub.stale_team? %>
+        <% elsif sub.stale_team? %>
         <span class="well-sm glyphicon glyphicon-alert" 
               data-toggle="tooltip" data-placement="top"
               title="Team was dissolved before homework was due"></span>
