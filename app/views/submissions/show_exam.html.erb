@@ -19,7 +19,7 @@
     <td>Problem <%= q_num + 1 %>: <%= q["name"] %><% if q["extra"] %> (Extra Credit)<% end %></td>
     <% if q["parts"] %>
     <% q_score = (grades[i .. (i - 1 + q["parts"].length)]).map do |g|
-         g&.dig("weight").to_f
+         ((g && g["weight"].to_f) || 0.0)
        end.sum %>
     <td>
       <%= show_score(q_score, @assignment, cur_reg_staff) %> / <%= show_score(q["weight"]) %></td>
