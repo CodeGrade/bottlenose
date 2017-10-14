@@ -48,7 +48,7 @@ class Gradesheet
           # q_grades = InlineComment.where(submission: s, grade: @raw_grades.dig(s.id, c.id), suppressed: false)
           #            .where('line < ?', @questions.count)
           #            .order(:line).pluck(:weight)
-          q_grades = @comments[s.id]
+          q_grades = (@comments[s.id] || [])
                      .select{|comm| comm[:grade_id] == g.id}
                      .sort_by!{|comm| comm[:line]}
                      .map(&:weight)
