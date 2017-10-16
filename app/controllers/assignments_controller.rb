@@ -111,8 +111,11 @@ class AssignmentsController < ApplicationController
       render action: "edit_weights"
       return
     end
-    params[:weight].each do |kv|
-      Assignment.find(kv[0]).update_attribute(:points_available, kv[1])
+    Assignment.transaction do
+      Assignment.find(params[:weight].keys).each do |assn|
+        new_weight = params[:weight][assn.id.to_s].to_f
+        assn.update_attribute(:points_available, new_weight) if new_weight != assn.points_available
+      end
     end
     redirect_to course_assignments_path
   end
