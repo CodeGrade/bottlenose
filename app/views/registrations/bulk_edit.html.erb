@@ -1,7 +1,11 @@
 <% @page_title = "Edit course registrations" %>
 <h2>Edit registrations</h2>
 
-<% roles = Registration.roles.to_a.map{|r| [r[0].humanize, r[0]] }
+<% if @cur_role == "professor"
+     roles = Registration.roles.to_a.map{|r| [r[0].humanize, r[0]] }
+   else
+     roles = [["Student", Registration.roles["student"]]]
+   end
    grouped_sections = @course.sections_by_type
    first_section_type = @course.section_types[0][0]
    Section.types.each do |type, _|

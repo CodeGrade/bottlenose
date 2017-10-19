@@ -1,4 +1,5 @@
 <% @page_title = "Registrations" %>
+<% cur_reg = current_user.registration_for(@course) %>
 
 <h2>Registrations
 
@@ -13,9 +14,9 @@
 
 <div class="row">
   <div class="col-md-6">
-    <%= render "users/table", header: "Students", role: :student, course: @course, users: @students %>
+    <%= render "users/table", header: "Students", role: "student", course: @course, users: @students %>
   </div>
   <div class="col-md-6">
-    <%= render "users/table", header: "Staff", role: :professor, course: @course, users: @staff %>
+    <%= render "users/table", header: "Staff", role: cur_reg.role, course: @course, users: @staff %>
   </div>
 </div>

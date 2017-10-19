@@ -44,9 +44,14 @@ class RegistrationsController < ApplicationController
 
   def bulk_edit
     @course = Course.find(params[:course_id])
+    @cur_role = current_user.registration_for(@course).role
     if params[:role] == "student"
       @registrations = @course.registrations
                        .where(role: Registration::roles["student"])
+    elsif @cur_role != "professor"
+      redirect_back fallback_location: course_registrations_path(@course),
+                    alert: "You are not allowed to edit staff registrations"
+      return
     else
       @registrations = @course.registrations
                        .where.not(role: Registration::roles["student"])
@@ -63,10 +68,14 @@ class RegistrationsController < ApplicationController
         @reg = Registration.find(params[:id])
         if @reg.nil? || (@reg.course.id != @course.id)
           render :json => {failure: "Unknown registration"}
+          return
         else
+          if (current_user.registration_for(@course).role != "professor")
+            params.delete(:role) # Only professors may edit roles
+          end
           changed = false
           @reg.dropped_date = nil if params[:reenroll]
-          @reg.role = params[:role]
+          @reg.role = params[:role] if params[:role]
           section_changes = params[:orig_sections].zip(params[:new_sections])
           section_changes.each do |orig, new|
             rs = RegistrationSection.find_by(registration_id: @reg.id, section_id: orig)
