@@ -81,8 +81,8 @@ class Questions < Assignment
                             end
                             if desc.is_a? String
                               # ok
-                            elsif (desc.is_a? Object) && !((desc["hint"].is_a? String) || (desc["feedback"].is_a? String))
-                              self.errors.add(:base, "#{question_desc}, rubric entry #{i} has malformed feedback")
+                            elsif (desc.is_a? Object) && (desc.keys.sort != ["feedback", "hint"])
+                              self.errors.add(:base, "#{question_desc}, rubric entry #{i} has malformed feedback (expected either a String, or a `hint` and a `feedback` message)")
                             end
                           end
                         end

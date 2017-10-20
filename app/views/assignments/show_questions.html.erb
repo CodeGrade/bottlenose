@@ -73,7 +73,7 @@
       <ul>
       <% q["rubric"].each do |entry| %>
         <% entry.each do |val, desc| %>
-        <li><b><%= val %>:</b> <%= sanitize_question(desc["hint"] || desc) %></li>
+        <li><b><%= val %>:</b> <%= sanitize_question((desc.is_a? String) ? desc : desc["hint"]) %></li>
         <% end %>
       <% end %>
       </ul>
