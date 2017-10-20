@@ -9,7 +9,7 @@
 <div class="row">
   <% if @teamset.errors.any? %>
   <div id="error_explanation" class="alert alert-danger">
-    <h3><%= pluralize(@teamset.errors.count, "error") %> prohibited this team from being saved:</h3>
+    <h2><%= pluralize(@teamset.errors.count, "error") %> prevented changes to this teamset from being saved:</h2>
     <ul>
       <% @teamset.errors.full_messages.each do |message| %>
       <li><%= message %></li>
@@ -61,11 +61,13 @@
         start.on("dp.change", function(e) {
           var v = $("#start_date").val();
           $("#random_start_date").val(v);
+          $("#bulk_start_date").val(v);
           $("#single_start_date").val(v);
         });
         end.on("dp.change", function(e) {
           var v = $("#end_date").val()
           $("#random_end_date").val(v);
+          $("#bulk_end_date").val(v);
           $("#single_end_date").val(v);
         });
         start.trigger("dp.change");
@@ -132,6 +134,38 @@
   <div class="form-group">
     <p>There are no other teamsets to copy from yet in this course.</p>
   </div>
+  <% end %>
+  
+  <h3 class="middle-separator">OR</h3>
+
+  <%= form_for([@course, @teamset], :url => {action: :bulk_enter, method: :post }) do |f| %>
+  <h3>Enter bulk team members</h3>
+  <%= fields_for "bulk" do |bulk| %>
+  <%= bulk.hidden_field "start_date" %>
+  <%= bulk.hidden_field "end_date" %>
+  <div class="row">
+    <div class="form-group">
+    <%= label_tag :bulk_teams, "Teams", class: "col-sm-12" %>
+    <div class="col-sm-8">
+      <%= text_area_tag :bulk_teams, @teamset.bulk_teams, class: "form-control", rows: 10 %>
+    </div>
+    <p class="help-block col-sm-4">
+      Enter one team per line, by supplying the comma-separated
+      usernames of the relevant students.  Teams will only be created if
+      all the relevant students are <i>not</i> currently in a team, so
+      be sure to dissolve any teams before proceeding.
+      <code style="white-space: pre-line; display: block;">username1, username2, username3
+        ...
+      </code>
+    </p>
+    <span class="clearfix"></span>
+    </div>
+    <div class="form-group col-sm-12">
+    <%= f.submit "Create teams", id: "submit-bulk",
+        class: "btn btn-primary col-sm-3", style: "float: none;" %>
+    </div>
+  </div>
+  <% end %>
   <% end %>
   
   <h3 class="middle-separator">OR</h3>

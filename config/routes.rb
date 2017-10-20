@@ -107,6 +107,7 @@ Bottlenose::Application.routes.draw do
       member do
         patch :clone
         patch :randomize
+        patch :bulk_enter
         patch :dissolve_all
       end
       resources :teams, only: [:show] do

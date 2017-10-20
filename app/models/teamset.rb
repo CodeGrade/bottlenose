@@ -4,6 +4,8 @@ class Teamset < ActiveRecord::Base
   has_many   :submissions, through: :teams
   has_many   :assignments
 
+  attr_accessor :bulk_teams
+  
   def to_s
     "Teamset #{self.id}"
   end
@@ -102,14 +104,23 @@ class Teamset < ActiveRecord::Base
     self.teams.where(Team.active_query, Date.current, Date.current)
   end
 
+  def active_team_for(user)
+    user.teams.where(course: self.course, teamset: self).select(&:active?).first
+  end
+
   def students_without_active_team
-    @swdi = self.course.students_with_drop_info
+    users_without_active_team(self.course.students)
+  end
+
+  def users_without_active_team(for_users = nil)
+    for_users = self.course.users unless for_users
+    @uwdi = self.course.users_with_drop_info(for_users)
     @relevant_teams = Team
                       .joins(:team_users)
                       .select("teams.*", "team_users.user_id as uid")
-                      .where("team_users.user_id IN (?)", @swdi.pluck(:id))
+                      .where("team_users.user_id IN (?)", @uwdi.pluck(:id))
                       .group_by(&:uid)
-    @swdi.where("registrations.dropped_date": nil).reject do |student|
+    @uwdi.where("registrations.dropped_date": nil).reject do |student|
       @relevant_teams[student.id]&.any? do |t| t.teamset_id == self.id && t.active? end
     end
   end

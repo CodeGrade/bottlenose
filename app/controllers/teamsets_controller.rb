@@ -1,11 +1,13 @@
+require 'csv'
+
 class TeamsetsController < ApplicationController
   layout 'course'
 
   before_action :find_course
   before_action :find_teamset, except: [:index]
   before_action :require_registered_user
-  before_action :stop_impersonating_user, only: [:edit, :update, :dissolve_all, :randomize]
-  before_action :require_admin_or_staff, only: [:edit, :update, :dissolve_all, :randomize]
+  before_action :stop_impersonating_user, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter]
+  before_action :require_admin_or_staff, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter]
 
   # GET /staff/courses/:course_id/teams
   def index
@@ -19,12 +21,7 @@ class TeamsetsController < ApplicationController
   end
 
   def edit
-    @teams = @teamset.teams.includes(:users).where(Team.active_query, Date.current, Date.current)
-    @others = @teamset.students_without_active_team
-    @students = @course.students
-                .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
-                .map{|s| [s.id, s]}.to_h
-    @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
+    setup_params
   end
 
   def update
@@ -34,14 +31,65 @@ class TeamsetsController < ApplicationController
     @team.users = users.map { |user_id| User.find(user_id.to_i) }
 
     if @team.save
-      redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
-        notice: "Team #{@team.id} was successfully created."
+      redirect_to edit_course_teamset_path(@course, @teamset),
+                  notice: "Team #{@team.id} was successfully created."
     else
-      @teams = @course.teams.select(Team.active_query, Date.current, Date.current)
-      @others = @teamset.students_without_active_team
+      setup_params
       @team.errors.full_messages.each do |e|
         @teamset.errors.add(:base, e)
       end
+      render :edit
+    end
+  end
+
+  def bulk_enter
+    @success = []
+    @failure = []
+    @swat = @teamset.users_without_active_team.map{|s| [s.id, s]}.to_h
+    CSV.parse(params[:bulk_teams]) do |row|
+      row.map(&:strip!)
+      users = row.map {|un| User.find_by(username: un)}
+      if users.any?(&:nil?)
+        @failure.push "Could not find all usernames in #{row.to_sentence}"
+      else
+        in_teams = users.select{|s| @swat[s.id].nil?}
+        if in_teams.empty?
+          team = Team.new(bulk_params)
+          team.users = users
+          if team.valid?
+            @success.push team
+          else
+            @failure.push "Could not create team for #{row.to_sentence}:\n\t#{team.errors.full_messages.join('\n\t')}"
+          end
+        else
+          if in_teams.count == 1
+            @failure.push "Could not create team for #{row.to_sentence}:\n\t#{in_teams.first.username} is already in an active team"
+          else
+            @failure.push "Could not create team for #{row.to_sentence}:\n\t#{in_teams.map(&:username).to_sentence} are already in active teams"
+          end
+        end
+      end
+    end
+    if @failure.empty?
+      begin
+        Team.transaction do
+          @success.each(&:save!)
+        end
+      rescue Exception => e
+        @teamset.errors.add(:base, "Could not save all teams: #{e}")
+        setup_params
+        @teamset.bulk_teams = params[:bulk_teams]
+        render :edit
+        return
+      end
+      redirect_to edit_course_teamset_path(@course, @teamset),
+                  notice: "#{pluralize(@success.count, 'team')} created"
+    else
+      @failure.each do |msg|
+        @teamset.errors.add(:base, msg)
+      end
+      setup_params
+      @teamset.bulk_teams = params[:bulk_teams]
       render :edit
     end
   end
@@ -83,5 +131,21 @@ class TeamsetsController < ApplicationController
     ans[:course_id] = params[:course_id]
     ans[:teamset_id] = params[:id]
     ans
+  end
+
+  def bulk_params
+    ans = params.require(:bulk).permit(:start_date, :end_date)
+    ans[:course_id] = params[:course_id]
+    ans[:teamset_id] = params[:id]
+    ans
+  end
+
+  def setup_params
+    @teams = @teamset.teams.includes(:users).where(Team.active_query, Date.current, Date.current)
+    @others = @teamset.students_without_active_team
+    @students = @course.students
+                .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
+                .map{|s| [s.id, s]}.to_h
+    @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
   end
 end
