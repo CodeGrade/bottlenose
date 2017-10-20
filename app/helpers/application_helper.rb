@@ -168,6 +168,8 @@ module ApplicationHelper
       "scheme"
     when ".ml", ".mli"
       "mllike"
+    when ".md"
+      "markdown"
     when ".mly"
       "text/x-ebnf"
     when ".c", ".h"

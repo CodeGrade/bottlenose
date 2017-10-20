@@ -29,6 +29,7 @@
 //= require codemirror/mode/mllike/mllike
 //= require codemirror/mode/ebnf/ebnf
 //= require codemirror/mode/javascript/javascript
+//= require codemirror/mode/markdown/markdown
 //= require codemirror/mode/scheme/scheme
 //= require pyret-codemirror-mode/mode/pyret
 //= require_tree .
