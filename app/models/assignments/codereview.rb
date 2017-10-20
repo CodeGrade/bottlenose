@@ -126,7 +126,6 @@ class Codereview < Assignment
                     @total_weight += Float(q["weight"])
                     ans = q["correctAnswer"]
                     if ans.nil?
-                      debugger
                       self.errors.add(:base, "#{question_desc} is missing a correctAnswer")
                     end
                     if q["rubric"].nil?
@@ -210,8 +209,8 @@ class Codereview < Assignment
                       end
                     end
                   end
-                # rescue Exception => e
-                #   self.errors.add(:base, "#{question_desc} could not be parsed: #{e}")
+                rescue Exception => e
+                  self.errors.add(:base, "#{question_desc} could not be parsed: #{e}")
                 end
               end
             end
