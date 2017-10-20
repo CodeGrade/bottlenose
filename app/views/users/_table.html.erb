@@ -1,5 +1,5 @@
 <% link_to_students = current_user.site_admin? || current_user.professor_ever? %>
-<% if role == :student %>
+<% if role == "student" %>
 <div class="panel panel-default">
   <div class="panel-heading">
     <h3 class="panel-title">
@@ -44,9 +44,11 @@
   <div class="panel-heading">
     <h3 class="panel-title">
       <%= header %> (<%= users.count %>)
+      <% if role == "professor" %>
       <%= link_to "Edit staff registrations",
           bulk_edit_course_registrations_path(@course, {role: role}),
           class: "pull-right btn-xs btn btn-default" %>
+      <% end %>
     </h3>
   </div>
 
