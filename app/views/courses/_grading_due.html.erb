@@ -10,7 +10,7 @@
     </h4>
     <ul>
       <% graders.group_by(&:id).each do |g_id, gs| %>
-      <% usernames = gs.map(&:user_name).join(", ") %>
+      <% usernames = gs.map(&:user_name).to_sentence %>
       <li><%= link_to usernames,
               course_assignment_submission_path(@course, assn_id, gs.first.submission_id) %></li>
       <% end %>

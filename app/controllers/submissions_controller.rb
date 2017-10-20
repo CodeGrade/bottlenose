@@ -210,7 +210,7 @@ class SubmissionsController < ApplicationController
       info: nil)
     sub_comment.save
     redirect_to course_assignment_path(@course, @assignment),
-                notice: "Submission marked as plagiarized for #{guilty_students.map{|uid, _| User.find(uid).name}.join(', ')}"
+                notice: "Submission marked as plagiarized for #{guilty_students.map{|uid, _| User.find(uid).name}.to_sentence}"
   end
 
   def split_submission
@@ -251,7 +251,7 @@ class SubmissionsController < ApplicationController
       info: nil)
     sub_comment.save!
     redirect_to course_assignment_path(@course, @assignment),
-                notice: "Group submission split for #{@submission.users.map(&:name).join(', ')}"
+                notice: "Group submission split for #{@submission.users.map(&:name).to_sentence}"
   end
 
   def split_sub(orig_sub, for_user, score = nil)

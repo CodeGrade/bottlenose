@@ -16,7 +16,7 @@ class Team < ApplicationRecord
   end
 
   def member_names
-    users.sort_by(&:sort_name).map(&:display_name).join(", ")
+    users.sort_by(&:sort_name).map(&:display_name).to_sentence
   end
 
   # If the end date of a team is not set (nil) then this team does not
@@ -57,7 +57,8 @@ class Team < ApplicationRecord
   def all_enrolled
     not_enrolled = users.select {|u| u.registration_for(course).nil?}
     if not_enrolled.count > 0
-      errors.add(:base, "Not all team members are enrolled in this course: " + not_enrolled.to_a.to_s)
+      errors.add(:base, "The following team members are not enrolled in this course: " +
+                        not_enrolled.to_a.map(&:username).to_sentence)
     end
   end
 

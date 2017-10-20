@@ -126,7 +126,7 @@ module ApplicationHelper
                   " - ",
                   team.users.sort_by(&:sort_name).map do |u|
                     maybe_link_user(show_user, u).html_safe
-                  end.join(", ")
+                  end.to_sentence
                 ].flatten.join("\n").html_safe)
   end
   

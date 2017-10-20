@@ -136,9 +136,9 @@
               <% end %>
             </td>
             <td class="col-md-1"><span class="<%= color_warning(total) %>"><%= show_score(total, nil, true) %></span></td>
-            <td class="col-md-1"><span data-toggle="tooltip" data-placement="top" title="(<%= info[:unsub_names].join(", ") %>)">
+            <td class="col-md-1"><span data-toggle="tooltip" data-placement="top" title="(<%= info[:unsub_names].to_sentence %>)">
                 <%= show_score(info[:unsub], nil, true) %></span></td>
-            <td class="col-md-1"><span data-toggle="tooltip" data-placement="top" title="(<%= info[:pending_names].join(", ") %>)">
+            <td class="col-md-1"><span data-toggle="tooltip" data-placement="top" title="(<%= info[:pending_names].to_sentence %>)">
                 <%= show_score(info[:pending], nil, true) %></span></td>
             <td class="col-md-1"><span><%= show_score(info[:remaining], nil, true) %></span></td>
           </tr>

@@ -72,8 +72,8 @@
     <% if role_name == 'student' %>
     <p>Registered for
       <%= info[:sections].map do |sec_type, sections| 
-         "#{sec_type} #{'section'.pluralize(sections.count)} #{sections.map(&:crn).join(", ")}"
-         end.join(", ") %>
+         "#{sec_type} #{'section'.pluralize(sections.count)} #{sections.map(&:crn).to_sentence}"
+         end.to_sentence %>
       <% if info[:withdrawn] %>
       (withdrawn <span class="local-time"><%= info[:withdrawn].iso8601 %></span>)
       <% end %>

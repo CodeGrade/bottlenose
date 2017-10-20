@@ -30,7 +30,7 @@ class Submission < ApplicationRecord
   after_save :add_user_submissions!
 
   def to_s
-    "#{self.type} #{self.id} by #{if self.team then '(team ' + self.team_id.to_s + ') ' else '' end}" + self.users.map(&:name).join(', ')
+    "#{self.type} #{self.id} by #{if self.team then '(team ' + self.team_id.to_s + ') ' else '' end}" + self.users.map(&:name).to_sentence
   end
 
   def add_user_submissions!

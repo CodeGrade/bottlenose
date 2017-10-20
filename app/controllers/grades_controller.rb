@@ -292,7 +292,7 @@ class GradesController < ApplicationController
                   notice: "Comments saved; grading completed"
     else
       if missing.count > 1
-        @grade.errors.add(:base, "Questions #{missing.join(', ')} do not have grades")
+        @grade.errors.add(:base, "Questions #{missing.to_sentence} do not have grades")
       else
         @grade.errors.add(:base, "Question #{missing[0]} does not have a grade")
       end
@@ -320,7 +320,7 @@ class GradesController < ApplicationController
 
     if !missing.empty?
       if missing.count > 1
-        @grade.errors.add(:base, "Questions #{missing.join(', ')} do not have grades")
+        @grade.errors.add(:base, "Questions #{missing.to_sentence} do not have grades")
       else
         @grade.errors.add(:base, "Question #{missing[0]} does not have a grade")
       end

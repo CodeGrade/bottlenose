@@ -66,7 +66,7 @@
         <% end %>
         <% if t[:info]["methodName"] %>
         <p>Method signature:
-          <code class="text-muted"><%= t[:info]["methodName"] %>(<%= t[:info]["paramNames"].join(", ") %>)</code>
+          <code class="text-muted"><%= t[:info]["methodName"] %>(<%= t[:info]["paramNames"].to_sentence %>)</code>
         </p>
         <p style="display: inline-block;">Given arguments:
           <dl class="dl-horizontal">
