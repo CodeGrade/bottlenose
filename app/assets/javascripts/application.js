@@ -134,6 +134,23 @@ function ensureFilesPresentOnSubmit(e, sel) {
   return !problems;
 }
 
+function makeFriendlyDate(str) {
+  var dd = moment(Date.parse(str));
+  if (!dd.isValid()) { dd = moment(str); }
+
+  if (dd.isValid()) {
+    var today = moment().startOf('day');
+    var tomorrow = moment(today).add(1, 'days');
+    var twodays = moment(tomorrow).add(1, 'days');
+    if (today.isSameOrBefore(dd) && dd.isBefore(tomorrow))
+      return ("Today, " + dd.format("h:mm:ssa"));
+    else if (tomorrow.isSameOrBefore(dd) && dd.isBefore(twodays))
+      return ("Tomorrow, " + dd.format("h:mm:ssa"));
+    else
+      return (dd.format("MMM D YYYY, h:mm:ssa"));
+  }
+}
+
 $(function() {
   $('[data-toggle="tooltip"]').each(function(elt) {
     $(this).tooltip({
@@ -144,20 +161,7 @@ $(function() {
   });
 
   $('.local-time').each(function(_) {
-    var dd = moment(Date.parse($(this).text()));
-    if (!dd.isValid()) { dd = moment($(this).text()); }
-
-    if (dd.isValid()) {
-      var today = moment().startOf('day');
-      var tomorrow = moment(today).add(1, 'days');
-      var twodays = moment(tomorrow).add(1, 'days');
-      if (today.isSameOrBefore(dd) && dd.isBefore(tomorrow))
-        $(this).text("Today, " + dd.format("h:mm:ssa"));
-      else if (tomorrow.isSameOrBefore(dd) && dd.isBefore(twodays))
-        $(this).text("Tomorrow, " + dd.format("h:mm:ssa"));
-      else
-        $(this).text(dd.format("MMM D YYYY, h:mm:ssa"));
-    }
+    $(this).text(makeFriendlyDate($(this).text()));
   });
 
   $("input.numeric").on("keydown", validateNumericInput);

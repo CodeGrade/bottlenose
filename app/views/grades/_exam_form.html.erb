@@ -17,9 +17,14 @@
     <% @course.sections.each do |s| %>
     <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
     <% end %>
-</select></h4>
+  </select>
+</h4>
 <% end %>
-<table id="grades-table" class="table table-striped col-sm-12">
+<% classes = "table table-striped col-sm-12"
+   if @student_info.length > 1
+     classes += " hide-dropped"
+   end %>
+<table id="grades-table" class="<%= classes %>">
   <thead>
     <tr style="vertical-align: top;">
       <th>NUID<% if any_parts %><br>&nbsp;<% end %></th>
@@ -36,7 +41,25 @@
       <% end %>
       <th>Curved <% if any_parts %><br><% end %>grade</th>
       <th>Final <% if any_parts %><br><% end %>grade</th>
-      <th class="col-sm-1"></th>
+      <th class="col-sm-1">
+        <% if @student_info.length > 1 %>
+        <div style="width: 0px; overflow: visible;">
+          <div id="toggle-dropped" class="btn-xs btn btn-default">Show dropped students</div>
+        </div>
+        <script>
+          $("#toggle-dropped").on("click", function(e) {
+            $("#grades-table").toggleClass("hide-dropped");
+            if ($("#grades-table").hasClass("hide-dropped")) {
+              $(this).text("Show dropped students");
+            } else {
+              $(this).text("Hide dropped students");
+            }
+            e.stopPropagation();
+            e.preventDefault();
+          });
+        </script>
+        <% end %>
+      </th>
       <th style="width: 2rem; padding-left: 0px;"></th>
     </tr>
   </thead>
@@ -44,7 +67,11 @@
   <% used_subs = @used_subs.group_by(&:user_id) %>
   <% @student_info.order("LOWER(last_name)", "LOWER(first_name)").each do |u| %>
     <% sections = @students_by_section[u.id].map{|u| "sec_#{u.crn}"}.join(' ') %>
+    <% if u.dropped_date %>
+    <tr id="<%= u.id %>" class="<%= sections %> dropped warning">
+    <% else %>
     <tr id="<%= u.id %>" class="<%= sections %>">
+    <% end %>
       <td class="text-muted small "><%= u.nuid %></td>
       <td>
         <form id="grade_<%= u.id %>">
@@ -98,6 +125,15 @@
   <% end %>
   </tbody>
 </table>
+<script>
+  <% raw_dropped_info = @student_info.select{|u| u.dropped_date}.map{|u| [u.id.to_s, u.dropped_date.iso8601]}.to_h %>
+  var dropped_dates = <%= raw json_escape(JSON.pretty_generate(raw_dropped_info)) %>;
+  for (var id in dropped_dates) {
+    dropped_dates[id] = makeFriendlyDate(dropped_dates[id]);
+    $("tr#" + id).attr("title", "Withdrawn on <span class='local-time'>" + dropped_dates[id] + "</span>")
+                 .tooltip({animated: 'fade', placement: "top", html: true});
+  }
+</script>
 
 <div id="enter_grades" class="modal" role="dialog">
   <div class="modal-dialog">

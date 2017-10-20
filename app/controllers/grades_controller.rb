@@ -212,7 +212,7 @@ class GradesController < ApplicationController
   # Per-assignment-type actions, by action
   # Bulk editing of grades
   def bulk_edit_Exam
-    edit_exam_grades_for(@course.students)
+    edit_exam_grades_for(@course.students_with_drop_info)
     
     render "edit_#{@assignment.type.underscore}_grades"
   end
@@ -611,10 +611,7 @@ HEADER
 
   # ExamGrader
   def edit_ExamGrader
-    edit_exam_grades_for(User
-                          .where(id: @submission.user_id)
-                          .joins(:registrations)
-                          .where("registrations.course_id": @course.id))
+    edit_exam_grades_for(@course.users_with_drop_info([@submission.user]))
     render "edit_ExamGrader"
   end
   def show_ExamGrader
