@@ -1,6 +1,7 @@
 class ReviewsController < ApplicationController
   layout 'course'
   
+  before_action :require_current_user
   before_action :find_course
   before_action :find_assignment
   before_action :find_submission
@@ -37,6 +38,7 @@ class ReviewsController < ApplicationController
     end    
   end
 
+  protected
   def find_review
     @review = ReviewFeedback.find_by(id: params[:id])
     if @review.nil? || @review.submission_id != @submission.id

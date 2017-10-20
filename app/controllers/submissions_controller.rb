@@ -7,7 +7,7 @@ class SubmissionsController < ApplicationController
   before_action :find_course
   before_action :find_assignment
   before_action -> { find_submission(params[:id]) }, except: [:index, :new, :create, :rerun_grader]
-  before_action :require_current_user, only: [:show, :files, :new, :create]
+  before_action :require_current_user, only: [:show, :index, :new, :create, :details]
   before_action -> { require_admin_or_staff(course_assignment_path(@course, @assignment)) },
                 only: [:rerun_grader]
   before_action -> { require_admin_or_staff(course_assignment_submission_path(@course, @assignment, @submission)) },
@@ -254,6 +254,15 @@ class SubmissionsController < ApplicationController
                 notice: "Group submission split for #{@submission.users.map(&:name).to_sentence}"
   end
 
+  def publish
+    @submission.grades.where(score: nil).each do |g| g.grade(assignment, used) end
+    @submission.grades.update_all(:available => true)
+    @submission.compute_grade!
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
+  end
+
+
+  private
   def split_sub(orig_sub, for_user, score = nil)
     team = orig_sub.team
     if team
@@ -294,15 +303,6 @@ class SubmissionsController < ApplicationController
     sub
   end
 
-  def publish
-    @submission.grades.where(score: nil).each do |g| g.grade(assignment, used) end
-    @submission.grades.update_all(:available => true)
-    @submission.compute_grade!
-    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
-  end
-
-
-  private
 
   def submission_params
     if true_user_prof_for?(@course) || current_user_prof_for?(@course)
