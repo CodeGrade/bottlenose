@@ -59,7 +59,7 @@ class CodereviewSub < Submission
         end
         self.cleanup!
       else
-        check_questions_schema(all_questions, @answers, @questions.count)
+        check_questions_schema(all_questions, @answers, @questions.count, @related_files)
       end
     end
   end
