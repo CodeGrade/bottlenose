@@ -16,7 +16,7 @@ class ArchiveUtils
       zip: true
     }
     # Unsupported file types, taken from https://en.wikipedia.org/wiki/List_of_archive_formats
-    [ "rar", "ar", "cpio", "shar", "LBR", "iso", "mar", "sbx", "bz2", "lz", "lzma", "lzo", "sfark", "sz",
+    [ "rar", "ar", "cpio", "shar", "lbr", "iso", "mar", "sbx", "bz2", "lz", "lzma", "lzo", "sfark", "sz",
       "xz", "z", "7z", "s7z", "ace", "afa", "alz", "apk", "arc", "arj", "b1", "b6z", "ba", "bh", "cab",
       "car", "cfs", "cpt", "dar", "dd", "dgc", "dmg", "ear", "gca", "ha", "hki", "ice", "jar", "kgb",
       "lzh", "lha", "pak", "partimg", "paq6", "paq7", "paq8", "pea", "pim", "pit", "qda", "rk", "sda",
