@@ -29,6 +29,16 @@
 </div>
 <div class="form-group">
   <%= f.label :upload_file %>
+  <p class="hidden alert alert-warning" id="archive-warning">
+    If your homework consists of submitting multiple files, please
+    submit either a <code>.zip</code>, a <code>.tar</code>,
+    a <code>.tar.gz</code> or a <code>.tgz</code> file.  Other archive
+    formats (e.g. <code>.rar</code>, <code>.jar</code>,
+    <code>7z</code> and others) are <i><b>not</b></i> supported, and
+    will not be extracted.  Also make sure that your archive
+    is <i>not</i> password-protected; the server cannot guess your
+    password.
+  </p>
   <%= f.file_field :upload_file %>
 </div>
 <div class="form-group">
@@ -49,6 +59,15 @@
     warning.find("p").removeClass("hidden");
     warning.find("h3").removeClass("hidden");
   }, Math.max(deadline - now, 0));
+  var archiveExtensions = <%= raw json_escape(JSON.generate(ArchiveUtils.ARCHIVE_EXTENSIONS)) %>;
+  $("#submission_upload_file").change(function(e) {
+    var filename = $(this).val();
+    if (archiveExtensions[filename.split('.').pop().toLowerCase()] === false) {
+      $("#archive-warning").removeClass("hidden");
+    } else {
+      $("#archive-warning").addClass("hidden");
+    }
+  });
   $("form").submit(function(e) {
     var num = ensureValidNumericInputOnSubmit(e, "div.spinner > input");
     var files = ensureFilesPresentOnSubmit(e);
