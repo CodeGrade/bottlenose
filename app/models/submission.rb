@@ -66,7 +66,7 @@ class Submission < ApplicationRecord
             alloc.save
           end
         end
-        used.submission_id = self.id
+        used.submission = self
         used.save!
       end
     else
@@ -80,7 +80,7 @@ class Submission < ApplicationRecord
           alloc.save
         end
       end
-      used.submission_id = self.id
+      used.submission = self
       used.save!
     end
   end

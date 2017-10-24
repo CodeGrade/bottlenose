@@ -107,4 +107,14 @@ class CodereviewSub < Submission
       end
     end
   end
+
+  def dup
+    result = super
+    self.review_feedbacks.each do |rf|
+      rf_dup = rf.dup
+      rf_dup.review_submission = result
+      result.review_feedbacks << rf_dup
+    end
+    result
+  end
 end

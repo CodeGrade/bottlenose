@@ -276,17 +276,12 @@ class SubmissionsController < ApplicationController
       team.save
     end
     # Create the new submission, reusing the prior submitted file
-    sub = Submission.new(
-      assignment: @assignment,
-      user: for_user,
-      time_taken: orig_sub.time_taken,
-      created_at: orig_sub.created_at,
-      ignore_late_penalty: false,
-      score: score || orig_sub.score,
-      team: team,
-      upload_id: @submission.upload_id,
-      type: @submission.type)
-    sub.save
+    sub = orig_sub.dup
+    sub.user = for_user
+    sub.ignore_late_penalty = false
+    sub.score = score || orig_sub.score
+    sub.team = team
+    sub.save!
     sub.set_used_sub!
     # Copy any grades
     orig_sub.grades.each do |g|
