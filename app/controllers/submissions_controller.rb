@@ -279,6 +279,7 @@ class SubmissionsController < ApplicationController
     sub = orig_sub.dup
     sub.user = for_user
     sub.ignore_late_penalty = false
+    sub.created_at = orig_sub.created_at
     sub.score = score || orig_sub.score
     sub.team = team
     sub.save!
