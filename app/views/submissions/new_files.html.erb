@@ -29,16 +29,22 @@
 </div>
 <div class="form-group">
   <%= f.label :upload_file %>
-  <p class="hidden alert alert-warning" id="archive-warning">
-    If your homework consists of submitting multiple files, please
-    submit either a <code>.zip</code>, a <code>.tar</code>,
-    a <code>.tar.gz</code> or a <code>.tgz</code> file.  Other archive
-    formats (e.g. <code>.rar</code>, <code>.jar</code>,
-    <code>7z</code> and others) are <i><b>not</b></i> supported, and
-    will not be extracted.  Also make sure that your archive
-    is <i>not</i> password-protected; the server cannot guess your
-    password.
-  </p>
+  <div class="hidden alert alert-warning" id="archive-warning">
+    <p>If your homework requires submitting multiple files:</p>
+    <ul>
+      <li>Please archive them and submit either a <code>.zip</code>,
+        a <code>.tar</code>, a <code>.tar.gz</code> or
+        a <code>.tgz</code> file.</li>
+      <li>Other archive formats (e.g. <code>.rar</code>, <code>.jar</code>,
+        <code>7z</code> and others) are <i><b>not</b></i> supported,
+        and will not be extracted.</li>
+      <li>Please check that the directory structure of your submission
+        matches any requirements specified by the assignment.</li>
+      <li>Make sure that your archive is <i><b>not</b></i>
+        password-protected; the server cannot guess your
+        password.</li>
+    </ul>
+  </div>
   <%= f.file_field :upload_file %>
 </div>
 <div class="form-group">
