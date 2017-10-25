@@ -430,6 +430,7 @@ class Submission < ApplicationRecord
   protected
 
   def user_is_registered_for_course
+    return unless self.new_record? || self.user_id_changed?
     if user && !user.courses.any?{|cc| cc.id == course.id }
       errors.add(:base, "Not registered for this course :" + user.name)
     end
@@ -439,12 +440,14 @@ class Submission < ApplicationRecord
   end
 
   def submitted_file_or_manual_grade
+    return unless self.new_record? || self.upload_id_changed?
     if upload_id.nil? and self.assignment.type != "Exam"
       errors.add(:base, "You need to submit a file.")
     end
   end
 
   def file_below_max_size
+    return unless self.new_record? || self.upload_size_changed?
     msz = course.sub_max_size
     if upload_size > msz.megabytes
       errors.add(:base, "Upload exceeds max size (#{upload_size} > #{msz} MB).")
@@ -452,6 +455,7 @@ class Submission < ApplicationRecord
   end
 
   def has_team_or_user
+    return unless self.new_record? || self.team_id_changed? || self.user_id_changed?
     if assignment.team_subs?
       if team.nil?
         errors.add(:base, "Assignment requires team subs. No team set.")
