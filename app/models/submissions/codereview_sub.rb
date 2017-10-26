@@ -32,13 +32,14 @@ class CodereviewSub < Submission
   attr_accessor :related_subs
   attr_accessor :related_files
   before_validation :load_answers_related_files
-  def load_answers_related_files
+  def load_answers_related_files(get_line_comments = false)
     return if @answers
     @answers ||= YAML.load(File.read(self.upload.submission_path))
     @related_files = {}
     @related_subs = self.review_feedbacks.map(&:submission)
     @related_subs.each do |s|
-      _, files = s.get_submission_files(self.user)
+      # we don't need the comments for validation purposes, so by default, don't load them
+      _, files = s.get_submission_files(self.user, get_line_comments ? nil : {}) 
       @related_files[s.id] = files
     end
   end
