@@ -58,7 +58,7 @@ class Gradesheet
           #            .where('line < ?', @questions.count)
           #            .order(:line).zip(@questions)
           #            .map{|w, q| w[:weight].clamp(0, 1) * q["weight"]}
-          q_grades = @comments[s.id]
+          q_grades = (@comments[s.id] || [])
                      .select{|comm| comm[:grade_id] == g.id}
                      .sort_by!{|comm| comm[:line]}.zip(@questions)
                      .map{|w, q| w[:weight].clamp(0, 1) * q["weight"]}
