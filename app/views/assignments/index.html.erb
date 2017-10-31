@@ -1,5 +1,5 @@
 <% @page_title = "#{@course.name} / Assignments" %>
-
+<% score_summary = @course.score_summary.to_a %>
 
 <% if @course && (@course.registered_by?(current_user) || current_user.site_admin?) %>
 
@@ -81,8 +81,8 @@
   <div class="panel-heading">
     <div class="panel-title" data-toggle="collapse" data-target="#students-table">
       Students
-      <span id="all-students-count" style="display: none;">(<%= @course.score_summary.count %>)</span>
-      <span id="current-students-count">(<%= @course.score_summary.keep_if{|i| !i[:dropped]}.count %>)</span>
+      <span id="all-students-count" style="display: none;">(<%= score_summary.count %>)</span>
+      <span id="current-students-count">(<%= score_summary.keep_if{|i| !i[:dropped]}.count %>)</span>
       <div id="toggle-dropped" class="pull-right btn-xs btn btn-default">Show dropped students</div>
       <script>
         $("#toggle-dropped").on("click", function(e) {
@@ -117,7 +117,7 @@
       </thead>
       <tbody>
         <% 
-           @course.score_summary.each do |info|
+           score_summary.each do |info|
            total = info[:max] + info[:unsub] + info[:pending]
            %>
           <% if info[:dropped] %>
