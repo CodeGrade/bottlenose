@@ -1,7 +1,8 @@
 <% @page_title = "#{@course.name} / Assignments" %>
-<% score_summary = @course.score_summary.to_a %>
+<% now = DateTime.current %>
 
 <% if @course && (@course.registered_by?(current_user) || current_user.site_admin?) %>
+<% score_summary = @course.score_summary.to_a %>
 
 <div class="panel panel-default">
   <div class="panel-heading">
@@ -36,15 +37,8 @@
         </tr>
       </thead>
       <tbody>
-        <%
-           assignments = @course.assignments.order(due_date: :desc, available: :desc)
-           stats = Submission.joins(:used_subs).where(assignment: assignments)
-                             .select("min(submissions.assignment_id) as a_id")
-                             .select("min(score), avg(score), max(score)")
-                             .group("submissions.assignment_id").to_a
-        %>
-        <% assignments.each do |assn| %>
-        <% if assn.available > DateTime.current %>
+        <% @ordered_assignments.each do |assn| %>
+        <% if assn.available > now %>
         <tr class="text-muted">
           <td><%= link_to assn.name, course_assignment_path(@course, assn) %></td>
           <td><span class="local-time"><%= assn.available.iso8601 %></span></td>
@@ -59,12 +53,12 @@
           <td><span class="local-time"><%= assn.available.iso8601 %></span></td>
           <td><span class="local-time"><%= assn.due_date.iso8601 %></span></td>
           <td><%= show_score(assn.points_available, assn, true) %>
-          <% if assn.due_date > DateTime.current %>
+          <% if assn.due_date > now %>
           <td class="text-muted">N/A</td>
           <td class="text-muted">N/A</td>
           <td class="text-muted">N/A</td>
           <% else %>
-          <% stat = stats.find{|r| r.a_id == assn.id} %>
+          <% stat = @stats[assn.id] %>
           <td><%= show_score(stat&.min, assn, true) %>%</td>
           <td><%= show_score(stat&.avg, assn, true) %>%</td>
           <td><%= show_score(stat&.max, assn, true) %>%</td>
@@ -82,7 +76,7 @@
     <div class="panel-title" data-toggle="collapse" data-target="#students-table">
       Students
       <span id="all-students-count" style="display: none;">(<%= score_summary.count %>)</span>
-      <span id="current-students-count">(<%= score_summary.keep_if{|i| !i[:dropped]}.count %>)</span>
+      <span id="current-students-count">(<%= score_summary.count{|i| !i[:dropped]} %>)</span>
       <div id="toggle-dropped" class="pull-right btn-xs btn btn-default">Show dropped students</div>
       <script>
         $("#toggle-dropped").on("click", function(e) {
@@ -121,12 +115,13 @@
            total = info[:max] + info[:unsub] + info[:pending]
            %>
           <% if info[:dropped] %>
-          <tr class="dropped text-muted">
+          <tr class="dropped warning text-muted">
           <% else %>
           <tr>
           <% end %>
             <td width="1em"><span><%= mail_to "#{info[:s].name} <#{info[:s].email}>", "@" %></span></td>
-            <td><span><%= link_to info[:s].display_name, impersonate_user_path(info[:s]), method: 'post' %></span></td>
+            <td><span><%= link_to info[:s].display_name, impersonate_user_path(info[:s]), 
+                          method: 'post', class: 'user-link', data: user_link_data(info[:s]) %></span></td>
             <td class="col-md-1"><span class="<%= color_warning(info[:min]) %>"><%= show_score(info[:min], nil, true) %></span></td>
             <td class="col-md-1">
               <% if info[:cur].nan? %>

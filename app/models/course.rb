@@ -130,22 +130,21 @@ class Course < ApplicationRecord
     end
     assns = self.assignments.where("available < ?", DateTime.current)
     open = assns.where("due_date > ?", DateTime.current)
-    subs = UsedSub.where(user: for_students, assignment: assns)
+    subs_by_user = UsedSub.where(user: for_students, assignment: assns)
       .joins(:submission)
       .select(:user_id, :assignment_id, :score)
-      .to_a
+      .group_by(&:user_id)
     assns = assns.map{|a| [a.id, a]}.to_h
     avail = assns.reduce(0) do |tot, kv| tot + kv[1].points_available end
     total_points = self.assignments.reduce(0) do |tot, a| tot + a.points_available end
     # assume a default of 100 points, but there might be extra credit assignments that push the total above 100
     remaining = [100.0, total_points].max - avail
-    ans = []
-    self.users_with_drop_info(for_students).sort_by(&:sort_name).each do |s|
+    ans = self.users_with_drop_info(for_students).sort_by(&:sort_name).map do |s|
       dropped = s.dropped_date
-      used = subs.select{|r| r.user_id == s.id}
+      used = (subs_by_user[s.id] || []).map{|u| [u.assignment_id, u]}.to_h
       adjust = 0
       pending_names = []
-      min = used.reduce(0.0) do |tot, sub| 
+      min = used.values.reduce(0.0) do |tot, sub| 
         if (assns[sub.assignment_id].points_available != 0)
           if sub.score.nil?
             adjust += assns[sub.assignment_id].points_available
@@ -160,17 +159,17 @@ class Course < ApplicationRecord
       max = min + remaining
       unsub_names = []
       unsubs = open.reduce(0.0) do |tot, o|
-        if used.find{|u| u.assignment_id == o.id}.nil?
+        if used[o.id].nil?
           unsub_names.push o.name
           tot + o.points_available
         else
           tot
         end
       end
-      ans.push ({s: s, dropped: dropped, min: min, cur: cur, max: max,
-                 pending: adjust, pending_names: pending_names,
-                 unsub: unsubs, unsub_names: unsub_names,
-                 remaining: remaining})
+      {s: s, dropped: dropped, min: min, cur: cur, max: max,
+       pending: adjust, pending_names: pending_names,
+       unsub: unsubs, unsub_names: unsub_names,
+       remaining: remaining}
     end
     ans
   end
@@ -221,10 +220,10 @@ class Course < ApplicationRecord
     assns.each do |a|
       next unless all_subs[a.id]
       a_subs = all_subs[a.id].group_by(&:for_user)
-      used = used_subs[a.id]
+      used = used_subs[a.id]&.map{|u| [u.user_id, u]}&.to_h
       people.each do |p|
         subs = a_subs[p.id]
-        if (subs&.count.to_i > 0) && (used.nil? || used.find{|us| us.user_id == p.id}.nil?)
+        if (subs&.count.to_i > 0) && (used.nil? || used[p.id].nil?)
           abnormals[a] = [] unless abnormals[a]
           abnormals[a].push p
         end

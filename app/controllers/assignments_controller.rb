@@ -37,6 +37,11 @@ class AssignmentsController < ApplicationController
   end
 
   def index
+    @ordered_assignments = @course.assignments.order(due_date: :desc, available: :desc)
+    @stats = Submission.joins(:used_subs).where(assignment: @ordered_assignments)
+             .select("min(submissions.assignment_id) as a_id")
+             .select("min(score), avg(score), max(score)")
+             .group("submissions.assignment_id").map{|a| [a.a_id, a]}.to_h
   end
 
   def new
