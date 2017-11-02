@@ -3,7 +3,7 @@ class ErrorsController < ApplicationController
     respond_to do |format|
       format.html { render status: 404 }
       format.png {
-        if params[:any].starts_with "apple-touch-icon"
+        if params[:any].starts_with? "apple-touch-icon"
           render body: nil, status: 410
         else
           render body: nil, status: 404
