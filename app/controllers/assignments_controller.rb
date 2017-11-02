@@ -177,9 +177,17 @@ class AssignmentsController < ApplicationController
     end
     @assignment.assign_attributes(ap)
     @assignment.current_user = current_user
+
+    need_to_unpublish_grades =
+      @assignment.graders.any?{|g| g.new_record? || g.changed? || g.marked_for_destruction?}
     
     if @assignment.save_upload && @assignment.save
-      redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully updated.'
+      count = 0
+      if need_to_unpublish_grades
+        count = @assignment.submissions.where.not(score: nil).update_all(score: nil)
+      end
+      redirect_to course_assignment_path(@course, @assignment),
+                  notice: "Assignment was successfully updated; #{pluralize(count, 'grade')} unpublished."
     else
       @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
       render action: "edit"
