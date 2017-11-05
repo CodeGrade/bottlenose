@@ -21,8 +21,15 @@
 <% if @submission_info.count < @assignment.review_count %>
 <div class="container">
   <h1>No assignments to review</h1>
+  <% if @assignment.review_target == "self" %>
+  <p>You have not submitted to
+    <%= link_to @assignment.related_assignment.name,
+        course_assignment_path(@course, @assignment.related_assignment) %>,
+    so there is nothing for you to review.</p>
+  <% else %>
   <p>There is nothing available at this time to review.  If this is
     not true, please contact your professor.</p>
+  <% end %>
 </div>
 <% else %>
 <% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id), index|

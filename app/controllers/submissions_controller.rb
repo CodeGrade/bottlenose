@@ -356,7 +356,7 @@ class SubmissionsController < ApplicationController
 
   def new_Codereview
     if @assignment.review_target == "self"
-      @subs_to_review = [@assignment.related_assignment.used_sub_for(current_user)]
+      @subs_to_review = [@assignment.related_assignment.used_sub_for(current_user)].compact
       Audit.log("User #{current_user.id} (#{current_user.name}) is viewing the self-eval for assignment #{@assignment.related_assignment.id} and has agreed not to submit further files to it.\n")
     else
       @team = current_user.active_team_for(@course, @assignment)
