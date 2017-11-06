@@ -129,7 +129,10 @@ class GradesController < ApplicationController
     comments = InlineComment.transaction do
       commentable.map do |c| self.send(cp_to_comment, c) end
     end
-    newdata = commentable.zip(comments).map do |c, comm| [c["id"], comm.id] end.to_h
+    newdata = commentable.zip(comments).map do |c, comm|
+      [c["id"],
+       if comm.is_a? InlineComment then comm.id else comm end]
+    end.to_h
     newdata.merge(deleted)
   end
 
@@ -176,19 +179,23 @@ class GradesController < ApplicationController
     if c["shouldDelete"]
       comment
     else
-      comment.update(submission_id: params[:submission_id],
-                     label: c["label"],
-                     filename: c["file"],
-                     line: c["line"],
-                     grade_id: @grade.id,
-                     user_id: current_user.id,
-                     severity: c["severity"],
-                     comment: c["comment"],
-                     weight: c["deduction"],
-                     suppressed: false,
-                     title: "",
-                     info: nil)
-      comment
+      begin
+        comment.update!(submission_id: params[:submission_id],
+                        label: c["label"],
+                        filename: c["file"],
+                        line: c["line"],
+                        grade_id: @grade.id,
+                        user_id: current_user.id,
+                        severity: c["severity"],
+                        comment: c["comment"],
+                        weight: c["deduction"],
+                        suppressed: false,
+                        title: "",
+                        info: nil)
+        comment
+      rescue Exception => e
+        { id: c["id"], error: e }
+      end
     end
   end
 
