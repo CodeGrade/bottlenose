@@ -3,6 +3,7 @@ class InlineComment < ApplicationRecord
   belongs_to :user
   belongs_to :grade
   enum severity: [:error, :warning, :info]
+  validates :weight, numericality: true
 
   def upload_filename
     Upload.upload_path_for(self.filename)

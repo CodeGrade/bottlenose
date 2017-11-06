@@ -29,9 +29,14 @@ $(function() {
     for (var i = 0; i < inertComments.length; i++) {
       deductions += inertComments[i].deduction;
     }
-    var ans = Math.max(maxScore - deductions, 0).toFixed(2);
-    $("#score").text(ans);
-    $("input#finalScore").val(ans);
+    if (Number.isNaN(deductions)) {
+      $("#score").text("??");
+      $("input#finalScore").val("");
+    } else {
+      var ans = Math.max(maxScore - deductions, 0).toFixed(2);
+      $("#score").text(ans);
+      $("input#finalScore").val(ans);
+    }
   }
   window.updateScore = updateScore;
 
@@ -44,6 +49,12 @@ $(function() {
   var commentObjs = [];
   var inertComments = [];
   var commentsById = {};
+  var widgetsById = {};
+  function markDirty() {
+    var widget = $(this).parents("div.ManualGrader");
+    widget.find(".save-status > .glyphicon").addClass("hidden");
+    widget.find(".save-dirty").removeClass("hidden");
+  }
   function autosave() {
     if (autosaveHandle === undefined) {
       autosaveHandle = window.setTimeout(function() {
@@ -58,13 +69,31 @@ $(function() {
             return v;
           }),
           success: function(data) {
-            console.log("Success: " + data);
+            console.log("Success: ", data);
             for (var id in data) {
               var c = commentsById[id];
+              var w = widgetsById[id];
               delete commentsById[id];
-              if (data[id] === "deleted") continue;
-              c.id = data[id];
-              commentsById[c.id] = c;
+              delete widgetsById[id];
+              if (data[id] === "deleted") {
+                continue;
+              } else if (data[id]["error"]) {
+                $(w).find(".save-status > .glyphicon").addClass("hidden");
+                $(w).find(".save-error")
+                  .removeClass("hidden").attr("title", "Error saving comment: " + data[id].error);
+                c.id = data[id].id;
+                commentsById[c.id] = c;
+                widgetsById[c.id] = w;
+              } else {
+                $(w).find(".save-status > .glyphicon").addClass("hidden");
+                $(w).find(".save-clean").removeClass("hidden");
+                $(w).find("select").one("change", markDirty);
+                $(w).find("input").one("change", markDirty);
+                $(w).find("textarea").one("input", markDirty);
+                c.id = data[id];
+                commentsById[c.id] = c;
+                widgetsById[c.id] = w;
+              }
             }
             autosaveHandle = undefined;
           },
@@ -102,6 +131,7 @@ $(function() {
     }
     var i = commentID++;
     var widget = $("<div>").attr("id", "comment_" + i).addClass("ManualGrader Error form-group");
+    widgetsById[comment.id] = widget;
     var table = $("<table>").addClass("container-fluid");
     widget.append(table);
     widget.on("focusout", autosave);
@@ -128,6 +158,7 @@ $(function() {
       }
       comment.severity = $(this).val();
       comment.saved = false;
+      markDirty.apply(categoryInput);
     });
     categoryInput.find("option[name='" + comment.severity + "']").first().prop("selected", true);
     categoryInput.trigger("change");
@@ -145,27 +176,40 @@ $(function() {
     deductionInput.find("input").on("change", function() {
       comment.deduction = parseFloat($(this).val());
       comment.saved = false;
+      markDirty.apply(deductionInput);
       updateScore();
-    });
+    }).one("input", markDirty);
     if (comment.deduction)
       deductionInput.val(comment.deduction).change();
     td = $("<td>").addClass("col-sm-10");
     row.append(td);
     var delComment = $("<span>").addClass("btn btn-alert pull-right")
+        .attr("style", "padding: 3px; margin-bottom: 3px;")
         .append($("<span>").addClass("glyphicon glyphicon-remove"));
+    var savedComment = $("<span>").addClass("pull-right save-status")
+        .append($("<span>")
+                .addClass("glyphicon glyphicon-floppy-saved save-clean btn-success hidden")
+                .attr("title", "Comment saved"))
+        .append($("<span>")
+                .addClass("glyphicon glyphicon-floppy-save save-dirty btn-warning hidden")
+                .attr("title", "Comment not saved"))
+        .append($("<span>")
+                .addClass("glyphicon glyphicon-floppy-remove save-error btn-danger hidden")
+                .attr("title", "Error saving comment"))
     var commentText = $("<textarea>").attr("id", "message_" + i).addClass("form-control").val(comment.comment);
     td.append(
       $("<div>")
-        .append(delComment)
+        .append(delComment).append(savedComment)
         .append($("<label>").text("Comment:").attr("for", "message_" + i))
         .append($("<span>").text(" (by " + comment.label + ")"))
         .append(commentText));
     commentText.on("change", function() {
       comment.comment = $(this).val();
       comment.saved = false;
-    });
+      markDirty.apply(commentText);
+    }).one("input", markDirty);
     if (comment.comment)
-      commentText.val(comment.comment).change();
+      commentText.val(comment.comment);
     
     var ret = {cmWidget: cm.addLineWidget(line, widget[0], {coverGutter: false, noHScroll: true}),
                dom: widget,
