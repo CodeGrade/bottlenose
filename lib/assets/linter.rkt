@@ -33,13 +33,13 @@
   ;; Return the line numbers of lines that are incorrectly indented
   [bad-indentation (-> string?
                        [listof (list/c (and/c integer? (>=/c 0))
-                                       string? string?
+                                       string?
                                        (and/c integer? (>=/c 0))
                                        (set/c (and/c integer? (>=/c 0))))])]
   ;; Return the line numbers of lines that are incorrectly indented
   [bad-indentation-text (-> (is-a?/c text%)
                             [listof (list/c (and/c integer? (>=/c 0))
-                                            string? string?
+                                            string?
                                             (and/c integer? (>=/c 0))
                                             (set/c (and/c integer? (>=/c 0))))])]))
 
@@ -127,7 +127,10 @@
   (bad-indentation-text (load-file source)))
 (define (bad-indentation-text t)
   (define orig-text (send t get-text))
-  (define treated-text (regexp-replace* #rx"~[^~]+~" orig-text "."))
+  (define treated-text
+    (regexp-replace* #rx"~tilde;"
+                     (regexp-replace* #rx"~(?!tilde;)[^~]+~" orig-text ".")
+                     "~"))
   (send t erase)
   (send t insert treated-text)
   (define-values (untabbed tabbed lambda-tabbed) (tabify-text t))
@@ -146,7 +149,7 @@
          (let ((indents (map (λ(l) (- (string-length l)
                                       (string-length (string-trim l #:right? #f))))
                              (list s-line t-line l-line))))
-           (cons (list i s-line t-line (first indents) (list->set (rest indents))) acc))))))
+           (cons (list i s-line (first indents) (list->set (rest indents))) acc))))))
 #;(module+ test
     (check-equal? (bad-indentation "(+ 1\n  2)") '())
     (check-equal? (bad-indentation "(+ 1\n    2)") '((1 "    2)" "  2)")))

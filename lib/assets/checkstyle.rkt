@@ -62,7 +62,7 @@
                               width)))
             )
           (for [(line-info (bad-indentation-text t))]
-            (define-values (line before after orig-indent correct-indents) (apply values line-info))
+            (define-values (line before orig-indent correct-indents) (apply values line-info))
             (define correct-indent
               (if (= 1 (set-count correct-indents))
                   (set-first correct-indents)
