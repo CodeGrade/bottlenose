@@ -82,8 +82,8 @@
     (if (boolean? err)
         err
         (list (exn-message err)
-              (send t position-line
-                    (srcloc-position (first (exn:fail:read-srclocs err))))))))
+              (+ 1 (send t position-line
+                         (srcloc-position (first (exn:fail:read-srclocs err)))))))))
 
 #;(module+ test
     (check-equal? (correct-parse? "(+ 1 2)") #t)
