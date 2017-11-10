@@ -127,12 +127,6 @@
   (bad-indentation-text (load-file source)))
 (define (bad-indentation-text t)
   (define orig-text (send t get-text))
-  (define treated-text
-    (regexp-replace* #rx"~tilde;"
-                     (regexp-replace* #rx"~(?!tilde;)[^~]+~" orig-text ".")
-                     "~"))
-  (send t erase)
-  (send t insert treated-text)
   (define-values (untabbed tabbed lambda-tabbed) (tabify-text t))
   (send t erase)
   (send t insert orig-text)
