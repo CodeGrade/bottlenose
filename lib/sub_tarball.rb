@@ -75,11 +75,15 @@ class SubTarball
     
     src = temp.join("#{afname}.tgz")
 
-    FileUtils.cp(src, @as.tarball_full_path)    
+    FileUtils.cp(src, @as.tarball_full_path)
+    FileUtils.rm_rf(temp)
   end
 
   def path
     @as.tarball_path
+  end
+  def full_path
+    @as.tarball_full_path
   end
 
   def self.untar(source, dest)

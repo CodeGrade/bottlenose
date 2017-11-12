@@ -1,3 +1,5 @@
+require 'sub_tarball'
+
 class AssignmentsController < ApplicationController
   layout 'course'
 
@@ -226,7 +228,11 @@ class AssignmentsController < ApplicationController
     else
       tb.update!
     end
-    redirect_to tb.path
+    send_data File.read(tb.full_path),
+              filename: File.basename(tb.full_path),
+              disposition: "attachment",
+              type: "application/x-gzip"
+    FileUtils.rm_rf(tb.full_path)
   end
 
   def publish
