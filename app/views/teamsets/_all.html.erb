@@ -1,4 +1,4 @@
-<% if admin %>
+<% if admin && @course %>
 <%= link_to "Investigate Partners",
     investigate_course_teamsets_path(@course),
     class: "btn btn-info" %>
