@@ -1,41 +1,41 @@
 <% @page_title = "#{@course.name}: Investigate partners" %>
 <div class="row">
   <div class="col-12">
-    <select id="student1" class="col-5">
+    <select id="student1" class="col-md-5">
       <option value="noone">&lt;No one&gt</option>
-      <% @all_users.each do |uid, uname| %>
+      <% @all_users.sort_by(&:last).each do |uid, uname| %>
       <option value="<%= uid %>"><%= uname %></option>
       <% end %>
     </select>
-    <span class="col-2 centered">with</span>
-    <select id="student2" class="col-5">
+    <span class="col-md-2 text-center">with</span>
+    <select id="student2" class="col-md-5">
       <option value="noone">&lt;No one&gt</option>
-      <% @all_users.each do |uid, uname| %>
+      <% @all_users.sort_by(&:last).each do |uid, uname| %>
       <option value="<%= uid %>"><%= uname %></option>
       <% end %>
     </select>
   </div>
 </div>
 <div class="row">
-  <table id="results1" class="table col-12">
+  <table id="results1" class="table col-md-12">
     <thead>
       <tr>
-        <th class="col-4">Student 1</th>
-        <th class="col-4">was in the same team as</th>
-        <th class="col-2">Student 2</th>
+        <th class="col-md-4">Student 1</th>
+        <th class="col-md-4">was in the same team as</th>
+        <th class="col-md-2">Student 2</th>
       </tr>
     </thead>
     <tbody>
     </tbody>
   </table>
-  <table id="results2" class="table col-12">
+  <table id="results2" class="table col-md-12">
     <thead>
       <tr>
-        <th class="col-2">Student 1</th>
-        <th class="col-3">was in the same team as</th>
-        <th class="col-2">this partner</th>
-        <th class="col-3">who was in the same team as</th>
-        <th class="col-2">Student 2</th>
+        <th class="col-md-2">Student 1</th>
+        <th class="col-md-3">was in the same team as</th>
+        <th class="col-md-2">this partner</th>
+        <th class="col-md-3">who was in the same team as</th>
+        <th class="col-md-2">Student 2</th>
       </tr>
     </thead>
     <tbody>
@@ -52,7 +52,7 @@
     var t = allTeams[team];
     var ret = $("<td>");
     ret.append($("<p>").append($("<span class='local-time'>").text(makeFriendlyDate(t.from)))
-                       .append(" -- ")
+                       .append(" &mdash; ")
                        .append(t.to ? $("<span class='local-time'>").text(makeFriendlyDate(t.to)) : "present"));
     ret.append($("<p>").text(t.assignments.join(", ")));
     return ret;
