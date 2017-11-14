@@ -1,8 +1,3 @@
-<% if admin && @course %>
-<%= link_to "Investigate Partners",
-    investigate_course_teamsets_path(@course),
-    class: "btn btn-info" %>
-<% end %>
 <% no_active = true %>
 <% course.assignments.order(due_date: :desc, available: :desc).each do |a| %>
 <% next unless a.team_subs? %>

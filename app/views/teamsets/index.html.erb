@@ -8,5 +8,11 @@
   h3.collapsed i.glyphicon-chevron-down { display: none; }
 </style>
 
+<% if cur_reg&.staff? %>
+<%= link_to "Investigate Partners",
+    investigate_course_teamsets_path(@course),
+    class: "btn btn-info" %>
+<% end %>
+
 <%= render "teamsets/all", admin: cur_reg&.staff?, course: @course, tag:
     "h3", editable: true %>
