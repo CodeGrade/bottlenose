@@ -104,6 +104,9 @@ Bottlenose::Application.routes.draw do
       end
     end
     resources :teamsets, only: [:index, :edit, :update] do
+      collection do
+        get :investigate
+      end
       member do
         patch :clone
         patch :randomize

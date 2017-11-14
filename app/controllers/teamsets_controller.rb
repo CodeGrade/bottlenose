@@ -4,10 +4,10 @@ class TeamsetsController < ApplicationController
   layout 'course'
 
   before_action :find_course
-  before_action :find_teamset, except: [:index]
+  before_action :find_teamset, except: [:index, :investigate]
   before_action :require_registered_user
   before_action :stop_impersonating_user, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter]
-  before_action :require_admin_or_staff, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter]
+  before_action :require_admin_or_staff, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter, :investigate]
 
   # GET /staff/courses/:course_id/teams
   def index
@@ -40,6 +40,17 @@ class TeamsetsController < ApplicationController
       end
       render :edit
     end
+  end
+
+  def investigate
+    @teamsets_by_id = @course.teamsets.map do |ts|
+      [ts.id, ts.assignments.map{|a| a.name}]
+    end.to_h
+    @all_partners = @course.all_partners
+    @all_users = User.where(id: @all_partners.keys).map do |u| [u.id, u.display_name] end.to_h
+    @all_teams = @course.teams.map do |t|
+      [t.id, {assignments: @teamsets_by_id[t.teamset_id], from: t.start_date.iso8601, to: t.end_date&.iso8601}]
+    end.to_h
   end
 
   def bulk_enter

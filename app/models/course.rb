@@ -124,6 +124,20 @@ class Course < ApplicationRecord
     self.assignments.to_a.sort_by(&:due_date)
   end
 
+  def all_partners
+    team_users = TeamUser.where(team: teams).group_by(&:team_id)
+    users_teams = teams.map do |t|
+      team_users[t.id].map do |tu|
+        [tu.user_id, t.id]
+      end
+    end.flatten(1).group_by(&:first).map{|k,v| [k,v.map(&:last)]}.to_h
+    users_teams.map do |uid, tids|
+      [uid, tids.map do |tid|
+         team_users[tid].map{|tu| [tu.user_id, tid]}
+       end.flatten(1).group_by(&:first).map{|k,v| [k,v.map(&:last)]}.to_h]
+    end.to_h
+  end
+
   def score_summary(for_students = nil)
     if for_students.nil?
       for_students = self.students
