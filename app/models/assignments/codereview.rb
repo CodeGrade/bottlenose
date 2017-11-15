@@ -56,8 +56,7 @@ class Codereview < Assignment
   end
   def teamset_consistency
     if self.review_target == "self"
-      if (self.team_subs && (self.teamset_id != self.related_assignment.teamset_id)) ||
-         (!self.team_subs && self.related_assignment.team_subs)
+      if (self.team_subs && (self.teamset_id != self.related_assignment.teamset_id))
         self.errors.add(:base, "A self-review must have consistent teamsets with the underlying assignment")
         return false
       end
