@@ -28,7 +28,7 @@ class ArchiveUtils
     known
   end
   def self.MAX_FILES
-    100
+    125
   end
   def self.MAX_SIZE
     10.megabytes

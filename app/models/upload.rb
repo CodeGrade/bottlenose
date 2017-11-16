@@ -7,10 +7,10 @@ require 'archive_utils'
 
 class Upload < ApplicationRecord
   def self.MAX_FILES
-    100
+    ArchiveUtils.MAX_FILES
   end
   def self.MAX_SIZE
-    10.megabytes
+    ArchiveUtils.MAX_SIZE
   end
 
   include UploadsHelper
