@@ -126,8 +126,12 @@ class Upload < ApplicationRecord
     end
     effective_mime = metadata[:mimetype] || upload.content_type
 
-    ArchiveUtils.too_many_files?(upload_path, effective_mime, Upload.MAX_FILES)
-    ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
+    unless (metadata.dig(:prof_override, :file_count) rescue false)
+      ArchiveUtils.too_many_files?(upload_path, effective_mime, Upload.MAX_FILES) 
+    end
+    unless (metadata.dig(:prof_override, :file_size) rescue false)
+      ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
+    end
 
     extract_contents!(effective_mime)
 

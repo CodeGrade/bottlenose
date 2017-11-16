@@ -128,7 +128,7 @@ class Submission < ApplicationRecord
     @upload_data = data
   end
 
-  def save_upload
+  def save_upload(prof_override = nil)
     if @upload_data.nil?
       errors.add(:base, "You need to submit a file.")
       return false
@@ -149,7 +149,8 @@ class Submission < ApplicationRecord
         course:     "#{course.name} (#{course.id})",
         assignment: "#{assignment.name} (#{assignment.id})",
         date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-        mimetype:   data.content_type
+        mimetype:   data.content_type,
+        prof_override: prof_override
       })
     rescue Exception => e
       errors.add(:base, e.message)

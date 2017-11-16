@@ -60,8 +60,7 @@ class SubmissionsController < ApplicationController
 
     sub_blocked = @assignment.submissions_blocked(current_user, @team)
     if sub_blocked
-      if current_user.course_staff?(@course) ||
-         (current_user.id != true_user&.id && true_user&.course_staff?(@course))
+      if current_user.course_staff?(@course) || prof_override?
         # allow submission
       else
         redirect_back fallback_location: course_assignment_path(@course, @assignment),
@@ -73,6 +72,10 @@ class SubmissionsController < ApplicationController
     self.send("new_#{@assignment.type.capitalize}")
   end
 
+  def prof_override?
+    (current_user.id != true_user&.id && true_user&.course_staff?(@course))
+  end
+  
   def create
     asgn_type = @assignment.type
     sub_type = submission_params[:type]
@@ -382,7 +385,13 @@ class SubmissionsController < ApplicationController
 
   # CREATE
   def create_Files
-    if (@submission.save_upload && @submission.save)
+    if prof_override?
+      prof_overrides = {file_size: params[:override_size], file_count: params[:override_count]}
+    else
+      prof_overrides = {file_size: false, file_count: false}
+    end
+
+    if (@submission.save_upload(prof_overrides) && @submission.save)
       @submission.set_used_sub!
       @submission.create_grades!
       @submission.autograde!
@@ -399,7 +408,13 @@ class SubmissionsController < ApplicationController
 
     @submission.related_files = {}
 
-    if @submission.save_upload && @submission.save
+    if prof_override?
+      prof_overrides = {file_size: params[:override_size], file_count: params[:override_count]}
+    else
+      prof_overrides = {file_size: false, file_count: false}
+    end
+
+    if @submission.save_upload(prof_overrides) && @submission.save
       @submission.set_used_sub!
       @submission.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)
@@ -423,7 +438,14 @@ class SubmissionsController < ApplicationController
       _, files = sub.get_submission_files(current_user)
       @submission.related_files[sub.id] = files
     end
-    if @submission.save_upload && @submission.save
+
+    if prof_override?
+      prof_overrides = {file_size: params[:override_size], file_count: params[:override_count]}
+    else
+      prof_overrides = {file_size: false, file_count: false}
+    end
+
+    if @submission.save_upload(prof_overrides) && @submission.save
       @submission.set_used_sub!
       @submission.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)

@@ -15,7 +15,7 @@ class CodereviewSub < Submission
     return self.errors.count == 0
   end
   attr_accessor :answers
-  def save_upload
+  def save_upload(prof_override = nil)
     if @answers.nil?
       errors.add(:base, "You need to submit a file.")
       return false
