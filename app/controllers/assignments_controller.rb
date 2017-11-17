@@ -150,6 +150,8 @@ class AssignmentsController < ApplicationController
       new_assn.lateness_config = @assignment.lateness_config.dup if @assignment.lateness_config.new_record?
       new_assn.graders = @assignment.graders.map(&:dup)
       new_assn.assignment_upload_id = nil # cleanup the Upload and clear out the upload_id, to force re-upload
+      new_assn.related_interlocks << @assignment.related_interlocks.map(&:dup)
+      new_assn.interlocks << @assignment.interlocks.map(&:dup)
       @assignment.errors.each do |attr, err|
         new_assn.errors[attr] << err
       end

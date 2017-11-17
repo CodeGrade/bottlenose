@@ -4,7 +4,13 @@ class Codereview < Assignment
   validate :teamset_consistency
 
   def prevent_late_submissions
-    !self.related_interlocks.where(constraint: Interlock::constraints[:no_submission_after_viewing]).empty?
+    # Deliberately not using .where(constraint: ...) because this method might be called
+    # when some of the interlocks are still new (unsaved) records, which don't show up
+    # in a where query
+    self.related_interlocks.to_a.keep_if{|i| i.constraint == "no_submission_after_viewing"}
+  end
+  def prevent_late_submissions?
+    !(prevent_late_submissions.empty?)
   end
   def prevent_late_submissions=(aid)
     i = self.related_interlocks.find_or_initialize_by(assignment: self,

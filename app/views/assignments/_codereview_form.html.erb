@@ -90,7 +90,7 @@
       <%= f.label :prevent_late_submissions, "Prevent re-submission to related assignment?" %>
       <p>If selected, prevent students from submitting to the related
         assignment once they've viewed this assignment</p>
-      <%= f.check_box :prevent_late_submissions, checked: asgn.prevent_late_submissions,
+      <%= f.check_box :prevent_late_submissions, checked: asgn.prevent_late_submissions?,
           data: {toggle: "toggle", on: "Yes", off: "No"} %>
       <p>
     </div>
