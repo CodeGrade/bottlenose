@@ -153,7 +153,7 @@ class SubmissionsController < ApplicationController
   end
 
   def rescind_lateness
-    @submission.update_attribute(:ignore_late_penalty, true)
+    @submission.update(ignore_late_penalty: true)
     @submission.compute_grade!
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
