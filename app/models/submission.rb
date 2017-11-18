@@ -137,6 +137,7 @@ class Submission < ApplicationRecord
     data = @upload_data
 
     if data.size > course.sub_max_size.megabytes
+      errors.add(:base, "Submitted file is too large (maximum size is #{course.sub_max_size}MB)")
       return false
     end
 
