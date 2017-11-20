@@ -1,7 +1,7 @@
 # coding: utf-8
 require 'securerandom'
 require 'audit'
-require 'uri'
+require 'addressable/uri'
 
 class Submission < ApplicationRecord
   belongs_to :assignment
@@ -224,7 +224,7 @@ class Submission < ApplicationRecord
     if upload_id.nil?
       ""
     else
-      URI.encode(upload.path)
+      Addressable::URI.encode_component(upload.path, Addressable::URI::CharacterClasses::PATH)
     end
   end
 

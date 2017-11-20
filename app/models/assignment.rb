@@ -1,6 +1,6 @@
 require 'securerandom'
 require 'audit'
-require 'uri'
+require 'addressable/uri'
 
 class Assignment < ApplicationRecord
   enum question_kind: [:yes_no, :true_false, :multiple_choice, :numeric, :text]
@@ -292,7 +292,7 @@ class Assignment < ApplicationRecord
     if assignment_upload_id.nil?
       ""
     else
-      URI.encode(assignment_upload.path)
+      Addressable::URI.encode_component(assignment_upload.path, Addressable::URI::CharacterClasses::PATH)
     end
   end
   def assignment_file=(data)

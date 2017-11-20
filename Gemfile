@@ -38,6 +38,8 @@ gem 'bootstrap-toggle-rails' # for toggle buttons instead of checkboxes
 gem 'momentjs-rails', '>= 2.9.0' # needed for human-friendly textual dates
 gem 'font-awesome-rails'
 
+gem 'addressable'
+
 # needed to run graders in the background
 gem 'backburner'
 gem 'beaneater'
