@@ -144,7 +144,7 @@
          if sub.stale_team? then classes += " text-muted" end
          if cur_user_prof_ever || cur_reg&.assistant?
          classes += (" " +
-           (@sections_by_student[@students[sub.user_id]&.reg_id] || []).map{|sec| "sec_#{sec.section_id}"}.join(" "))
+           (@sections_by_student[@students[sub.user_id]&.reg_id] || []).map{|sec| "sec_#{@section_crns[sec.section_id]}"}.join(" "))
          end
          %>
       <tr class="<%= classes %>">

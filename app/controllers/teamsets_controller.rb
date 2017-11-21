@@ -288,6 +288,7 @@ class TeamsetsController < ApplicationController
       [s.username, s]
     end.to_h
     @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
+    @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
     @team_requests = []
     # To compute the cliques among team requests, map each student to the set of usernames they requested
     all_requests = @teamset.team_requests.map{|tr| [tr.user.username, tr.partners.to_set]}.to_h

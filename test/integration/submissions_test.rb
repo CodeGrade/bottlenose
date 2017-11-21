@@ -20,13 +20,13 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @largeCourse = create(:course)
     @largeTs = create(:teamset, course: @largeCourse)
 
-    Registration.create(user: @fred, course: @largeCourse, new_sections: [@largeCourse.sections.first.crn],
+    Registration.create(user: @fred, course: @largeCourse, new_sections: [@largeCourse.sections.first],
                         role: Registration::roles[:professor], show_in_lists: true)
       .save_sections
     
     @manyUsers = (1..30).map do |n| create(:user) end
     @manyUsers.each do |u|
-      r = Registration.create(user: u, course: @largeCourse, new_sections: [@largeCourse.sections.first.crn],
+      r = Registration.create(user: u, course: @largeCourse, new_sections: [@largeCourse.sections.first],
                               role: Registration::roles[:student], show_in_lists: true)
       r.save_sections
       r

@@ -97,7 +97,7 @@ FactoryBot.define do
     after(:build) do |sub|
       unless sub.user.registration_for(sub.course)
         create(:registration, user: sub.user, course: sub.course, role: 0, show_in_lists: true,
-               new_sections: [sub.course.sections.first.crn])
+               new_sections: [sub.course.sections.first])
       end
 
       if sub.upload
@@ -113,7 +113,7 @@ FactoryBot.define do
     role 0
     show_in_lists true
     after(:create) do |reg|
-      reg.new_sections = [reg.course.sections.first.crn]
+      reg.new_sections = [reg.course.sections.first]
       reg.save_sections
     end
   end

@@ -133,7 +133,7 @@
       </tr>
       <% @team_requests.each do |tr| %>
       <% classes = tr.map do |user|
-           (@sections_by_student[@students[user.id]&.reg_id] || []).map{|sec| "sec_#{sec.section_id}"}
+           (@sections_by_student[@students[user.id]&.reg_id] || []).map{|sec| "sec_#{@section_crns[sec.section_id]}"}
          end.flatten.uniq.compact.join(" ") %>
       <tr class="<%= classes %>">
         <td><%= tr.map{|u| maybe_link_user(true, u).html_safe}.to_sentence.html_safe %></td>
@@ -308,7 +308,7 @@
       <tbody>
         <% @teams.each do |team| %>
         <% classes = team.users.map do |user|
-             (@sections_by_student[@students[user.id]&.reg_id] || []).map{|sec| "sec_#{sec.section_id}"}
+             (@sections_by_student[@students[user.id]&.reg_id] || []).map{|sec| "sec_#{@section_crns[sec.section_id]}"}
            end.flatten.uniq.compact.join(" ") %>
         <tr class="<%= classes %>">
           <td><%= show_team team %></td>
@@ -344,7 +344,7 @@
       <tbody>
 	<% @others.sort_by(&:sort_name).each do |user| %>
         <% classes = (@sections_by_student[@students[user.id]&.reg_id] || [])
-                        .map{|sec| "sec_#{sec.section_id}"}.join(" ") %>
+                        .map{|sec| "sec_#{@section_crns[sec.section_id]}"}.join(" ") %>
 	<%= content_tag("tr", class: "user #{classes}", data: { id: user.id, name: user.name }) do %>
 	<td><%= show_user user %></td>
         <td><div class="add-user-btn btn btn-success btn-xs pull-right">Add</div></td>

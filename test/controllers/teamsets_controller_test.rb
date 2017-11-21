@@ -4,17 +4,17 @@ class TeamsetsControllerTest < ActionController::TestCase
   setup do
     @team = create(:team)
     @fred = create(:user)
-    r = create(:registration, user: @fred, course: @team.course, new_sections: [@team.course.sections.first.crn],
+    r = create(:registration, user: @fred, course: @team.course, new_sections: [@team.course.sections.first],
                role:  Registration::roles[:professor])
     r.save_sections
 
-    mreg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    mreg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first])
     mreg.save_sections
     @mark = mreg.user
-    jreg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    jreg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first])
     jreg.save_sections
     @jane = jreg.user
-    greg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first.crn])
+    greg = create(:registration, course: @team.course, new_sections: [@team.course.sections.first])
     greg.save_sections
     @greg = greg.user
 
@@ -22,12 +22,12 @@ class TeamsetsControllerTest < ActionController::TestCase
     @largeTs = create(:teamset, course: @largeCourse)
     @manyUsers = (1..30).map do |n| create(:user) end
     @manyUsers.each do |u|
-      r = Registration.create(user: u, course: @largeCourse, new_sections: [@largeCourse.sections.first.crn],
+      r = Registration.create(user: u, course: @largeCourse, new_sections: [@largeCourse.sections.first],
                           role: Registration::roles[:student], show_in_lists: true)
       r.save_sections
       r
     end
-    Registration.create(user: @fred, course: @largeCourse, new_sections: [@largeCourse.sections.first.crn],
+    Registration.create(user: @fred, course: @largeCourse, new_sections: [@largeCourse.sections.first],
                         role: Registration::roles[:professor], show_in_lists: true)
       .save_sections
   end

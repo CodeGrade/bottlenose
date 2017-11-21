@@ -28,6 +28,7 @@ class AssignmentsController < ApplicationController
                 .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
                 .map{|s| [s.id, s]}.to_h
     @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
+    @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
 
     self.send("show_#{@assignment.type.capitalize}")
     if admin_view

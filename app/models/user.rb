@@ -255,7 +255,7 @@ class User < ApplicationRecord
     ret = {}
     regs = self.registrations
     reg_sections = RegistrationSection.where(registration_id: regs.map(&:id))
-    sections = Section.where(crn: reg_sections.map(&:section_id)).map{|s| [s.crn, s]}.to_h
+    sections = Section.where(id: reg_sections.map(&:section_id)).map{|s| [s.id, s]}.to_h
     reg_sections = reg_sections.group_by(&:registration_id)
     terms = Term.all_sorted.to_a
     all_regs_by_term = regs.joins(:course).select("registrations.*", "courses.term_id as term_id").group_by(&:term_id)

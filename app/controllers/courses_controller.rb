@@ -57,8 +57,9 @@ class CoursesController < ApplicationController
                 .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
                 .order("users.last_name", "users.first_name")
     @reg_sections = RegistrationSection.where(registration: @course.registrations)
+    @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
     @students_by_section = @reg_sections.group_by(&:section_id).map do |section_id, regs|
-      [section_id, @students.where("registrations.id": regs.map(&:registration_id))]
+      [@section_crns[section_id], @students.where("registrations.id": regs.map(&:registration_id))]
     end.to_h
     @sections_by_student = @reg_sections.group_by(&:registration_id)
   end

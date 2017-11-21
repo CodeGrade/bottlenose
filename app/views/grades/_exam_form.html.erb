@@ -66,7 +66,7 @@
   <tbody id="grades">
   <% used_subs = @used_subs.group_by(&:user_id) %>
   <% @student_info.order("LOWER(last_name)", "LOWER(first_name)").each do |u| %>
-    <% sections = @students_by_section[u.id].map{|u| "sec_#{u.crn}"}.join(' ') %>
+    <% sections = @sections_by_student[u.id].map{|u| "sec_#{u.crn}"}.join(' ') %>
     <% if u.dropped_date %>
     <tr id="<%= u.id %>" class="<%= sections %> dropped warning">
     <% else %>

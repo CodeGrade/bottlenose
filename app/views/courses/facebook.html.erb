@@ -44,7 +44,7 @@
   <% @students.each_slice(6) do |row| %>
   <div class="row">
     <% row.each do |s| %>
-    <div class="col-md-2 text-center <%= @sections_by_student[s.reg_id].map{|sec| "sec_#{sec.section_id}"}.join(" ") %>">
+    <div class="col-md-2 text-center <%= @sections_by_student[s.reg_id].map{|sec| "sec_#{@section_crns[sec.section_id]}"}.join(" ") %>">
       <%= image_tag Upload.upload_path_for(s.profile || "silhouette.jpg"), 
           alt: s.display_name, style: "max-height: 200px; max-width: 100%;" %>
       <p><%= link_to s.display_name, user_path(s) %></p>

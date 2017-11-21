@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20171103172019) do
+ActiveRecord::Schema.define(version: 20171121152503) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -200,7 +200,7 @@ ActiveRecord::Schema.define(version: 20171103172019) do
     t.integer "instructor_id", null: false
     t.integer "type", default: 0, null: false
     t.index ["course_id"], name: "index_sections_on_course_id"
-    t.index ["crn"], name: "index_sections_on_crn", unique: true
+    t.index ["crn", "course_id"], name: "index_sections_on_crn_and_course_id", unique: true
   end
 
   create_table "submission_views", force: :cascade do |t|

@@ -91,30 +91,25 @@ class Registration < ApplicationRecord
 
   private
   def remove_old_sections
-    @orig_sections&.each do |crn|
-      rs = RegistrationSection.find_by(registration: self, section_id: crn)
+    @orig_sections&.each do |s|
+      rs = RegistrationSection.find_by(registration: self, section: s)
       if rs.nil?
-        self.errors.add(:base, "Could not find section #{crn} to remove enrollment")
+        self.errors.add(:base, "Could not find section #{s.crn} to remove enrollment")
       else
         begin
           rs.destroy!
         rescue Exception => e
-          self.errors.add(:base, "Could not remove enrollment from section #{crn}: #{e}")
+          self.errors.add(:base, "Could not remove enrollment from section #{s.crn}: #{e}")
         end
       end
     end
   end
   def create_new_sections
-    @new_sections&.each do |crn|
-      s = Section.find_by(crn: crn)
-      if s.nil?
-        self.errors.add(:base, "Could not find section #{crn}")
-      else
-        begin
-          RegistrationSection.find_or_create_by!(registration: self, section_id: crn)
-        rescue Exception => e
-          self.errors.add(:base, "Could not register for section #{crn}: #{e}")
-        end
+    @new_sections&.each do |s|
+      begin
+        RegistrationSection.find_or_create_by!(registration: self, section: s)
+      rescue Exception => e
+        self.errors.add(:base, "Could not register for section #{s.crn}: #{e}")
       end
     end
   end

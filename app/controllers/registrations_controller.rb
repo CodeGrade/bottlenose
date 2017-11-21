@@ -76,11 +76,12 @@ class RegistrationsController < ApplicationController
           changed = false
           @reg.dropped_date = nil if params[:reenroll]
           @reg.role = params[:role] if params[:role]
+          sections = @course.sections.map{|sec| [sec.crn.to_s, sec.id]}.to_h
           section_changes = params[:orig_sections].zip(params[:new_sections])
           section_changes.each do |orig, new|
-            rs = RegistrationSection.find_by(registration_id: @reg.id, section_id: orig)
+            rs = RegistrationSection.find_by(registration_id: @reg.id, section_id: sections[orig])
             if rs
-              rs.section_id = new
+              rs.section_id = sections[new]
               if rs.changed?
                 changed = true
                 rs.save
@@ -112,11 +113,13 @@ class RegistrationsController < ApplicationController
         r = Registration.find_by(course_id: @course, user_id: uu.id)
       end
       if r
-        r.assign_attributes(course_id: @course.id, new_sections: row[1..-1],
+        r.assign_attributes(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
+                                                                               crn: row[1..-1]),
                             username: row[0], role: "student")
       else
         # Create @registration object for errors.
-        r = Registration.new(course_id: @course.id, new_sections: row[1..-1],
+        r = Registration.new(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
+                                                                                crn: row[1..-1]),
                              username: row[0], role: "student")
       end
 
@@ -156,7 +159,12 @@ class RegistrationsController < ApplicationController
     ans = params.require(:registration)
           .permit(:course_id, :orig_sections, :new_sections, :role, :username, :show_in_lists, :tags)
     ans[:course_id] = params[:course_id]
-    ans[:new_sections] = params[:new_sections].reject(&:blank?)
+    if params[:new_sections]
+      ans[:new_sections] = Section.where(crn: params[:new_sections].reject(&:blank?), course: params[:course_id])
+    end
+    if params[:orig_sections]
+      ans[:orig_sections] = Section.where(crn: params[:orig_sections].reject(&:blank?), course: params[:course_id])
+    end
     ans
   end
 
