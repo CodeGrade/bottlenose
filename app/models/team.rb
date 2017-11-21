@@ -11,6 +11,8 @@ class Team < ApplicationRecord
   validate :end_not_before_start
   validate :all_enrolled
 
+  before_save :delete_team_requests
+
   def to_s
     "Team #{self.id} - #{self.member_names}"
   end
@@ -73,5 +75,9 @@ class Team < ApplicationRecord
     if end_date < start_date
       errors.add(:end_date, "must be not be before the start date")
     end
+  end
+
+  def delete_team_requests
+    TeamRequest.where(teamset: self.teamset, user: self.users).delete_all
   end
 end

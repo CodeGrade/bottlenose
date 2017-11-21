@@ -21,6 +21,7 @@ class User < ApplicationRecord
 
   has_many :team_users, dependent: :restrict_with_error
   has_many :teams, through: :team_users
+  has_many :team_requests, dependent: :destroy
 
   validates :email, :format => { :with => /\@.*\./ }, :allow_nil => true
 

@@ -6,8 +6,15 @@ class TeamsetsController < ApplicationController
   before_action :find_course
   before_action :find_teamset, except: [:index, :investigate]
   before_action :require_registered_user
-  before_action :stop_impersonating_user, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter]
-  before_action :require_admin_or_staff, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter, :investigate]
+  before_action :stop_impersonating_user, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter,
+                                                 :accept_request, :reject_request,
+                                                 :accept_all_requests, :reject_all_requests
+                                                ]
+  before_action :require_admin_or_staff, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter,
+                                                :accept_request, :reject_request,
+                                                :accept_all_requests, :reject_all_requests,
+                                                :investigate
+                                               ]
 
   # GET /staff/courses/:course_id/teams
   def index
@@ -149,6 +156,81 @@ class TeamsetsController < ApplicationController
                   notice: "#{pluralize(count, 'team')} copied from #{source.name}"
   end
 
+  def accept_request
+    team_info = custom_params
+    uids = (team_info.delete("users") || []).map(&:to_i)
+    team_info["users"] = User.where(id: uids)
+    if uids.length != team_info["users"].length
+      missing = uids - (team_info["users"].map(&:id))
+      setup_params
+      @teamset.errors.add(:base, "Could not find all users for request: missing ids #{missing.to_sentence}")
+      render :edit
+      return
+    end
+
+    @swat = @others.map{|s| [s.id, s]}.to_h
+    in_teams = team_info["users"].select{|s| @swat[s.id].nil?}
+    if in_teams.empty?
+      @team = Team.new(team_info)
+      if @team.save
+        TeamRequest.where(teamset: @teamset, user: @team.users.map(&:id)).delete_all
+        redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                      notice: "Team #{@team.id} was successfully created."
+      else
+        setup_params
+        @team.errors.full_messages.each do |e|
+          @teamset.errors.add(:base, e)
+        end
+        render :edit
+      end
+    else
+      setup_params
+      @teamset.errors.add(:base, "Could not create team: #{in_teams.map(&:username).to_sentence} " +
+                                 "#{pluralize(in_teams.count, 'is')} already in an active team")
+      render :edit
+    end
+  end
+  def reject_request
+    count = TeamRequest.where(teamset: @teamset, user: team_info["users"]).delete_all
+    redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                  notice: "One team request (#{pluralize(count, 'student')}) rejected"
+  end
+  def accept_all_requests
+    team_info = custom_params
+    setup_params
+    @swat = @others.map{|s| [s.id, s]}.to_h
+    count = 0
+    team = nil
+    begin
+      Team.transaction do
+        @team_requests.each do |req|
+          in_teams = req.select{|s| @swat[s.id].nil?}
+          if in_teams.empty?
+            team = Team.new(team_info)
+            team.users = req
+            team.save!
+            count = count + 1
+          else
+            raise "Could not create team: #{in_teams.map(&:username).to_sentence} " +
+                  "#{pluralize(in_teams.count, 'is')} already in an active team"
+          end
+        end
+      end
+      redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                    notice: "#{pluralize(count, 'team')} added"
+    rescue Exception => e
+      redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                    alert: e
+    end
+  end
+  def reject_all_requests
+    setup_params
+    count = TeamRequest.where(teamset: @teamset).delete_all
+    redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                  notice: "#{pluralize(@team_requests.count, 'team request')} (#{pluralize(count, 'student')}) rejected"
+  end
+
+  
   private
 
   def find_teamset
@@ -173,12 +255,39 @@ class TeamsetsController < ApplicationController
     ans
   end
 
+  def custom_params
+    ans = params.require(:custom).permit(:start_date, :end_date, users: [])
+    ans[:course_id] = params[:course_id]
+    ans[:teamset_id] = params[:id]
+    ans
+  end
+    
   def setup_params
     @teams = @teamset.teams.includes(:users).where(Team.active_query, Date.current, Date.current)
     @others = @teamset.students_without_active_team
     @students = @course.students
                 .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
                 .map{|s| [s.id, s]}.to_h
+    @students_by_username = @students.map do |_, s|
+      [s.username, s]
+    end.to_h
     @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
+    @team_requests = []
+    # To compute the cliques among team requests, map each student to the set of usernames they requested
+    all_requests = @teamset.team_requests.map{|tr| [tr.user.username, tr.partners.to_set]}.to_h
+    # Ensure each set of partners contain the requesting student's name
+    all_requests.each do |un, partners|
+      partners << un
+    end
+    all_requests.each do |un, partners|
+      # check for clique by checking for set-equality among all the requested partners
+      if partners.all?{|p| all_requests[p] == partners}
+        @team_requests << partners.to_a.sort
+      end
+    end
+    @team_requests.uniq!
+    @team_requests = @team_requests.map do |names|
+      names.map{|name| @students_by_username[name]}
+    end
   end
 end

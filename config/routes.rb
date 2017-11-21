@@ -112,6 +112,10 @@ Bottlenose::Application.routes.draw do
         patch :randomize
         patch :bulk_enter
         patch :dissolve_all
+        delete :accept_all_requests
+        delete :reject_all_requests
+        delete :accept_request
+        delete :reject_request
       end
       resources :teams, only: [:show] do
         member do

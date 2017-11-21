@@ -1,9 +1,12 @@
 <style>
   <% @course.sections.each do |s| %>
+  table#team-requests.show_one .sec_<%= s.crn %> { display: none; }
+  table#team-requests.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
   table#users.show_one .sec_<%= s.crn %> { display: none; }
   table#users.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
   table#teams.show_one .sec_<%= s.crn %> { display: none; }
   table#teams.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  .btn-blank { background-image: none; border: none; background: transparent; padding: initial; }
   <% end %>
 </style>
 <div class="row">
@@ -60,12 +63,14 @@
         var end = $("#end_date").parent();
         start.on("dp.change", function(e) {
           var v = $("#start_date").val();
+          $("input[id='custom_start_date']").val(v);
           $("#random_start_date").val(v);
           $("#bulk_start_date").val(v);
           $("#single_start_date").val(v);
         });
         end.on("dp.change", function(e) {
           var v = $("#end_date").val()
+          $("input[id='custom_end_date']").val(v);
           $("#random_end_date").val(v);
           $("#bulk_end_date").val(v);
           $("#single_end_date").val(v);
@@ -83,6 +88,98 @@
 </div>
 
 <div class="well">
+  <% if @team_requests.length > 0 %>
+  <h3>Existing team requests</h3>
+  <div class="col-md-12">
+    <h4>Filter team requests by section: <select class="sections" data-target="table#team-requests">
+        <option value="show_all">Show all sections</option>
+        <% @course.sections.each do |s| %>
+        <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
+        <% end %>
+      </select>
+    </h4>
+  </div>
+  <div style="max-height: 15em; overflow-y: scroll; border: 1px solid #ccc; border-radius: 4px;">
+    <table class="table table-striped" id="team-requests" style="margin-bottom: 0;">
+      <tr>
+        <th style="vertical-align: middle;">Students</th>
+        <th>
+          <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
+            <div class="btn btn-success btn-sm">
+            <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_all_requests }) do |f| %>
+            <%= fields_for "custom" do |custom| %>
+            <%= custom.hidden_field :course_id %>
+            <%= custom.hidden_field :teamset_id %>
+            <%= custom.hidden_field "start_date" %>
+            <%= custom.hidden_field "end_date" %>
+            <%= custom.button type: "submit", method: :delete,
+                style: "float: unset;", class: "btn-blank" do %>
+              <span class="glyphicon glyphicon-ok"></span>
+              <span style="padding-left: 1em;">Accept All</span>
+              <% end %><% end %><% end %>
+            </div><% # commenting out the whitespace, so there's no gap...
+          %><div class="btn btn-danger btn-sm">
+            <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_all_requests }) do |f| %>
+            <%= fields_for "custom" do |custom| %>
+            <%= custom.hidden_field :course_id %>
+            <%= custom.hidden_field :teamset_id %>
+            <%= custom.hidden_field "start_date" %>
+            <%= custom.hidden_field "end_date" %>
+            <%= custom.button type: "submit", method: :delete,
+                style: "float: unset;", class: "btn-blank",
+                data: { confirm: "Are you sure you want to reject ALL teammate requests?" } do %>
+              <span class="glyphicon glyphicon-remove"></span>
+              <span style="padding-left: 1em;">Reject All</span>
+            <% end %><% end %><% end %>
+            </div>
+          </div>
+        </th>
+      </tr>
+      <% @team_requests.each do |tr| %>
+      <% classes = tr.map do |user|
+           (@sections_by_student[@students[user.id]&.reg_id] || []).map{|sec| "sec_#{sec.section_id}"}
+         end.flatten.uniq.compact.join(" ") %>
+      <tr class="<%= classes %>">
+        <td><%= tr.map{|u| maybe_link_user(true, u).html_safe}.to_sentence.html_safe %></td>
+        <td>
+          <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
+            <div class="btn btn-success btn-sm">
+            <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_request }) do |f| %>
+            <%= fields_for "custom" do |custom| %>
+            <%= custom.hidden_field :course_id %>
+            <%= custom.hidden_field :teamset_id %>
+            <%= custom.hidden_field "start_date" %>
+            <%= custom.hidden_field "end_date" %>
+              <% tr.each do |t| %>
+                <%= custom.hidden_field :users, multiple: true, value: t.id %>
+              <% end %>
+              <%= custom.submit "Accept request", style: "float: unset;", class: "btn-blank" %>
+            <% end %><% end %>
+            </div><% # commenting out the whitespace, so there's no gap...
+          %><div class="btn btn-danger btn-sm">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_request }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field :course_id %>
+              <%= custom.hidden_field :teamset_id %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <% tr.each do |t| %>
+                <%= custom.hidden_field :users, multiple: true, value: t.id %>
+              <% end %>
+              <%= custom.submit "Reject request", style: "float: unset;",
+                  data: { confirm: "Are you sure you want to reject ALL teammate requests?" }, class: "btn-blank" %>
+              <% end %>
+              <% end %>
+            </div>
+        </td>
+      </tr>
+      <% end %>
+    </table>
+  </div>
+    
+  <h3 class="middle-separator">OR</h3>
+  <% end %>
+  
   <%= form_for([@course, @teamset], :url => { action: :randomize, method: :patch }) do |f| %>
   <h3>Randomize all teams</h3>
   <%= fields_for "random" do |rand| %>
@@ -195,7 +292,7 @@
 
 <div class="row">
   <div class="col-md-12">
-    <h4>Filter teams and students by section: <select id="sections">
+    <h4>Filter teams and students by section: <select class="sections" data-target="table#users, table#teams">
         <option value="show_all">Show all sections</option>
         <% @course.sections.each do |s| %>
         <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
@@ -274,11 +371,13 @@
     $('.spinner').each(function() { activateSpinner(this) });
   });
   $(function() {
-    var prevSection = "show_all";
-    $("#sections").change(function(e) {
-      $("table#users").removeClass(prevSection).addClass($(this).val());
-      $("table#teams").removeClass(prevSection).addClass($(this).val());
-      prevSection = $(this).val();
+    $(".sections").each(function() {
+      $(this).data("prevSection", "show_all");
+    });
+    $(".sections").change(function(e) {
+      var thisSelect = $(this);
+      $(thisSelect.data("target")).removeClass(thisSelect.data("prevSection")).addClass(thisSelect.val());
+      thisSelect.data("prevSection", thisSelect.val());
     });
   });
 </script>

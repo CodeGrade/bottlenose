@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170827140156) do
+ActiveRecord::Schema.define(version: 20171103172019) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -229,6 +229,17 @@ ActiveRecord::Schema.define(version: 20170827140156) do
     t.index ["assignment_id"], name: "index_submissions_on_assignment_id"
     t.index ["user_id", "assignment_id"], name: "index_submissions_on_user_id_and_assignment_id"
     t.index ["user_id"], name: "index_submissions_on_user_id"
+  end
+
+  create_table "team_requests", force: :cascade do |t|
+    t.integer "teamset_id", null: false
+    t.integer "user_id", null: false
+    t.string "partner_names", null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.index ["teamset_id", "user_id"], name: "index_team_requests_on_teamset_id_and_user_id", unique: true
+    t.index ["teamset_id"], name: "index_team_requests_on_teamset_id"
+    t.index ["user_id"], name: "index_team_requests_on_user_id"
   end
 
   create_table "team_users", id: :serial, force: :cascade do |t|

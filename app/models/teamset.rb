@@ -3,6 +3,7 @@ class Teamset < ActiveRecord::Base
   has_many   :teams
   has_many   :submissions, through: :teams
   has_many   :assignments
+  has_many   :team_requests
 
   attr_accessor :bulk_teams
   
