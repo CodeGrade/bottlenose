@@ -16,8 +16,8 @@ class SanityTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test "factory girl lint" do
-    FactoryGirl.lint
+  test "factory bot lint" do
+    FactoryBot.lint
     assert(true)
   end
 end

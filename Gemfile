@@ -72,7 +72,7 @@ group :test do
   gem 'capybara'
   gem 'capybara-webkit' # Needs qt5-default qt5-qmake libqt5webkit5-dev
   gem 'launchy'
-  gem 'factory_girl_rails'
+  gem 'factory_bot_rails'
   gem 'rails-controller-testing'
   gem 'single_test'
 end

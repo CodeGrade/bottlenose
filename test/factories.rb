@@ -1,5 +1,5 @@
 
-FactoryGirl.define do
+FactoryBot.define do
   sequence :user_name do |n|
     letters = ('A'..'Z').to_a
     first = letters[(n * 17) % 26] + "#{n}"

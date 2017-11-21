@@ -118,10 +118,10 @@ GEM
     erubi (1.7.0)
     erubis (2.7.0)
     execjs (2.7.0)
-    factory_girl (4.9.0)
+    factory_bot (4.8.2)
       activesupport (>= 3.0.0)
-    factory_girl_rails (4.9.0)
-      factory_girl (~> 4.9.0)
+    factory_bot_rails (4.8.2)
+      factory_bot (~> 4.8.2)
       railties (>= 3.0.0)
     ffi (1.9.18)
     font-awesome-rails (4.7.0.2)
@@ -180,7 +180,7 @@ GEM
     public_suffix (3.0.1)
     puma (3.11.0)
     rack (2.0.3)
-    rack-test (0.8.0)
+    rack-test (0.8.2)
       rack (>= 1.0, < 3)
     rails (5.1.4)
       actioncable (= 5.1.4)
@@ -297,7 +297,7 @@ DEPENDENCIES
   devise_ldap_authenticatable
   erubis
   execjs
-  factory_girl_rails
+  factory_bot_rails
   font-awesome-rails
   headless
   i18n
@@ -327,4 +327,4 @@ DEPENDENCIES
   yaml_db
 
 BUNDLED WITH
-   1.14.6
+   1.16.0
