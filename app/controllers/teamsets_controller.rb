@@ -57,9 +57,9 @@ class TeamsetsController < ApplicationController
               name: u.display_name, link: user_path(u), sort_name: u.sort_name}]
     end.to_h
     @course_teams = @course.teams
-    @all_team_users = TeamUser.where(team: @course_teams).group_by(&:team_id)
+    @all_team_users = TeamUser.where(team: @course_teams).group_by(&:team_id).map{|k, v| [k, v.map(&:user_id)]}.to_h
     @all_teams = @course_teams.map do |t|
-      users = @all_users.values_at(*@all_team_users[t.id].map(&:user_id))
+      users = @all_users.values_at(*@all_team_users[t.id])
       [t.id, {assignments: @teamsets_by_id[t.teamset_id],
               from: t.start_date.at_beginning_of_day.iso8601, to: t.end_date&.at_beginning_of_day&.iso8601,
               users: @all_team_users[t.id].sort,
@@ -69,8 +69,8 @@ class TeamsetsController < ApplicationController
     @active_teams = @course.active_teams.group_by(&:teamset_id).map do |tsid, teams|
       active = {}
       teams.each do |t|
-        @all_team_users[t.id].each do |team_user|
-          active[team_user.user_id] = t.id
+        @all_team_users[t.id].each do |uid|
+          active[uid] = t.id
         end
       end
       [tsid, active]
