@@ -52,6 +52,11 @@ class Team < ApplicationRecord
     User.where(id: user_ids).distinct
   end
 
+  def used_submissions
+    Submission.joins("INNER JOIN used_subs ON submissions.id = used_subs.submission_id")
+      .where(team: self)
+  end
+
   private
 
   def all_enrolled

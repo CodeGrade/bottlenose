@@ -1,0 +1,158 @@
+<div id="common-partners" class="tab-pane active">
+  <div class="alert alert-info" style="color: black;">
+    <div class="row">
+      <div class="col-sm-12">
+        <select id="student1" class="col-md-5">
+          <option value="noone">&lt;No one&gt</option>
+          <% @all_users.sort_by{|k, v| v[:last]}.each do |uid, uinfo| %>
+          <option value="<%= uid %>"><%= uinfo[:name] %></option>
+          <% end %>
+        </select>
+        <span class="col-md-2 text-center">with</span>
+        <select id="student2" class="col-md-5">
+          <option value="noone">&lt;No one&gt</option>
+          <% @all_users.sort_by{|k, v| v[:last]}.each do |uid, uinfo| %>
+          <option value="<%= uid %>"><%= uinfo[:name] %></option>
+          <% end %>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <h4>Same team</h4>
+      <table id="results1" class="table">
+        <thead>
+          <tr>
+            <th class="col-md-4">Student 1</th>
+            <th class="col-md-4">was in the same team as</th>
+            <th class="col-md-2">Student 2</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-md-12">
+      <h4>One indirect team <small>(green highlighting points towards newer team)</small></h4>
+      <table id="results2" class="table col-md-12">
+        <thead>
+          <tr>
+            <th class="col-md-2">Student 1</th>
+            <th class="col-md-3">was in the same team as</th>
+            <th class="col-md-2">this partner</th>
+            <th class="col-md-3">who was in the same team as</th>
+            <th class="col-md-2">Student 2</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-md-12">
+      <h4>Two indirect teams <small>(green highlighting points towards newer team)</small></h4>
+      <table id="results3" class="table col-md-12">
+        <thead>
+          <tr>
+            <th class="col-md-2">Student 1</th>
+            <th class="col-md-2">was in the same team as</th>
+            <th class="col-md-1">this partner</th>
+            <th class="col-md-2">who was in the same team as</th>
+            <th class="col-md-1">this partner</th>
+            <th class="col-md-2">who was in the same team as</th>
+            <th class="col-md-2">Student 2</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+  var allPartners = <%= raw json_escape(JSON.generate(@all_partners)) %>;
+
+  function teamTD(team) {
+    var t = allTeams[team];
+    var ret = $("<td>");
+    var teamLink = linkTeam(team, true);
+    teamLink.attr("title",
+                  "<span class='local-time'>" + makeFriendlyDate(t.from, false) + "</span>" +
+                  " &mdash; " + 
+                  (t.to ? "<span class='local-time'>" + makeFriendlyDate(t.to, false) + "</span>" : "present"))
+            .data("html", true)
+            .tooltip('fixTitle');
+    ret.append($("<p>").append(teamLink));
+    var span = $("<span>").text(t.assignments.join(", "));
+    ret.append($("<p>").append(span));
+    return ret;
+  }  
+  
+  $("#common-partners select").change(function() {
+    $("#results1 > tbody > tr").remove();
+    $("#results2 > tbody > tr").remove();
+    $("#results3 > tbody > tr").remove();
+    var student1 = $("#student1").val();
+    var student2 = $("#student2").val();
+    if (student1 == student2) return;
+    if (allPartners[student1] && allPartners[student1][student2]) {
+      allPartners[student1][student2].forEach(function(team) {
+        $("#results1 > tbody").append(
+          $("<tr>").append($("<td>").append(showUser(allUsers[student1])))
+                   .append(teamTD(team))
+                   .append($("<td>").append(showUser(allUsers[student2])))
+        );
+      });
+    }
+    var s1partners = allPartners[student1] || {};
+    var s2partners = allPartners[student2] || {};
+    for (var s1partner in s1partners) {
+      for (var s2partner in s2partners) {
+        if (s1partner == s2partner && s1partner != student1 && s2partner != student2) {
+          allPartners[student1][s1partner].forEach(function(s1team) {
+            allPartners[student2][s2partner].forEach(function(s2team) {
+              var older = (allTeams[s1team].from < allTeams[s2team].from);
+              $("#results2 > tbody").append(
+                $("<tr>").append($("<td>").append(showUser(allUsers[student1])))
+                         .append(teamTD(s1team))
+                         .append($("<td>").append(showUser(allUsers[s1partner]))
+                                          .addClass(older ? "older-team" : "newer-team"))
+                         .append(teamTD(s2team))
+                         .append($("<td>").append(showUser(allUsers[student2])))
+              );
+            });
+          });
+        }
+      }
+    }
+    for (var s1partner in s1partners) {
+      if (s1partner == student1 || s1partner == student2) { continue; }
+      for (var sa_partner in (allPartners[s1partner] || {})) {
+        if (sa_partner == student1 || sa_partner == s1partner || sa_partner == student2) { continue; }
+        for (var sb_partner in (allPartners[sa_partner] || {})) {
+          if (sb_partner == student2) {
+            allPartners[student1][s1partner].forEach(function(s1team) {
+              allPartners[s1partner][sa_partner].forEach(function(sab_team) {
+                var older_1a = (allTeams[s1team].from < allTeams[sab_team].from);
+                allPartners[sa_partner][student2].forEach(function(s2team) {
+                  var older_ab = (allTeams[sab_team].from < allTeams[s2team].from);
+                  $("#results3 > tbody").append(
+                    $("<tr>").append($("<td>").append(showUser(allUsers[student1])))
+                             .append(teamTD(s1team))
+                             .append($("<td>").append(showUser(allUsers[s1partner]))
+                                              .addClass(older_1a ? "older-team" : "newer-team"))
+                             .append(teamTD(sab_team))
+                             .append($("<td>").append(showUser(allUsers[sa_partner]))
+                                              .addClass(older_ab ? "older-team" : "newer-team"))
+                             .append(teamTD(s2team))
+                             .append($("<td>").append(showUser(allUsers[student2])))
+                  );
+                });
+              });
+            });
+          }
+        }
+      }
+    }
+  });
+</script>

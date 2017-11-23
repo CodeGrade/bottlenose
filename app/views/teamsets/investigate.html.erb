@@ -1,96 +1,41 @@
 <% @page_title = "#{@course.name}: Investigate partners" %>
-<div class="row">
-  <div class="col-12">
-    <select id="student1" class="col-md-5">
-      <option value="noone">&lt;No one&gt</option>
-      <% @all_users.sort_by(&:last).each do |uid, uname| %>
-      <option value="<%= uid %>"><%= uname %></option>
-      <% end %>
-    </select>
-    <span class="col-md-2 text-center">with</span>
-    <select id="student2" class="col-md-5">
-      <option value="noone">&lt;No one&gt</option>
-      <% @all_users.sort_by(&:last).each do |uid, uname| %>
-      <option value="<%= uid %>"><%= uname %></option>
-      <% end %>
-    </select>
-  </div>
-</div>
-<div class="row">
-  <table id="results1" class="table col-md-12">
-    <thead>
-      <tr>
-        <th class="col-md-4">Student 1</th>
-        <th class="col-md-4">was in the same team as</th>
-        <th class="col-md-2">Student 2</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-  <table id="results2" class="table col-md-12">
-    <thead>
-      <tr>
-        <th class="col-md-2">Student 1</th>
-        <th class="col-md-3">was in the same team as</th>
-        <th class="col-md-2">this partner</th>
-        <th class="col-md-3">who was in the same team as</th>
-        <th class="col-md-2">Student 2</th>
-      </tr>
-    </thead>
-    <tbody>
-    </tbody>
-  </table>
-</div>
+<style>
+  .older-team {
+  background: linear-gradient(to right, white, #dff0d8);
+  }
+  .newer-team {
+  background: linear-gradient(to left, white, #dff0d8);
+  }
+</style>
 <script>
-  var teamsetInfo = <%= raw json_escape(JSON.generate(@teamsets_by_id)) %>;
-  var allPartners = <%= raw json_escape(JSON.generate(@all_partners)) %>;
   var allUsers = <%= raw json_escape(JSON.generate(@all_users)) %>;
   var allTeams = <%= raw json_escape(JSON.generate(@all_teams)) %>;
-
-  function teamTD(team) {
-    var t = allTeams[team];
-    var ret = $("<td>");
-    ret.append($("<p>").append($("<span class='local-time'>").text(makeFriendlyDate(t.from)))
-                       .append(" &mdash; ")
-                       .append(t.to ? $("<span class='local-time'>").text(makeFriendlyDate(t.to)) : "present"));
-    ret.append($("<p>").text(t.assignments.join(", ")));
-    return ret;
+  function showUser(u) {
+    return $("<a>").attr("href", u.link).text(u.name)
+                   .addClass("user-link")
+                   .attr("title", $("<img>").attr("src", u.profile)
+                                            .attr("alt", u.name)
+                                            .css({"max-height": "300px", "max-width": "300px"})[0].outerHTML)
+                   .data({toggle: "tooltip", 
+                          delay: {show: 0, hide: 250},
+                          html: true}).tooltip('fixTitle');
+  }
+  function linkTeam(tid, terse) {
+    if (tid && allTeams[tid]) {
+      return $("<a>").attr("href", allTeams[tid].link).text(terse ? "Team " + tid : allTeams[tid].description);
+    } else {
+      return "<none>";
+    }
   }  
-  
-  $("select").change(function() {
-    $("#results1 > tbody > tr").remove();
-    $("#results2 > tbody > tr").remove();
-    var student1 = $("#student1").val();
-    var student2 = $("#student2").val();
-    if (student1 == student2) return;
-    if (allPartners[student1] && allPartners[student1][student2]) {
-      allPartners[student1][student2].forEach(function(team) {
-        $("#results1 > tbody").append(
-          $("<tr>").append($("<td>").text(allUsers[student1]))
-                   .append(teamTD(team))
-                   .append($("<td>").text(allUsers[student2]))
-        );
-      });
-    }
-    var s1partners = allPartners[student1] || {};
-    var s2partners = allPartners[student2] || {};
-    for (var s1partner in s1partners) {
-      for (var s2partner in s2partners) {
-        if (s1partner == s2partner && s1partner != student1 && s2partner != student2) {
-          allPartners[student1][s1partner].forEach(function(s1team) {
-            allPartners[student2][s2partner].forEach(function(s2team) {
-              $("#results2 > tbody").append(
-                $("<tr>").append($("<td>").text(allUsers[student1]))
-                         .append(teamTD(s1team))
-                         .append($("<td>").text(allUsers[s1partner]))
-                         .append(teamTD(s2team))
-                         .append($("<td>").text(allUsers[student2]))
-              );
-            });
-          });
-        }
-      }
-    }
-  });
 </script>
+<div>
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#common-partners" data-toggle="tab">Find common partners</a></li>
+    <li><a href="#diff-teamsets" data-toggle="tab">Compare teamsets</a></li>
+  </ul>
+
+  <div class="tab-content">
+    <%= render 'common_partners' %>
+    <%= render 'diff_teamsets' %>
+  </div>
+</div>

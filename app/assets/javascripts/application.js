@@ -135,7 +135,7 @@ function ensureFilesPresentOnSubmit(e, sel) {
   return !problems;
 }
 
-function makeFriendlyDate(str) {
+function makeFriendlyDate(str, showTime) {
   var dd = moment(Date.parse(str));
   if (!dd.isValid()) { dd = moment(str); }
 
@@ -147,8 +147,10 @@ function makeFriendlyDate(str) {
       return ("Today, " + dd.format("h:mm:ssa"));
     else if (tomorrow.isSameOrBefore(dd) && dd.isBefore(twodays))
       return ("Tomorrow, " + dd.format("h:mm:ssa"));
-    else
+    else if (showTime)
       return (dd.format("MMM D YYYY, h:mm:ssa"));
+    else
+      return (dd.format("MMM D, YYYY"));
   }
 }
 
@@ -162,7 +164,7 @@ $(function() {
   });
 
   $('.local-time').each(function(_) {
-    $(this).text(makeFriendlyDate($(this).text()));
+    $(this).text(makeFriendlyDate($(this).text(), true));
   });
 
   $("input.numeric").on("keydown", validateNumericInput);

@@ -46,10 +46,29 @@ class TeamsetsController < ApplicationController
     @teamsets_by_id = @course.teamsets.map do |ts|
       [ts.id, ts.assignments.map{|a| a.name}]
     end.to_h
+    @assignments_to_teamsets = @course.assignments.where(team_subs: true).map do |a|
+      [a.id, [a.name, a.teamset_id]]
+    end.to_h
     @all_partners = @course.all_partners
-    @all_users = User.where(id: @all_partners.keys).map do |u| [u.id, u.display_name] end.to_h
+    @all_users = User.where(id: @all_partners.keys).map do |u|
+      [u.id, {profile: Upload.upload_path_for(u.profile || 'silhouette.jpg'),
+              name: u.display_name, link: user_path(u), last: u.last_name}]
+    end.to_h
     @all_teams = @course.teams.map do |t|
-      [t.id, {assignments: @teamsets_by_id[t.teamset_id], from: t.start_date.iso8601, to: t.end_date&.iso8601}]
+      [t.id, {assignments: @teamsets_by_id[t.teamset_id],
+              from: t.start_date.at_beginning_of_day.iso8601, to: t.end_date&.at_beginning_of_day&.iso8601,
+              users: t.users.map(&:id).sort,
+              description: t.to_s,
+              link: course_teamset_team_path(@course, t.teamset, t)}]
+    end.to_h
+    @active_teams = @course.teamsets.map do |ts|
+      active = {}
+      ts.active_teams.each do |t|
+        t.users.each do |u|
+          active[u.id] = t.id
+        end
+      end
+      [ts.id, active]
     end.to_h
   end
 

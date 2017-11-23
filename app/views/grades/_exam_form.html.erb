@@ -129,7 +129,7 @@
   <% raw_dropped_info = @student_info.select{|u| u.dropped_date}.map{|u| [u.id.to_s, u.dropped_date.iso8601]}.to_h %>
   var dropped_dates = <%= raw json_escape(JSON.pretty_generate(raw_dropped_info)) %>;
   for (var id in dropped_dates) {
-    dropped_dates[id] = makeFriendlyDate(dropped_dates[id]);
+    dropped_dates[id] = makeFriendlyDate(dropped_dates[id], true);
     $("tr#" + id).attr("title", "Withdrawn on <span class='local-time'>" + dropped_dates[id] + "</span>")
                  .tooltip({animated: 'fade', placement: "top", html: true});
   }
