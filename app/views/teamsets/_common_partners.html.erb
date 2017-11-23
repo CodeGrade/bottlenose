@@ -4,14 +4,14 @@
       <div class="col-sm-12">
         <select id="student1" class="col-md-5">
           <option value="noone">&lt;No one&gt</option>
-          <% @all_users.sort_by{|k, v| v[:last]}.each do |uid, uinfo| %>
+          <% @all_users.sort_by{|k, v| v[:sort_name]}.each do |uid, uinfo| %>
           <option value="<%= uid %>"><%= uinfo[:name] %></option>
           <% end %>
         </select>
         <span class="col-md-2 text-center">with</span>
         <select id="student2" class="col-md-5">
           <option value="noone">&lt;No one&gt</option>
-          <% @all_users.sort_by{|k, v| v[:last]}.each do |uid, uinfo| %>
+          <% @all_users.sort_by{|k, v| v[:sort_name]}.each do |uid, uinfo| %>
           <option value="<%= uid %>"><%= uinfo[:name] %></option>
           <% end %>
         </select>

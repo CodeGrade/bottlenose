@@ -69,8 +69,8 @@ class TeamsetsController < ApplicationController
     @active_teams = @course.active_teams.group_by(&:teamset_id).map do |tsid, teams|
       active = {}
       teams.each do |t|
-        @all_team_users[t.id].each do |uid|
-          active[uid] = t.id
+        @all_team_users[t.id].each do |team_user|
+          active[team_user.user_id] = t.id
         end
       end
       [tsid, active]
