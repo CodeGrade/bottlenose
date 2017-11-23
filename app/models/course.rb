@@ -81,6 +81,10 @@ class Course < ApplicationRecord
     registrations.where(show_in_lists: true).joins(:user).order("users.last_name", "users.first_name")
   end
 
+  def active_teams
+    self.teams.where(Team.active_query, Date.current, Date.current)
+  end
+
   def students
     users.where("registrations.role": RegRequest::roles["student"])
   end

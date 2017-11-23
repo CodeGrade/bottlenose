@@ -24,7 +24,7 @@
     if (tid && allTeams[tid]) {
       return $("<a>").attr("href", allTeams[tid].link).text(terse ? "Team " + tid : allTeams[tid].description);
     } else {
-      return "<none>";
+      return $("<span>").text("<none>");
     }
   }  
 </script>
