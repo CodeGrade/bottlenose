@@ -33,8 +33,8 @@
   </div>
 </div>
 <script>
-  var assnToTeamsets = <%= raw json_escape(JSON.generate(@assignments_to_teamsets)) %>;
-  var activeTeams = <%= raw json_escape(JSON.generate(@active_teams)) %>;
+  var assnToTeamsets = <%= raw json_escape(JSON.pretty_generate(@assignments_to_teamsets)) %>;
+  var activeTeams = <%= raw json_escape(JSON.pretty_generate(@active_teams)) %>;
   $("#diff-teamsets select").change(function() {
     $("#diff-table > tbody > tr").remove();
     var ts1 = $("#teamset1").val();

@@ -49,13 +49,11 @@ class TeamsetsController < ApplicationController
     @teamsets_by_id = {}
     @assignments_to_teamsets.each do |aid, (n, tsid)|
       @teamsets_by_id[tsid] ||= []
-      @teamsets_by_id[tsid] << n
+      @teamsets_by_id[tsid] << aid
     end
+    @assignment_names = @assignments_to_teamsets.map{|aid, (aname, _)| [aid, aname]}.to_h
     @all_partners = @course.all_partners
-    @all_users = User.where(id: @all_partners.keys).map do |u|
-      [u.id, {profile: Upload.upload_path_for(u.profile || 'silhouette.jpg'),
-              name: u.display_name, link: user_path(u), sort_name: u.sort_name}]
-    end.to_h
+    @all_users = User.where(id: @all_partners.keys).map{|u| [u.id, u]}.to_h
     @course_teams = @course.teams
     @all_team_users = TeamUser.where(team: @course_teams).group_by(&:team_id).map{|k, v| [k, v.map(&:user_id)]}.to_h
     @all_teams = @course_teams.map do |t|
@@ -63,7 +61,7 @@ class TeamsetsController < ApplicationController
       [t.id, {assignments: @teamsets_by_id[t.teamset_id],
               from: t.start_date.at_beginning_of_day.iso8601, to: t.end_date&.at_beginning_of_day&.iso8601,
               users: @all_team_users[t.id].sort,
-              description: "Team #{t.id} - #{users.sort_by{|a| a[:sort_name]}.map{|a| a[:name]}.to_sentence}",
+              description: "Team #{t.id} - #{users.sort_by(&:sort_name).map(&:display_name).to_sentence}",
               link: course_teamset_team_path(@course, t.teamset_id, t)}]
     end.to_h
     @active_teams = @course.active_teams.group_by(&:teamset_id).map do |tsid, teams|

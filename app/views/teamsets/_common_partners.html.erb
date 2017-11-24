@@ -4,15 +4,15 @@
       <div class="col-sm-12">
         <select id="student1" class="col-md-5">
           <option value="noone">&lt;No one&gt</option>
-          <% @all_users.sort_by{|k, v| v[:sort_name]}.each do |uid, uinfo| %>
-          <option value="<%= uid %>"><%= uinfo[:name] %></option>
+          <% @sorted_users.each do |uid| %>
+          <option value="<%= uid %>"><%= @all_users[uid][:name] %></option>
           <% end %>
         </select>
         <span class="col-md-2 text-center">with</span>
         <select id="student2" class="col-md-5">
           <option value="noone">&lt;No one&gt</option>
-          <% @all_users.sort_by{|k, v| v[:sort_name]}.each do |uid, uinfo| %>
-          <option value="<%= uid %>"><%= uinfo[:name] %></option>
+          <% @sorted_users.each do |uid| %>
+          <option value="<%= uid %>"><%= @all_users[uid][:name] %></option>
           <% end %>
         </select>
       </div>
@@ -83,7 +83,7 @@
             .data("html", true)
             .tooltip('fixTitle');
     ret.append($("<p>").append(teamLink));
-    var span = $("<span>").text(t.assignments.join(", "));
+    var span = $("<span>").text(t.assignments.map(function(n) { return assignmentNames[n]; }).join(", "));
     ret.append($("<p>").append(span));
     return ret;
   }  
@@ -111,6 +111,7 @@
         if (s1partner == s2partner && s1partner != student1 && s2partner != student2) {
           allPartners[student1][s1partner].forEach(function(s1team) {
             allPartners[student2][s2partner].forEach(function(s2team) {
+              if (s1team === s2team) { return; }
               var older = (allTeams[s1team].from < allTeams[s2team].from);
               $("#results2 > tbody").append(
                 $("<tr>").append($("<td>").append(showUser(allUsers[student1])))
@@ -133,8 +134,10 @@
           if (sb_partner == student2) {
             allPartners[student1][s1partner].forEach(function(s1team) {
               allPartners[s1partner][sa_partner].forEach(function(sab_team) {
+                if (s1team === sab_team) { return; }
                 var older_1a = (allTeams[s1team].from < allTeams[sab_team].from);
                 allPartners[sa_partner][student2].forEach(function(s2team) {
+                  if (sab_team === s2team) { return; }
                   var older_ab = (allTeams[sab_team].from < allTeams[s2team].from);
                   $("#results3 > tbody").append(
                     $("<tr>").append($("<td>").append(showUser(allUsers[student1])))

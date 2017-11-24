@@ -94,12 +94,14 @@ module ApplicationHelper
     end
   end
 
+  def user_image(user)
+    image_path(Upload.upload_path_for(user.profile || 'silhouette.jpg'))
+  end
   def user_link_data(user)
     {
       toggle: "tooltip",
       delay: {show:0, hide: 250},
-      title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
-                          alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+      title: "#{image_tag(user_image(user), alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
     }
   end
   def show_user(user)
