@@ -1,4 +1,6 @@
 <% @page_title = "Edit grader allocations for #{@assignment.name}" %>
+<% sorted_staff = @course.sorted_staff %>
+<% sorted_staff_by_id = sorted_staff.map{|s| [s.id, s]}.to_h %>
 <h3>Edit grader allocations for <%= @grader.display_type %> for
   <%= link_to @assignment.name, course_assignment_path(@course,
       @assignment) %></h3>
@@ -22,10 +24,12 @@
     do so <i>first</i> in the single-grader section below, then return to
     this section once grading has been assigned.
   </p>
+  <% sorted_staff.group_by(&:role).each do |role, by_role| %>
   <div class="row">
-  <% @course.staff.each do |staff| %>
+    <h4 class="col-sm-12"><%= Registration::roles.invert[role].humanize.pluralize(3) %></h4>
+  <% by_role.each do |staff| %>
   <span class="col-sm-4" style="vertical-align: middle;">
-    <span><%= staff.name %></span>
+    <span style="margin-right: 1em;"><%= staff.name %></span>
     <span style="display: inline-block; vertical-align: inherit;">
       <%= spinner_tag "weight[#{staff.id}]",
           if staff.course_grader?(@course) then 1.0 else 0 end,
@@ -34,6 +38,7 @@
   </span>
   <% end %>
   </div>
+  <% end %>
   <p></p>
   <div class="row text-center">
     <%= f.submit "Assign graders", class: 'btn btn-primary' %>
@@ -62,7 +67,7 @@
     </div>
     <div class="col-sm-4">
       <%= select_tag(:who_grades_id,
-          names_for_graders(@course.staff),
+          names_for_graders(sorted_staff),
           size: 10,
           multiple: false, class: "form-control") %>
     </div>
@@ -88,7 +93,7 @@
   <% @who_grades.each do |g, subs| %>
   <% next if g.nil? %>
   <div class="col-md-4">
-    <% grade = @course.staff.find_by(id: g) %>
+    <% grade = sorted_staff_by_id[g] %>
     <% next if grade.nil? %>
     <h4><%= grade.name %></h4>
     <ul>

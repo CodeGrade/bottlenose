@@ -120,6 +120,11 @@ class Course < ApplicationRecord
       .where("registrations.dropped_date is null")
   end
 
+  def sorted_staff
+    staff.select("users.*", "registrations.role as role")
+      .sort_by{|s| [0 - s.role, s.sort_name]}
+  end
+
   def first_professor
     professors.first
   end
