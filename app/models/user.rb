@@ -288,7 +288,9 @@ class User < ApplicationRecord
     end
     to_dissolve.each do |t| t.dissolve(DateTime.current) end
     # Abandon any grading, if this person is a grader for the course
-    GraderAllocation.where(course: course, who_grades: self, grading_completed: nil).update_all(abandoned: true)
+    # Note: it seems like `who_grades` doesn't work with objects, so I need to use `who_grades_id` here
+    GraderAllocation.where(course: course, who_grades_id: self.id, grading_completed: nil)
+      .update_all(abandoned: true)
   end
 
   def course_regs_by_term
