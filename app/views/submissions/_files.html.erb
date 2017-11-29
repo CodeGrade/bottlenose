@@ -26,6 +26,55 @@
       <i class="glyphicon glyphicon-zoom-in"></i>
     </a>
   </div>
+  <% elsif (f[:type] == "application/xml") || (f[:type] == "text/html") %>
+  <% begin
+     contents = render html: f[:contents]
+     json_contents = raw json_escape(JSON.generate(f[:contents]))
+     type = if (f[:name].ends_with? ".svg") then "SVG"
+            elsif (f[:name].ends_with? ".html") then "HTML"
+            else "XML" end %>
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#markup_src_<%= i %>_<%= root %>" data-toggle="tab"><%= type %> source</a></li>
+    <li><a href="#markup_image_<%= i %>_<%= root %>" data-toggle="tab"><%= type %> preview (scripts disabled)</a></li>
+    <li><%= link_to "Download #{f[:name]}", f[:link] %></li>
+  </ul>
+  <div class="tab-content" style="height: 100%;">
+    <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">
+      <div>
+        <textarea class="sourceCode" data-lang="<%= f[:type] %>"
+                  data-source="<%= f[:link] %>"
+                  id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
+      </div>
+    </div>
+    <div id="markup_image_<%= i %>_<%= root %>" class="tab-pane nested" style="position: relative;">
+      <div style="position: absolute; z-index: 1; box-sizing: border-box;
+                  top: 0; bottom: 0; left: 0; right: 0;">
+      </div>
+      <iframe id="iframe_<%= i %>_<%= root %>"
+              sandbox="allow-same-origin allow" style="border: 0px; width: 100%; height: 100%;">
+      </iframe>
+      <script>
+        (function() {
+          var iframe = document.getElementById("iframe_<%= i %>_<%= root %>");
+          var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          iframeDoc.open();
+          iframeDoc.write(<%= json_contents %>);
+          iframeDoc.close();
+          iframe.previousElementSibling.addEventListener("click", function() {
+            alert("Clicking is disabled on active content -- download the file and load it separately for safety");
+            return;
+          });
+        })();
+      </script>
+    </div>
+  </div>
+  <% rescue Exception => err %>
+  <div class="nonCMwrapper">
+    <p>Could not render <%= f[:name] %></p>
+    <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+    <p><%= err %>
+  </div>
+  <% end %>
   <% elsif f[:type] == "zip" || f[:type] == "jar" %>
   <div class="nonCMwrapper"><%= link_to "Download #{f[:name]}", f[:link] %></div>
   <% elsif f[:type] == "symlink" %>
@@ -36,6 +85,11 @@
     <%= link_to f[:link_to], f[:link_href], class: "symlink-jump", data: {root: root} %>
     <% end %>
   </div>
+  <% elsif f[:contents].lines.length > 10000 %>
+  <div class="nonCMwrapper">
+    <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
+    <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+  </div>  
   <% else %>
   <% begin
        contents = render html: f[:contents] %>

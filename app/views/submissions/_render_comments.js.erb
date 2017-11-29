@@ -14,6 +14,7 @@ $(function (){
     }
     $(code).addClass("cm-s-mdn-like cm-s-default");
   });
+  var curActive = {};
   $("#<%= root %>").find(".files").treeview({
     expandIcon: 'glyphicon glyphicon-chevron-down', // deliberately the same
     collapseIcon: 'glyphicon glyphicon-chevron-down', // always expanded
@@ -22,9 +23,11 @@ $(function (){
       e.preventDefault();
       e.stopPropagation();
       if (data.href !== undefined && data.href !== "#") {
-        $("#<%= root %>").find(".tab-pane").removeClass("active");
+        if (curActive["<%= root %>"])
+          curActive["<%= root %>"].removeClass("active");
         // make sure any comments are visible
         var newPane = $(data.href);
+        curActive["<%= root %>"] = newPane;
         var cm = newPane.addClass("active").find(".CodeMirror");
         if (cm.length > 0) {
           cm = cm[0].CodeMirror;
@@ -105,8 +108,17 @@ $(function (){
     var codeHeight = windowHeight - footerHeight - parentBulk;
     var filesHeight = windowHeight - footerHeight - toggleCommentsHeight;
     <% end %>
+    var tabbarHeight = $("#<%= root %>").find(".nav-tabs").outerHeight(true) || 0;
+    var tabpane = $("#<%= root %>").find(".tab-pane").first();
+    var tabpaneBulk = tabpane.outerHeight() - tabpane.height();
     $("#<%= root %>").find(".CodeMirror").each(function(index, cm) {
       cm.CodeMirror.setSize(null, codeHeight);
+    });
+    $("#<%= root %>").find(".tab-pane.nested").each(function(index, nested) {
+      $(nested).find(".CodeMirror").each(function(index, cm) {
+        cm.CodeMirror.setSize(null, codeHeight - tabbarHeight - tabpaneBulk);
+      });
+      $(nested).find("iframe").height(codeHeight - tabbarHeight - tabpaneBulk);
     });
     $("#<%= root %>").find(".nonCMwrapper").height(codeHeight);
     $("#<%= root %>").find(".files-sidebar .files-treeview").height(filesHeight);
