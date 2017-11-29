@@ -13,6 +13,7 @@
 .embed-xml { border: 1px solid green; margin: 2px; position: relative; padding-top: 1em; }
 .embed-xml::after { content: "\2039\203A"; font-size: 150%; top: -0.25em; right: 0; position: absolute; color: green; }
 </style>
+<% site_url = Settings.load_json["site_url"] %>
 <% sub_files.each_with_index do |f, i| %>
 <% index = (i + 1).to_s.rjust(sub_files.count.to_s.length, '0') %>
 <div class="file-pane tab-pane panel-tab-pane <%= if i == 0; 'active' end %>" id="file_<%= index %>_<%= root %>">
@@ -28,8 +29,10 @@
   </div>
   <% elsif (f[:type] == "application/xml") || (f[:type] == "text/html") %>
   <% begin
-     contents = render html: f[:contents]
-     json_contents = raw json_escape(JSON.generate(f[:contents]))
+     raw_contents = f[:contents]
+     clean_contents = raw_contents.gsub(request.env["SERVER_NAME"].to_s, "#").gsub(site_url, "#")
+     contents = render html: raw_contents
+     json_contents = raw json_escape(JSON.generate(clean_contents))
      type = if (f[:name].ends_with? ".svg") then "SVG"
             elsif (f[:name].ends_with? ".html") then "HTML"
             else "XML" end %>
@@ -51,7 +54,7 @@
                   top: 0; bottom: 0; left: 0; right: 0;">
       </div>
       <iframe id="iframe_<%= i %>_<%= root %>"
-              sandbox="allow-same-origin allow" style="border: 0px; width: 100%; height: 100%;">
+              sandbox="allow-same-origin" style="border: 0px; width: 100%; height: 100%;">
       </iframe>
       <script>
         (function() {
