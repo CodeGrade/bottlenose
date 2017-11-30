@@ -1,4 +1,7 @@
 <% content_for :wide_content do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
 
 <% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id, sub_team, sub_user), index|
    @submission_dirs = sub_dirs

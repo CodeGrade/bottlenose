@@ -1,6 +1,9 @@
 <% @page_title = "Codereview Grader" %>
 <% cur_reg = current_user.registration_for(@course) %>
 <% content_for :wide_content_before do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
 <style id="comment-styles"></style>
 <% if @grade.errors.any? %>
 <div id="error_explanation" class="alert alert-danger">

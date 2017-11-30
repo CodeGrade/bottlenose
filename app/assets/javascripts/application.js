@@ -34,6 +34,7 @@
 //= require codemirror/mode/css/css
 //= require codemirror/mode/xml/xml
 //= require codemirror/mode/htmlmixed/htmlmixed
+//= require dompurify/dist/purify.min
 //= require pyret-codemirror-mode/mode/pyret
 //= require_tree .
 

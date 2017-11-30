@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "codemirror": "latest",
+    "dompurify": "latest",
     "pyret-codemirror-mode": "git://github.com/brownplt/pyret-codemirror-mode#master"
   },
   "devDependencies": {

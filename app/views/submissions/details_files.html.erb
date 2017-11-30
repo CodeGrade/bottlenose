@@ -5,6 +5,9 @@
    end %>
 <% cur_reg = current_user.registration_for(@course) %>
 <% content_for :wide_content_before do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
 <% if @commentType %>
 <style>
   div.CodeMirror-linewidget > div { display: none; }

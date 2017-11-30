@@ -1,6 +1,9 @@
 <% @page_title = "Manual Style Grader" %>
 <% cur_reg = current_user.registration_for(@course) %>
 <% content_for :wide_content_before do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
 <style id="comment-styles">
   .save-status > .glyphicon { padding: 6px; border-radius: 4px; }
 </style>
