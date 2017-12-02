@@ -62,7 +62,7 @@ $(function() {
       for (var i = assnNames.length - 1; i >= 0; i--) {
         var style = null;
         var certainty = true;
-        if (avgGrades[i][1] == "Exam" || avgGrades[i][1] == "Questions") {
+        if (avgGrades[i][1] == "Exam") {
           style = "point { size: 18, shape-type: star; fill-color: gold; opacity: 1; }";
         }
         if (grades[i] === false) { certainty = false; grades[i] = 0; }
