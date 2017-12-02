@@ -192,7 +192,7 @@ class Course < ApplicationRecord
       {s: s, dropped: dropped, min: min, cur: cur, max: max,
        pending: adjust, pending_names: pending_names,
        unsub: unsubs, unsub_names: unsub_names,
-       remaining: remaining}
+       remaining: remaining, used: used}
     end
     ans
   end

@@ -18,9 +18,6 @@
       </div>
       <% end %>
     </div>
-    <script>
-      $("#assignments a.btn").on("click", function(e) { e.stopPropagation(); });
-    </script>
   </div>
 
   <div id="assignments-table" class="panel-body collapse in">
@@ -78,22 +75,6 @@
       <span id="all-students-count" style="display: none;">(<%= score_summary.count %>)</span>
       <span id="current-students-count">(<%= score_summary.count{|i| !i[:dropped]} %>)</span>
       <div id="toggle-dropped" class="pull-right btn-xs btn btn-default">Show dropped students</div>
-      <script>
-        $("#toggle-dropped").on("click", function(e) {
-          $("#students-table").toggleClass("hide-dropped");
-          if ($("#students-table").hasClass("hide-dropped")) {
-            $(this).text("Show dropped students");
-            $("#all-students-count").hide();
-            $("#current-students-count").show();
-          } else {
-            $(this).text("Hide dropped students");
-            $("#all-students-count").show();
-            $("#current-students-count").hide();
-          }
-          e.stopPropagation();
-          e.preventDefault();
-        });
-      </script>
     </div>
   </div>
   <div id="students-table" class="panel-body collapse in hide-dropped">
@@ -121,7 +102,10 @@
           <% end %>
             <td width="1em"><span><%= mail_to "#{info[:s].name} <#{info[:s].email}>", "@" %></span></td>
             <td><span><%= link_to info[:s].display_name, impersonate_user_path(info[:s]), 
-                          method: 'post', class: 'user-link', data: user_link_data(info[:s]) %></span></td>
+                          method: 'post', class: 'user-link', data: user_link_data(info[:s]) %></span>
+              <% grades = @ordered_assignments.map{|a| info[:used][a.id]&.score || false} %>
+              <p class="hidden" data-grades="<%= raw json_escape(JSON.generate(grades)) %>"></p>
+            </td>
             <td class="col-md-1"><span class="<%= color_warning(info[:min]) %>"><%= show_score(info[:min], nil, true) %></span></td>
             <td class="col-md-1">
               <% if info[:cur].nan? %>
@@ -141,33 +125,10 @@
       </tbody>
     </table>
   </div>
-  <script>
-    $(function() {
-      $.tablesorter.themes.bootstrap = {
-        caption      : 'caption',
-        sortNone     : '',
-        sortAsc      : '',
-        sortDesc     : '',
-        active       : '', // applied when column is sorted
-        hover        : '', // custom css required - a defined bootstrap style may not override other classes
-        // icon class names
-        icons        : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
-        iconSortAsc  : 'glyphicon glyphicon-chevron-up', // class name added to icon when column has ascending sort
-        iconSortDesc : 'glyphicon glyphicon-chevron-down', // class name added to icon when column has descending sort
-        filterRow    : '', // filter row class; use widgetOptions.filter_cssFilter for the input/select element
-        footerRow    : '',
-        footerCells  : '',
-        even         : '', // even row zebra striping
-        odd          : ''  // odd row zebra striping
-      };
-      $("#students-table > table").tablesorter({
-        headerTemplate: "{content} {icon}",
-        theme: "bootstrap",
-        widgets: ['uitheme']
-      });
-    });
-  </script>    
 </div>
+<script>
+  <%= render "index.js" %>
+</script>
 
 <% else %>
 <%= render "assignments/table", assignments: @course.assignments, 
