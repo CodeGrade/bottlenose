@@ -89,12 +89,16 @@
 
 
 <h3>Existing grading allocations</h3>
+<% sorted_staff_by_id = sorted_staff.map{|s| [s.id, s]}.to_h %>
+<% sorted_staff.group_by(&:role).to_a.reverse.to_h.each do |role, by_role| %>
+<div class="row"><h4 class="col-sm-12"><%= Registration::roles.invert[role].humanize.pluralize(3) %></h4></div>
+<% grader_rows =
+   @who_grades.slice(*by_role.map(&:id)).to_a.in_groups_of(3).map{|a| a.compact.to_h} %>
+<% grader_rows.each do |row| %>
 <div class="row">
-  <% @who_grades.each do |g, subs| %>
-  <% next if g.nil? %>
+  <% row.each do |g, subs| %>
+  <% grade = sorted_staff_by_id[g] %>
   <div class="col-md-4">
-    <% grade = sorted_staff_by_id[g] %>
-    <% next if grade.nil? %>
     <h4><%= grade.name %></h4>
     <ul>
       <% subs.each do |sub| %>
@@ -142,6 +146,8 @@
   </div>
   <% end %>
 </div>
+<% end %>
+<% end %>
 <script>
   $(".spinner").each(function() { activateSpinner(this, {precision: 1}); });
 </script>
