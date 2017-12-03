@@ -287,8 +287,16 @@ class CourseSpreadsheet
                                         col_name(weight.count - 3), true, i + sheet.header_rows.length + 2, false,
                                         nil))
           sheet.push_row(i, [curved, 0])
+        elsif all_grade_comments[sub_id.submission_id].nil?
+          questions.each do |g| sheet.push_row(i, "") end
+          sheet.push_row(i, [0, "Not yet graded"])
+          curved = Cell.new(nil,
+                            CellRef.new(nil,
+                                        col_name(weight.count - 3), true, i + sheet.header_rows.length + 2, false,
+                                        nil))
+          sheet.push_row(i, [curved, 0])
         else
-          grade_comments = all_grade_comments[sub_id.submission_id]&.sort_by{|c| c.line}
+          grade_comments = all_grade_comments[sub_id.submission_id].sort_by{|c| c.line}
           q_grades = grade_comments.slice(0..questions.count-1).map{|c| (c && c["weight"])}
           q_grades.each do |g|
             sheet.push_row(i, g || "<none>")
