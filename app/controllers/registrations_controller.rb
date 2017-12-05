@@ -56,10 +56,11 @@ class RegistrationsController < ApplicationController
       @registrations = @course.registrations
                        .where.not(role: Registration::roles["student"])
     end
-    @registrations = @registrations
-                     .includes(:user)
-                     .includes(:registration_sections)
-                     .to_a.sort_by{|r| r.user.display_name}
+    @sections = @course.sections.map{|s| [s.id, s]}.to_h
+    @registrations = @registrations.includes(:user)
+    @reg_sections = RegistrationSection.where(registration: @registrations).group_by(&:registration_id)
+                    .map{|rid, regs| [rid, regs.map{|r| @sections[r.section_id]}]}.to_h
+    @registrations = @registrations.to_a.sort_by{|r| r.user.display_name}
   end
 
   def bulk_update

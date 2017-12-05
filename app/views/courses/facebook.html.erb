@@ -20,19 +20,19 @@
     <% end %>
   </select>
   <span id="emails" class="pull-right show_all">
-    <% all_emails = @students.map{|u| "#{u.name} <#{u.email}>" } %>
+    <% all_emails = @students.reject{|u| u.dropped_date}.map{|u| "#{u.name} <#{u.email}>" } %>
     <span class="btn btn-default btn-large show_all">
       <%= mail_to "#{current_user.name} <#{current_user.email}>",
                   "Email all sections",
-                  bcc: all_emails.join(","), title: "Email everyone (bcc)" %>
+                  bcc: all_emails.join(","), title: "Email everyone currently enrolled (bcc)" %>
     </span>
     <% @sections.each do |s|
        next unless @students_by_section[s.crn]&.length.to_i != 0
-       all_emails = @students_by_section[s.crn].sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>" } %>
+       all_emails = @students_by_section[s.crn].reject{|u| u.dropped_date}.map {|u| "#{u.name} <#{u.email}>" } %>
     <span class="btn btn-default btn-large sec_<%= s.crn %>">
       <%= mail_to "#{current_user.name} <#{current_user.email}>",
                   "Email section #{s.crn}",
-                  bcc: all_emails.join(","), title: "Email everyone in this section (bcc)" %>
+                  bcc: all_emails.join(","), title: "Email everyone currently enrolled in this section (bcc)" %>
     </span>
     <% end %>
   </span>

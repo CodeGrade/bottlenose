@@ -59,8 +59,9 @@ class CoursesController < ApplicationController
     @reg_sections = RegistrationSection.where(registration: @course.registrations)
     @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
     @students_by_section = @reg_sections.group_by(&:section_id).map do |section_id, regs|
-      [@section_crns[section_id], @students.where("registrations.id": regs.map(&:registration_id))]
+      [@section_crns[section_id], @students.where("registrations.id": regs.map(&:registration_id)).to_a]
     end.to_h
+    @students = @students.to_a
     @sections_by_student = @reg_sections.group_by(&:registration_id)
   end
 

@@ -26,7 +26,7 @@
   </thead>
   <tbody>
     <% @registrations.each do |r| %>
-    <% section = r.sections.where(type: type)&.first %>
+    <% section = @reg_sections[r.id].select{|s| s.type == type}&.first %>
     <% next unless section %>
     <tr>
       <td>
