@@ -2,7 +2,7 @@
 <% flat_questions = @assignment.flattened_questions %>
 <% col_count = flat_questions.count %>
 <% any_parts = (questions.count != col_count) %>
-<% total_score = questions.map do |q| q["weight"] end.sum %>
+<% total_score = questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
 
 <% if @student_info.length > 1 %>
 <style>

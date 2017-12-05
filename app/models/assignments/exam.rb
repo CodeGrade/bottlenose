@@ -10,7 +10,7 @@ class Exam < Assignment
   end
   
   def set_exam_graders
-    return true unless self.new_record?
+    return true unless (self.new_record? || self.assignment_upload_id_changed?)
     upload = @assignment_file_data
     if upload.nil?
       if self.assignment_upload.nil?
