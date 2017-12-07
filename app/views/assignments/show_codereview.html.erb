@@ -9,9 +9,11 @@
 <% cur_reg = current_user.registration_for(@course) %>
 <% if cur_reg&.professor? %>
 <p class="pull-right">
+  <% if @gradesheet.assignment.review_target == "peer" %>
   <%= link_to "Edit review matchings",
       edit_course_assignment_matchings_path(@course, @gradesheet.assignment),
       class: "btn btn-default" %>
+  <% end %>
   <%= link_to "Edit Assignment", 
       edit_course_assignment_path(@course, @gradesheet.assignment), class: "btn btn-default" %>
 </p>

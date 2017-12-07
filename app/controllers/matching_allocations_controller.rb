@@ -7,6 +7,11 @@ class MatchingAllocationsController < ApplicationController
   before_action -> { require_admin_or_prof(course_assignment_path(@course, @assignment)) }
 
   def edit
+    if @assignment.review_target == "self"
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "Cannot specify teams for self-reviews: they must be the same as the underlying submissions."
+      return
+    end
     @existing_matchings = CodereviewMatching.where(assignment: @assignment)
     @needed_teams = Team.where(id: (@existing_matchings.pluck(:team_id) +
                                     @existing_matchings.pluck(:target_team_id)).compact)
