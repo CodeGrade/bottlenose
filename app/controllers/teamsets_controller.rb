@@ -1,19 +1,20 @@
 require 'csv'
+require 'teamset_spreadsheet'
 
 class TeamsetsController < ApplicationController
   layout 'course'
 
   before_action :find_course
-  before_action :find_teamset, except: [:index, :investigate]
+  before_action :find_teamset, except: [:index, :investigate, :export]
   before_action :require_registered_user
   before_action :stop_impersonating_user, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter,
                                                  :accept_request, :reject_request,
-                                                 :accept_all_requests, :reject_all_requests
+                                                 :accept_all_requests, :reject_all_requests, :export
                                                 ]
   before_action :require_admin_or_staff, only: [:edit, :update, :dissolve_all, :randomize, :bulk_enter,
                                                 :accept_request, :reject_request,
                                                 :accept_all_requests, :reject_all_requests,
-                                                :investigate
+                                                :investigate, :export
                                                ]
 
   # GET /staff/courses/:course_id/teams
@@ -31,6 +32,12 @@ class TeamsetsController < ApplicationController
     setup_params
   end
 
+  def export
+    respond_to do |format|
+      format.xlsx { send_data TeamsetSpreadsheet.new(@course).to_xlsx, type: "application/xlsx" }
+    end
+  end
+  
   def update
     @team = Team.new(team_params)
 

@@ -106,6 +106,7 @@ Bottlenose::Application.routes.draw do
     resources :teamsets, only: [:index, :edit, :update] do
       collection do
         get :investigate
+        get :export
       end
       resources :team_requests, only: [:index, :create, :update, :destroy]
       member do

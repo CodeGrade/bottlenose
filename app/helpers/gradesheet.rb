@@ -66,8 +66,7 @@ class Gradesheet
         elsif (c.is_a? CodereviewGrader) && File.file?(g.grading_output.to_s)
           responses = YAML.load(File.read(g.grading_output))
           responses.delete("grader")
-          questions = @assignment.flattened_questions
-          q_grades = responses.values.flatten.zip(questions * @assignment.review_count).map do |r, q|
+          q_grades = responses.values.flatten.zip(@questions * c.review_count).map do |r, q|
             (r["score"].to_f.clamp(0, 1) * q["weight"])
           end
           q_scores << q_grades
