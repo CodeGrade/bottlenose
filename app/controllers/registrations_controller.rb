@@ -133,7 +133,7 @@ class RegistrationsController < ApplicationController
     else
       failed.each do |f| @course.errors.add(:base, f) end
       redirect_to course_registrations_path(@course),
-                  notice: "Added #{num_added} students.",
+                  notice: "Added #{pluralize(num_added, 'student')}.",
                   alert: "Could not add #{pluralize(failed.count, 'student')}: #{failed.to_sentence}"
     end
   end

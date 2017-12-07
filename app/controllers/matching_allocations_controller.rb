@@ -12,7 +12,7 @@ class MatchingAllocationsController < ApplicationController
                                     @existing_matchings.pluck(:target_team_id)).compact)
                     .includes(:users).map{|t| [t.id, t]}.to_h
     @needed_users = User.where(id: (@existing_matchings.pluck(:user_id) +
-                                    @existing_matchings.pluck(:target_team_id)).compact)
+                                    @existing_matchings.pluck(:target_user_id)).compact)
                     .map{|u| [u.id, u]}.to_h
 
     @targets =

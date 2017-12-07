@@ -68,7 +68,7 @@
         class: "btn btn-sm btn-warning pull-right", method: :delete %>
     <%= @needed_teams[m.team_id] || @needed_users[m.user_id] %>
     <b>reviews</b> <br/>
-    <%= @needed_teams[m.target_team_id] || @needed_teams[m.target_user_id] %>
+    <%= @needed_teams[m.target_team_id] || @needed_users[m.target_user_id] %>
   </div>
   <% end %>
 </div>
