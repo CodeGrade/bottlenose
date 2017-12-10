@@ -75,6 +75,8 @@ Bottlenose::Application.routes.draw do
           get 'edit' => 'matching_allocations#edit', as: 'edit'
           patch 'edit' => 'matching_allocations#patch', as: 'patch'
           patch 'update' => 'matching_allocations#update', as: 'update'
+          patch 'bulk_enter' => 'matching_allocations#bulk_enter', as: 'bulk_enter'
+          delete 'delete_all' => 'matching_allocations#delete_all', as: 'delete_all'
         end
         member do
           delete 'delete' => 'matching_allocations#delete', as: 'delete'

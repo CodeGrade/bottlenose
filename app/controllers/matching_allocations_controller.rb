@@ -1,3 +1,4 @@
+require 'csv'
 class MatchingAllocationsController < ApplicationController
   layout 'course'
   
@@ -132,6 +133,96 @@ class MatchingAllocationsController < ApplicationController
       end
     end
   end
+  def bulk_enter
+    @num_added = 0
+    @failed = []
+
+    @allTeams = @assignment.teamset.teams
+    @allUsers = @course.users
+    def find_users_or_fail(ids)
+      ids = [ids] unless ids.is_a? Array
+      any_dups = ids.group_by{|v| v}.select{|k, v| v.size > 1}.map(&:first)
+      unless any_dups.blank?
+        @failed << "Found duplicate #{'id'.pluralize(any_dups.count)}: #{any_dups.to_sentence}"
+        return nil
+      end
+      ans = @allUsers.where(id: ids).to_a
+      if ans.length != ids.length
+        missing = ids.to_set - ans.map(&:id).to_set
+        @failed <<
+          "Could not find #{'user'.pluralize(missing.count)} with #{'id'.pluralize(missing.count)} #{missing.to_a.to_sentence}"
+        return nil
+      end
+      ans
+    end
+    def find_teams_or_fail(ids)
+      ids = [ids] unless ids.is_a? Array
+      any_dups = ids.group_by{|v| v}.select{|k, v| v.size > 1}.map(&:first)
+      unless any_dups.blank?
+        @failed << "Found duplicate #{'id'.pluralize(any_dups.count)}: #{any_dups.to_sentence}"
+        return nil
+      end
+      ans = @allTeams.where(id: ids).to_a
+      if ans.length != ids.length
+        missing = ids.to_set - ans.map(&:id).to_set
+        @failed <<
+          "Could not find #{'team'.pluralize(missing.count)} with #{'id'.pluralize(missing.count)} #{missing.to_a.to_sentence}"
+        return nil
+      end
+      ans
+    end
+    def save_if_possible(match)
+      begin
+        match.save!
+        @num_added += 1
+      rescue ActiveRecord::RecordNotUnique => e
+        @failed << "Matching already exists: #{match}"
+      end
+    end
+    CSV.parse(params[:matchings]) do |row|
+      nums = row.map{|v| Integer(v) rescue false}
+      next unless nums.all?
+      case [@assignment.team_subs?, @assignment.related_assignment.team_subs?]
+      when [true, true]
+        reviewer_team = find_teams_or_fail(nums[0])&.first
+        target_teams = find_teams_or_fail(nums[1..-1])
+        next if reviewer_team.nil? || target_teams.nil?
+        target_teams.each do |tt|
+          save_if_possible(CodereviewMatching.new(assignment: @assignment, team: reviewer_team, target_team: tt))
+        end
+      when [true, false]
+        reviewer_team = find_teams_or_fail(nums[0])&.first
+        target_users = find_users_or_fail(nums[1..-1])
+        next if reviewer_team.nil? || target_users.nil?
+        target_users.each do |tu|
+          save_if_possible(CodereviewMatching.new(assignment: @assignment, team: reviewer_team, target_user: tu))
+        end
+      when [false, true]
+        reviewer_user = find_users_or_fail(nums[0])&.first
+        target_teams = find_teams_or_fail(nums[1..-1])
+        next if reviewer_user.nil? || target_teams.nil?
+        target_teams.each do |tt|
+          save_if_possible(CodereviewMatching.new(assignment: @assignment, user: reviewer_user, target_team: tt))
+        end
+      when [false, false]
+        reviewer_user = find_users_or_fail(nums[0])&.first
+        target_users = find_users_or_fail(nums[1..-1])
+        next if reviewer_user.nil? || target_users.nil?
+        target_users.each do |tu|
+          save_if_possible(CodereviewMatching.new(assignment: @assignment, user: reviewer_user, target_user: tu))
+        end
+      end
+    end
+    if @failed.blank?
+      redirect_to edit_course_assignment_matchings_path(@course, @assignment),
+                  notice: "Added #{pluralize(@num_added, 'matching')}."
+    else
+      @failed.each do |f| @assignment.errors.add(:base, f) end
+      redirect_to edit_course_assignment_matchings_path(@course, @assignment),
+                  notice: "Added #{pluralize(@num_added, 'matching')}.",
+                  alert: "Could not add #{pluralize(@failed.count, 'matching')}: #{@failed.to_sentence}"
+    end
+  end
   def update
     CodereviewMatching.transaction do
       case [@assignment.team_subs?, @assignment.related_assignment.team_subs?]
@@ -190,6 +281,11 @@ class MatchingAllocationsController < ApplicationController
       redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
                     alert: "That matching does not belong to this assignment"
     end      
+  end
+  def delete_all
+    matchings = @assignment.codereview_matchings.destroy_all
+    redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
+                  notice: "#{pluralize(matchings.count, 'matching')} deleted"
   end
 
   private

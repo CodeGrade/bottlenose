@@ -6,7 +6,7 @@
 <div class="well">
   <%= form_for([@course, @assignment.becomes(Assignment)],
                :url => { action: :update, method: :patch }) do |f| %>
-  <h3>Bulk review matchings</h3>
+  <h3>Random bulk review matchings</h3>
   <p>
     By default, if you do not specify any matchings at all, then all
     students will be assigned to randomly review other students.  <b><i>You
@@ -26,6 +26,32 @@
   </div>
   <% end %>
 
+  <h3 class="middle-separator">OR</h3>
+
+  <h3>Manual bulk review matchings</h3>
+  <% reviewer = @assignment.team_subs? ? "team" : "user" %>
+  <% reviewee = @assignment.related_assignment.team_subs? ? "team" : "user" %>
+  <p class="help-block">
+    Enter <i>reviewer and reviewee ids</i> in CSV format, with reviewer <%= reviewer %>s on the
+    left and one or more reviewee <%= reviewee %>s to the right.  Rows whose
+    entries aren't numeric are ignored, so you can leave a header row:
+    <code style="white-space: pre-line; display: block;">Reviewer <%= reviewer %> id, reviewee <%= reviewee %> ids...
+      reviwer<%= reviewer.capitalize %>Id1, reviewee<%= reviewee.capitalize %>Id2, reviewee<%= reviewee.capitalize %>Id3
+      reviewer<%= reviewer.capitalize %>Id4, reviewee<%= reviewee.capitalize %>Id5
+    </code>
+  </p>
+  <%= form_for([@course, @assignment.becomes(Assignment)],
+               :url => { action: :bulk_enter, method: :patch }) do |f| %>
+  <%= hidden_field_tag :course_id, @course.id %>
+  <%= hidden_field_tag :assignment_id, @assignment.id %>
+  <div class="form-group">
+    <%= label_tag :matchings, "Review matchings" %>
+    <%= text_area_tag :matchings, nil, class: "form-control", rows: 15 %>
+    <div class="form-group">
+      <%= submit_tag "Create Matchings", class: 'btn btn-primary' %>
+    </div>
+  </div>
+  <% end %>
   <h3 class="middle-separator">OR</h3>
 
   <h3>Assign individual review <%= 'matching'.pluralize(@assignment.review_count) %></h3>
@@ -59,7 +85,15 @@
 </div>
 
 
-<h3>Existing review matchings</h3>
+<h3>
+  Existing review matchings
+  <% if !@existing_matchings.blank? %>
+  <%= link_to "Unmatch all",
+      delete_all_course_assignment_matchings_path(@course, @assignment),
+      method: :delete, class: "btn btn-sm btn-danger pull-right",
+      data: {confirm: "Are you sure you want to delete all existing matchings?"} %>
+  <% end %>
+</h3>
 <div class="row">
   <% @existing_matchings.each do |m| %>
   <div class="col-md-6" style="margin: 6px 0;">

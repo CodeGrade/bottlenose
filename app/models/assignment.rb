@@ -35,6 +35,8 @@ class Assignment < ApplicationRecord
   accepts_nested_attributes_for :interlocks, allow_destroy: true
   has_many :submission_views
 
+  has_many :codereview_matchings
+  
   validates :name,      :uniqueness => { :scope => :course_id }
   validates :name,      :presence => true
   validates :course_id, :presence => true

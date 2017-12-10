@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20171121152503) do
+ActiveRecord::Schema.define(version: 20171210143444) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -47,6 +47,10 @@ ActiveRecord::Schema.define(version: 20171121152503) do
     t.integer "team_id"
     t.integer "target_user_id"
     t.integer "target_team_id"
+    t.index ["assignment_id", "team_id", "target_team_id"], name: "unique_team_team_matchings", unique: true, where: "((user_id IS NULL) AND (target_user_id IS NULL))"
+    t.index ["assignment_id", "team_id", "target_user_id"], name: "unique_team_user_matchings", unique: true, where: "((user_id IS NULL) AND (target_team_id IS NULL))"
+    t.index ["assignment_id", "user_id", "target_team_id"], name: "unique_user_team_matchings", unique: true, where: "((team_id IS NULL) AND (target_user_id IS NULL))"
+    t.index ["assignment_id", "user_id", "target_user_id"], name: "unique_user_user_matchings", unique: true, where: "((team_id IS NULL) AND (target_team_id IS NULL))"
     t.index ["assignment_id"], name: "index_codereview_matchings_on_assignment_id"
     t.index ["team_id"], name: "index_codereview_matchings_on_team_id"
     t.index ["user_id"], name: "index_codereview_matchings_on_user_id"
