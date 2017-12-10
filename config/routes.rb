@@ -62,6 +62,8 @@ Bottlenose::Application.routes.draw do
           get ':grader_id/edit' => 'grader_allocations#edit', as: 'edit'
           patch ':grader_id/edit' => 'grader_allocations#patch', as: 'patch'
           patch ':grader_id/update' => 'grader_allocations#update', as: 'update'
+          delete :abandon_all
+          delete :delete_all
         end
       end
       resources :graders, only: [] do

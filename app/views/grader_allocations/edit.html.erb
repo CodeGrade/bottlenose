@@ -88,7 +88,23 @@
 </div>
 
 
-<h3>Existing grading allocations</h3>
+<h3>
+  Existing grading allocations
+  <% if @allocations.any?{|_, allocs| allocs.any?{|_, a| a.grading_completed.nil?}} %>
+  <span class="btn-group pull-right">
+  <%= link_to "Delete all",
+      delete_all_course_assignment_grader_allocations_path(@course, @assignment, {config: @grader}),
+      class: "abandon btn btn-sm btn-warning",
+      title: "Use this to remove all incomplete grading allocations for this assignment, without penalty",
+      method: :delete, data: { confirm: "Are you sure?" } %>
+  <%= link_to "Abandon all",
+      abandon_all_course_assignment_grader_allocations_path(@course, @assignment, {config: @grader}),
+      class: "abandon btn btn-sm btn-danger",
+      title: "Use this to remove all incomplete grading allocations for this assignment, and blame each one",
+      method: :delete, data: { confirm: "Are you sure?" } %>
+  </span>
+  <% end %>
+</h3>
 <% sorted_staff_by_id = sorted_staff.map{|s| [s.id, s]}.to_h %>
 <% sorted_staff.group_by(&:role).to_a.reverse.to_h.each do |role, by_role| %>
 <div class="row"><h4 class="col-sm-12"><%= Registration::roles.invert[role].humanize.pluralize(3) %></h4></div>
@@ -97,13 +113,29 @@
 <% grader_rows.each do |row| %>
 <div class="row">
   <% row.each do |g, subs| %>
-  <% grade = sorted_staff_by_id[g] %>
+  <% staff_grader = sorted_staff_by_id[g] %>
   <div class="col-md-4">
-    <h4><%= grade.name %></h4>
+    <h4>
+      <%= staff_grader.name %>
+      <% if subs.any?{|s| @grades[s.id].score.nil? && !@allocations[g][s.id].abandoned?} %>
+      <span class="btn-group pull-right">
+      <%= link_to "Delete all",
+          delete_all_course_assignment_grader_allocations_path(@course, @assignment, {config: @grader, staff: g}),
+          class: "abandon btn btn-sm btn-warning",
+          title: "Use this to remove all incomplete grading allocations from this grader, without penalty",
+          method: :delete, data: { confirm: "Are you sure?" } %>
+      <%= link_to "Abandon all",
+          abandon_all_course_assignment_grader_allocations_path(@course, @assignment, {config: @grader, staff: g}),
+          class: "abandon btn btn-sm btn-danger",
+          title: "Use this to remove all incomplete grading allocations from this grader, and blame them",
+          method: :delete, data: { confirm: "Are you sure?" } %>
+      </span>
+      <% end %>
+    </h4>
     <ul>
       <% subs.each do |sub| %>
       <% grade = @grades[sub.id] %>
-      <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.who_grades_id == g} %>
+      <% alloc = @allocations[g][sub.id] %>
       <li>
         <%= link_to sub.submission_user_names,
             edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
@@ -126,14 +158,14 @@
             <br>
             <span class="btn-group">
             <%= link_to "Delete",
-                delete_course_grader_allocation_path(@course, alloc, :config => @grader),
+                delete_course_grader_allocation_path(@course, alloc, {config: @grader}),
                 class: "abandon btn btn-sm btn-warning",
-                title: "Use this to remove this assignment from this grader, without penalty",
+                title: "Use this to remove this allocation from this grader, without penalty",
                 method: :patch, data: { confirm: "Are you sure?" } %>
             <%= link_to "Abandon",
-                abandon_course_grader_allocation_path(@course, alloc, :config => @grader),
+                abandon_course_grader_allocation_path(@course, alloc, {config: @grader}),
                 class: "abandon btn btn-sm btn-danger",
-                title: "Use this to remove this assignment from this grader, and blame them",
+                title: "Use this to remove this allocation from this grader, and blame them",
                 method: :patch, data: { confirm: "Are you sure?" } %>
             </span>
           <% end %>

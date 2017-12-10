@@ -30,6 +30,8 @@ class Assignment < ApplicationRecord
   has_many :graders, dependent: :destroy, autosave: true
   accepts_nested_attributes_for :graders, allow_destroy: true
 
+  has_many :grader_allocations, dependent: :destroy
+  
   has_many :interlocks, dependent: :destroy
   has_many :related_interlocks, :foreign_key => "related_assignment_id", :class_name => "Interlock"
   accepts_nested_attributes_for :interlocks, allow_destroy: true

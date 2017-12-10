@@ -3,10 +3,10 @@ class GraderAllocationsController < ApplicationController
 
   before_action :find_course
   before_action :find_assignment, except: [:stats, :abandon, :delete]
-  before_action :find_grader, except: [:stats, :abandon, :delete]
+  before_action :find_grader, except: [:stats, :abandon, :delete, :abandon_all, :delete_all]
   before_action :require_current_user
   before_action :require_staff_for_course, only: [:index]
-  before_action :require_ta_for_course, only: [:patch, :edit, :update, :abandon, :delete]
+  before_action :require_ta_for_course, only: [:patch, :edit, :update, :abandon, :delete, :abandon_all, :delete_all]
   before_action :require_admin_or_prof, only: [:stats]
 
   def index
@@ -135,12 +135,37 @@ class GraderAllocationsController < ApplicationController
     end
   end
 
+  def abandon_all
+    allocs = @assignment.grader_allocations.where(grading_completed: nil)
+    if params[:staff]
+      allocs = allocs.where(who_grades_id: params[:staff])
+    end
+    allocs.update_all(abandoned: true, grading_completed: DateTime.now)
+    if params[:config]
+      redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, params[:config])
+    else
+      redirect_back fallback_location: course_assignment_path(@course, @assignment)
+    end
+  end
+  def delete_all
+    allocs = @assignment.grader_allocations.where(grading_completed: nil)
+    if params[:staff]
+      allocs = allocs.where(who_grades_id: params[:staff])
+    end
+    allocs.destroy_all
+    if params[:config]
+      redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, params[:config])
+    else
+      redirect_back fallback_location: course_assignment_path(@course, @assignment)
+    end
+  end
+
   def compute_who_grades
     @allocations =
       GraderAllocation
       .where(assignment: @assignment)
       .joins("INNER JOIN users ON users.id = grader_allocations.who_grades_id")
-      .to_a
+      .group_by(&:who_grades_id).map{|who_grades_id, subs| [who_grades_id, subs.map{|s| [s.submission_id, s]}.to_h]}.to_h
     @grades = 
       # only use submissions that are being used for grading, but this may produce duplicates for team submissions
       # only pick submissions from this course
