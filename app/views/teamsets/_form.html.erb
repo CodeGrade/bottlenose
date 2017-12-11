@@ -108,8 +108,6 @@
             <div class="btn btn-success btn-sm">
             <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_all_requests }) do |f| %>
             <%= fields_for "custom" do |custom| %>
-            <%= custom.hidden_field :course_id %>
-            <%= custom.hidden_field :teamset_id %>
             <%= custom.hidden_field "start_date" %>
             <%= custom.hidden_field "end_date" %>
             <%= custom.button type: "submit", method: :delete,
@@ -121,8 +119,6 @@
           %><div class="btn btn-danger btn-sm">
             <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_all_requests }) do |f| %>
             <%= fields_for "custom" do |custom| %>
-            <%= custom.hidden_field :course_id %>
-            <%= custom.hidden_field :teamset_id %>
             <%= custom.hidden_field "start_date" %>
             <%= custom.hidden_field "end_date" %>
             <%= custom.button type: "submit", method: :delete,
@@ -146,8 +142,6 @@
             <div class="btn btn-success btn-sm">
             <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_request }) do |f| %>
             <%= fields_for "custom" do |custom| %>
-            <%= custom.hidden_field :course_id %>
-            <%= custom.hidden_field :teamset_id %>
             <%= custom.hidden_field "start_date" %>
             <%= custom.hidden_field "end_date" %>
               <% tr.each do |t| %>
@@ -159,15 +153,13 @@
           %><div class="btn btn-danger btn-sm">
               <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_request }) do |f| %>
               <%= fields_for "custom" do |custom| %>
-              <%= custom.hidden_field :course_id %>
-              <%= custom.hidden_field :teamset_id %>
               <%= custom.hidden_field "start_date" %>
               <%= custom.hidden_field "end_date" %>
               <% tr.each do |t| %>
                 <%= custom.hidden_field :users, multiple: true, value: t.id %>
               <% end %>
               <%= custom.submit "Reject request", style: "float: unset;",
-                  data: { confirm: "Are you sure you want to reject ALL teammate requests?" }, class: "btn-blank" %>
+                  data: { confirm: "Are you sure you want to reject this team request?" }, class: "btn-blank" %>
               <% end %>
               <% end %>
             </div>
@@ -208,7 +200,6 @@
   <% other_teamsets = @course.teamsets.reject{|ts| ts.id == @teamset.id} %>
   <% if other_teamsets.count > 0 %>
   <%= form_for([@course, @teamset], :url => { action: :clone, method: :post }) do |f| %>
-  <%= f.hidden_field :course_id %>
   <h3>Copy existing teamset</h3>
   <div class="form-group">
     <%= select_tag(:teamset,
@@ -269,8 +260,6 @@
 
   <%= form_for([@course, @teamset]) do |f| %>
   <%= fields_for "single" do |single| %>
-  <%= single.hidden_field :course_id %>
-  <%= single.hidden_field :teamset_id %>
   <%= single.hidden_field "start_date" %>
   <%= single.hidden_field "end_date" %>
   <h3>Select team members</h3>

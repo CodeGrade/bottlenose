@@ -107,6 +107,7 @@ Bottlenose::Application.routes.draw do
       collection do
         get :investigate
       end
+      resources :team_requests, only: [:index, :create, :update, :destroy]
       member do
         patch :clone
         patch :randomize

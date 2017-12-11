@@ -86,26 +86,37 @@ class TeamsetsController < ApplicationController
     @success = []
     @failure = []
     @swat = @teamset.users_without_active_team.map{|s| [s.id, s]}.to_h
-    CSV.parse(params[:bulk_teams]) do |row|
+    csv = CSV.parse(params[:bulk_teams])
+    seen = [].to_set
+    csv.each do |row|
       row.map(&:strip!)
-      users = row.map {|un| User.find_by(username: un)}
-      if users.any?(&:nil?)
-        @failure.push "Could not find all usernames in #{row.to_sentence}"
-      else
-        in_teams = users.select{|s| @swat[s.id].nil?}
-        if in_teams.empty?
-          team = Team.new(bulk_params)
-          team.users = users
-          if team.valid?
-            @success.push team
-          else
-            @failure.push "Could not create team for #{row.to_sentence}:\n\t#{team.errors.full_messages.join('\n\t')}"
-          end
+      row_set = row.to_set
+      overlap = seen & row_set
+      seen.merge(row_set)
+      if !overlap.empty?
+        @failure.push "Found duplicate #{'username'.pluralize(overlap.count)} in multiple teams: #{overlap.to_a.to_sentence}"
+      end
+    end
+    if @failure.empty?
+      csv.each do |row|
+        users = row.map {|un| User.find_by(username: un)}
+        if users.any?(&:nil?)
+          @failure.push "Could not find all usernames in #{row.to_sentence}"
         else
-          if in_teams.count == 1
-            @failure.push "Could not create team for #{row.to_sentence}:\n\t#{in_teams.first.username} is already in an active team"
+          in_teams = users.select{|s| @swat[s.id].nil?}
+          if in_teams.empty?
+            team = Team.new(bulk_params)
+            team.users = users
+            users.each do |u| @swat[u.id] = nil end
+            if team.valid?
+              @success.push team
+            else
+              @failure.push "Could not create team for #{row.to_sentence}:\n\t" +
+                            "#{team.errors.full_messages.join('\n\t')}"
+            end
           else
-            @failure.push "Could not create team for #{row.to_sentence}:\n\t#{in_teams.map(&:username).to_sentence} are already in active teams"
+            @failure.push "Could not create team for #{row.to_sentence}:\n\t" +
+                          "#{in_teams.map(&:username).to_sentence} #{'is'.pluralize(in_teams.count)} already in an active team"
           end
         end
       end
@@ -163,17 +174,16 @@ class TeamsetsController < ApplicationController
     if uids.length != team_info["users"].length
       missing = uids - (team_info["users"].map(&:id))
       setup_params
-      @teamset.errors.add(:base, "Could not find all users for request: missing ids #{missing.to_sentence}")
+      @teamset.errors.add(:base, "Could not find all users for request: missing #{pluralize('id', missing.count)} #{missing.to_sentence}")
       render :edit
       return
     end
 
-    @swat = @others.map{|s| [s.id, s]}.to_h
+    @swat = @teamset.students_without_active_team.map{|s| [s.id, s]}.to_h
     in_teams = team_info["users"].select{|s| @swat[s.id].nil?}
     if in_teams.empty?
       @team = Team.new(team_info)
       if @team.save
-        TeamRequest.where(teamset: @teamset, user: @team.users.map(&:id)).delete_all
         redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                       notice: "Team #{@team.id} was successfully created."
       else
@@ -186,12 +196,12 @@ class TeamsetsController < ApplicationController
     else
       setup_params
       @teamset.errors.add(:base, "Could not create team: #{in_teams.map(&:username).to_sentence} " +
-                                 "#{pluralize(in_teams.count, 'is')} already in an active team")
+                                 "#{'is'.pluralize(in_teams.count)} already in an active team")
       render :edit
     end
   end
   def reject_request
-    count = TeamRequest.where(teamset: @teamset, user: team_info["users"]).delete_all
+    count = TeamRequest.where(teamset: @teamset, user: custom_params["users"]).delete_all
     redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                   notice: "One team request (#{pluralize(count, 'student')}) rejected"
   end
@@ -200,27 +210,33 @@ class TeamsetsController < ApplicationController
     setup_params
     @swat = @others.map{|s| [s.id, s]}.to_h
     count = 0
+    failure = []
     team = nil
-    begin
-      Team.transaction do
-        @team_requests.each do |req|
-          in_teams = req.select{|s| @swat[s.id].nil?}
-          if in_teams.empty?
-            team = Team.new(team_info)
-            team.users = req
-            team.save!
-            count = count + 1
-          else
-            raise "Could not create team: #{in_teams.map(&:username).to_sentence} " +
-                  "#{pluralize(in_teams.count, 'is')} already in an active team"
-          end
+    @team_requests.each do |req|
+      in_teams = req.select{|s| @swat[s.id].nil?}
+      begin
+        if in_teams.empty?
+          team = Team.new(team_info)
+          team.users = req
+          team.save!
+          count = count + 1
+        else
+          failure.push "Could not create team: #{in_teams.map(&:username).to_sentence} " +
+                       "#{'is'.pluralize(in_teams.count)} already in an active team"
         end
+      rescue Exception => e
+        failure.push e
       end
+    end
+    if failure.empty?
       redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                     notice: "#{pluralize(count, 'team')} added"
-    rescue Exception => e
-      redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
-                    alert: e
+    else
+      setup_params
+      failure.each do |msg|
+        @teamset.errors.add(:base, msg)
+      end
+      render :edit
     end
   end
   def reject_all_requests

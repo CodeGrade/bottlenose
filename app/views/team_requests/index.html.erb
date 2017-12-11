@@ -1,0 +1,50 @@
+<% cur_reg = current_user.registration_for(@course) %>
+<% cur_user_site_admin = current_user.site_admin? %>
+<% cur_user_prof_ever = current_user.professor_ever? %>
+<% @page_title = "#{@course.name} - #{@teamset.name} - Team requests" %>
+
+<%= link_to "< Back to teamsets", course_teamsets_path(@course) %>
+<h3>Team requests for <%= @teamset.name %></h3>
+<% if @team_request.errors.any? %>
+  <div id="error_explanation" class="alert alert-danger">
+    <h2><%= pluralize(@team_request.errors.count, "error") %>
+    prohibited this team request from being saved:</h2>
+
+    <ul>
+    <% @team_request.errors.full_messages.each do |msg| %>
+      <li><%= msg %></li>
+    <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<h4>Current request:</h4>
+<% if @team_request.new_record? %>
+<p>None</p>
+<% else %>
+<p style="vertical-align: baseline;">
+  <span class="col-sm-3"><b>Teammates:</b> <%= @team_request.to_s %></span>
+  <span class="col-sm-3"><b>Status:</b> <%= @team_request.request_status %></span>
+  <%= link_to "Delete request",
+      course_teamset_team_request_path(@course, @teamset, @team_request),
+      method: :delete, class: 'btn btn-warning',
+      style: "vertical-align: top;",
+      data: {confirm: "Are you sure you want to delete this request?"} %>
+</p>
+<% end %>
+
+<h4>Create new request:</h4>
+<% if !@team_request.new_record? %>
+<p><b>Note:</b> this will replace your existing team request.</p>
+<% end %>
+<%= form_for [@course, @teamset, @team_request] do |f| %>
+<div class="form-group">
+  <%= f.label "partner_names",
+      "Enter the usernames of the students you want to work with, separated by commas:" %><br />
+  <%= f.text_area "partner_names", class: 'form-control',
+      value: @team_request.partner_names&.gsub(';', ', ') %>
+</div>
+<div class="form-group">
+  <%= f.submit "Create new team request", class: 'btn btn-primary' %>
+</div>
+<% end %>

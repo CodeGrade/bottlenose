@@ -78,6 +78,6 @@ class Team < ApplicationRecord
   end
 
   def delete_team_requests
-    TeamRequest.where(teamset: self.teamset, user: self.users).delete_all
+    TeamRequest.where(teamset: self.teamset, user: self.users.map(&:id)).delete_all
   end
 end

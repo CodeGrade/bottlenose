@@ -13,14 +13,18 @@
      class="team-heading"
      <% end %>>
     Teams for <%= a.name %>
+    <% if admin && editable %>
+    <%= link_to "Edit Teams", edit_course_teamset_path(course, a.teamset),
+        class: "pull-right btn btn-success" %>
+    <% end %>
     <% if expired %>
     <i class="glyphicon glyphicon-chevron-down"></i>
     <i class="glyphicon glyphicon-chevron-up"></i>
+    <% elsif editable %>
+    <%= link_to "Request teammates",
+        course_teamset_team_requests_path(course, a.teamset), class:
+        "pull-right btn btn-info" %>
     <% end %>
-<% if admin && editable %>
-  <%= link_to "Edit Teams", edit_course_teamset_path(course, a.teamset),
-      class: "pull-right btn btn-success" %>
-<% end %>
 </<%= tag %>>
 <div id="assn_<%= a.id %>" <% if expired %>class="collapse"<% end %>>
 <%= render "teamsets/table", teams: teams, id: "assn_#{a.id}_#{a.teamset_id}" %>
