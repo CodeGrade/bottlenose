@@ -86,7 +86,7 @@
       <% sub = used_subs[u.id].first if used_subs[u.id] %>
       <% grades = @grade_comments[sub.id] if sub %>
       <% grades = (0..col_count).map do |i|
-           (grades&.find do |g| g.line == i end) || {weight: nil}
+           grades&.dig(i) || {weight: nil}
          end %>
       <% score = 0 %>
       <% col_count.times do |i| %>

@@ -273,7 +273,7 @@ class Assignment < ApplicationRecord
   end
   
   def assignment_upload
-    Upload.find_by_id(assignment_upload_id)
+    Upload.find_by(id: assignment_upload_id)
   end
 
   def assignment_file

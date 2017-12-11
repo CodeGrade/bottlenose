@@ -162,10 +162,10 @@ class GraderAllocationsController < ApplicationController
 
   def compute_who_grades
     @allocations =
-      GraderAllocation
-      .where(assignment: @assignment)
-      .joins("INNER JOIN users ON users.id = grader_allocations.who_grades_id")
-      .group_by(&:who_grades_id).map{|who_grades_id, subs| [who_grades_id, subs.map{|s| [s.submission_id, s]}.to_h]}.to_h
+      multi_group_by(GraderAllocation
+                      .where(assignment: @assignment)
+                      .joins("INNER JOIN users ON users.id = grader_allocations.who_grades_id"),
+                     [:who_grades_id, :submission_id], true)
     @grades = 
       # only use submissions that are being used for grading, but this may produce duplicates for team submissions
       # only pick submissions from this course

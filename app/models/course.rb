@@ -68,7 +68,7 @@ class Course < ApplicationRecord
 
   def registered_by?(user, as: nil)
     return false if user.nil?
-    registration = Registration.find_by_course_id_and_user_id(self.id, user.id)
+    registration = Registration.find_by(course_id: self.id, user_id: user.id)
     return false if registration.nil?
     if as
       as == registration.role

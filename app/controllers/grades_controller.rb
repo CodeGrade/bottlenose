@@ -236,7 +236,8 @@ class GradesController < ApplicationController
   def bulk_update_Exam
     respond_to do |f|
       f.json {
-        if params[:grade_action] == "getGrades"
+        case params[:grade_action]
+        when "getGrades"
           sub = @assignment.used_sub_for(User.find(params[:user_id]))
           if sub
             comments = InlineComment.where(submission_id: sub.id)
@@ -245,7 +246,7 @@ class GradesController < ApplicationController
           else
             render :json => {"none found": true}
           end
-        elsif params[:grade_action] == "setGrades"
+        when "setGrades"
           sub = @assignment.used_sub_for(User.find(params[:user_id]))
           @grader = @assignment.graders.first # and only config
           config = Grade.find_by(grader_id: @grader.id, submission_id: sub.id) if sub
@@ -680,7 +681,8 @@ HEADER
     @student_info = students.select(:username, :last_name, :first_name, :nickname, :nuid, :id)
     @sections_by_student = @course.students_with_registrations.select(:id, "sections.crn AS crn").group_by(&:id)
     @used_subs = @assignment.used_submissions
-    @grade_comments = InlineComment.where(submission_id: @used_subs.map(&:id)).group_by(&:submission_id)
+    @grade_comments = multi_group_by(InlineComment.where(submission_id: @used_subs.map(&:id)),
+                                     [:submission_id, :line], true)
   end
 
   def update_exam_grades

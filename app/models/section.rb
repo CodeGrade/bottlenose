@@ -25,6 +25,6 @@ class Section < ApplicationRecord
   end
 
   def prof_name=(username)
-    self.instructor = User.find_by_username(username)
+    self.instructor = User.find_by(username: username)
   end
 end
