@@ -55,7 +55,9 @@ class SubmissionsController < ApplicationController
     end
 
     if current_user.id == true_user&.id
-      SubmissionView.find_or_create_by!(user: current_user, assignment: @assignment, team: @team)
+      @submission_view = SubmissionView.find_or_initialize_by(user: current_user, assignment: @assignment, team: @team)
+      @submission_view_new = @submission_view.new_record?
+      @submission_view.save
     end
 
     sub_blocked = @assignment.submissions_blocked(current_user, @team)
@@ -378,6 +380,11 @@ class SubmissionsController < ApplicationController
     @submission_info = @subs_to_review&.map do |s|
       d, f = s.get_submission_files(current_user)
       [d, f, s.id]
+    end
+    if @submission_info.count < @assignment.review_count && @submission_view_new
+      # don't bother interlocking this assignment with the underlying one,,
+      # since there's nothing to see yet
+      @submission_view.delete
     end
     @questions = @assignment.questions
     render "new_#{@assignment.type.underscore}"
