@@ -50,11 +50,14 @@
           <td><%= link_to assignment.name, course_assignment_path(assignment.course, assignment) %></td>
           <td><span class="local-time"><%= assignment.due_date.iso8601 %></span></td>
           <% if show_weight %>
-            <td>
+            <td class="text-right">
               <%= show_score(assignment.points_available, assignment, true) %>
+              <% if assignment.extra_credit %>
+              <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
+              <% end %>
             </td>
           <% end %>
-          <td><%= show_score(score, assignment, is_admin) %></td>
+          <td class="text-right"><%= show_score(score, assignment, is_admin) %></td>
           <td style="white-space: nowrap;">
             <% submissions.take(5).each do |submission| %>
              <%= link_to course_assignment_submission_path(assignment.course, assignment, submission) do %>

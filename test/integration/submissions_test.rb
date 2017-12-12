@@ -6,15 +6,136 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     DatabaseCleaner.clean
     Capybara.current_driver = :webkit
     make_standard_course
-
-    @hello = create(:assignment, course: @cs101, teamset: @ts1)
-    @john_hello = create(:submission, user: @john, assignment: @hello)
   end
 
   teardown do
     Upload.cleanup_test_uploads!
   end
 
+  test "course summaries should handle all submission transitions correctly" do
+    def clean(summary)
+      summary.map do |v|
+        v.delete(:used)
+        [v.delete(:s).id, v]
+      end.to_h
+    end
+    @as1 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now - 1.days, points_available: 5)
+    @as1.reload # needed for the lateness config
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 0.0, cur: 0.0, max: 95.0,
+                  pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
+                  remaining: 95.0},
+                 "Create an assignment that's due in the past.  Before sub1 is created, max = 95, pending = 0")
+
+    @sub1 = create(:submission, user: @john, assignment: @as1, created_at: Time.now - 2.days)
+    @sub1.set_used_sub!
+    @summary = clean(@cs101.score_summary(@john))
+    assert (@summary[@john.id].delete(:cur).nan?)
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 0.0, max: 100.0,
+                  pending: 5.0, pending_names: [@as1.name], unsub: 0.0, unsub_names: [],
+                  remaining: 95.0},
+                 "After creating submission but not grading it, cur == NaN, max = 100, remaining = 95")
+
+    @sub1.create_grades!
+    @sub1.grades.first.update(score: 50)
+    @sub1.compute_grade!
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 2.5, cur: 50.0, max: 97.5,
+                  pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
+                  remaining: 95.0},
+                 "After grading (at 50% quality), cur = 50%, min = 2.5, max = 97.5, remaining = 95")
+
+    @as2 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now + 1.days, points_available: 5)
+    @as2.reload # needed for the lateness config
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 2.5, cur: 25.0, max: 97.5,
+                  pending: 0.0, pending_names: [], unsub: 5.0, unsub_names: [@as2.name],
+                  remaining: 90.0},
+                 "Create an assignment due in the future.  Cur drops to 2.5/10.0 since nothing's submitted, but max stays put")
+    
+    @as2.update(due_date: Time.now - 1.days)
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 2.5, cur: 25.0, max: 92.5,
+                  pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
+                  remaining: 90.0},
+                 "After making the assignment overdue, max drops to 92.5, and unsub should now be zero")
+
+    @sub2 = create(:submission, user: @john, assignment: @as2, created_at: Time.now - 2.days)
+    @sub2.set_used_sub!
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 2.5, cur: 50.0, max: 97.5,
+                  pending: 5.0, pending_names: [@as2.name], unsub: 0.0, unsub_names: [],
+                  remaining: 90.0},
+                 "After creating submission but not grading it yet, cur = 2.5/5.0, pending = 5, remaining = 90, max = min + remaining + pending")
+
+    @sub2.create_grades!
+    @sub2.grades.first.update(score: 100)
+    @sub2.compute_grade!
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 7.5, cur: 75.0, max: 97.5,
+                  pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
+                  remaining: 90.0},
+                 "After grading (at 100% quality), cur = 7.5/10, pending = 0, remaining = 90, max = min + remaining + pending")
+
+    @as3 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now - 1.days, points_available: 5,
+                  extra_credit: true)
+    @as3.reload # needed for the lateness config
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 7.5, cur: 75.0, max: 97.5,
+                  pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
+                  remaining: 90.0},
+                "After creating an extra credit assignment, but not submitting, nothing should change in the grades")
+
+    @sub3 = create(:submission, user: @john, assignment: @as3, created_at: Time.now - 2.days)
+    @sub3.set_used_sub!
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 7.5, cur: 75.0, max: 102.5,
+                  pending: 5.0, pending_names: [@as3.name], unsub: 0.0, unsub_names: [],
+                  remaining: 90.0},
+                 "Once it's submitted, cur should stay the same, and pending should include the new sub")
+    
+    @sub3.create_grades!
+    @sub3.grades.first.update(score: 50)
+    @sub3.compute_grade!
+    @summary = clean(@cs101.score_summary(@john))
+    assert_equal(@summary[@john.id],
+                 {dropped: nil, min: 10, cur: 100.0, max: 100,
+                  pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
+                  remaining: 90.0},
+                 "After grading the extra credit, cur increases, max increases, min increases, but remaining stays the same")
+  end
+
+  test "Can handle extra credit in grading" do
+    @as4 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now - 1.days, points_available: 5)
+    @as4.reload # needed for the lateness config
+    @regGrader = @as4.graders.first
+    @regGrader.update(avail_score: 50)
+    @regGrader.save
+    @regGrader.reload
+    @ecGrader = create(:grader, extra_credit: true, avail_score: 20)
+    @as4.graders << @ecGrader
+    @as4.save
+    @sub4 = create(:submission, user: @john, assignment: @as4, created_at: Time.now - 2.days)
+    @sub4.set_used_sub!
+    @sub4.create_grades!
+    @sub4.grades.find_by(grader: @regGrader).update(score: 25)
+    @sub4.grades.find_by(grader: @ecGrader).update(score: 0)
+    @sub4.compute_grade!
+    assert_equal(100.0 * (25.0 / 50.0), @sub4.score, "Without extra credit, score is 50%")
+    @sub4.grades.find_by(grader: @ecGrader).update(score: 10)
+    @sub4.reload
+    @sub4.compute_grade!
+    assert_equal(100.0 * (25.0 + 10.0) / 50.0, @sub4.score, "With extra credit, score is boosted")
+  end
   
   def course_assn_with_teams(num_students, team_size)
     @largeCourse = create(:course)

@@ -281,7 +281,7 @@ class AssignmentsController < ApplicationController
                                :points_available, :hide_grading, :blame_id,
                                :assignment_file,  :type, :related_assignment_id,
                                :course_id, :team_subs, :request_time_taken,
-                               :removefile,
+                               :removefile, :extra_credit,
                                :teamset_plan, :teamset_source_use, :teamset_source_copy,
                                :prevent_late_submissions,
                                interlocks_attributes: [
@@ -296,7 +296,7 @@ class AssignmentsController < ApplicationController
                                  :avail_score, :upload_file, :extra_upload_file, :params,
                                  :type, :id, :_destroy, :errors_to_show, :test_class,
                                  :review_target, :review_count, :review_threshold,
-                                 :upload_by_user_id, :order, :line_length
+                                 :upload_by_user_id, :order, :line_length, :extra_credit
                                ]
                               )
   end

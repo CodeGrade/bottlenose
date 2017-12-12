@@ -10,6 +10,10 @@
       <span class="local-time"><%= gradesheet.assignment.due_date.iso8601 %></span>
     </p>
     <p>
+      <b>Extra Credit:</b>
+      <%= gradesheet.assignment.extra_credit? ? "Yes" : "No" %>
+    </p>
+    <p>
       <b>Grading Hidden:</b>
       <%= gradesheet.assignment.hide_grading? ? "Yes" : "No" %>
     </p>

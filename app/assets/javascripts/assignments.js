@@ -90,6 +90,7 @@
     el.find(".spinner").each(function(_ii, div) {
       activateSpinner(div);
     });
+    el.find("[data-toggle='toggle']").bootstrapToggle();
     el.find("input[name$='[order]']").val(++max_grader_order);
     form_tabs_init_all(el);
   }

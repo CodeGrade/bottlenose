@@ -291,9 +291,9 @@ class Submission < ApplicationRecord
       return if g.score.nil?
       component_weight = g.grader.avail_score.to_f
       grade_component = component_weight * (g.score.to_f / g.out_of.to_f)
-      log += "#{g.grader.type} => #{grade_component} / #{component_weight}, "
+      log += "#{g.grader.type}#{if g.grader.extra_credit then ' (E.C.)' end} => #{grade_component} / #{component_weight}, "
       score += grade_component
-      max_score += component_weight
+      max_score += component_weight unless g.grader.extra_credit
     end
     plagiarism = InlineComment.where(submission: self, label: "Plagiarism")
     if plagiarism.count > 0

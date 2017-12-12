@@ -96,8 +96,12 @@ class Course < ApplicationRecord
 
   def users_with_drop_info(for_users = nil)
     look_for = users
-    if for_users
+    if for_users.is_a? Array
       look_for = look_for.where(id: for_users.map(&:id))
+    elsif for_users.is_a? User
+      look_for = look_for.where(id: for_users.id)
+    elsif for_users
+      look_for = look_for.where(id: for_users.pluck(:id))
     end
     look_for.select("users.*", "registrations.dropped_date as dropped_date", "registrations.id as reg_id")
   end
@@ -158,28 +162,34 @@ class Course < ApplicationRecord
       .select(:user_id, :assignment_id, :score)
       .group_by(&:user_id)
     assns = assns.map{|a| [a.id, a]}.to_h
-    avail = assns.reduce(0) do |tot, kv| tot + kv[1].points_available end
-    total_points = self.assignments.reduce(0) do |tot, a| tot + a.points_available end
+    extras, regulars = assns.values.partition(&:extra_credit)
+    avail = regulars.sum(&:points_available)
+    extra_avail = extras.sum(&:points_available)
+    total_points = self.assignments.reject(&:extra_credit).sum(&:points_available)
     # assume a default of 100 points, but there might be extra credit assignments that push the total above 100
-    remaining = [100.0, total_points].max - avail
+    total_points = [100.0, total_points].max
+    remaining = total_points - avail
     ans = self.users_with_drop_info(for_students).sort_by(&:sort_name).map do |s|
       dropped = s.dropped_date
       used = (subs_by_user[s.id] || []).map{|u| [u.assignment_id, u]}.to_h
       adjust = 0
+      extra_adjust = 0
       pending_names = []
-      min = used.values.reduce(0.0) do |tot, sub| 
+      min = 0
+      used.values.each do |sub| 
         if (assns[sub.assignment_id].points_available != 0)
           if sub.score.nil?
-            adjust += assns[sub.assignment_id].points_available
+            if assns[sub.assignment_id].extra_credit
+              extra_adjust += assns[sub.assignment_id].points_available
+            else
+              adjust += assns[sub.assignment_id].points_available
+            end
             pending_names.push assns[sub.assignment_id].name
           end
-          tot + ((sub.score || 0) * assns[sub.assignment_id].points_available / 100.0) 
-        else
-          tot
+          min += ((sub.score || 0) * assns[sub.assignment_id].points_available / 100.0) 
         end
       end
       cur = (100.0 * min) / (avail - adjust)
-      max = min + remaining
       unsub_names = []
       unsubs = open.reduce(0.0) do |tot, o|
         if used[o.id].nil?
@@ -189,8 +199,10 @@ class Course < ApplicationRecord
           tot
         end
       end
-      {s: s, dropped: dropped, min: min, cur: cur, max: max,
-       pending: adjust, pending_names: pending_names,
+      max = min + remaining + extra_adjust + adjust + unsubs
+      {s: s, dropped: dropped,
+       min: min * (100.0 / total_points), cur: cur * (100.0 / total_points), max: max * (100.0 / total_points),
+       pending: adjust + extra_adjust, pending_names: pending_names,
        unsub: unsubs, unsub_names: unsub_names,
        remaining: remaining, used: used}
     end

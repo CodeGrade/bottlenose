@@ -44,7 +44,12 @@
       <p>
         This is the percentage of the final grade that this
         assignment is worth.  Default: same as previous assignment.</p>
-      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+      <span class="col-sm-9" style="padding-left: 0;">
+        <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+      </span>
+      <span class="pull-right">
+        <%= f.check_box :extra_credit, data: {toggle: "toggle", on: "Extra credit", off: "Regular"} %>
+      </span>
     </div>
 
     <%= render 'questions_schema', id: "review-schema" %>

@@ -44,14 +44,15 @@
       </tr>
       <tr>
         <td><strong>Maximum grade:</strong></td>
-        <td><span class="<%= color_warning(stats[:max] + stats[:unsub] + stats[:pending]) %>">
-            <%= show_score(stats[:max] + stats[:unsub] + stats[:pending], nil, true) %></span></td>
+        <td><span class="<%= color_warning(stats[:max]) %>">
+            <%= show_score(stats[:max], nil, true) %></span></td>
         <td><i class="glyphicon glyphicon-question-sign" style="cursor: pointer;"
                data-toggle="collapse" data-target="#max-grade-info"></i></td>
         <td><p id="max-grade-info" class="collapse">
               This is your maximum possible grade, assuming that you
               submit everything that can still be submitted, and that
-              you do perfectly on each of those submissions.
+              you do perfectly on each of those submissions.  It
+              includes any potential extra credit assignments.
             </p>
         </td>
       </tr>

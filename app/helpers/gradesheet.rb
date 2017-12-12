@@ -22,7 +22,11 @@ class Gradesheet
     @submissions = submissions
     @graders = @assignment.graders_ordered
     @questions = @assignment.flattened_questions
-    @max_score = @graders.sum(&:avail_score)
+    if @assignment.extra_credit
+      @max_score = @graders.sum(&:avail_score)
+    else
+      @max_score = @graders.reject(&:extra_credit).sum(&:avail_score)
+    end
     raw_grades = Grade.where(submission_id: @submissions.map(&:id))
     @raw_grades = raw_grades
                   .group_by(&:submission_id)

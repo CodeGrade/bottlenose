@@ -3,24 +3,27 @@
 
 <table class="table no-first-row" style="margin-bottom: 0px;">
   <tr class="form-group">
-    <td><%= f.label "avail_score", "Points available:" %></td>
-    <td><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>
+    <td class="col-sm-2"><%= f.label "avail_score", "Points available:" %></td>
+    <td class="col-sm-3"><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>
+    <td><%= f.check_box :extra_credit, data: {toggle: "toggle", on: "Extra credit", off: "Regular"} %></td>
   </tr>
   <tr class="form-group">
-    <td><%= f.label "upload_file", "Grading file:" %></td>
-    <td><%= f.file_field "upload_file" %>
+    <td class="col-sm-2"><%= f.label "upload_file", "Grading file:" %></td>
+    <td class="col-sm-3"><%= f.file_field "upload_file" %>
       <% if f.object.upload_file %>
         <br>Current file: <%= link_to f.object.upload_file, f.object.upload.path %>
       <% end %>
     </td>
+    <td></td>
   </tr>
   <tr class="form-group">
-    <td><%= f.label "extra_upload_file", "Extra file:" %></td>
-    <td><%= f.file_field "extra_upload_file" %>
+    <td class="col-sm-2"><%= f.label "extra_upload_file", "Extra file:" %></td>
+    <td class="col-sm-3"><%= f.file_field "extra_upload_file" %>
       <% if f.object.extra_upload_file %>
         <br>Current file: <%= link_to f.object.extra_upload_file, f.object.extra_upload.path %>
       <% end %>
     </td>
+    <td></td>
   </tr>
 
 </table>
