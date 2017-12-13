@@ -4,7 +4,7 @@
   .nav-tabs
      .li a ...    <- click this
   .tab-pane ...   <- to find these
-     .form-group  <- and swap these, so only one exists at at a time
+     ....         <- and swap these, so only one .tab-pane at a time has attached children
 
 Both "a" and ".tab-pane" should be marked with matching data-tab attrs.
 
@@ -14,7 +14,6 @@ Both "a" and ".tab-pane" should be marked with matching data-tab attrs.
 window.form_tabs_init = function (tabs_div) {
     var top  = $(tabs_div);
     var val0 = top.data('init-tab');
-    var tabs = {};
 
     function show_tab(tab) {
         top.find('.nav-tabs a').each(function (_ii, lnk) {
@@ -34,18 +33,16 @@ window.form_tabs_init = function (tabs_div) {
             var $div = $(div);
 
             if (tab == this_tab) {
+                // Note: this deliberately updates the data attribute after restoring the old contents,
                 $div.addClass('active');
                 $div.show();
-                if (tabs[this_tab]) {
-                    $div.append(tabs[tab]);
-                }
+                $div.append($div.data("bn.detached-tab"));
+                $div.data("bn.detached-tab", $div.children());
             }
             else {
-                var fg = $div.find('.form-group');
-                if (fg[0]) {
-                    tabs[this_tab] = fg[0];
-                    $(fg[0]).detach();
-                }
+                // while this saves the contents to the data attribute before detaching them all
+                $div.data("bn.detached-tab", $div.children());
+                $div.children().detach();
                 $div.removeClass('active');
                 $div.hide();
             }
@@ -63,7 +60,8 @@ window.form_tabs_init = function (tabs_div) {
     $.fn.matchHeight._beforeUpdate = function(e, groups) {
       oldActive = top.find('.tab-pane.active');
       panes.each(function(_, div) {
-        $(div).addClass('active').append(tabs[$(div).data('tab')]).show();
+        var $div = $(div);
+        $div.addClass('active').append($div.data("bn.detached-tab")).show();
       });
       if (oldBefore)
         oldBefore(e, groups);

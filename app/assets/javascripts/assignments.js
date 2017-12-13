@@ -86,14 +86,26 @@
   }
 
   var max_grader_order;
+  const extraCreditWarning = "This assignment is already marked as extra-credit.  Only mark this grader as extra credit if you truly mean to have extra credit on top of extra credit.";
   function on_add_grader(evt, el) {
     el.find(".spinner").each(function(_ii, div) {
       activateSpinner(div);
     });
-    el.find("[data-toggle='toggle']").bootstrapToggle();
+    var newToggles = el.find("input[data-toggle='toggle']");
+    newToggles.bootstrapToggle();
+    newToggles = newToggles.parent("div[data-toggle='toggle']");
+    newToggles.attr('title', extraCreditWarning);
+    newToggles.tooltip();
+    if ($("input[data-toggle='toggle'][name='assignment[extra_credit]']").prop('checked')) {
+      newToggles.tooltip('enable');
+    } else {
+      newToggles.tooltip('disable');
+    }
     el.find("input[name$='[order]']").val(++max_grader_order);
     form_tabs_init_all(el);
   }
+
+  
 
   function form_init() {
     init_datetime();
@@ -118,6 +130,19 @@
         orders.each(function(index, item) {
           $(item).val(++max_grader_order);
         });
+      }
+    });
+
+    $("input[name='assignment[extra_credit]']").change(function() {
+      var newToggles = $(".graders-list .tab-pane").map(function(_, e) { return $(e).data("bn.detached-tab"); });
+      newToggles = $.map(newToggles, function(kids) { return $.map(kids, function(k) { return k; }); });
+      newToggles = $(newToggles).find("div[data-toggle='toggle']");
+      debugger
+      if ($(this).prop('checked')) {
+        newToggles.tooltip('enable');
+        newToggles.find("input[data-toggle='toggle']").bootstrapToggle('off');
+      } else {
+        newToggles.tooltip('disable');
       }
     });
 
