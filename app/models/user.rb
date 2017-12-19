@@ -19,6 +19,8 @@ class User < ApplicationRecord
   has_many :submissions, through: :user_submissions
   has_many :reg_requests, dependent: :destroy
 
+  has_many :individual_extensions, dependent: :destroy
+
   has_many :team_users, dependent: :restrict_with_error
   has_many :teams, through: :team_users
   has_many :team_requests, dependent: :destroy

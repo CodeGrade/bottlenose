@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20171211221349) do
+ActiveRecord::Schema.define(version: 20171218170821) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -106,6 +106,20 @@ ActiveRecord::Schema.define(version: 20171211221349) do
     t.datetime "updated_at"
     t.boolean "available", default: false
     t.index ["submission_id"], name: "index_grades_on_submission_id"
+  end
+
+  create_table "individual_extensions", force: :cascade do |t|
+    t.integer "assignment_id", null: false
+    t.integer "user_id"
+    t.integer "team_id"
+    t.datetime "due_date", null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.index ["assignment_id", "team_id"], name: "unique_assn_team_extension", unique: true, where: "(user_id IS NULL)"
+    t.index ["assignment_id", "user_id"], name: "unique_assn_user_extension", unique: true, where: "(team_id IS NULL)"
+    t.index ["assignment_id"], name: "index_individual_extensions_on_assignment_id"
+    t.index ["team_id"], name: "index_individual_extensions_on_team_id"
+    t.index ["user_id"], name: "index_individual_extensions_on_user_id"
   end
 
   create_table "inline_comments", id: :serial, force: :cascade do |t|

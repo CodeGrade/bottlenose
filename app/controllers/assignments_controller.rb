@@ -35,6 +35,7 @@ class AssignmentsController < ApplicationController
       render "show_#{@assignment.type.underscore}"
     else
       @user = current_user
+      @team = @user.active_team_for(@course, @assignment)
       render "show_user_#{@assignment.type.underscore}"
     end
   end

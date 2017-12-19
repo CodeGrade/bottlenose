@@ -11,7 +11,7 @@ class LatenessConfig < ApplicationRecord
 
   def late?(assignment, submission)
     (!submission.ignore_late_penalty) and
-      ((submission.created_at || DateTime.current) > assignment.due_date)
+      ((submission.created_at || DateTime.current) > assignment.effective_due_date(submission.user, submission.team))
   end
 
   def allow_submission?(assignment, submission)
@@ -24,7 +24,7 @@ class LatenessConfig < ApplicationRecord
 
   def days_late(assignment, submission, raw = false)
     return 0 unless raw or late?(assignment, submission)
-    due_on = assignment.due_date
+    due_on = assignment.effective_due_date(submission.user, submission.team)
     sub_on = submission.created_at || DateTime.current
     late_days = ((sub_on.to_f - due_on.to_f) / 1.day.seconds)
     late_days.ceil

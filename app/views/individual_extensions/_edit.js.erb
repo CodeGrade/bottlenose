@@ -1,0 +1,84 @@
+$(function() {
+  var $initialFilled = $(".datetime-picker").filter(function() { return this.value.length !== 0; });
+  var $revokeAll = $("#revoke_all");
+  if ($initialFilled.length > 0) {
+    $revokeAll.removeClass("hidden");
+  }
+  $initialFilled.closest("tr").find("button.revoke").removeClass("hidden");
+  $('.datetime-picker').datetimepicker({
+    sideBySide: true,
+    format: "YYYY/MM/DD h:mm A",
+    defaultDate: undefined
+  });
+  $("form").map(function() {
+    var $form = $(this);
+    $form.parents("tr").find("input, select").change(function() {
+      $("#sucess_" + $form.find("input[name='id']").val()).addClass("hidden");
+    });
+  });
+  $(".submit").click(function(e) {
+    e.preventDefault();
+    var $submit = $(this);
+    var $row = $submit.closest("tr");
+    var $revoke = $row.find(".revoke");
+    var $valuesToSubmit = $row.find("form");
+    var $check = $row.find("#success_" + $valuesToSubmit[0].id);
+    var $fail  = $row.find("#failure_" + $valuesToSubmit[0].id);
+    debugger
+    $.ajax({
+      type: "PATCH",
+      url: "<%= patch_course_assignment_extensions_path(@course, @assignment) %>",
+      data: $valuesToSubmit.serialize(),
+      dataType: "JSON",
+      timeout: 500
+    }).done(function(json) {
+      $submit.addClass("hidden");
+      $revoke.removeClass("hidden");
+      $revokeAll.removeClass("hidden");
+      $check.removeClass("hidden")
+        .attr("title", "Extension saved")
+        .tooltip('fixTitle');;
+      $fail.addClass("hidden");
+    }).fail(function(jqXHR, status, err) {
+      $check.addClass("hidden")
+      $fail.removeClass("hidden")
+        .attr("title", "Error saving extension: " + jqXHR.responseText)
+        .tooltip('fixTitle');
+    });
+  });
+  $(".revoke").click(function(e) {
+    e.preventDefault();
+    var $revoke = $(this);
+    var $row = $revoke.closest("tr");
+    var $submit = $row.find(".submit");
+    var $due = $row.find(".datetime-picker");
+    var $valuesToSubmit = $row.find("form");
+    var $check = $row.find("#success_" + $row[0].id);
+    var $fail  = $row.find("#failure_" + $row[0].id);
+    $.ajax({
+      type: "DELETE",
+      url: "<%= delete_course_assignment_extensions_path(@course, @assignment) %>",
+      data: $valuesToSubmit.serialize(),
+      dataType: "JSON",
+      timeout: 500
+    }).done(function(json) {
+      $revoke.addClass("hidden");
+      $due.data('DateTimePicker').date(null);
+      $submit.addClass("hidden");
+      $check.removeClass("hidden");
+      $fail.addClass("hidden");
+    }).fail(function(jqXHR, status, err) {
+      $check.addClass("hidden");
+      $fail.removeClass("hidden").attr("title", "Error revoking extension: " + jqXHR.responseText);
+    });
+  });
+  $("input.datetime-picker").on("dp.change", function(e) {
+    $(e.target).parents("tr").find("button.submit").attr("disabled", false).removeClass("hidden");
+    $(e.target).parents("tr").find("i.text-success").addClass("hidden");
+    $(e.target).parents("tr").find("i.text-danger").addClass("hidden");
+  }).one("dp.show", function(e) {
+    $(e.target).data('DateTimePicker')
+      .minDate(moment("<%= @assignment.due_date.iso8601 %>"))
+      .date(moment("<%= @assignment.due_date.iso8601 %>"));
+  });
+});

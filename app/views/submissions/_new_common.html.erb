@@ -70,7 +70,7 @@
   </div> 
   <% else %>
     <% @accept_inputs = true %>
-    <% if DateTime.current > @assignment.due_date && staff_override %>
+    <% if DateTime.current > @assignment.effective_due_date(current_user, @team) && staff_override %>
     <div class="alert alert-info">
       <p>You are <%= type[:gerund] %> on behalf of a student.  Should
         this <%= type[:noun] %>

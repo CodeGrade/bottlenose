@@ -115,7 +115,7 @@
 </div>
 <script>
   <%= render partial: "new_questions.js", locals: {count: (count - 1)} %>
-  var deadline = moment(Date.parse("<%= @assignment.due_date.strftime("%Y/%m/%d %H:%M") %>")).valueOf();
+  var deadline = moment(Date.parse("<%= @assignment.effective_due_date(current_user, @team).strftime("%Y/%m/%d %H:%M") %>")).valueOf();
   var now = moment().valueOf();
   setTimeout(function() {
     var warning = $("#late-warning");

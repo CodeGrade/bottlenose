@@ -3,6 +3,8 @@
 <% cur_reg = current_user.registration_for(@course) %>
 <% if cur_reg&.professor? %>
 <p class="pull-right">
+  <%= link_to "Manage individual extensions",
+      edit_course_assignment_extensions_path(@course, @gradesheet.assignment), class: "btn btn-default" %>
   <%= link_to "Edit Assignment", 
       edit_course_assignment_path(@course, @gradesheet.assignment), class: "btn btn-default" %>
 </p>

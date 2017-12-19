@@ -156,7 +156,10 @@ class Course < ApplicationRecord
       for_students = self.students
     end
     assns = self.assignments.where("available < ?", DateTime.current)
-    open = assns.where("due_date > ?", DateTime.current)
+    effective_due_dates =
+      multi_group_by(
+        assns.map{|a| a.effective_due_dates(for_students).map{|(uid, due)| [uid, a.id, a, due]}}.flatten(1),
+        [:first, :second], true)
     subs_by_user = UsedSub.where(user: for_students, assignment: assns)
       .joins(:submission)
       .select(:user_id, :assignment_id, :score)
@@ -190,13 +193,13 @@ class Course < ApplicationRecord
         end
       end
       cur = (100.0 * min) / (avail - adjust)
+      open = effective_due_dates[s.id].select{|_, (_, _, a, due)| due > DateTime.current}.map(&:third)
       unsub_names = []
-      unsubs = open.reduce(0.0) do |tot, o|
+      unsubs = 0
+      open.each do |o|
         if used[o.id].nil?
           unsub_names.push o.name
-          tot + o.points_available
-        else
-          tot
+          unsubs += o.points_available
         end
       end
       max = min + remaining + extra_adjust + adjust + unsubs

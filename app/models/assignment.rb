@@ -37,7 +37,8 @@ class Assignment < ApplicationRecord
   accepts_nested_attributes_for :interlocks, allow_destroy: true
   has_many :submission_views
 
-  has_many :codereview_matchings
+  has_many :codereview_matchings, dependent: :destroy
+  has_many :individual_extensions, dependent: :destroy
   
   validates :name,      :uniqueness => { :scope => :course_id }
   validates :name,      :presence => true
@@ -230,6 +231,14 @@ class Assignment < ApplicationRecord
     self.team_subs = (@teamset_plan != "none")
   end
 
+  def effective_due_date(user, team)
+    self.due_date # TODO!
+  end
+
+  def effective_due_dates(users)
+    users.map{|u| [u.id, self.due_date]} # TODO!
+  end
+  
   def sub_late?(sub)
     self.lateness_config.late?(self, sub)
   end

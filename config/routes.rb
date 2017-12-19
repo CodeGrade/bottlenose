@@ -84,6 +84,15 @@ Bottlenose::Application.routes.draw do
           delete 'delete' => 'matching_allocations#delete', as: 'delete'
         end
       end
+      resources :extensions, only: [] do
+        collection do
+          get 'edit' => 'individual_extensions#edit', as: 'edit'
+          patch 'edit' => 'individual_extensions#patch', as: 'patch'
+          patch 'update' => 'individual_extensions#update', as: 'update'
+          delete 'delete' => 'individual_extensions#delete', as: 'delete'
+          delete 'delete_all' => 'individual_extensions#delete_all', as: 'delete_all'
+        end
+      end
       resources :submissions, except: [:edit, :update, :destroy] do
         collection do
           post 'rerun/:grader_id', to: 'submissions#rerun_grader', as: 'rerun_grader'

@@ -102,7 +102,7 @@ class Teamset < ActiveRecord::Base
   end
 
   def active_teams
-    self.teams.where(Team.active_query, Date.current, Date.current)
+    self.teams.where(Team.active_query, Date.current, Date.current).includes(:users)
   end
 
   def active_team_for(user)

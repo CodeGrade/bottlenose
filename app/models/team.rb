@@ -4,6 +4,7 @@ class Team < ApplicationRecord
   has_many   :team_users, dependent: :destroy
   has_many   :users, through: :team_users
   has_many   :submissions
+  has_many   :individual_extensions, dependent: :destroy
 
   validates :course_id,  presence: true
   validates :start_date, presence: true
