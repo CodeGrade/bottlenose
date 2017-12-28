@@ -232,11 +232,28 @@ class Assignment < ApplicationRecord
   end
 
   def effective_due_date(user, team)
-    self.due_date # TODO!
+    if self.team_subs
+      self.individual_extensions.find_by(team: team)&.due_date || self.due_date
+    else
+      self.individual_extensions.find_by(user: user)&.due_date || self.due_date
+    end
+  end
+
+  def extensions_for_users(users)
+    if self.team_subs
+      active_teams = self.teamset.active_teams_for(users)
+      extensions = multi_group_by(self.individual_extensions.where(team: active_teams.values), [:team_id], true)
+      users.map{|u| [u.id, extensions[active_teams[u.id]&.id]]}.to_h
+    else
+      extensions = multi_group_by(self.individual_extensions.where(user: users), [:user_id], true)
+      users.map{|u| [u.id, extensions[u.id]]}.to_h
+    end
   end
 
   def effective_due_dates(users)
-    users.map{|u| [u.id, self.due_date]} # TODO!
+    extensions_for_users(users).map do |uid, ext|
+      [uid, ext&.due_date || self.due_date]
+    end.to_h
   end
   
   def sub_late?(sub)

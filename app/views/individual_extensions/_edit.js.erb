@@ -53,8 +53,8 @@ $(function() {
     var $submit = $row.find(".submit");
     var $due = $row.find(".datetime-picker");
     var $valuesToSubmit = $row.find("form");
-    var $check = $row.find("#success_" + $row[0].id);
-    var $fail  = $row.find("#failure_" + $row[0].id);
+    var $check = $row.find("#success_" + $valuesToSubmit[0].id);
+    var $fail  = $row.find("#failure_" + $valuesToSubmit[0].id);
     $.ajax({
       type: "DELETE",
       url: "<%= delete_course_assignment_extensions_path(@course, @assignment) %>",
@@ -65,11 +65,15 @@ $(function() {
       $revoke.addClass("hidden");
       $due.data('DateTimePicker').date(null);
       $submit.addClass("hidden");
-      $check.removeClass("hidden");
+      $check.removeClass("hidden")
+        .attr("title", "Extension revoked")
+        .tooltip('fixTitle');
       $fail.addClass("hidden");
     }).fail(function(jqXHR, status, err) {
       $check.addClass("hidden");
-      $fail.removeClass("hidden").attr("title", "Error revoking extension: " + jqXHR.responseText);
+      $fail.removeClass("hidden")
+        .attr("title", "Error revoking extension: " + jqXHR.responseText)
+        .tooltip('fixTitle');
     });
   });
   $("input.datetime-picker").on("dp.change", function(e) {

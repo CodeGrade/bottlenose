@@ -109,6 +109,12 @@ class Teamset < ActiveRecord::Base
     user.teams.where(course: self.course, teamset: self).select(&:active?).first
   end
 
+  def active_teams_for(users)
+    self.active_teams.map do |t|
+      t.users.map{|u| [u.id, t]}
+    end.flatten(1).to_h.slice(*users.map(&:id))
+  end
+
   def students_without_active_team
     users_without_active_team(self.course.students)
   end
