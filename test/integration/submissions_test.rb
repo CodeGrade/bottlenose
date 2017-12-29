@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'test_helper'
 
 class SubmissionsTest < ActionDispatch::IntegrationTest
@@ -234,7 +235,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       matchings[:tar][cm.target_team_id] << cm.team_id
     end
     matchings[:tar].each do |tid, reviewers|
-      assert_equal(2, reviewers.count, "Team #{tid} should receive two reviews")
+      assert_in_delta(2, reviewers.count, 1, "Team #{tid} should receive 2±1 reviews")
       assert_not_includes(reviewers, tid, "Team #{tid} should not be reviewed by itself")
     end
     matchings[:rev].each do |tid, targets|
@@ -290,7 +291,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       matchings[:tar][cm.target_team_id] << cm.team_id
     end
     matchings[:tar].each do |tid, reviewers|
-      assert_equal(2, reviewers.count, "Team #{tid} should receive two reviews, but got #{reviewers}")
+      assert_in_delta(2, reviewers.count, 1, "Team #{tid} should receive 2±1 reviews, but got #{reviewers}")
       assert_not_includes(reviewers, tid, "Team #{tid} should not be reviewed by itself")
     end
     matchings[:rev].each do |tid, targets|

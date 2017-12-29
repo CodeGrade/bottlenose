@@ -242,6 +242,9 @@ class Assignment < ApplicationRecord
   end
 
   def extensions_for_users(users)
+    if users.is_a? User
+      users = [users]
+    end
     if @cached
       return users.map{|u| [u.id, @cached[u.id] || self.due_date]}.to_h
     elsif self.team_subs
