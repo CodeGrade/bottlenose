@@ -232,7 +232,9 @@ class Assignment < ApplicationRecord
   end
 
   def effective_due_date(user, team)
-    if self.team_subs
+    if @cached
+      return @cached[user.id || team.id] || self.due_date
+    elsif self.team_subs
       self.individual_extensions.find_by(team: team)&.due_date || self.due_date
     else
       self.individual_extensions.find_by(user: user)&.due_date || self.due_date
@@ -240,7 +242,9 @@ class Assignment < ApplicationRecord
   end
 
   def extensions_for_users(users)
-    if self.team_subs
+    if @cached
+      return users.map{|u| [u.id, @cached[u.id] || self.due_date]}.to_h
+    elsif self.team_subs
       active_teams = self.teamset.active_teams_for(users)
       extensions = multi_group_by(self.individual_extensions.where(team: active_teams.values), [:team_id], true)
       users.map{|u| [u.id, extensions[active_teams[u.id]&.id]]}.to_h
@@ -254,6 +258,11 @@ class Assignment < ApplicationRecord
     extensions_for_users(users).map do |uid, ext|
       [uid, ext&.due_date || self.due_date]
     end.to_h
+  end
+
+  def cache_effective_due_dates!(users)
+    @cached = nil
+    @cached = effective_due_dates(users)
   end
   
   def sub_late?(sub)

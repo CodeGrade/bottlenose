@@ -171,9 +171,10 @@ class CourseSpreadsheet < Spreadsheet
     hw_cols = []
 
     course.assignments.where.not(type: ["Exam", "Questions"]).order(:due_date).each do |assn|
-      used_subs = assn.all_used_subs.to_a
+      used_subs = assn.all_used_subs.includes(:user, :team).references(:user, :team).to_a
       grades = Gradesheet.new(assn, used_subs)
       subs_for_grading = UsedSub.where(assignment: assn).to_a
+      assn.cache_effective_due_dates!(users)
       
       sheet.columns.push(Col.new(sanitize(assn.name), "Number"))
       @graders_count = grades.graders.count
@@ -222,13 +223,14 @@ class CourseSpreadsheet < Spreadsheet
             sheet.push_row(i, "<ignore>")
           else
             lc = assn.lateness_config
-            sheet.push_row(i, lc.late_penalty(assn, sub[:sub]) / 100.0)
+            penalty = lc.late_penalty(assn, sub[:sub]) / 100.0
+            sheet.push_row(i, penalty)
             sum_grade = Formula.new(nil, "MAX", 0,
                                     Formula.new(nil, "-", sum_grade,
                                                 CellRef.new(nil,
                                                             Spreadsheet.col_name(weight.count - 3), true,
                                                             i + sheet.header_rows.length + 2, false,
-                                                            lc.late_penalty(assn, sub[:sub]) / 100.0)
+                                                            penalty)
                                                ))
           end
 
@@ -242,7 +244,7 @@ class CourseSpreadsheet < Spreadsheet
         end
       end
     end
-
+    
     return sheet, hw_cols
   end
 
