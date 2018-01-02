@@ -19,14 +19,14 @@
 <% end %>
 
 <h4>Current request:</h4>
-<% if @team_request.new_record? %>
+<% if @existing.nil? && @team_request.new_record? %>
 <p>None</p>
 <% else %>
 <p style="vertical-align: baseline;">
-  <span class="col-sm-3"><b>Teammates:</b> <%= @team_request.to_s %></span>
-  <span class="col-sm-3"><b>Status:</b> <%= @team_request.request_status %></span>
+  <span class="col-sm-3"><b>Teammates:</b> <%= (@existing || @team_request).to_s %></span>
+  <span class="col-sm-3"><b>Status:</b> <%= (@existing || @team_request).request_status %></span>
   <%= link_to "Delete request",
-      course_teamset_team_request_path(@course, @teamset, @team_request),
+      course_teamset_team_request_path(@course, @teamset, (@existing || @team_request)),
       method: :delete, class: 'btn btn-warning',
       style: "vertical-align: top;",
       data: {confirm: "Are you sure you want to delete this request?"} %>
@@ -34,7 +34,7 @@
 <% end %>
 
 <h4>Create new request:</h4>
-<% if !@team_request.new_record? %>
+<% if @existing || !@team_request.new_record? %>
 <p><b>Note:</b> this will replace your existing team request.</p>
 <% end %>
 <%= form_for [@course, @teamset, @team_request] do |f| %>

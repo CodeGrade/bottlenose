@@ -288,13 +288,13 @@ class TeamsetsController < ApplicationController
   def setup_params
     @teams = @teamset.teams.includes(:users).where(Team.active_query, Date.current, Date.current)
     @others = @teamset.students_without_active_team
-    @students = @course.students
+    @users = @course.users
                 .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
                 .map{|s| [s.id, s]}.to_h
-    @students_by_username = @students.map do |_, s|
+    @users_by_username = @users.map do |_, s|
       [s.username, s]
     end.to_h
-    @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
+    @sections_by_user = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
     @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
     @team_requests = []
     # To compute the cliques among team requests, map each student to the set of usernames they requested
@@ -311,7 +311,7 @@ class TeamsetsController < ApplicationController
     end
     @team_requests.uniq!
     @team_requests = @team_requests.map do |names|
-      names.map{|name| @students_by_username[name]}
+      names.map{|name| @users_by_username[name]}
     end
   end
 end

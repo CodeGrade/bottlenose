@@ -16,6 +16,8 @@ class TeamRequestsController < ApplicationController
       redirect_to course_teamset_team_requests_path(@course, @teamset),
                   notice: "Your team request has been made."
     else
+      @existing = TeamRequest.find_by(teamset: @teamset, user: current_user)
+      id = @team_request.id # NOTE: this line seems to be needed or else the subsequent .dup doesn't work
       errors = @team_request.errors
       @team_request = @team_request.dup
       @team_request.errors.copy!(errors)
@@ -30,11 +32,11 @@ class TeamRequestsController < ApplicationController
     tr = TeamRequest.find_by(id: params[:id])
     if (tr.user_id == current_user.id) || true_user&.course_staff?(@course)
       tr.destroy
-      redirect_back fallback_location: course_teamset_team_requests_path(@course, @teamset),
-                    notice: "Team request deleted"
+      redirect_to course_teamset_team_requests_path(@course, @teamset),
+                  notice: "Team request deleted"
     else
-      redirect_back fallback_location: course_teamset_team_requests_path(@course, @teamset),
-                    alert: "That's not your team request"
+      redirect_to course_teamset_team_requests_path(@course, @teamset),
+                  alert: "That's not your team request"
     end
   end
 
