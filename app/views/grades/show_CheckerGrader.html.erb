@@ -43,7 +43,10 @@
           <% end %>
           <b>Passed:</b> <%= t[:info]['message'] %>
           <% if t[:info]["actual"] %>
-          <% unless t[:comment].strip.empty? %>(using <code><%= t[:comment].strip %></code>)<% end %>
+          <% unless t[:comment].strip.empty? %>
+          (using <code><%= t[:comment].strip %></code><% if t[:info]["tolerance"] %>
+          with tolerance <code><%= t[:info]["tolerance"] %></code><% end %>)
+          <% end %>
           <% end %>
         </p>
         <% if t[:info]["timeout"] || t[:info]["stack"] %>
@@ -58,7 +61,10 @@
           <% end %>
           <b>Failed:</b> <%= t[:info]['message'] %>
           <% if t[:info]["actual"] %>
-          <% unless t[:comment].strip.empty? %>(using <code><%= t[:comment].strip %></code>)<% end %>
+          <% unless t[:comment].strip.empty? %>
+          (using <code><%= t[:comment].strip %></code><% if t[:info]["tolerance"] %>
+          with tolerance <code><%= t[:info]["tolerance"] %></code><% end %>)
+          <% end %>
           <% end %>
         </p>
         <% if t[:info]["timeout"] || t[:info]["stack"] %>
