@@ -17,6 +17,6 @@
     <%= render "users/table", header: "Students", role: "student", course: @course, users: @students %>
   </div>
   <div class="col-md-6">
-    <%= render "users/table", header: "Staff", role: cur_reg.role, course: @course, users: @staff %>
+    <%= render "users/table", header: "Staff", role: @role, course: @course, users: @staff %>
   </div>
 </div>

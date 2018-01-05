@@ -13,6 +13,11 @@ class RegistrationsController < ApplicationController
     @students = @course.students
     @staff = @course.staff
     @requests = @course.reg_requests.joins(:user).order('role desc', 'name').includes(:user)
+    if current_user.site_admin?
+      @role = "professor"
+    else
+      @role = current_user.registration_for(@course).role
+    end
   end
 
   def new
