@@ -1,23 +1,10 @@
 GIT
-  remote: git://github.com/plataformatec/devise.git
-  revision: 88e9a85d6a796a41f4dcf2528ed6d5f48916b5fd
+  remote: git://github.com/cschiewek/devise_ldap_authenticatable.git
+  revision: 80356c3ea672723828f478ed37c7ba2c44ef59ff
   specs:
-    devise (4.3.0)
-      bcrypt (~> 3.0)
-      orm_adapter (~> 0.1)
-      railties (>= 4.1.0, < 5.2)
-      responders
-      warden (~> 1.2.3)
-
-GIT
-  remote: https://github.com/charliesome/better_errors.git
-  revision: 946281d441523c9a009657a1c658f5134c17b482
-  branch: master
-  specs:
-    better_errors (2.4.0)
-      coderay (>= 1.0.0)
-      erubi (>= 1.0.0)
-      rack (>= 0.9.0)
+    devise_ldap_authenticatable (0.8.6)
+      devise (>= 3.4.1)
+      net-ldap (>= 0.6, != 0.12)
 
 GEM
   remote: https://rubygems.org/
@@ -54,7 +41,7 @@ GEM
       activemodel (= 5.1.4)
       activesupport (= 5.1.4)
       arel (~> 8.0)
-    activerecord-import (0.20.2)
+    activerecord-import (0.21.0)
       activerecord (>= 3.2)
     activesupport (5.1.4)
       concurrent-ruby (~> 1.0, >= 1.0.2)
@@ -64,7 +51,7 @@ GEM
     addressable (2.5.2)
       public_suffix (>= 2.0.2, < 4.0)
     arel (8.0.0)
-    autoprefixer-rails (7.1.6)
+    autoprefixer-rails (7.2.4)
       execjs
     backburner (1.4.1)
       beaneater (~> 1.0)
@@ -72,6 +59,10 @@ GEM
       dante (> 0.1.5)
     bcrypt (3.1.11)
     beaneater (1.0.0)
+    better_errors (2.4.0)
+      coderay (>= 1.0.0)
+      erubi (>= 1.0.0)
+      rack (>= 0.9.0)
     binding_of_caller (0.7.3)
       debug_inspector (>= 0.0.1)
     bootstrap-sass (3.3.7)
@@ -107,13 +98,16 @@ GEM
     coffee-script-source (1.12.2)
     concurrent-ruby (1.0.5)
     crass (1.0.3)
-    daemons (1.2.5)
+    daemons (1.2.6)
     dante (0.2.0)
     database_cleaner (1.6.2)
     debug_inspector (0.0.3)
-    devise_ldap_authenticatable (0.8.5)
-      devise (>= 3.4.1)
-      net-ldap (>= 0.6.0, <= 0.11)
+    devise (4.4.0)
+      bcrypt (~> 3.0)
+      orm_adapter (~> 0.1)
+      railties (>= 4.1.0, < 5.2)
+      responders
+      warden (~> 1.2.3)
     docile (1.1.5)
     erubi (1.7.0)
     erubis (2.7.0)
@@ -135,7 +129,7 @@ GEM
       rails-dom-testing (>= 1, < 3)
       railties (>= 4.2.0)
       thor (>= 0.14, < 2.0)
-    jquery-tablesorter (1.24.0)
+    jquery-tablesorter (1.24.1)
       railties (>= 3.2, < 6)
     jquery-ui-rails (6.0.1)
       railties (>= 3.2.16)
@@ -158,15 +152,15 @@ GEM
     mime-types-data (3.2016.0521)
     mini_mime (1.0.0)
     mini_portile2 (2.3.0)
-    minitest (5.10.3)
+    minitest (5.11.1)
     momentjs-rails (2.17.1)
       railties (>= 3.1)
-    net-ldap (0.11)
-    nio4r (2.1.0)
+    net-ldap (0.16.1)
+    nio4r (2.2.0)
     nokogiri (1.8.1)
       mini_portile2 (~> 2.3.0)
     orm_adapter (0.5.0)
-    passenger (5.1.11)
+    passenger (5.1.12)
       rack
       rake (>= 0.8.1)
     pg (0.21.0)
@@ -219,7 +213,7 @@ GEM
       railties (>= 4.2.0, < 5.3)
     ruby_dep (1.5.0)
     rubyzip (1.2.1)
-    sass (3.5.3)
+    sass (3.5.5)
       sass-listen (~> 4.0.0)
     sass-listen (4.0.0)
       rb-fsevent (~> 0.9, >= 0.9.4)
@@ -252,7 +246,7 @@ GEM
     tilt (2.0.8)
     tzinfo (1.2.4)
       thread_safe (~> 0.1)
-    uglifier (3.2.0)
+    uglifier (4.1.2)
       execjs (>= 0.3.0, < 3)
     warden (1.2.7)
       rack (>= 1.0)
@@ -280,7 +274,7 @@ DEPENDENCIES
   addressable
   backburner
   beaneater
-  better_errors!
+  better_errors
   binding_of_caller
   bootstrap-sass (~> 3.3.7)
   bootstrap-sass-extras
@@ -293,8 +287,8 @@ DEPENDENCIES
   coffee-rails-source-maps
   daemons
   database_cleaner
-  devise!
-  devise_ldap_authenticatable
+  devise
+  devise_ldap_authenticatable!
   erubis
   execjs
   factory_bot_rails
