@@ -186,7 +186,7 @@ class TeamsetsController < ApplicationController
       return
     end
 
-    @swat = @teamset.students_without_active_team.map{|s| [s.id, s]}.to_h
+    @swat = @teamset.users_without_active_team.map{|s| [s.id, s]}.to_h
     in_teams = team_info["users"].select{|s| @swat[s.id].nil?}
     if in_teams.empty?
       @team = Team.new(team_info)
