@@ -33,9 +33,9 @@ class RegRequestsController < ApplicationController
     @request = RegRequest.find(params[:id])
     errs = accept_help(@request)
     if errs
-      redirect_back fallback_location: course_registrations_path(@course), alert: errs
+      redirect_to course_registrations_path(@course), alert: errs
     else
-      redirect_back fallback_location: course_registrations_path(@course)
+      redirect_to course_registrations_path(@course)
     end
   end
 
@@ -59,8 +59,8 @@ class RegRequestsController < ApplicationController
       end
       count = count + 1
     end
-    redirect_back fallback_location: course_registrations_path(@course),
-                  notice: "#{pluralize(count, 'registration')} added"
+    redirect_to course_registrations_path(@course),
+                notice: "#{pluralize(count, 'registration')} added"
   end
 
   def accept_help(request)
@@ -78,7 +78,7 @@ class RegRequestsController < ApplicationController
 
   def reject
     RegRequest.find(params[:id]).destroy
-    redirect_back fallback_location: course_registrations_path(@course)
+    redirect_to course_registrations_path(@course)
   end
 
   def reject_all
@@ -94,8 +94,8 @@ class RegRequestsController < ApplicationController
     end
     count = requests.count
     requests.destroy_all
-    redirect_back fallback_location: course_registrations_path(@course),
-                  alert: "#{pluralize(count, 'registration request')} deleted"
+    redirect_to course_registrations_path(@course),
+                alert: "#{pluralize(count, 'registration request')} deleted"
   end
 
   private
