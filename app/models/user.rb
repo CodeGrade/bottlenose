@@ -154,29 +154,6 @@ class User < ApplicationRecord
     end
   end
 
-  if Rails.env.development?
-    def self.find_for_ldap_authentication(attributes={})
-      user = User.find_by(username: attributes[:username])
-      if user &&
-         !attributes[:password].blank? &&
-         Devise::Encryptor.compare(user.class, user.encrypted_password, attributes[:password])
-        Audit.log("DB auth for #{self.name}")
-        class << user
-          # Note: per https://github.com/plataformatec/devise/blob/master/lib/devise/models/authenticatable.rb#L80,
-          # we're not supposed to override this method, but since
-          # https://github.com/plataformatec/devise/blob/master/lib/devise/strategies/authenticatable.rb#L30
-          # calls this directly, we have no choice
-          def valid_for_authentication?
-            true
-          end
-        end
-        user
-      else
-        super
-      end
-    end
-  end
-
   before_validation do
     unless self.email.nil?
       self.email = self.email.downcase

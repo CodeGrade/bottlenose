@@ -256,6 +256,13 @@ Devise.setup do |config|
   # If you want to use other strategies, that are not supported by Devise, or
   # change the failure app, you can configure them inside the config.warden block.
   #
+  if Rails.env.development?
+    # From https://insights.kyan.com/devise-authentication-strategies-a1a6b4e2b891
+    config.warden do |manager|
+      manager.strategies.add(:debug_login, Devise::Strategies::DebugLogin)
+      manager.default_strategies(scope: :user).unshift :debug_login
+    end
+  end
   # config.warden do |manager|
   #   manager.intercept_401 = false
   #   manager.default_strategies(scope: :user).unshift :some_external_strategy
