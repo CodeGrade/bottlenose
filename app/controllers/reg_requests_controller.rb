@@ -40,8 +40,18 @@ class RegRequestsController < ApplicationController
   end
 
   def accept_all
+    requests = RegRequest.where(course_id: params[:course_id])
+    if params[:crn]
+      section = @course.section.find_by(crn: params[:crn])
+      if section.nil?
+        redirect_back fallback_location: course_registrations_path,
+                      alert: "Could not accept requests: Unknown section"
+        return
+      end
+      requests = requests.joins(:reg_request_sections).where('reg_request_sections.section_id': section)
+    end
     count = 0
-    RegRequest.where(course_id: params[:course_id]).each do |req|
+    requests.each do |req|
       errs = accept_help(req)
       if errs
         redirect_back fallback_location: course_registrations_path(@course), alert: errs
@@ -72,8 +82,20 @@ class RegRequestsController < ApplicationController
   end
 
   def reject_all
-    RegRequest.where(course_id: params[:course_id]).destroy_all
-    redirect_back fallback_location: course_registrations_path(@course)
+    requests = RegRequest.where(course_id: params[:course_id])
+    if params[:crn]
+      section = @course.section.find_by(crn: params[:crn])
+      if section.nil?
+        redirect_back fallback_location: course_registrations_path,
+                      alert: "Could not accept requests: Unknown section"
+        return
+      end
+      requests = requests.joins(:reg_request_sections).where('reg_request_sections.section_id': section)
+    end
+    count = requests.count
+    requests.destroy_all
+    redirect_back fallback_location: course_registrations_path(@course),
+                  alert: "#{pluralize(count, 'registration request')} deleted"
   end
 
   private

@@ -12,7 +12,9 @@ class RegistrationsController < ApplicationController
   def index
     @students = @course.students
     @staff = @course.staff
-    @requests = @course.reg_requests.joins(:user).order('role desc', 'name').includes(:user)
+    @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
+    @requests = @course.reg_requests.joins(:user).order('role desc', 'name')
+                .includes(:user).includes(:reg_request_sections)
     if current_user.site_admin?
       @role = "professor"
     else

@@ -1,9 +1,29 @@
+<style>
+  <% @course.sections.each do |s| %>
+  table#reg-requests.show_one .sec_<%= s.crn %> { display: none; }
+  table#reg-requests.show_one.sec_<%= s.crn %> tr.sec_<%= s.crn %> { display: table-row; }
+  table#reg-requests.show_all div.sec_<%= s.crn %> { display: none !important; }
+  table#reg-requests.show_one div.show-all { display: none !important; }
+  table#reg-requests.show_one.sec_<%= s.crn %> div.sec_<%= s.crn %> { display: inline !important; }
+  <% end %>
+</style>
 <div class="panel panel-default">
   <div class="panel-heading">
-    <h3 class="panel-title">Requests</h3>
+    <h3 class="panel-title"
+        style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+      <span style="flex-grow: 1;">Requests</span>
+      <span>
+        Filter teams and students by section: <select class="sections" data-target="table#reg-requests">
+          <option value="show_all">Show all sections</option>
+          <% @course.sections.each do |s| %>
+          <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
+          <% end %>
+        </select>
+      </span>
+    </h3>
   </div>
 
-  <table class="table table-striped">
+  <table id="reg-requests" class="table table-striped show_all">
     <tr>
       <th style="vertical-align: middle;">Name</th>
       <th style="vertical-align: middle;">Role</th>
@@ -11,7 +31,7 @@
       <th style="vertical-align: middle;">Note</th>
       <th>
         <% if requests.length > 0 %>
-          <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
+          <div class="btn-group pull-right show-all" style="white-space: nowrap;" role="group">
             <%= link_to course_reg_request_accept_all_path(@course), 
                 method: :delete, 
                 style: "float: unset;",
@@ -28,6 +48,25 @@
               <span style="padding-left: 1em;">Reject All</span>
             <% end %>
           </div>
+          <% @course.sections.each do |s| %>
+            <div class="btn-group pull-right sec_<%= s.crn %>" style="white-space: nowrap;" role="group">
+              <%= link_to course_reg_request_accept_all_path(@course, crn: s.crn), 
+                  method: :delete, 
+                  style: "float: unset;",
+                  class: "btn btn-success btn-sm" do %>
+                <span class="glyphicon glyphicon-ok"></span>
+                <span style="padding-left: 1em;">Accept all in section</span>
+              <% end %><% # commenting out the whitespace, so there's no gap...
+            %><%= link_to course_reg_request_reject_all_path(@course, crn: s.crn), 
+                  method: :delete,
+                  style: "float: unset;",
+                  data: { confirm: "Are you sure you want to reject ALL registration requests?" },
+                  class: "btn btn-danger btn-sm" do %>
+                <span class="glyphicon glyphicon-remove"></span>
+                <span style="padding-left: 1em;">Reject all in section</span>
+              <% end %>
+            </div>
+          <% end %>
         <% else %>
           &nbsp;
         <% end %>
@@ -35,8 +74,11 @@
     </tr>
 
     <% requests.each do |request| %>
-      <tr>
-        <td><%= link_to request.user.name, user_path(request.user) %></td>
+      <% classes = request.reg_request_sections.map do |sec|
+           "sec_#{@section_crns[sec.section_id]}"
+         end.flatten.uniq.compact.join(" ")%>
+      <tr class="<%= classes %>">
+        <td><%= show_user request.user %></td>
         <td><%= request.role.humanize %></td>
         <td><%= request.user.email %></td>
         <td><%= request.notes %></td>
@@ -61,3 +103,15 @@
     <% end %>
   </table>
 </div>
+<script>
+  $(function() {
+    $(".sections").each(function() {
+      $(this).data("prevSection", "show_all");
+    });
+    $(".sections").change(function(e) {
+      var thisSelect = $(this);
+      $(thisSelect.data("target")).removeClass(thisSelect.data("prevSection")).addClass(thisSelect.val());
+      thisSelect.data("prevSection", thisSelect.val());
+    });
+  });
+</script>
