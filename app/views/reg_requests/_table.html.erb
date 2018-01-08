@@ -32,14 +32,14 @@
       <th>
         <% if requests.length > 0 %>
           <div class="btn-group pull-right show-all" style="white-space: nowrap;" role="group">
-            <%= link_to course_reg_request_accept_all_path(@course), 
+            <%= link_to accept_all_course_reg_requests_path(@course), 
                 method: :delete, 
                 style: "float: unset;",
                 class: "btn btn-success btn-sm" do %>
               <span class="glyphicon glyphicon-ok"></span>
               <span style="padding-left: 1em;">Accept All</span>
             <% end %><% # commenting out the whitespace, so there's no gap...
-          %><%= link_to course_reg_request_reject_all_path(@course), 
+          %><%= link_to reject_all_course_reg_requests_path(@course), 
                 method: :delete,
                 style: "float: unset;",
                 data: { confirm: "Are you sure you want to reject ALL registration requests?" },
@@ -50,14 +50,14 @@
           </div>
           <% @course.sections.each do |s| %>
             <div class="btn-group pull-right sec_<%= s.crn %>" style="white-space: nowrap;" role="group">
-              <%= link_to course_reg_request_accept_all_path(@course, crn: s.crn), 
+              <%= link_to accept_all_course_reg_requests_path(@course, crn: s.crn), 
                   method: :delete, 
                   style: "float: unset;",
                   class: "btn btn-success btn-sm" do %>
                 <span class="glyphicon glyphicon-ok"></span>
                 <span style="padding-left: 1em;">Accept all in section</span>
               <% end %><% # commenting out the whitespace, so there's no gap...
-            %><%= link_to course_reg_request_reject_all_path(@course, crn: s.crn), 
+            %><%= link_to reject_all_course_reg_requests_path(@course, crn: s.crn), 
                   method: :delete,
                   style: "float: unset;",
                   data: { confirm: "Are you sure you want to reject ALL registration requests?" },
@@ -84,13 +84,13 @@
         <td><%= request.notes %></td>
         <td>
           <div class="btn-group pull-right" role="group">
-            <%= link_to course_reg_request_accept_path(@course, request), 
+            <%= link_to accept_course_reg_request_path(@course, request), 
                 method: :delete, 
                 class: "btn btn-success btn-xs" do %>
               <span class="glyphicon glyphicon-ok"></span>
               <span style="padding-left: 0.5em;">Accept</span>
             <% end %>
-            <%= link_to course_reg_request_reject_path(@course, request), 
+            <%= link_to reject_course_reg_request_path(@course, request), 
                 method: :delete, 
                 data: { confirm: "Are you sure you want to reject this registration request?" },
                 class: "btn btn-danger btn-xs" do %>
