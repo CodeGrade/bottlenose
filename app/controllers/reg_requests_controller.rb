@@ -42,7 +42,7 @@ class RegRequestsController < ApplicationController
   def accept_all
     requests = RegRequest.where(course_id: params[:course_id])
     if params[:crn]
-      section = @course.section.find_by(crn: params[:crn])
+      section = @course.sections.find_by(crn: params[:crn])
       if section.nil?
         redirect_back fallback_location: course_registrations_path,
                       alert: "Could not accept requests: Unknown section"
@@ -84,7 +84,7 @@ class RegRequestsController < ApplicationController
   def reject_all
     requests = RegRequest.where(course_id: params[:course_id])
     if params[:crn]
-      section = @course.section.find_by(crn: params[:crn])
+      section = @course.sections.find_by(crn: params[:crn])
       if section.nil?
         redirect_back fallback_location: course_registrations_path,
                       alert: "Could not accept requests: Unknown section"
