@@ -174,6 +174,27 @@ div.grader-config {
     margin-right: -50%;
 }
 
+.menu-separator {
+   position: relative;
+   z-index: 1;
+}
+.menu-separator:before {
+   border-top: 1px solid #eee;
+   border-bottom: 1px solid lightgray;
+   content: "";
+   position: absolute;
+   z-index: -1;
+   top: 50%; left: 0; right: 0; bottom: 0;
+   width: 95%; height: 0;
+   margin: 0 auto;
+}
+.menu-separator > span {
+   color: gray;
+   margin-left: 3em;
+   padding: 0 0.5em;
+   background-color: white;
+}
+
 
 .treeview.condensed {
    overflow: scroll;

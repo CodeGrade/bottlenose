@@ -25,7 +25,6 @@
 <h2>Your courses</h2>
 <% regs = current_user.course_regs_by_term %>
 <% regs.keys.sort_by{|t| t.canonical_name}.reverse.each_with_index do |term, i| %>
-<% info = regs[term] %>
   <h3 <% if term.archived? %>class="collapsed" data-toggle="collapse" data-target="#term_<%= i %>"<% end %>>
     <%= term.name %>
     <% if term.archived? %>
@@ -34,7 +33,7 @@
     <% end %>
   </h3>
   <div id="term_<%= i %>" <% if term.archived? %>class="collapse"<% end %>>
-  <% info.each do |term, course, sections, dropped| %>
+  <% regs[term].each do |_, (term, course, sections, role, dropped)| %>
     <% if dropped %>
     <h3 style="font-size: 21px;"><%= course.name %></h3>
     <div class="row">

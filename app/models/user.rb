@@ -287,6 +287,7 @@ class User < ApplicationRecord
 
   def course_regs_by_term
     regs = self.registrations.includes(:course).includes(:term)
+    roles = regs.map(&:role)
     courses = regs.map(&:course)
     rs = RegistrationSection.where(registration_id: regs.map(&:id)).includes(:section).group_by(&:registration_id)
     sections = regs.map do |r|
@@ -294,6 +295,14 @@ class User < ApplicationRecord
     end
     dropped = regs.map(&:dropped_date)
     terms = courses.map(&:term)
-    terms.zip(courses, sections, dropped).group_by{|tcsd| tcsd[0]}
+    multi_group_by(terms.zip(courses, sections, roles, dropped), [:first, :second], true)
+  end
+
+  def active_courses
+    # sort descending on terms, ascending on names, grouped by term name
+    self.courses.includes(:term).where('terms.archived': false)
+      .map{|c| [c.term, c]}.group_by(&:first).to_a
+      .sort{|(t1, c1s), (t2, c2s)| t2.canonical_name <=> t1.canonical_name}
+      .map{|t, cs| [t.name, cs.map(&:second).sort_by(&:name)]}.to_h
   end
 end

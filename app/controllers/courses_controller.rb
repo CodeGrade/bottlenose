@@ -12,7 +12,7 @@ class CoursesController < ApplicationController
   before_action :require_admin_or_staff, only: [:facebook]
 
   def index
-    @courses_by_term = Course.order(:name).group_by(&:term)
+    @courses_by_term = Course.order(:name).includes(:term).group_by(&:term)
 
     # We can't use the course layout if we don't have a @course.
     render layout: 'application'
