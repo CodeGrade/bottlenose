@@ -17,7 +17,7 @@
       <% next if term.archived? %>
       <h2><%= term.name %></h2>
 
-      <%= render 'table', courses: courses, reg_info: course_regs[term] %>
+      <%= render 'table', courses: courses, reg_info: (course_regs[term] || {}) %>
     <% end %>
   </div>
 </div>
