@@ -8,11 +8,11 @@
       class: "btn btn-primary pull-right" %>
 </h2>
 <div class="row">
-  <div class="col-sm-3 text-center">
+  <div class="col-sm-4 col-md-3 text-center">
     <%= image_tag Upload.upload_path_for(@user.profile || "silhouette.jpg"),
         alt: @user.display_name, style: 'max-height: 300px; max-width: 300px;' %>
   </div>
-  <div class="col-sm-9">
+  <div class="col-sm-8 col-md-9">
     <table class="table">
       <tr>
         <td>Name:</td>

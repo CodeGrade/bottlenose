@@ -116,7 +116,7 @@ div.grader-config {
 }
 
 
-@media(min-width: 768px) {
+@media(min-width: $screen-sm-min) {
    nav.review-navbar {
       position: sticky;
       top: -1px;
@@ -129,7 +129,7 @@ div.grader-config {
       height: 150px;
    }
 }
-@media(max-width: 767px) {
+@media(max-width: $screen-xs-max) {
    .files-sidebar-container {
       top: unset !important;
    }
@@ -195,6 +195,11 @@ div.grader-config {
    background-color: white;
 }
 
+@media(max-width: $screen-xs-max) {
+   .menu-separator > span {
+      background-color: $navbar-default-bg;
+   }
+}
 
 .treeview.condensed {
    overflow: scroll;
