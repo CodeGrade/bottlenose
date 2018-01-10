@@ -193,7 +193,7 @@ class Course < ApplicationRecord
         end
       end
       cur = (100.0 * min) / (avail - adjust)
-      open = effective_due_dates[s.id].select{|_, (_, _, a, due)| due > DateTime.current}.values.map(&:third)
+      open = effective_due_dates[s.id]&.select{|_, (_, _, a, due)| due > DateTime.current}&.values&.map(&:third) || []
       unsub_names = []
       unsubs = 0
       open.each do |o|

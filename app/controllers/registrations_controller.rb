@@ -51,7 +51,7 @@ class RegistrationsController < ApplicationController
 
   def bulk_edit
     @course = Course.find(params[:course_id])
-    @cur_role = current_user.registration_for(@course).role
+    @cur_role = current_user.registration_for(@course)&.role
     if params[:role] == "student"
       @registrations = @course.registrations
                        .where(role: Registration::roles["student"])
