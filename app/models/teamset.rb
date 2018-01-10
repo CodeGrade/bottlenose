@@ -41,7 +41,7 @@ class Teamset < ActiveRecord::Base
       sections = self.course.sections.group_by(&:type)
       students_by_reg = unteamed_students.map{|s| [s.reg_id, s]}.to_h
       grouped_students_to_team = sections[within_section].map do |s|
-        students_by_reg.values_at(*reg_sections[s.crn].map(&:registration_id))
+        students_by_reg.values_at(*reg_sections[s.id]&.map(&:registration_id))
       end
     end
     leftovers = []
