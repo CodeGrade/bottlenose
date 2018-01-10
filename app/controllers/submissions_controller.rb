@@ -334,18 +334,6 @@ class SubmissionsController < ApplicationController
 
   def new_Questions
     @questions = @assignment.questions
-    if @assignment.related_assignment
-      related_sub = @assignment.related_assignment.used_sub_for(current_user)
-      if related_sub.nil?
-        @submission_files = []
-        @submission_dirs = []
-      else
-        @submission_dirs, @submission_files = related_sub.get_submission_files(current_user)
-      end
-    else
-      @submission_files = []
-      @submission_dirs = []
-    end
     render "new_#{@assignment.type.underscore}"
   end
 
@@ -428,7 +416,9 @@ class SubmissionsController < ApplicationController
       redirect_to(path, notice: 'Response was successfully created.')
     else
       @submission.cleanup!
-      new_Questions
+      @answers = [["newsub", @submission.answers]].to_h
+      @questions = @assignment.questions
+      render "new_#{@assignment.type.underscore}"
     end
   end
 

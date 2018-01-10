@@ -2,19 +2,6 @@
 <%= f.hidden_field :user_id %>
 
 <% @accept_inputs = false %>
-<% if @submission.errors.any? %>
-<div id="error_explanation" class="alert alert-danger">
-  <h2><%= pluralize(@submission.errors.count, "error") %> prohibited
-  this <%= type[:noun] %> from being saved:</h2>
-
-  <ul>
-    <% @submission.errors.full_messages.each do |msg| %>
-    <li><%= msg %></li>
-    <% end %>
-  </ul>
-</div>
-<% end %>
-
 <% unless @assignment.assignment.nil? || @assignment.assignment.empty? %>
 <div class="<%= container_style %>">
   <div class="panel panel-default">

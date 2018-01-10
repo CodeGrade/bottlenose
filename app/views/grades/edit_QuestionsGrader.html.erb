@@ -74,7 +74,7 @@
   });
   <%= render "submissions/render_questions.js", root: "sub_#{@submission.id}" %>
 </script>
-<div id="responses" class="form-group container">
+<div class="responses form-group container">
 <%= render "submissions/render_questions", start: 0, root: "all-files", sub_id: @submission.id %>
 <span class="col-sm-12 text-center">
 <%= f.submit "Submit grade", id: "completed", class: "btn btn-success" %>

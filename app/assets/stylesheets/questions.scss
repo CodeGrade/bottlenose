@@ -1,13 +1,13 @@
-#responses input.unanswered,
-#responses button.unanswered, 
-#responses label.unanswered,
-#responses textarea.unanswered
+.responses input.unanswered,
+.responses button.unanswered, 
+.responses label.unanswered,
+.responses textarea.unanswered
 {
    border: 1px solid #eed3d7;
    box-shadow: 0 0 1em #eed3d7;
 }
 /* Don't override the border on selects, because it doesn't render properly */
-#responses select.unanswered {
+.responses select.unanswered {
    box-shadow: 0 0 1em #eed3d7;
 }
 

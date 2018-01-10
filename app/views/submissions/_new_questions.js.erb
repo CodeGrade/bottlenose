@@ -15,46 +15,55 @@ $(function() {
   });
 });
 $(function() {
-  var answered = [];
-  for (var i = 0; i <= <%= count %>; i++) {
-    answered[i] = { 
-      answered: {}, 
-      root: "answers[" + i + "]",
-      subs: {"main": false, "detail": false, "parts": false},
-      ids: []
-    };
-    answered[i].blame = $("[name^='" + answered[i].root + "']");
-    answered[i].ids = answered[i].blame.filter(function() { return this.type === "hidden"; })
-      .map(function() { return this.id; });
-    answered[i].ids.each(function() {
-      answered[i].blame = answered[i].blame.add("[data-id='" + this + "']");
-    });
-    for (var key in answered[i].subs) {
-      answered[i].subs[key] = $("[name^='" + answered[i].root + "[" + key + "]']");
-      var ids = answered[i].subs[key].map(function() { return this.id; });
-      ids.each(function() {
-        answered[i].subs[key] = answered[i].subs[key].add("[data-id='" + this + "']");
-      });
-      if (answered[i].subs[key].length > 0)
-        answered[i].answered[key] = false;
-    }
-
-    (function(idx) {
-      function clean(key) {
-        return function() {
-          if (!(this instanceof HTMLTextAreaElement) || ($(this).val().trim() !== "")) {
-            answered[idx].answered[key] = true;
-            answered[idx].subs[key].removeClass("unanswered");
-          } else {
-            debugger;
-          }          
-        };
-      }
-      for (var key in answered[idx].subs) {
-        answered[idx].subs[key].on("change", clean(key)).on("focus", clean(key));
-      }
-    })(i);
+  var answers = $("[name^='answers']:not(.optional)");
+  var byNames = {};
+  var nameChunk = /\[.*?\]/g;
+  function isTextInput(elem) {
+    return elem instanceof HTMLTextAreaElement ||
+      (elem instanceof HTMLInputElement && elem.type === "text");
   }
+  answers.each(function() {
+    var cur = byNames;
+    // this.name == answers[sub_id][question_num][part][optional_part_num]...ignored suffix...
+    // so we slice off the first four bracketed parts (assuming there are four parts)
+    var matches = this.name.match(nameChunk).slice(0, 4);
+    var i;
+    var question;
+    for (i = 0; i < matches.length; i++) {
+      if (cur[matches[i]] === undefined)
+        cur[matches[i]] = {};
+      cur = cur[matches[i]];
+      if (i == 1) question = cur;
+    }
+    if (cur.parts === undefined) {
+      cur.parts = [];
+      cur.answered = false;
+    }
+    var res = { answered: false, target: this, group: cur, question: question };
+    function clean() {
+      if (!isTextInput(this) || ($(this).val().trim() !== "")) {
+        res.answered = true;
+        if ((this instanceof HTMLInputElement && this.type === "radio") ||
+            (this instanceof HTMLButtonElement))
+          res.group.answered = true;
+        for (var idx = 0; idx < res.group.parts.length; idx++)
+          $(res.group.parts[idx].target).removeClass("unanswered");
+      } else if (isTextInput(this)) {
+        res.answered = false;
+        res.group.answered = false;
+      }
+    }
+    cur.parts.push(res);
+    $(this).on("change", clean).on("focus", clean);
+    if (this instanceof HTMLInputElement && this.type === "hidden") {
+      $("button[data-id='" + this.id + "']").each(function() {
+        var res = { answered: false, target: this, group: cur, question: question };
+        cur.parts.push(res);
+        $(this).on("change", clean).on("focus", clean);
+      });
+    }
+  });
+ 
   $(".spinner input").each(function() {
     var pieces = $(this)[0].name.match(/(\[[_a-z0-9]+\])/g);
     if (pieces === null || pieces.length != 2) return;
@@ -69,21 +78,46 @@ $(function() {
   
   $("form").submit(function(e) {
     try {
-      var unanswered = $(answered).filter(function() {
-        for (var key in this.answered)
-          if (!this.answered[key] && !this.subs[key].prop("disabled"))
-            return true;
-        return false;
-      }).map(function() { 
-        return this.blame; 
-      });
-      if (unanswered.length > 0) {
+      var unansweredInputs = [];
+      function findUnanswered(cur) {
+        if (cur instanceof Array) {
+          for (var i = 0; i < cur.length; i++) {
+            if (!cur[i].group.answered && !cur[i].answered && !$(cur[i].target).prop('disabled'))
+              unansweredInputs.push(cur[i]);
+          }
+        } else {
+          for (var key in cur) {
+            findUnanswered(cur[key]);
+          }
+        }
+      }
+      findUnanswered(byNames);
+      var unansweredParts = [];
+      for (var i = 0; i < unansweredInputs.length; i++) {
+        var found = false;
+        for (var j = 0; j < unansweredParts.length; j++) {
+          if (unansweredInputs[i].question === unansweredParts[j].question) {
+            found = true;
+            break;
+          }
+        }
+        if (!found)
+          unansweredParts.push(unansweredInputs[i]);
+      }
+      if (unansweredParts.length > 0) {
         e.preventDefault();
-        alert("There are " + unanswered.length + " questions unanswered");
-        unanswered.each(function() {
-          $(this).addClass("unanswered");
+        if (unansweredParts.length == 1) {
+          alert("There is one question unanswered");
+        } else {
+          alert("There are " + unansweredParts.length + " questions unanswered");
+        }
+        $(unansweredInputs).each(function() {
+          var $target = $(this.target);
+          if (!$target.prop("disabled") && !this.answered) $target.addClass("unanswered");
+          if (this.target.type === "hidden") $("button[data-id='" + this.target.id + "']").addClass("unanswered");
         });
         $(".spinner input.unanswered[val!='']").removeClass("unanswered");
+        return false;
       }
     } catch (exn) {
       alert("Something went wrong: " + exn);

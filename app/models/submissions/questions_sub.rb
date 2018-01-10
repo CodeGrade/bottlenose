@@ -30,14 +30,15 @@ class QuestionsSub < Submission
   attr_accessor :related_files
   validate :check_all_questions
   def check_all_questions
-    return true unless self.upload.nil? || self.upload.new_record?
+    return true unless self.new_record?
     questions = self.assignment.flattened_questions
+    all_questions = [["newsub", questions]].to_h
     num_qs = questions.count
     if @answers.count != num_qs
       self.errors.add(:base, "There were #{pluralize(@answers.count, 'answer')} for #{pluralize(num_qs, 'question')}")
       self.cleanup!
     else
-      check_questions_schema(questions, @answers, questions.count)
+      check_questions_schema(all_questions, [["newsub", @answers]].to_h, questions.count)
     end
   end
 end

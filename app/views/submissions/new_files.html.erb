@@ -1,5 +1,19 @@
 <% @page_title = "New Submission: #{@assignment.name}" %>
 
+<% if @submission.errors.any? %>
+<div id="error_explanation" class="alert alert-danger">
+  <h2><%= pluralize(@submission.errors.count, "error") %> prohibited
+  this submission from being saved:</h2>
+
+  <ul>
+    <% @submission.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+    <% end %>
+  </ul>
+</div>
+<% end %>
+
+
 <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)] do |f| %>
   <% f.object = @submission.becomes(@submission.class)
      allowed = @assignment.sub_allow_submission?(@submission)

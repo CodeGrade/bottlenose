@@ -7,29 +7,30 @@ module SubmissionsHelper
           self.errors.add(:base, "#{prefix} is missing an answer")
           next
         end
-        if q["YesNo"]
+        case q["type"]
+        when "YesNo"
           unless ["yes", "no"].member?(a["main"].downcase)
             self.errors.add(:base, "#{prefix} has a non-Yes/No answer")
           end
-        elsif q["TrueFalse"]
+        when"TrueFalse"
           unless ["true", "false"].member?(a["main"].downcase)
             self.errors.add(:base, "#{prefix} has non-true/false answer")
           end
-        elsif q["Numeric"]
+        when "Numeric"
           if !(Float(a["main"]) rescue false)
             self.errors.add(:base, "#{prefix} has a non-numeric answer")
           elsif Float(a["main"]) < q["Numeric"]["min"] || Float(a["main"]) > q["Numeric"]["max"]
             self.errors.add(:base, "#{prefix} has a numeric answer outside the valid range")
           end
-        elsif q["MultipleChoice"]
+        when "MultipleChoice"
           if a["main"].nil?
           # nothing, was handled above
           elsif !(Integer(a["main"]) rescue false)
             self.errors.add(:base, "#{prefix} has an invalid multiple-choice answer")
-          elsif a["main"].to_i < 0 || a["main"].to_i >= q[type]["options"].count
+          elsif a["main"].to_i < 0 || a["main"].to_i >= q["options"].count
             self.errors.add(:base, "#{prefix} has an invalid multiple-choice answer")
           end
-        elsif q["Text"]
+        when "Text"
           # nothing
         end
         if q["parts"]
