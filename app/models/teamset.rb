@@ -58,6 +58,8 @@ class Teamset < ActiveRecord::Base
           
           if @team.save
             count += 1
+          else
+            debugger
           end
         else
           leftovers += t
@@ -90,8 +92,12 @@ class Teamset < ActiveRecord::Base
     return count
   end
 
-  def dissolve_all(end_time = DateTime.current)
-    active = self.active_teams
+  def dissolve_all(end_time = DateTime.current, section_id=nil)
+    if section_id
+      active = self.active_teams_in_section(section_id)
+    else
+      active = self.active_teams
+    end
     count = active.count
     active.each do |t| t.dissolve(end_time) end
     return count
@@ -103,6 +109,15 @@ class Teamset < ActiveRecord::Base
 
   def active_teams
     self.teams.where(Team.active_query, Date.current, Date.current).includes(:users)
+  end
+
+  def active_teams_in_section(section_id)
+    section = course.sections.find(section_id)
+    return [] unless section
+    users_in_section = section.users.map{|u| [u.id, true]}.to_h
+    self.active_teams.select do |team|
+      team.users.any?{|u| users_in_section[u.id]}
+    end
   end
 
   def active_team_for(user)

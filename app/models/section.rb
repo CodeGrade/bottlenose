@@ -7,6 +7,10 @@ class Section < ApplicationRecord
   belongs_to :course
   belongs_to :instructor, :class_name => "User", :foreign_key => "instructor_id", :primary_key => "id"
   delegate :term, to: :course
+  has_many :registration_sections
+  has_many :registrations, through: :registration_sections
+  has_many :users, through: :registrations
+
 
   validates :crn, presence: true
   validates :instructor, presence: true

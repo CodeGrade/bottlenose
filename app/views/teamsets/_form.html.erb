@@ -1,4 +1,5 @@
 <style>
+  .btn-blank { background-image: none; border: none; background: transparent; padding: initial; }
   <% @course.sections.each do |s| %>
   table#team-requests.show_one .sec_<%= s.crn %> { display: none; }
   table#team-requests.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
@@ -6,7 +7,11 @@
   table#users.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
   table#teams.show_one .sec_<%= s.crn %> { display: none; }
   table#teams.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
-  .btn-blank { background-image: none; border: none; background: transparent; padding: initial; }
+  <% end %>
+  h3.user-headers.show_one .show_all { display: none; }
+  <% @course.sections.each do |s| %>
+  h3.user-headers .sec_<%= s.crn %> { display: none; }
+  h3.user-headers.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: inline-block; }
   <% end %>
 </style>
 <div class="row">
@@ -281,7 +286,8 @@
 
 <div class="row">
   <div class="col-md-12">
-    <h4>Filter teams and students by section: <select class="sections" data-target="table#users, table#teams">
+    <h4>Filter teams and students by section:
+      <select class="sections" data-target=".user-headers, table#users, table#teams">
         <option value="show_all">Show all sections</option>
         <% @course.sections.each do |s| %>
         <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
@@ -290,11 +296,17 @@
     </h4>
   </div>
   <div class="col-md-6">
-    <h3>Active Teams
+    <h3 class="user-headers">Active Teams
       <%= link_to "Dissolve all",
           dissolve_all_course_teamset_path(@course, @teamset),
-          class: "btn btn-danger pull-right", 
+          class: "btn btn-danger pull-right show_all", 
           method: :patch, data: { confirm: "Are you sure you want to dissolve all teams?" } %>
+      <% @course.sections.each do |s| %>
+      <%= link_to "Dissolve all in section",
+          dissolve_all_course_teamset_path(@course, @teamset, section_id: s.id),
+          class: "btn btn-danger pull-right show_one sec_#{s.crn}", 
+          method: :patch, data: { confirm: "Are you sure you want to dissolve all teams in this section?" } %>
+      <% end %>
     </h3>
 
     <div class="long-table">
@@ -326,11 +338,21 @@
   </div>
 
   <div class="col-md-6">
-    <h3>
+    <h3 class="user-headers">
       <% all_emails = @others.sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>"} %>
+      <span class="show_all">
       <%= mail_to "#{current_user.name} <#{current_user.email}>", "@",
                   bcc: all_emails.join(","), title: "Email all unpartnered students (bcc)" %>
       Students Without Teams (<%= @others.length %> remaining)
+      </span>
+      <% @others_by_section_ids.each do |sec_id, others|
+         emails = others.sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>"} %>
+      <span class="show_one sec_<%= @section_crns[sec_id] %>">
+      <%= mail_to "#{current_user.name} <#{current_user.email}>", "@",
+                  bcc: emails.join(","), title: "Email all unpartnered students in section (bcc)" %>
+      Students without teams in section (<%= others.length %> remaining)
+      </span>
+      <% end %>
     </h3>
     
     <div class="long-table">

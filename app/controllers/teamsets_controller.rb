@@ -153,7 +153,7 @@ class TeamsetsController < ApplicationController
   end
 
   def dissolve_all
-    count = @teamset.dissolve_all(DateTime.current)
+    count = @teamset.dissolve_all(DateTime.current, params[:section_id])
     redirect_back fallback_location: course_teamsets_path(@course),
                   notice: "#{pluralize(count, 'team')} dissolved"
   end
@@ -295,6 +295,13 @@ class TeamsetsController < ApplicationController
       [s.username, s]
     end.to_h
     @sections_by_user = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
+    @others_by_section_ids = {}
+    @others.each do |user|
+      @sections_by_user[user.reg_id].each do |reg_section|
+        @others_by_section_ids[reg_section.section_id] ||= []
+        @others_by_section_ids[reg_section.section_id].push user
+      end
+    end
     @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
     @team_requests = []
     # To compute the cliques among team requests, map each student to the set of usernames they requested
