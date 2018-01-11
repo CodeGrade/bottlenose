@@ -40,23 +40,50 @@ $(function() {
       cur.answered = false;
     }
     var res = { answered: false, target: this, group: cur, question: question };
-    function clean() {
-      if (!isTextInput(this) || ($(this).val().trim() !== "")) {
-        res.answered = true;
-        if ((this instanceof HTMLInputElement && this.type === "radio") ||
-            (this instanceof HTMLButtonElement))
-          res.group.answered = true;
+    function clean(e) {
+      if (this instanceof HTMLSelectElement) {
+        if (this.selectedIndex != 0) {
+          res.answered = true;
+          if (this.selectedIndex == 1) {
+            res.group.answered = true; // <none> option
+          } else {
+            res.group.answered = ($(res.group.parts[1]).val() !== "");
+          }
+        }
+      } else if (isTextInput(this)) {
+        res.answered = res.group.answered = ($(this).val().trim() !== "");
+      } else if (this instanceof HTMLButtonElement) {
+        if (e || $(this).hasClass("active")) {
+          res.answered = res.group.answered = true;
+        }
+      } else if (this instanceof HTMLInputElement) {
+        if (this.type === "radio") {
+          if (e || this.checked) {
+            res.answered = res.group.answered = true;
+          }
+        } else if ($('button.btn.answer[data-id="' + this.id + '"]').length > 0) {
+          if (this.value !== "") {
+            res.answered = res.group.answered = true;
+          }
+        } else {
+          debugger
+        }
+      } else {
+        debugger
+      }
+      if (res.group.answered) {
         for (var idx = 0; idx < res.group.parts.length; idx++)
           $(res.group.parts[idx].target).removeClass("unanswered");
-      } else if (isTextInput(this)) {
-        res.answered = false;
-        res.group.answered = false;
+      } else if (res.answered) {
+        $(res.target).removeClass("unanswered");
       }
     }
+    clean.apply(this);
     cur.parts.push(res);
     $(this).on("change", clean).on("focus", clean);
+    $('button.btn.answer[data-id="' + this.id + '"]').on("click", clean);
     if (this instanceof HTMLInputElement && this.type === "hidden") {
-      $("button[data-id='" + this.id + "']").each(function() {
+      $("button.btn.answer[data-id='" + this.id + "']").each(function() {
         var res = { answered: false, target: this, group: cur, question: question };
         cur.parts.push(res);
         $(this).on("change", clean).on("focus", clean);
@@ -114,7 +141,8 @@ $(function() {
         $(unansweredInputs).each(function() {
           var $target = $(this.target);
           if (!$target.prop("disabled") && !this.answered) $target.addClass("unanswered");
-          if (this.target.type === "hidden") $("button[data-id='" + this.target.id + "']").addClass("unanswered");
+          if (this.target.type === "hidden")
+            $("button.btn.answer[data-id='" + this.target.id + "']").addClass("unanswered");
         });
         $(".spinner input.unanswered[val!='']").removeClass("unanswered");
         return false;

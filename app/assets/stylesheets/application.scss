@@ -118,11 +118,13 @@ div.grader-config {
 
 @media(min-width: $screen-sm-min) {
    nav.review-navbar {
+      position: -webkit-sticky;
       position: sticky;
       top: -1px;
       z-index: 1000;
    }
    .files-sidebar-container {
+      position: -webkit-sticky;
       position: sticky;
    }
    div.spacer {
