@@ -1,5 +1,8 @@
 <% @page_title = "New Response: #{@assignment.name}" %>
 <% content_for :wide_content_before do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
 <%= render "layouts/standard_course_info" %>
 <% if @submission.errors.any? %>
 <div id="error_explanation" class="alert alert-danger">
