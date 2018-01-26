@@ -13,7 +13,7 @@
        grade = grades&.find{|g| g.grader_id == gr.id}
      %>
   <tr>
-    <td><%= gr.display_type %></td>
+    <td><%= gr.display_type %> <% if gr.extra_credit %>(Extra credit)<% end %></td>
     <td>
       <% if scores.kind_of?(Array) %>
       <%= show_score(scores[0], @gradesheet.assignment, cur_reg_staff) %>&nbsp;/&nbsp;<%= to_fixed(scores[1]) %>

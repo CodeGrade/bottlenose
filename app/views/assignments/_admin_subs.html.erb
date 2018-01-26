@@ -129,6 +129,9 @@
               class: "btn btn-default no-resort",
               title: "Assign graders" do %><i class="glyphicon glyphicon-list-alt"></i><% end %>
           <% end %>
+          <% if c.extra_credit %>
+          <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
+          <% end %>
           <%= c.display_type %>
         </th>
         <% end %>

@@ -97,8 +97,12 @@
           </div>
           <div class="col-sm-6">
             <p><b>Expected:</b></p>
+            <% if t[:info]["expectedExnName"] %>
             <p>Exception name: <code class="text-muted"><%= t[:info]["expectedExnName"] %></code></p>
             <p>Exception message: <code class="text-muted"><%= t[:info]["expectedExnMessage"] %></code></p>
+            <% else %>
+            <p>No exception</p>
+            <% end %>
           </div>
         </div>
         <% elsif t[:info]["stack"] %>
