@@ -19,7 +19,7 @@ module SubmissionsHelper
         when "Numeric"
           if !(Float(a["main"]) rescue false)
             self.errors.add(:base, "#{prefix} has a non-numeric answer")
-          elsif Float(a["main"]) < q["Numeric"]["min"] || Float(a["main"]) > q["Numeric"]["max"]
+          elsif Float(a["main"]) < q["min"] || Float(a["main"]) > q["max"]
             self.errors.add(:base, "#{prefix} has a numeric answer outside the valid range")
           end
         when "MultipleChoice"
