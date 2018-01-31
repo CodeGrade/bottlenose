@@ -44,7 +44,9 @@ class RegistrationsController < ApplicationController
       redirect_to course_registrations_path(@course),
                   notice: 'Registration was successfully created.'
     else
-
+      if @registration && !@registration.new_record?
+        @registration.delete
+      end
       render action: :new
     end
   end
@@ -134,7 +136,7 @@ class RegistrationsController < ApplicationController
       if (r.save && r.save_sections)
         num_added += 1
       else
-        failed << row[0]
+        failed << "#{row[0]} (#{r.errors.full_messages.to_sentence})"
       end
     end
 
