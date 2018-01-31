@@ -1,5 +1,11 @@
 <style>
   .btn-blank { background-image: none; border: none; background: transparent; padding: initial; }
+  <% Section.types.each do |t, _| %>
+  table#teams .multi_<%= t %> { display: none; }
+  <% end %>
+  <% Section.types.each do |t, _| %>
+  table#teams.show_<%= t %> .multi_<%= t %> { display: inline; }
+  <% end %>
   <% @course.sections.each do |s| %>
   table#team-requests.show_one .sec_<%= s.crn %> { display: none; }
   table#team-requests.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
@@ -290,7 +296,7 @@
       <select class="sections" data-target=".user-headers, table#users, table#teams">
         <option value="show_all">Show all sections</option>
         <% @course.sections.each do |s| %>
-        <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
+        <option value="show_one show_<%= s.type %> sec_<%= s.crn %>">Section <%= s.to_s %></option>
         <% end %>
       </select>
     </h4>
@@ -319,11 +325,21 @@
       </thead>
       <tbody>
         <% @teams.each do |team| %>
-        <% classes = team.users.map do |user|
-             (@sections_by_user[@users[user.id]&.reg_id] || []).map{|sec| "sec_#{@section_crns[sec.section_id]}"}
-           end.flatten.uniq.compact.join(" ") %>
+        <% sections = team.users.map do |user|
+             (@sections_by_user[@users[user.id]&.reg_id] || []).map do |sec|
+               [@section_crns[sec.section_id], @section_types[sec.section_id]]
+             end
+           end.flatten(1).uniq.compact
+           hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
+             ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
+           end
+           classes = sections.map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
         <tr class="<%= classes %>">
-          <td><%= show_team team %></td>
+          <td>
+            <% hazards.each do |hazard, warning| %>
+            <span class="glyphicon glyphicon-alert <%= hazard %>" title="<%= warning %>"></span>
+            <% end %>
+            <%= show_team team %></td>
           <td>
             <%= link_to "Dissolve",
                 dissolve_course_teamset_team_path(@course, @teamset, team),
