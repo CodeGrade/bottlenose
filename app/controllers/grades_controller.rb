@@ -154,8 +154,7 @@ class GradesController < ApplicationController
     # there should be at most one grading allocation per user per assignment,
     # and at most one grading allocation should not be abandoned at any given time
     # but prefer to find the one for the current user, first
-    alloc = (allocs.find{|a| a.who_grades_id == current_user.id}
-             || allocs.find{|a| !a.abandoned && a.grading_completed.nil?})
+    alloc = (allocs.find{|a| a.who_grades_id == current_user.id} || allocs.find{|a| !a.abandoned && a.grading_completed.nil?})
     if alloc && alloc.grading_completed.nil?
       if alloc.who_grades_id != current_user.id
         alloc.abandoned = true
