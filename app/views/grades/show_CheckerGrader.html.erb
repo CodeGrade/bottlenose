@@ -104,6 +104,12 @@
             <p>No exception</p>
             <% end %>
           </div>
+          <% if t[:info]["stack"] %>
+          <div>
+          <p style="display: inline-block;">Stack:</p>
+          <pre><%= t[:info]["stack"].join("\n") %></pre>
+          </div>
+          <% end %>
         </div>
         <% elsif t[:info]["stack"] %>
         <p>
