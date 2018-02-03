@@ -89,7 +89,7 @@
         <% elsif t[:info]["targetClassName"] %>
         <p>Target: <code class="text-muted"><%= t[:info]["targetClassName"] %></code></p>
         <% if t[:info]["arguments"] %>
-        <div>
+        <div class="col-sm-12">
         <p style="display: inline-block;">Arguments:</p>
         <pre><%= t[:info]["arguments"].join(",\n") %></pre>
         </div>
@@ -111,7 +111,7 @@
             <% end %>
           </div>
           <% if t[:info]["stack"] %>
-          <div>
+          <div class="col-sm-12">
           <p style="display: inline-block;">Stack:</p>
           <pre><%= t[:info]["stack"].join("\n") %></pre>
           </div>
