@@ -97,4 +97,10 @@ class CodereviewGrader < Grader
   def set_review_params
     self.params = "#{self.review_target};#{self.review_count};#{self.review_threshold}"
   end
+
+  def recompute_grades
+    self.grades.each do |g|
+      self.do_grading(self.assignment, g.submission) if g.score
+    end
+  end
 end

@@ -80,7 +80,7 @@ class Grader < ApplicationRecord
   has_many :grades
   validates_presence_of :assignment
   validates :order, presence: true, uniqueness: {scope: :assignment_id}
-
+  before_save :recompute_grades, if: :avail_score_changed?
   
   class << self
     attr_accessor :delayed_grades
@@ -229,12 +229,12 @@ class Grader < ApplicationRecord
   def assign_attributes(attrs)
     self.upload_by_user_id = attrs[:upload_by_user_id]
     super(attrs)
-    self.recompute_grade_if_avail_score_changed
   end
 
   protected
 
-  def recompute_grade_if_avail_score_changed
+  def recompute_grades
+    # nothing to do by default
   end
 
   def do_grading(assignment, submission)

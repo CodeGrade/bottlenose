@@ -173,7 +173,7 @@ class JunitGrader < Grader
     return 0
   end
 
-  def recompute_grade_if_avail_score_changed
+  def recompute_grades
     # nothing to do:
     # we already compute the score here based on the TAP output
   end

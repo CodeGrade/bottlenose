@@ -40,4 +40,10 @@ class QuestionsGrader < Grader
 
     return g.score
   end
+
+  def recompute_grades
+    self.grades.each do |g|
+      self.do_grading(self.assignment, g.submission) if g.score
+    end
+  end
 end
