@@ -286,6 +286,7 @@ class Submission < ApplicationRecord
     ### A Submission's score is recorded as a percentage
     score = 0.0
     max_score = 0.0
+    max_score_with_ec = 0.0
     log = ""
     self.grades.each do |g|
       return if g.score.nil?
@@ -294,6 +295,7 @@ class Submission < ApplicationRecord
       log += "#{g.grader.type}#{if g.grader.extra_credit then ' (E.C.)' end} => #{grade_component} / #{component_weight}, "
       score += grade_component
       max_score += component_weight unless g.grader.extra_credit
+      max_score_with_ec += component_weight
     end
     plagiarism = InlineComment.where(submission: self, label: "Plagiarism")
     if plagiarism.count > 0
@@ -305,7 +307,8 @@ class Submission < ApplicationRecord
     if self.ignore_late_penalty
       log += "Ignoring late penalty, "
     else
-      self.score = assignment.lateness_config.penalize(self.score, assignment, self)
+      max_pct = 100.0 * (max_score_with_ec.to_f / max_score.to_f)
+      self.score = assignment.lateness_config.penalize(self.score, assignment, self, max_pct)
     end
     log += "Final score: #{self.score}%"
 
