@@ -214,7 +214,7 @@ class TeamsetsController < ApplicationController
   end
   def accept_all_requests
     team_info = custom_params
-    setup_params
+    setup_params(params[:section_id])
     @swat = @others.map{|s| [s.id, s]}.to_h
     count = 0
     failure = []
@@ -247,8 +247,12 @@ class TeamsetsController < ApplicationController
     end
   end
   def reject_all_requests
-    setup_params
-    count = TeamRequest.where(teamset: @teamset).delete_all
+    if params[:section_id]
+      setup_params(params[:section_id])
+      count = TeamRequest.where(teamset: @teamset, user_id: @team_requests.flatten.map(&:id)).delete_all
+    else
+      count = TeamRequest.where(teamset: @teamset).delete_all
+    end      
     redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                   notice: "#{pluralize(@team_requests.count, 'team request')} (#{pluralize(count, 'student')}) rejected"
   end
@@ -285,7 +289,7 @@ class TeamsetsController < ApplicationController
     ans
   end
     
-  def setup_params
+  def setup_params(section_id = nil)
     @teams = @teamset.teams.includes(:users).where(Team.active_query, Date.current, Date.current)
     @others = @teamset.students_without_active_team
     @users = @course.users
@@ -320,6 +324,11 @@ class TeamsetsController < ApplicationController
     @team_requests.uniq!
     @team_requests = @team_requests.map do |names|
       names.map{|name| @users_by_username[name]}
+    end
+    if section_id
+      @team_requests = @team_requests.keep_if do |partners|
+        partners.any?{|p| @sections_by_user[p.reg_id].any?{|rs| rs.section_id.to_i == section_id.to_i}}
+      end
     end
   end
 end

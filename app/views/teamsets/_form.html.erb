@@ -17,9 +17,14 @@
   table#teams.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
   <% end %>
   h3.user-headers.show_one .show_all { display: none; }
+  table#team-requests.show_one .show_all { display: none; }
   <% @course.sections.each do |s| %>
   h3.user-headers .sec_<%= s.crn %> { display: none; }
   h3.user-headers.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: inline-block; }
+  table#team-requests div.sec_<%= s.crn %> { display: none; }
+  table#team-requests.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: inline-block; }
+  table#team-requests.show_one tr.sec_<%= s.crn %> { display: none; }
+  table#team-requests.show_one.sec_<%= s.crn %> tr.sec_<%= s.crn %> { display: table-row; }
   <% end %>
 </style>
 <div class="row">
@@ -107,7 +112,7 @@
     <h4>Filter team requests by section: <select class="sections" data-target="table#team-requests">
         <option value="show_all">Show all sections</option>
         <% @course.sections.each do |s| %>
-        <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
+        <option value="show_one show_<%= s.type %> sec_<%= s.crn %>">Section <%= s.to_s %></option>
         <% end %>
       </select>
     </h4>
@@ -118,29 +123,56 @@
         <th style="vertical-align: middle;">Students</th>
         <th>
           <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
-            <div class="btn btn-success btn-sm">
-            <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_all_requests }) do |f| %>
-            <%= fields_for "custom" do |custom| %>
-            <%= custom.hidden_field "start_date" %>
-            <%= custom.hidden_field "end_date" %>
-            <%= custom.button type: "submit", method: :delete,
-                style: "float: unset;", class: "btn-blank" do %>
-              <span class="glyphicon glyphicon-ok"></span>
-              <span style="padding-left: 1em;">Accept All</span>
+            <div class="btn btn-success btn-sm show_all">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_all_requests }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <%= custom.button type: "submit", method: :delete,
+                  style: "float: unset;", class: "btn-blank" do %>
+                <span class="glyphicon glyphicon-ok"></span>
+                <span style="padding-left: 1em;">Accept All</span>
               <% end %><% end %><% end %>
             </div><% # commenting out the whitespace, so there's no gap...
-          %><div class="btn btn-danger btn-sm">
-            <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_all_requests }) do |f| %>
-            <%= fields_for "custom" do |custom| %>
-            <%= custom.hidden_field "start_date" %>
-            <%= custom.hidden_field "end_date" %>
-            <%= custom.button type: "submit", method: :delete,
-                style: "float: unset;", class: "btn-blank",
-                data: { confirm: "Are you sure you want to reject ALL teammate requests?" } do %>
-              <span class="glyphicon glyphicon-remove"></span>
-              <span style="padding-left: 1em;">Reject All</span>
-            <% end %><% end %><% end %>
+          %><div class="btn btn-danger btn-sm show_all">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_all_requests }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <%= custom.button type: "submit", method: :delete,
+                  style: "float: unset;", class: "btn-blank",
+                  data: { confirm: "Are you sure you want to reject ALL teammate requests?" } do %>
+                <span class="glyphicon glyphicon-remove"></span>
+                <span style="padding-left: 1em;">Reject All</span>
+              <% end %><% end %><% end %>
             </div>
+            <% @course.sections.each do |s| %>
+            <div class="btn btn-success btn-sm show_one sec_<%= s.crn %>">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_all_requests }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <%= hidden_field_tag "section_id", s.id %>
+              <%= custom.button type: "submit", method: :delete,
+                  style: "float: unset;", class: "btn-blank" do %>
+                <span class="glyphicon glyphicon-ok"></span>
+                <span style="padding-left: 1em;">Accept all in section</span>
+              <% end %><% end %><% end %>
+            </div><% # commenting out the whitespace, so there's no gap...
+          %><div class="btn btn-danger btn-sm show_one sec_<%= s.crn %>">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_all_requests }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <%= hidden_field_tag "section_id", s.id %>
+              <%= custom.button type: "submit", method: :delete,
+                  style: "float: unset;", class: "btn-blank",
+                  data: { confirm: "Are you sure you want to reject ALL teammate requests in this section?" } do %>
+                <span class="glyphicon glyphicon-remove"></span>
+                <span style="padding-left: 1em;">Reject all in section</span>
+              <% end %><% end %><% end %>
+            </div>
+            <% end %>
           </div>
         </th>
       </tr>
@@ -168,10 +200,10 @@
             <%= fields_for "custom" do |custom| %>
             <%= custom.hidden_field "start_date" %>
             <%= custom.hidden_field "end_date" %>
-              <% tr.each do |t| %>
-                <%= custom.hidden_field :users, multiple: true, value: t.id %>
-              <% end %>
-              <%= custom.submit "Accept request", style: "float: unset;", class: "btn-blank" %>
+            <% tr.each do |t| %>
+              <%= custom.hidden_field :users, multiple: true, value: t.id %>
+            <% end %>
+            <%= custom.submit "Accept request", style: "float: unset;", class: "btn-blank" %>
             <% end %><% end %>
             </div><% # commenting out the whitespace, so there's no gap...
           %><div class="btn btn-danger btn-sm">
@@ -184,9 +216,9 @@
               <% end %>
               <%= custom.submit "Reject request", style: "float: unset;",
                   data: { confirm: "Are you sure you want to reject this team request?" }, class: "btn-blank" %>
-              <% end %>
-              <% end %>
+              <% end %><% end %>
             </div>
+          </div>
         </td>
       </tr>
       <% end %>
