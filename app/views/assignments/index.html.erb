@@ -61,9 +61,9 @@
             <%= show_score(assn.points_available, assn, true) %>
           </td>
           <% if assn.due_date > now %>
-          <td class="text-muted">N/A</td>
-          <td class="text-muted">N/A</td>
-          <td class="text-muted">N/A</td>
+          <td class="text-muted text-center">N/A</td>
+          <td class="text-muted text-center">N/A</td>
+          <td class="text-muted text-center">N/A</td>
           <% else %>
           <% stat = @stats[assn.id] %>
           <td class="text-right"><%= show_score(stat&.min, assn, true) %>%</td>
