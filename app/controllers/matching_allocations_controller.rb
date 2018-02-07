@@ -296,13 +296,13 @@ class MatchingAllocationsController < ApplicationController
     target_ids.shuffle!
     @count = 0
     reviewers.each do |r|
-      r_users = get_reviewer_users(r)
+      r_users = get_reviewer_users.call(r)
       assoc = []
-      target_ids.each do |t|
-        t = targets[t]
+      target_ids.each do |tid|
+        t = targets_ids_map[tid]
         break if assoc.length == @assignment.review_count
         next if review_counts[t.id].nil?
-        if disjoint_users(r_users, get_target_users(t))
+        if disjoint_users.call(r_users, get_target_users.call(t))
           assoc << t
           review_counts[t.id] += 1
           if review_counts[t.id] == @assignment.review_count
@@ -311,7 +311,7 @@ class MatchingAllocationsController < ApplicationController
         end
       end
       assoc.each do |a|
-        create_matching(r, a)
+        create_matching.call(r, a)
         @count += 1
       end
     end
