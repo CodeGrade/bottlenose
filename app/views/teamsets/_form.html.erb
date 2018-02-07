@@ -2,9 +2,11 @@
   .btn-blank { background-image: none; border: none; background: transparent; padding: initial; }
   <% Section.types.each do |t, _| %>
   table#teams .multi_<%= t %> { display: none; }
+  table#team-requests .multi_<%= t %> { display: none; }
   <% end %>
   <% Section.types.each do |t, _| %>
   table#teams.show_<%= t %> .multi_<%= t %> { display: inline; }
+  table#team-requests.show_<%= t %> .multi_<%= t %> { display: inline; }
   <% end %>
   <% @course.sections.each do |s| %>
   table#team-requests.show_one .sec_<%= s.crn %> { display: none; }
@@ -143,11 +145,22 @@
         </th>
       </tr>
       <% @team_requests.each do |tr| %>
-      <% classes = tr.map do |user|
-           (@sections_by_user[@users[user.id]&.reg_id] || []).map{|sec| "sec_#{@section_crns[sec.section_id]}"}
-         end.flatten.uniq.compact.join(" ") %>
+      <% sections = tr.map do |user|
+           (@sections_by_user[@users[user.id]&.reg_id] || []).map do |sec|
+             [@section_crns[sec.section_id], @section_types[sec.section_id]]
+           end
+         end.flatten(1).uniq.compact
+         hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
+           ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
+         end
+         classes = sections.map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
       <tr class="<%= classes %>">
-        <td><%= tr.map{|u| maybe_link_user(true, u).html_safe}.to_sentence.html_safe %></td>
+        <td>
+          <% hazards.each do |hazard, warning| %>
+          <span class="glyphicon glyphicon-alert <%= hazard %>" title="<%= warning %>"></span>
+          <% end %>
+          <%= tr.map{|u| maybe_link_user(true, u).html_safe}.to_sentence.html_safe %>
+        </td>
         <td>
           <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
             <div class="btn btn-success btn-sm">
