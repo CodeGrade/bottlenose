@@ -30,7 +30,7 @@ class LatenessConfig < ApplicationRecord
     late_days.ceil
   end
 
-  def penalize(score, assignment, submission, max_pct = 100.0)
+  def penalize(score, assignment, submission, max_pct = 100.0, max_pct_with_ec = 100.0)
     # score is [0, max_pct]
     penalty = late_penalty(assignment, submission) # compute penalty in [0, 100]
     #print "Penalty is #{penalty}\n"
@@ -40,7 +40,7 @@ class LatenessConfig < ApplicationRecord
     penalty = penalty * (max_pct / 100.0) # scale to [0, max_pct]
     #print "Penalty is now #{penalty}\n"
     #print "Score is #{score}\n"
-    ans = (score - penalty).clamp(0, max_pct)
+    ans = (score - penalty).clamp(0, max_pct_with_ec)
     #print "Penalized score is #{ans}\n"
     ans
   end

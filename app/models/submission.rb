@@ -288,7 +288,7 @@ class Submission < ApplicationRecord
     max_score = 0.0
     max_score_with_ec = 0.0
     log = ""
-    self.grades.each do |g|
+    self.grades.includes(:grader).each do |g|
       return if g.score.nil?
       component_weight = g.grader.avail_score.to_f
       grade_component = component_weight * (g.score.to_f / g.out_of.to_f)
@@ -308,7 +308,7 @@ class Submission < ApplicationRecord
       log += "Ignoring late penalty, "
     else
       max_pct = 100.0 * (max_score_with_ec.to_f / max_score.to_f)
-      self.score = assignment.lateness_config.penalize(self.score, assignment, self, max_pct)
+      self.score = assignment.lateness_config.penalize(self.score, assignment, self, 100.0, max_pct)
     end
     log += "Final score: #{self.score}%"
 
