@@ -171,6 +171,10 @@ class Grader < ApplicationRecord
     end
   end
 
+  def guess_who_graded(sub)
+    nil
+  end
+
   def upload_file
     if @upload_data
       @upload_data.original_filename

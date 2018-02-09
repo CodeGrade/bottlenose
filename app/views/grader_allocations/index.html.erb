@@ -43,7 +43,7 @@
   <% subs.each do |sub| %>
   <% usernames =  %>
   <% grade = @grades[sub.id] %>
-  <% alloc = @allocations[g][sub.id] %>
+  <% alloc = @allocations.dig(g, sub.id) %>
   <li>
     <%= link_to sub.submission_user_names,
         edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
@@ -65,6 +65,7 @@
       </span>
       <% end %>
     <% else %>
+      <% if alloc.nil? %><span class="text-success">(volunteered)</span><% end %>
       <span class="text-muted"><br>completed <span class="local-time"><%= grade.updated_at.iso8601 %></span></span>
     <% end %>
   </li>

@@ -65,6 +65,12 @@ class CodereviewGrader < Grader
     end
   end
 
+  def guess_who_graded(sub)
+    g = grade_for(sub, true)
+    return nil if g.new_record? || g.grading_output.nil?
+    return User.find_by(id: YAML.load(File.open(g.grading_output))["grader"].to_i)
+  end
+  
   protected
 
   def do_grading(assignment, sub)

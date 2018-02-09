@@ -20,6 +20,12 @@ class ManualGrader < Grader
     "#{self.avail_score} points: Manual grading"
   end
 
+  def guess_who_graded(sub)
+    g = grade_for(sub, true)
+    return nil if g.new_record?
+    return g.inline_comments.first&.user
+  end
+      
 
   protected
 

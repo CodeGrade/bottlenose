@@ -170,6 +170,16 @@ class GradesController < ApplicationController
       alloc.abandoned = false
       alloc.grading_completed = DateTime.now
       alloc.save
+    else
+      GraderAllocation.create!(
+        abandoned: false,
+        who_grades_id: current_user.id,
+        grading_assigned: @assignment.due_date,
+        grading_completed: DateTime.now,
+        course: @course,
+        assignment: @assignment,
+        submission: @submission
+      )        
     end
   end
 
