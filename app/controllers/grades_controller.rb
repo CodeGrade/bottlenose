@@ -170,7 +170,7 @@ class GradesController < ApplicationController
       alloc.abandoned = false
       alloc.grading_completed = DateTime.now
       alloc.save
-    else
+    elsif alloc.nil?
       GraderAllocation.create!(
         abandoned: false,
         who_grades_id: current_user.id,
