@@ -20,10 +20,13 @@ class ManualGrader < Grader
     "#{self.avail_score} points: Manual grading"
   end
 
-  def guess_who_graded(sub)
-    g = grade_for(sub, true)
-    return nil if g.new_record?
-    return g.inline_comments.first&.user
+  def guess_who_graded(subs)
+    grades = Grade.where(grader_id: self.id, submission: subs)
+    comments = InlineComment.where(grade_id: grades.map(&:id))
+               .order(:submission_id)
+               .select("submission_id",
+                       "min(inline_comments.user_id) as user_id").group("submission_id")
+    return comments.map{|c| [c.submission_id, c.user_id]}.to_h
   end
       
 

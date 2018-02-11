@@ -198,7 +198,7 @@ class GraderAllocationsController < ApplicationController
     #   .group_by(&:who_grades_id)
     subs_and_graders =
       @used_subs
-      .includes(:users).includes(team: [:users])
+      .includes(:user).includes(team: [:users])
       .joins("LEFT OUTER JOIN grader_allocations ga ON used_subs.submission_id = ga.submission_id")
       .select("submissions.*", "ga.who_grades_id", "ga.abandoned")
     @who_grades = subs_and_graders.group_by(&:who_grades_id)
@@ -216,9 +216,10 @@ class GraderAllocationsController < ApplicationController
     if @grader
       unknown = @who_grades[nil]
       @who_grades[nil] = []
+      grading_guesses = @grader.guess_who_graded unknown
       unknown.each do |sub|
-        u = @grader.guess_who_graded sub
-        @who_grades[u&.id].push sub # pushes back onto @who_grades[nil] if unknown
+        uid = grading_guesses[sub.id]
+        @who_grades[uid].push sub # pushes back onto @who_grades[nil] if unknown
       end
     end
   end

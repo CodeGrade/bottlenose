@@ -41,11 +41,11 @@
 <h5><%= grader.name %></h5>
 <ul>
   <% subs.each do |sub| %>
-  <% usernames =  %>
+  <% usernames = sub.submission_user_names %>
   <% grade = @grades[sub.id] %>
   <% alloc = @allocations.dig(g, sub.id) %>
   <li>
-    <%= link_to sub.submission_user_names,
+    <%= link_to usernames,
         edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
     <% if grade.score.nil? %>
       <% if alloc.abandoned? %>
