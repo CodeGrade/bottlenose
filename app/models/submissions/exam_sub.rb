@@ -38,6 +38,7 @@ class ExamSub < Submission
     end
     grader = self.assignment.graders.first
     grade_question!(who_graded, num_questions, curved_grade)
+    grader.expect_num_questions(num_questions)
     grader.grade(self.assignment, self)
   end
 
