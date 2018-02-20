@@ -8,7 +8,6 @@ class ExamSub < Submission
       comment.delete unless comment.new_record?
       return nil
     else
-      puts "Question is #{question}"
       comment.update(label: "Exam question",
                      filename: self.assignment.name,
                      severity: InlineComment.severities["info"],
@@ -23,13 +22,20 @@ class ExamSub < Submission
     end
   end
   def set_curved_grade(who_graded, curved_grade = nil)
+    questions = self.assignment.flattened_questions
+    num_questions = questions.count
     if curved_grade.nil? && block_given?
       comments = InlineComment.where(submission: self, suppressed: false).order(:line)
       grades = []
-      comments.each do |c| grades[c.line] = c.weight end
-      curved_grade = yield(grades)
+      comments.each do |c|
+        if questions[c.line]
+          grades[c.line] = {score: c.weight, out_of: questions[c.line]["weight"]}
+        else
+          grades[c.line] = {curved: c.weight}
+        end
+      end
+      curved_grade = yield(num_questions, grades)
     end
-    num_questions = self.assignment.flattened_questions.count
     grader = self.assignment.graders.first
     grade_question!(who_graded, num_questions, curved_grade)
     grader.grade(self.assignment, self)
