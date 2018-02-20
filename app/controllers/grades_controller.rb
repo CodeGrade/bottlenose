@@ -725,24 +725,7 @@ HEADER
       grades = all_grades[student.id]
       flattened = @assignment.flattened_questions
       grades.each_with_index do |g, q_num|
-        comment = InlineComment.find_or_initialize_by(submission_id: @sub.id, grade_id: @grade.id, line: q_num)
-        if g.to_s.empty?
-          if comment.new_record?
-            next # no need to save blanks
-          else
-            comment.delete
-          end
-        else
-          comment.update(label: "Exam question",
-                         filename: @assignment.name,
-                         severity: InlineComment.severities["info"],
-                         user_id: current_user.id,
-                         weight: g,
-                         comment: "",
-                         suppressed: false,
-                         title: "",
-                         info: nil)
-        end
+        @sub.grade_question!(current_user, q_num, g)
       end
       @grader.expect_num_questions(flattened.count)
       @grader.grade(@assignment, @sub)
