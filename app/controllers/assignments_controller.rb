@@ -49,7 +49,9 @@ class AssignmentsController < ApplicationController
   end
 
   def new
-    last_assn = @course.assignments.order(created_at: :desc).first
+    assns = @course.assignments.order(created_at: :desc)
+    last_assns = assns.group_by(&:type).map{|t, as| [t, as.first]}.to_h
+    ["Files", "Exam", "Questions", "Codereview"].each {|type| last_assns[type] ||= assns.first }
     if @assignment.is_a? Files
       @files = @assignment
     else
@@ -57,7 +59,7 @@ class AssignmentsController < ApplicationController
                          due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
                          available: Time.now.strftime("%Y/%m/%d %H:%M"),
                          lateness_config_id: @course.lateness_config_id,
-                         points_available: last_assn&.points_available,
+                         points_available: last_assns["Files"]&.points_available,
                          request_time_taken: true)
     end
 
@@ -68,7 +70,7 @@ class AssignmentsController < ApplicationController
                        due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
                        available: Time.now.strftime("%Y/%m/%d %H:%M"),
                        lateness_config_id: @course.lateness_config_id,
-                       points_available: last_assn&.points_available,
+                       points_available: last_assns["Exam"]&.points_available,
                        request_time_taken: false)
       @exam.graders = [ExamGrader.new(order: 1)]
     end
@@ -80,7 +82,7 @@ class AssignmentsController < ApplicationController
                              due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
                              available: Time.now.strftime("%Y/%m/%d %H:%M"),
                              lateness_config_id: @course.lateness_config_id,
-                             points_available: last_assn&.points_available,
+                             points_available: last_assns["Questions"]&.points_available,
                              request_time_taken: false)
       @quest.graders = [QuestionsGrader.new(order: 1)]
     end
@@ -92,7 +94,7 @@ class AssignmentsController < ApplicationController
                                    due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
                                    available: Time.now.strftime("%Y/%m/%d %H:%M"),
                                    lateness_config_id: @course.lateness_config_id,
-                                   points_available: last_assn&.points_available,
+                                   points_available: last_assns["Codereview"]&.points_available,
                                    request_time_taken: false)
       @codereview.graders = [CodereviewGrader.new(order: 1)]
     end
