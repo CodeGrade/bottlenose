@@ -1,23 +1,26 @@
 <div>
   <ul class="nav nav-tabs">
-    <li <% if @assignment == @files %>class="active"<% end %>><a href="#type-files" data-toggle="tab">Files</a></li>
-    <li <% if @assignment == @quest %>class="active"<% end %>><a href="#type-questions" data-toggle="tab">Questions</a></li>
-    <li <% if @assignment == @codereview %>class="active"<% end %>><a href="#type-codereview" data-toggle="tab">Code Review</a></li>
-    <li <% if @assignment == @exam %>class="active"<% end %>><a href="#type-exam" data-toggle="tab">Exam</a></li>
+    <li><a href="#type-files" data-toggle="tab">Files</a></li>
+    <li><a href="#type-questions" data-toggle="tab">Questions</a></li>
+    <li><a href="#type-codereview" data-toggle="tab">Code Review</a></li>
+    <li><a href="#type-exam" data-toggle="tab">Exam</a></li>
   </ul>
 
   <div class="tab-content">
-    <div id="type-files" class="tab-pane <%= if @assignment == @files; "active" end %>">
+    <div id="type-files" class="tab-pane active">
       <%= render 'files_form', asgn: @files || @assignment %>
     </div>
-    <div id="type-questions" class="tab-pane <%= if @assignment == @quest; "active" end %>">
+    <div id="type-questions" class="tab-pane active">
       <%= render 'questions_form', asgn: @quest || @assignment %>
     </div>
-    <div id="type-codereview" class="tab-pane <%= if @assignment == @codereview; "active" end %>">
+    <div id="type-codereview" class="tab-pane active">
       <%= render 'codereview_form', asgn: @codereview || @assignment %>
     </div>
-    <div id="type-exam" class="tab-pane <%= if @assignment == @exam; "active" end %>">
+    <div id="type-exam" class="tab-pane active">
       <%= render 'exam_form', asgn: @exam || @assignment %>
     </div>
   </div>
+  <script>
+    $(function() { $("a[href='#type-<%= @assignment.type.downcase %>']").click(); });
+  </script>
 </div>
