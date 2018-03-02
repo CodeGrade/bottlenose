@@ -5,12 +5,14 @@
       if (theseComments["noCommentsFor"]) return;
       var cm = $(this).find(".CodeMirror")[0].CodeMirror;
       cm.operation(function() {
-        Object.keys(theseComments).forEach(function(type, _) {
-          var commentsByType = theseComments[type] || {};
-          Object.keys(commentsByType).forEach(function(line, _) {
-            var commentsOnLine = commentsByType[line] || {};
+        Object.keys(theseComments).forEach(function(gradeId, _) {
+          var commentsByGrade = theseComments[gradeId] || {};
+          var type = commentsByGrade.type;
+          delete commentsByGrade.type
+          Object.keys(commentsByGrade).forEach(function(line, _) {
+            var commentsOnLine = commentsByGrade[line] || {};
             commentsOnLine.forEach(function(comment, _) {
-              renderComment(cm, type, line, comment);
+              renderComment(cm, gradeId, type, line, comment);
             });
           });
         });
@@ -19,8 +21,8 @@
   }
   window.renderComments = renderComments;
 
-  function renderComment(cm, type, line, comment) {
-    var widget = $("<div>").addClass(comment.severity).addClass(type);
+  function renderComment(cm, gradeId, type, line, comment) {
+    var widget = $("<div>").addClass(comment.severity).addClass("grade_" + gradeId).addClass(type);
     var table = $("<table>");
     widget.append(table);
     var row = $("<tr>");
@@ -37,7 +39,7 @@
       var deduction = $("<span>").addClass("label label-default")
           .data("toggle", "tooltip").data("placement", "top")
           .attr("title", "This problem would normally deduct " + comment.deduction + " points");
-      if (comment.deduction < 0)
+      if (comment.severity === "Bonus")
         deduction.text("[+" + Math.abs(comment.deduction) + "]");
       else {
         deduction.text("[-" + comment.deduction + "]");
@@ -50,20 +52,23 @@
         icon.addClass("glyphicon-ban-circle").attr("title", "Error");
       else if (comment.severity === "Warning")
         icon.addClass("glyphicon-warning-sign").attr("title", "Warning");
-      else
+      else if (comment.severity === "Info")
         icon.addClass("glyphicon-info-sign").attr("title", "Suggestion");
+      else if (comment.severity === "Bonus")
+        icon.addClass("glyphicon-thumbs-up").attr("title", "Bonus");
+      else
+        icon.addClass("glyphicon-question-sign").attr("title", "Unknown");
       td.append(icon);
-      var deduction = $("<span>").addClass("label label-danger");
-      if (comment.deduction < 0)
-        deduction.text("[+" + Math.abs(comment.deduction) + "]");
-      else {
-        deduction.text("[-" + comment.deduction + "]");
-      }
-      if (comment.deduction < 0)
-        deduction.text("+" + Math.abs(comment.deduction));
+      var deduction = $("<span>").addClass("label");
+      if (comment.severity === "Bonus")
+        deduction.text("+" + Math.abs(comment.deduction)).addClass("label-default");
       else {
         deduction.text("-" + comment.deduction);
-      }    
+        if (comment.severity === 0)
+          deduction.addClass("label-default");
+        else
+          deduction.addClass("label-danger");
+      }
       td.append(deduction);
     }
     td = $("<td>");

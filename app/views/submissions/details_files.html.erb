@@ -8,10 +8,10 @@
 <script>
   <%= render 'submissions/purify.js' %>
 </script>
-<% if @commentType %>
+<% if @commentsFrom %>
 <style>
   div.CodeMirror-linewidget > div { display: none; }
-  div.CodeMirror-linewidget > div.<%= @commentType %> { display: block; }
+  div.CodeMirror-linewidget > div.grade_<%= @commentsFrom %> { display: block; }
 </style>
 <% end %>
 <p>

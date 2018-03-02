@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180211180103) do
+ActiveRecord::Schema.define(version: 20180302211623) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -140,6 +140,7 @@ ActiveRecord::Schema.define(version: 20180211180103) do
     t.index ["filename"], name: "index_inline_comments_on_filename"
     t.index ["grade_id"], name: "index_inline_comments_on_grade_id"
     t.index ["label"], name: "index_inline_comments_on_label"
+    t.index ["severity"], name: "index_inline_comments_on_severity"
     t.index ["submission_id", "grade_id", "line"], name: "index_inline_comments_on_submission_id_and_grade_id_and_line"
     t.index ["submission_id"], name: "index_inline_comments_on_submission_id"
   end

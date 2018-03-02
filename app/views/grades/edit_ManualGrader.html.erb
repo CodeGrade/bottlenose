@@ -83,12 +83,13 @@
 <script>
   var lineComments = <%= raw json_escape(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
   <%= render 'submissions/render_comments.js', sub_dirs: @submission_dirs, vertical: false, root: "all-files" %>
-  <%= render 'grades/enter_comments.js', root: "all-files" %>
+  <%= render 'grades/enter_comments.js', root: "all-files",
+      extra_credit: @grader.extra_credit, grade_id: @grade.id %>
   $(function() {
     var manualComments = [];
     for (var i = 0; i < lineComments.length; i++) {
-      manualComments[i] = lineComments[i].ManualGrader || {};
-      delete lineComments[i].ManualGrader;
+      manualComments[i] = lineComments[i]["<%= @grade.id %>"] || {};
+      delete lineComments[i]["<%= @grade.id %>"];
     }
     renderComments(lineComments);
     $(".file-pane").each(function(index) {
@@ -106,7 +107,7 @@
             if (isEditable)
               insertComment(cm, Number.parseInt(line) - 1, comment);
             else
-              renderComment(cm, "ManualGrader", line, comment);
+              renderComment(cm, "<%= @grade.id %>", "ManualGrader", line, comment);
           });
         });
       });

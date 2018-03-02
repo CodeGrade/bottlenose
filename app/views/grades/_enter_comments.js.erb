@@ -1,6 +1,6 @@
 $(function() {
   var styles = document.getElementById("comment-styles").sheet;
-  var showOurComments = styles.insertRule("div.CodeMirror-linewidget > div.ManualGrader { display: block; }",
+  var showOurComments = styles.insertRule("div.CodeMirror-linewidget > div.grade_<%= @grade.id %> { display: block; }",
                                           styles.cssRules.length);
   var hideOtherComments;
   function hideOthers() {
@@ -24,16 +24,26 @@ $(function() {
     var deductions = 0;
     for (var i = 0; i < commentObjs.length; i++) {
       if (commentObjs[i].shouldDelete) continue;
-      deductions += commentObjs[i].deduction;
+      if (commentObjs[i].severity === "bonus")
+        deductions -= commentObjs[i].deduction;
+      else
+        deductions += commentObjs[i].deduction;
     }
     for (var i = 0; i < inertComments.length; i++) {
-      deductions += inertComments[i].deduction;
+      if (inertComments[i].severity === "bonus")
+        deductions -= inertComments[i].deduction;
+      else
+        deductions += inertComments[i].deduction;
     }
     if (Number.isNaN(deductions)) {
       $("#score").text("??");
       $("input#finalScore").val("");
     } else {
-      var ans = Math.max(maxScore - deductions, 0).toFixed(2);
+      if (<%= extra_credit %>) {
+        var ans = Math.max(0 - deductions, 0).toFixed(2);
+      } else {
+        var ans = Math.max(maxScore - deductions, 0).toFixed(2);
+      }
       $("#score").text(ans);
       $("input#finalScore").val(ans);
     }
@@ -130,7 +140,8 @@ $(function() {
       comment = registerComment(cm, line, comment);
     }
     var i = commentID++;
-    var widget = $("<div>").attr("id", "comment_" + i).addClass("ManualGrader Error form-group");
+    var widget = $("<div>").attr("id", "comment_" + i).addClass("ManualGrader Error form-group")
+        .addClass("grade_<%= grade_id %>");
     widgetsById[comment.id] = widget;
     var table = $("<table>").addClass("container-fluid");
     widget.append(table);
@@ -151,14 +162,11 @@ $(function() {
       widget.removeClass(widget.data("severity"))
         .data("severity", $(this).find(":selected").first().attr("name"))
         .addClass($(this).find(":selected").first().attr("name"));
-      if ($(this).find(":selected").first().attr("name") == "Info") {
-        $(deductionInput).find("input").removeData("min").change();
-      } else {
-        $(deductionInput).find("input").data("min", 0).change();
-      }
+      $(deductionInput).find("input").data("min", 0).change();
       comment.severity = $(this).val();
       comment.saved = false;
       markDirty.apply(categoryInput);
+      updateScore();
     });
     categoryInput.find("option[name='" + comment.severity + "']").first().prop("selected", true);
     categoryInput.trigger("change");

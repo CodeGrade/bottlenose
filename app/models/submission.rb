@@ -177,9 +177,9 @@ class Submission < ApplicationRecord
     end
     comments.group_by(&:filename).map do |filename, byfile|
       [Upload.upload_path_for(filename), byfile.group_by(&:grade_id).map do |grade, bygrade|
-         [config_types[grade], bygrade.group_by(&:line).map do |line, byline|
+         [grade, ([["type", config_types[grade]]] + bygrade.group_by(&:line).map do |line, byline|
             [line, byline.map{|c| c.to_editable_json(comment_author_user)}]
-          end.to_h]
+          end).to_h]
        end.to_h]
     end.to_h
     # self.gradrs.map(&:line_comments).reduce({}, &:merge)
@@ -355,22 +355,32 @@ class Submission < ApplicationRecord
           if comments[:noCommentsFor]
             nil
           elsif @show_deductions
-            comments.reduce(nil) do |sum, (type, commentsByType)|
-              if commentsByType.is_a? String
+            comments.reduce(nil) do |sum, (gradeId, commentsByGradeId)|
+              if commentsByGradeId.is_a? String
                 sum
-              elsif @show_deductions.is_a? String and @show_deductions != type
+              elsif @show_deductions.is_a? Integer and @show_deductions != gradeId
                 sum
               else
-                commentsByType.reduce(sum) do |sum, (line, comments)|
-                  comments.reduce(sum) do |sum, comment|
-                    (sum || 0) - comment[:deduction]
+                commentsByGradeId.reduce(sum) do |sum, (line, comments)|
+                  if line == "type"
+                    sum
+                  else
+                    comments.reduce(sum) do |sum, comment|
+                      if comment[:severity] == "Bonus"
+                        sum.to_f + comment[:deduction]
+                      else
+                        sum.to_f - comment[:deduction]
+                      end
+                    end
                   end
                 end
               end
             end
           end
         { text:
-            if deductions
+            if deductions.to_f > 0
+              "#{item[:path]} (+#{deductions})"
+            elsif deductions
               "#{item[:path]} (#{deductions})"
             else
               item[:path]

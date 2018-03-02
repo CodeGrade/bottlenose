@@ -113,6 +113,7 @@ class GradesController < ApplicationController
                                                                        params[:submission_id]),
                   alert: "No such grader for that submission"
     end
+    @grader = @grade.grader
   end
 
   def do_save_comments(cp, cp_to_comment)
@@ -389,9 +390,9 @@ class GradesController < ApplicationController
   ###################################
   # Grader responses, by grader type
 
-  def show_inline_comment_grader(type)
-    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, type)
-    @commentType = type
+  def show_inline_comment_grader
+    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, @grade.id)
+    @commentsFrom = @grade.id
     if @grade.grading_output
       begin
         @grading_output = File.read(@grade.grading_output)
@@ -428,7 +429,7 @@ HEADER
   
   # JavaStyleGrader
   def show_JavaStyleGrader
-    show_inline_comment_grader "JavaStyleGrader"
+    show_inline_comment_grader
   end
   def edit_JavaStyleGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -524,7 +525,7 @@ HEADER
 
   # RacketStyleGrader
   def show_RacketStyleGrader
-    show_inline_comment_grader "RacketStyleGrader"
+    show_inline_comment_grader
   end
   def edit_RacketStyleGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -617,8 +618,8 @@ HEADER
     show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
     @lineCommentsByFile = @submission.grade_line_comments(current_user, show_hidden)
     @sub_comments = @submission.grade_submission_comments(show_hidden)
-    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, @lineCommentsByFile, "ManualGrader")
-    @commentType = "ManualGrader"
+    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, @lineCommentsByFile, @grade.id)
+    @commentsFrom = @grade.id
     @grading_output = @grade
     render "submissions/details_files"
   end

@@ -262,6 +262,10 @@ div.CodeMirror-linewidget > div.Info {
    background: $alert-info-bg;
 }
 
+div.CodeMirror-linewidget > div.Bonus {
+   background: $alert-success-bg;
+}
+
 li.list-group-item.unvisited {
    background: $alert-danger-bg;
 }

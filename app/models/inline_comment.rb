@@ -2,7 +2,7 @@ class InlineComment < ApplicationRecord
   belongs_to :submission
   belongs_to :user
   belongs_to :grade
-  enum severity: [:error, :warning, :info]
+  enum severity: [:error, :warning, :info, :bonus]
   validates :weight, numericality: true
 
   def upload_filename
@@ -53,6 +53,16 @@ class InlineComment < ApplicationRecord
       ans += self.comment
     else
       self.to_json
+    end
+  end
+
+  def penalty_weight
+    # returns how much *to deduct* from the overall score
+    # (so negative values mean bonuses)
+    if self.severity == "bonus"
+      0 - self.weight
+    else
+      self.weight
     end
   end
 end

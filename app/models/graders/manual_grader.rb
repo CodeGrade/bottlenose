@@ -35,11 +35,15 @@ class ManualGrader < Grader
   def do_grading(assignment, sub)
     g = self.grade_for sub
     comments = InlineComment.where(submission: sub, grade: g, suppressed: false)
-    deductions = comments.pluck(:weight).sum
+    deductions = comments.sum(&:penalty_weight)
 
     g.out_of = self.avail_score
     # TODO: Figure out correct clamping behavior.
-    g.score = self.avail_score - deductions
+    if self.extra_credit?
+      g.score = 0 - deductions
+    else
+      g.score = self.avail_score - deductions
+    end
 
     g.updated_at = DateTime.now
     g.available = false
@@ -53,7 +57,12 @@ class ManualGrader < Grader
       g.out_of = self.avail_score
       comments = InlineComment.where(submission: g.submission, grade: g, suppressed: false)
       if g.score # only update the computation if there's something already done to update
-        g.score = self.avail_score - comments.pluck(:weight).sum
+        deductions = comments.sum(&:penalty_weight)
+        if self.extra_credit?
+          g.score = 0 - deductions
+        else
+          g.score = self.avail_score - deductions
+        end
       end
       g.updated_at = DateTime.now
       g.save!
