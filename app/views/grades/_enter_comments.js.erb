@@ -175,10 +175,10 @@ $(function() {
 
     td.append(
       $("<p>").append($("<label>").attr("for", "severity_" + i)
-                      .text("Severity:")).append(categoryInput));
+                      .text("Comment type:")).append(categoryInput));
     // deductionInput: 
     td.append(
-      $("<p>").append($("<label>").attr("for", "deduction_" + i).text("Deduction:"))
+      $("<p>").append($("<label>").attr("for", "deduction_" + i).text("Points:"))
         .append($("<span>").css({"display": "inline-block", "vertical-align": "bottom"})
                 .append(deductionInput)));
     deductionInput.find("input").on("change", function() {
