@@ -120,7 +120,7 @@ class Course < ApplicationRecord
 
   def staff
     users
-      .where("registrations.role <> #{Registrations::roles["student"]}")
+      .where("registrations.role <> #{Registration::roles["student"]}")
       .where("registrations.dropped_date is null")
   end
 
