@@ -36,7 +36,7 @@
   <h4>There is at least one failed test, but this assignment is not
     going to show you any hints.</h4>
   <% end %>
-  <% @tests.each do |t| %>
+  <% @tests&.each do |t| %>
     <% if t[:passed] %>
       <div class="alert alert-success">
         <p>
