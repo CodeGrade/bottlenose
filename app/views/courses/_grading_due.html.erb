@@ -3,16 +3,16 @@
     <h3 class="panel-title">All pending grading</h3>
   </div>
   <div class="panel-body">
-    <% @pending_grading.each do |assn_id, graders| %>
+    <% @pending_grading.each do |assn_id, sub_grades_groups| %>
     <h4><%= link_to @assignments[assn_id].name,
             course_assignment_path(@course, assn_id) %>
-      (<%= graders.count %> remaining)
+      (<%= sub_grades_groups.count %> remaining)
     </h4>
     <ul>
-      <% graders.group_by(&:id).each do |g_id, gs| %>
-      <% usernames = gs.map(&:user_name).to_sentence %>
+      <% sub_grades_groups.each do |sub_id, gs| %>
+      <% usernames = gs.values.first.map(&:user_name).to_sentence %>
       <li><%= link_to usernames,
-              course_assignment_submission_path(@course, assn_id, gs.first.submission_id) %></li>
+              course_assignment_submission_path(@course, assn_id, sub_id) %></li>
       <% end %>
     </ul>
     <% end %>

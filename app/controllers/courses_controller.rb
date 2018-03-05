@@ -21,12 +21,9 @@ class CoursesController < ApplicationController
   def show
     if current_user_staff_for?(@course)
       @pending_grading = @course.pending_grading
-   else
+    else
       @pending_grading = {}
     end
-    # elsif @registration.staff?
-    #   @pending_grading = []
-    #   @assignments = []
     @allocated_grading = @course.grading_assigned_for(current_user)
     @completed_grading = @course.grading_done_for(current_user)
     @assignments = Assignment

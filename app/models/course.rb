@@ -86,7 +86,7 @@ class Course < ApplicationRecord
   end
 
   def students
-    users.where("registrations.role": RegRequest::roles["student"])
+    users.where("registrations.role": Registration::roles["student"])
   end
 
   def students_with_registrations
@@ -111,16 +111,16 @@ class Course < ApplicationRecord
   end
 
   def professors
-    users.where("registrations.role": RegRequest::roles["professor"])
+    users.where("registrations.role": Registration::roles["professor"])
   end
 
   def graders
-    users.where("registrations.role": RegRequest::roles["grader"])
+    users.where("registrations.role": Registration::roles["grader"])
   end
 
   def staff
     users
-      .where("registrations.role <> #{RegRequest::roles["student"]}")
+      .where("registrations.role <> #{Registrations::roles["student"]}")
       .where("registrations.dropped_date is null")
   end
 
@@ -231,11 +231,15 @@ class Course < ApplicationRecord
   end
 
   def pending_grading
-    # only use submissions that are being used for grading, but this may produce
-    # duplicates for team submissions only pick submissions from this course
-    # only pick non-staff submissions hang on to the assignment id only keep
-    # unfinished graders sort the assignments
-    Grade
+    # only use submissions that are being used for grading
+    # only pick submissions from this course
+    # only pick non-staff submissions
+    # hang on to the assignment id
+    # only keep unfinished graders
+    # sort the assignments
+    # group by assignment and submission id
+    multi_group_by(
+      Grade
       .joins("INNER JOIN used_subs ON grades.submission_id = used_subs.submission_id")
       .joins("INNER JOIN assignments ON used_subs.assignment_id = assignments.id")
       .joins("INNER JOIN registrations ON used_subs.user_id = registrations.user_id")
@@ -245,8 +249,8 @@ class Course < ApplicationRecord
       .distinct.select("users.name AS user_name")
       .where(score: nil)
       .where("registrations.role": Registration::roles["student"])
-      .order("assignments.due_date", "users.name")
-      .group_by{|r| r.assignment_id}
+      .order("assignments.due_date", "users.name"),
+      [:assignment_id, :submission_id, :id])
   end
 
   def abnormal_subs

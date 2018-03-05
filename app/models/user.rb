@@ -195,7 +195,7 @@ class User < ApplicationRecord
   end
 
   def professor_ever?
-    Registration.where(user_id: self.id, role: RegRequest::roles["professor"]).count > 0
+    Registration.where(user_id: self.id, role: Registration::roles["professor"]).count > 0
   end
 
   def course_professor?(course)
