@@ -6,16 +6,12 @@
 
 <div class="panel panel-default">
   <div class="panel-heading">
-    <div class="panel-title" id="assignments" data-toggle="collapse" data-target="#assignments-table">
-      Assignments
-
+    <div class="panel-title" id="assignments" data-toggle="collapse" data-target="#assignments-table"
+         style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+      <span style="flex: 1;">Assignments</span>
       <% if @course&.registered_by?(current_user) %>
-      <div class="pull-right">
-        <%= link_to "New", new_course_assignment_path(@course), class: 'btn btn-xs btn-success' %>
-      </div>
-      <div class="pull-right">
-        <%= link_to "Edit Assignment Weights", weights_course_assignments_path, class: 'btn btn-xs btn-default' %>
-      </div>
+      <div><%= link_to "Edit Assignment Weights", weights_course_assignments_path, class: 'btn btn-sm btn-default' %></div>
+      <div><%= link_to "New", new_course_assignment_path(@course), class: 'btn btn-sm btn-success' %></div>
       <% end %>
     </div>
   </div>
@@ -80,11 +76,14 @@
 
 <div class="panel panel-default">
   <div class="panel-heading">
-    <div class="panel-title" data-toggle="collapse" data-target="#students-table">
-      Students
-      <span id="all-students-count" style="display: none;">(<%= score_summary.count %>)</span>
-      <span id="current-students-count">(<%= score_summary.count{|i| !i[:dropped]} %>)</span>
-      <div id="toggle-dropped" class="pull-right btn-xs btn btn-default">Show dropped students</div>
+    <div class="panel-title" data-toggle="collapse" data-target="#students-table"
+         style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+      <span style="flex: 1;">
+        Students
+        <span id="all-students-count" style="display: none;">(<%= score_summary.count %>)</span>
+        <span id="current-students-count">(<%= score_summary.count{|i| !i[:dropped]} %>)</span>
+      </span>
+      <div id="toggle-dropped" class="btn-sm btn btn-default">Show dropped students</div>
     </div>
   </div>
   <div id="students-table" class="panel-body collapse in hide-dropped">
