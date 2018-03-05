@@ -44,10 +44,15 @@ class InlineComment < ApplicationRecord
       ans += " #{self.title}" if self.title.to_s != ""
       ans += self.label if self.user && (self.user.name != self.label)
       ans += " (#{self.severity.humanize}) "
-      if self.suppressed
-        ans += "[#{0 - self.weight} (ignored)]"
+      if self.severity == "bonus"
+        w = self.weight
       else
-        ans += "[#{0 - self.weight}]"
+        w = 0 - self.weight
+      end
+      if self.suppressed
+        ans += "[#{w} (ignored)]"
+      else
+        ans += "[#{w}]"
       end
       ans += "\n\t"
       ans += self.comment

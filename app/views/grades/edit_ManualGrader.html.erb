@@ -98,6 +98,8 @@
       var cm = $(this).find(".CodeMirror")[0].CodeMirror;
       cm.operation(function() {
         var theseComments = manualComments[index];
+        var type = theseComments.type;
+        delete theseComments.type;
         Object.keys(theseComments).forEach(function(line, _) {
           var commentsOnLine = theseComments[line];
           commentsOnLine.forEach(function(comment, _) {
@@ -107,7 +109,7 @@
             if (isEditable)
               insertComment(cm, Number.parseInt(line) - 1, comment);
             else
-              renderComment(cm, "<%= @grade.id %>", "ManualGrader", line, comment);
+              renderComment(cm, "<%= @grade.id %>", type, line, comment);
           });
         });
       });
