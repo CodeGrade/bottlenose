@@ -22,7 +22,7 @@ class JavaStyleGrader < Grader
   protected
   
   def do_grading(assignment, sub)
-    run_command_produce_tap assignment, sub
+    run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT
   end
   def get_command_arguments(assignment, sub)
     files_dir = sub.upload.extracted_path

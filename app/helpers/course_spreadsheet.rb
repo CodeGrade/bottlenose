@@ -66,7 +66,7 @@ class CourseSpreadsheet < Spreadsheet
           sub = grades.grades[:grades][sub_id.submission_id] unless sub_id.nil?
         rescue Exception => e
           sub = nil
-          Audit.log("Failed in query: #{grades.grades} and #{sub_id and sub_id.submission_id}\n#{e}\n")
+          Audit.log("Failed in query: #{grades.grades} and #{sub_id and sub_id.submission_id}\n#{e}")
         end
         if sub.nil?
           questions.each do |g| sheet.push_row(i, "") end

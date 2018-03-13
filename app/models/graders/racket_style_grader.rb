@@ -36,7 +36,7 @@ class RacketStyleGrader < Grader
       @tmpdir = tmpdir
       sub.upload.extract_contents_to!(nil, Pathname.new(tmpdir), false)
       Headless.ly(display: g.id) do
-        run_command_produce_tap assignment, sub
+        run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT
       end
     end
   end

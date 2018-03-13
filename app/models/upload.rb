@@ -145,7 +145,7 @@ class Upload < ApplicationRecord
     begin
       YAML.load(File.open(metadata_path))
     rescue Exception => e
-      Audit.log("Problems reading metadata for #{metadata_path}: #{e}\n")
+      Audit.log("Problems reading metadata for #{metadata_path}: #{e}")
       {}
     end
   end

@@ -3,6 +3,8 @@ require 'tap_parser'
 require 'audit'
 
 class Grader < ApplicationRecord
+  DEFAULT_COMPILE_TIMEOUT = 60
+  DEFAULT_GRADING_TIMEOUT = 300
   class GradingJob
     # This job class helps keeps track of all jobs that go into the beanstalk system
     # It keeps track of starting times for them, and the arguments passed in.
@@ -237,6 +239,32 @@ class Grader < ApplicationRecord
 
   protected
 
+  def capture3(*cmd, stdin_data: '', binmode: false, timeout: nil, signal: :TERM, **opts)
+    Open3.popen3(*cmd, opts) do |i, o, e, t|
+      if binmode
+        i.binmode
+        o.binmode
+        e.binmode
+      end
+      out_reader = Thread.new { o.read }
+      err_reader = Thread.new { e.read }
+      begin
+        i.write stdin_data
+      rescue Errno::EPIPE
+      end
+      i.close
+      timed_out = false
+      if timeout
+        if !t.join(timeout)
+          timed_out = true
+          Process.kill(signal, t.pid)
+          # t.value below will implicitly .wait on the process
+        end
+      end
+      [out_reader.value, err_reader.value, t.value, timed_out]
+    end
+  end
+
   def recompute_grades
     # nothing to do by default
   end
@@ -254,7 +282,7 @@ class Grader < ApplicationRecord
     g
   end
 
-  def run_command_produce_tap(assignment, sub)
+  def run_command_produce_tap(assignment, sub, timeout: nil)
     g = self.grade_for sub
     u = sub.upload
     grader_dir = u.grader_path(g)
@@ -265,9 +293,9 @@ class Grader < ApplicationRecord
 
     tap_out, env, args, replacements = get_command_arguments(assignment, sub)
 
-    Audit.log("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Command line: #{args.join(' ')}\n")
-    print("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Command line: #{args.join(' ')}\n")
-    output, err, status = Open3.capture3(env, *args)
+    Audit.log("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Timeout: #{timeout || 'unlimited'}.  Command line: #{args.join(' ')}")
+    print("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Timeout: #{timeout || 'unlimited'}.  Command line: #{args.join(' ')}\n")
+    output, err, status, timed_out = capture3(env, *args, timeout: timeout)
     File.open(grader_dir.join(tap_out), "w") do |style|
       replacements&.each do |rep, with|
         output = output.gsub(rep, with)
@@ -275,8 +303,8 @@ class Grader < ApplicationRecord
       style.write(Upload.upload_path_for(output))
       g.grading_output = style.path
     end
-    if !status.success?
-      Audit.log "#{prefix}: #{self.type} checker failed: status #{status}, error: #{err}\n"
+    if timed_out || !status&.success?
+      Audit.log "#{prefix}: #{self.type} checker failed: timed out #{timed_out}, status #{status}, error: #{err}"
       InlineComment.where(submission: sub, grade: g).destroy_all
 
       g.score = 0
@@ -301,7 +329,7 @@ class Grader < ApplicationRecord
       return 0
     else
       tap = TapParser.new(output)
-      Audit.log "#{prefix}: #{self.type} checker results: Tap: #{tap.points_earned}\n"
+      Audit.log "#{prefix}: #{self.type} checker results: Tap: #{tap.points_earned}"
 
       g.score = tap.points_earned
       g.out_of = tap.points_available

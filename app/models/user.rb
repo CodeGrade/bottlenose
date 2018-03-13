@@ -93,7 +93,7 @@ class User < ApplicationRecord
       secret = SecureRandom.urlsafe_base64
       new_file = Upload.base_upload_dir.join("#{secret}_#{self.username}_profile_thumb.jpg")
       type = profile_image_type
-      Audit.log "Making #{new_file} from #{type} #{old_file}\n"
+      Audit.log "Making #{new_file} from #{type} #{old_file}"
       output, err, status = Open3.capture3("convert",
                                            "#{type}:#{old_file}",
                                            "-resize", "200x300",

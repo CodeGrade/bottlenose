@@ -107,12 +107,16 @@ class CheckerGrader < Grader
             Dir.glob("#{build_dir}/**/*.java").each do |file|
               next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
               Audit.log "#{prefix}: Compiling #{file}"
-              comp_out, comp_err, comp_status = Open3.capture3("javac", "-cp", classpath, file,
-                                                               *Dir.glob("#{build_dir}/*.java"),
-                                                               chdir: build_dir.to_s)
+              comp_out, comp_err, comp_status, timed_out = capture3("javac", "-cp", classpath, file,
+                                                                    *Dir.glob("#{build_dir}/*.java"),
+                                                                    chdir: build_dir.to_s,
+                                                                    timeout: Grader::DEFAULT_COMPILE_TIMEOUT)
               details.write("Compiling #{file}: (exit status #{comp_status})\n")
               details.write(comp_out)
-              if !comp_status.success?
+              if timed_out
+                details.write("Compiling #{file}: Compilation timed out after #{Grader::DEFAULT_COMPILE_TIMEOUT} seconds\n")
+              end
+              if timed_out || !comp_status&.success?
                 details.write("Errors building student code:\n")
                 details.write(comp_err)
                 Audit.log("#{prefix}: #{file} failed with compilation errors; see details.log")
@@ -124,16 +128,20 @@ class CheckerGrader < Grader
             # output, status = Open3.capture2("ls", "-R", build_dir.to_s)
             # details.write output
 
-            Audit.log("#{prefix}: Running Checker")
-            test_out, test_err, test_status =
-                                Open3.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000",
-                                               "-cp", classpath, "tester.Main",
-                                               "-secmon", "-tap", "-enforceTimeouts",
-                                               self.test_class,
-                                               chdir: build_dir.to_s)
+            Audit.log("#{prefix}: Running Checker with timeout of #{Grader::DEFAULT_GRADING_TIMEOUT}")
+            test_out, test_err, test_status, timed_out =
+                                             capture3("java", "-XX:MaxJavaStackTraceDepth=1000000",
+                                                      "-cp", classpath, "tester.Main",
+                                                      "-secmon", "-tap", "-enforceTimeouts",
+                                                      self.test_class,
+                                                      chdir: build_dir.to_s,
+                                                      timeout: Grader::DEFAULT_GRADING_TIMEOUT)
             details.write("Checker output: (exit status #{test_status})\n")
             details.write(test_out)
-            if !test_status.success?
+            if timed_out
+              details.write("Running tests timed out after #{Grader::DEFAULT_GRADING_TIMEOUT} seconds")
+            end
+            if timed_out || !test_status&.success?
               details.write("Checker errors:\n")
               details.write(test_err)
               Audit.log("#{prefix}: Checker failed with errors; see details.log")
