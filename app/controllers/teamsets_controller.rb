@@ -72,11 +72,11 @@ class TeamsetsController < ApplicationController
     @all_team_users = TeamUser.where(team: @course_teams).group_by(&:team_id).map{|k, v| [k, v.map(&:user_id)]}.to_h
     @all_teams = @course_teams.map do |t|
       users = @all_users.values_at(*@all_team_users[t.id])
-      [t.id, {assignments: @teamsets_by_id[t.teamset_id],
+      [t.id, {assns: @teamsets_by_id[t.teamset_id],
               from: t.start_date.at_beginning_of_day.iso8601, to: t.end_date&.at_beginning_of_day&.iso8601,
               users: @all_team_users[t.id].sort,
-              description: "Team #{t.id} - #{users.sort_by(&:sort_name).map(&:display_name).to_sentence}",
-              link: course_teamset_team_path(@course, t.teamset_id, t)}]
+              desc: "Team #{t.id} - #{users.sort_by(&:sort_name).map(&:display_name).to_sentence}",
+              ts_id: t.teamset_id}]
     end.to_h
     @active_teams = @course.active_teams.group_by(&:teamset_id).map do |tsid, teams|
       active = {}

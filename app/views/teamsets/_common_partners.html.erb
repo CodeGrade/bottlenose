@@ -70,7 +70,7 @@
   </div>
 </div>
 <script>
-  var allPartners = <%= raw json_escape(JSON.generate(@all_partners)) %>;
+  var allPartners = <%= raw json_escape(JSON.generate(@all_partners).gsub("},", "},\n")) %>;
 
   function teamTD(team) {
     var t = allTeams[team];
@@ -83,7 +83,7 @@
             .data("html", true)
             .tooltip('fixTitle');
     ret.append($("<p>").append(teamLink));
-    var span = $("<span>").text(t.assignments.map(function(n) { return assignmentNames[n]; }).join(", "));
+    var span = $("<span>").text(t.assns.map(function(n) { return assignmentNames[n]; }).join(", "));
     ret.append($("<p>").append(span));
     return ret;
   }  
@@ -98,9 +98,9 @@
     if (allPartners[student1] && allPartners[student1][student2]) {
       allPartners[student1][student2].forEach(function(team) {
         $("#results1 > tbody").append(
-          $("<tr>").append($("<td>").append(showUser(allUsers[student1])))
+          $("<tr>").append($("<td>").append(showUser(student1, allUsers[student1])))
                    .append(teamTD(team))
-                   .append($("<td>").append(showUser(allUsers[student2])))
+                   .append($("<td>").append(showUser(student1, allUsers[student2])))
         );
       });
     }
@@ -114,12 +114,12 @@
               if (s1team === s2team) { return; }
               var older = (allTeams[s1team].from < allTeams[s2team].from);
               $("#results2 > tbody").append(
-                $("<tr>").append($("<td>").append(showUser(allUsers[student1])))
+                $("<tr>").append($("<td>").append(showUser(student1, allUsers[student1])))
                          .append(teamTD(s1team))
-                         .append($("<td>").append(showUser(allUsers[s1partner]))
+                         .append($("<td>").append(showUser(s1partner, allUsers[s1partner]))
                                           .addClass(older ? "older-team" : "newer-team"))
                          .append(teamTD(s2team))
-                         .append($("<td>").append(showUser(allUsers[student2])))
+                         .append($("<td>").append(showUser(student2, allUsers[student2])))
               );
             });
           });
@@ -140,15 +140,15 @@
                   if (sab_team === s2team) { return; }
                   var older_ab = (allTeams[sab_team].from < allTeams[s2team].from);
                   $("#results3 > tbody").append(
-                    $("<tr>").append($("<td>").append(showUser(allUsers[student1])))
+                    $("<tr>").append($("<td>").append(showUser(student1, allUsers[student1])))
                              .append(teamTD(s1team))
-                             .append($("<td>").append(showUser(allUsers[s1partner]))
+                             .append($("<td>").append(showUser(s1partner, allUsers[s1partner]))
                                               .addClass(older_1a ? "older-team" : "newer-team"))
                              .append(teamTD(sab_team))
-                             .append($("<td>").append(showUser(allUsers[sa_partner]))
+                             .append($("<td>").append(showUser(sa_partner, allUsers[sa_partner]))
                                               .addClass(older_ab ? "older-team" : "newer-team"))
                              .append(teamTD(s2team))
-                             .append($("<td>").append(showUser(allUsers[student2])))
+                             .append($("<td>").append(showUser(student2, allUsers[student2])))
                   );
                 });
               });

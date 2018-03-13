@@ -9,14 +9,16 @@
 </style>
 <% @sorted_users = @all_users.sort_by{|uid, u| u.sort_name}.map(&:first)
    @all_users = @all_users.map do |uid, u|
-     [uid, {profile: user_image(u), name: u.display_name, path: user_path(u)}]
+     [uid, {profile: user_image(u), name: u.display_name}]
    end.to_h %>
 <script>
   var assignmentNames = <%= raw json_escape(JSON.generate(@assignment_names)) %>;
-  var allUsers = <%= raw json_escape(JSON.generate(@all_users)) %>;
-  var allTeams = <%= raw json_escape(JSON.generate(@all_teams)) %>;
-  function showUser(u) {
-    return $("<a>").attr("href", u.path).text(u.name).addClass("user-link")
+  var allUsers = <%= raw json_escape(JSON.generate(@all_users).gsub("},", "},\n")) %>;
+  var allTeams = <%= raw json_escape(JSON.generate(@all_teams).gsub("},", "},\n")) %>;
+  var userPath = "<%= user_path(id: '(uid)') %>";
+  var teamPath = "<%= course_teamset_team_path(course_id: @course.id, teamset_id: '(tsid)', id: '(tid)') %>";
+  function showUser(uid, u) {
+    return $("<a>").attr("href", userPath.replace("(uid)", uid)).text(u.name).addClass("user-link")
                    .attr("title", $("<img>").attr("src", u.profile).attr("alt", u.name)
                                             .attr("style", 'max-height: 300px; max-width: 300px;')[0].outerHTML)
                    .data("toggle", "tooltip").data("delay", {show: 0, hide: 250})
@@ -24,7 +26,8 @@
   }
   function linkTeam(tid, terse) {
     if (tid && allTeams[tid]) {
-      return $("<a>").attr("href", allTeams[tid].link).text(terse ? "Team " + tid : allTeams[tid].description);
+      return $("<a>").attr("href", teamPath.replace('(tsid)', allTeams[tid].ts_id).replace('(tid)', tid))
+                     .text(terse ? "Team " + tid : allTeams[tid].desc);
     } else {
       return $("<span>").text("<none>");
     }
