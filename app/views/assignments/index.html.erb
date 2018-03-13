@@ -4,6 +4,19 @@
 <% if @course && (@course.registered_by?(current_user) || current_user.site_admin?) %>
 <% score_summary = @course.score_summary.to_a %>
 
+<style>
+  svg > g:last-child g:last-child > text { cursor: not-allowed; }
+  svg > g:last-child g:last-child > rect { fill: transparent; }
+  svg > g:last-child g:last-child > text[fill="#000000"] {
+    cursor: pointer;
+    fill: #337ab7;
+    text-decoration: underline;
+  }
+  svg > g:last-child g:last-child > text[fill="#000000"]:hover {
+    fill: #23527c;
+  }
+</style>
+
 <div class="panel panel-default">
   <div class="panel-heading">
     <div class="panel-title" id="assignments" data-toggle="collapse" data-target="#assignments-table"
@@ -109,8 +122,9 @@
             <td width="1em"><span><%= mail_to "#{info[:s].name} <#{info[:s].email}>", "@" %></span></td>
             <td><span><%= link_to info[:s].display_name, impersonate_user_path(info[:s]), 
                           method: 'post', class: 'user-link', data: user_link_data(info[:s]) %></span>
-              <% grades = @ordered_assignments.map{|a| info[:used][a.id]&.score || false} %>
-              <p class="hidden" data-grades="<%= raw json_escape(JSON.generate(grades)) %>"></p>
+              <% grades = @ordered_assignments.map{|a| info[:used][a.id]&.score&.round(2) || false} %>
+              <% subs   = @ordered_assignments.map{|a| info[:used][a.id]&.submission_id || ""} %>
+              <p class="hidden" data-grades="<%= raw json_escape(JSON.generate(grades)) %>" data-subs='<%= raw json_escape(JSON.generate(subs)) %>'></p>
             </td>
             <td class="col-md-1"><span class="<%= color_warning(info[:min]) %>"><%= show_score(info[:min], nil, true) %></span></td>
             <td class="col-md-1">

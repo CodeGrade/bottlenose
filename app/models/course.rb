@@ -162,7 +162,7 @@ class Course < ApplicationRecord
         [:first, :second], true)
     subs_by_user = UsedSub.where(user: for_students, assignment: assns)
       .joins(:submission)
-      .select(:user_id, :assignment_id, :score)
+      .select(:user_id, :assignment_id, :score, :submission_id)
       .group_by(&:user_id)
     assns = assns.map{|a| [a.id, a]}.to_h
     extras, regulars = assns.values.partition(&:extra_credit)

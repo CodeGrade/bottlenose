@@ -42,12 +42,15 @@ $(function() {
     widgets: ['uitheme']
   });
   var avgGrades = <%= raw json_escape(JSON.generate(@ordered_assignments.map{|a| [@stats[a.id]&.avg, a.type]})) %>;
+  var assnIds = <%= raw json_escape(JSON.generate(@ordered_assignments.map{|a| a.id})) %>;
   var assnNames = $("#assignments-table tbody td:first-child").map(function() { return $(this).text(); }).get();
+  var routeToSub = "<%= course_assignment_submission_path(course_id: @course.id, assignment_id: '(aid)', id: '(sid)') %>";
   GoogleCharts.load('corechart', function() {
     $("#students-table tbody tr").click(function(e) {
       var $p = $(this).find("p");
       if ($(e.target).closest("p")[0] != $p[0]) { $p.toggleClass("hidden"); }
       var grades = $p.data("grades");
+      var subs = $p.data("subs");
       if (grades === "") return;
       $p.attr("data-grades", ""); $p.data("grades", "");
       var data = new GoogleCharts.api.visualization.DataTable();
@@ -57,6 +60,7 @@ $(function() {
       data.addColumn("number", $(this).find("td:nth-child(2) a").text());
       data.addColumn({type: "string", role: "style"});
       data.addColumn({type: "boolean", role: "certainty"});
+      data.addColumn({type: "string", role: "annotationText"});
       var table = [];
       // since assignments are reversed in table above, load in reversed order
       for (var i = assnNames.length - 1; i >= 0; i--) {
@@ -66,7 +70,7 @@ $(function() {
           style = "point { size: 18, shape-type: star; fill-color: gold; opacity: 1; }";
         }
         if (grades[i] === false) { certainty = false; grades[i] = 0; }
-        table.push([assnNames[i], avgGrades[i][0], style, grades[i], style, certainty]);
+        table.push([assnNames[i], avgGrades[i][0], style, grades[i], style, certainty, String(subs[i])]);
       }
       data.addRows(table);
       var chart = new GoogleCharts.api.visualization.LineChart($p[0]);
@@ -75,10 +79,30 @@ $(function() {
         interpolateNulls: false,
         chartArea: {left: 30, bottom: 60, top: 20, width: '100%'},
         focusTarget: 'category',
+        tooltip: { trigger: "selection" },
         //        backgroundColor: 'transparent',
         hAxis: { slantedText: true },
         vAxis: { minValue: 0, maxValue: 100 }
       };
+      chart.setAction({
+        id: "goToSubmission",
+        text: "Open submission in new tab",
+        action: function() {
+          var sel = chart.getSelection()[0];
+          var subId = data.getValue(sel.row, 6);
+          var assnId = assnIds[assnIds.length - sel.row - 1];
+          var sUrl = routeToSub.replace("(aid)", assnId).replace("(sid)", subId);
+          console.log(sUrl);
+          window.open(sUrl, "_blank");
+        },
+        enabled: function() {
+          var sel = chart.getSelection()[0];
+          if (sel) {
+            return !!(data.getValue(sel.row, 6));
+          }
+          return false;
+        }
+      });
       chart.draw(data, options);
     });
   });
