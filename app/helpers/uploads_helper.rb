@@ -26,6 +26,12 @@ module UploadsHelper
       PROCS[ext]&.call(extracted_path, f)
     end
 
+    def self.no_files_found(extracted_path)
+      File.open(extracted_path.join("no_files.txt"), "w") do |f|
+        f.write "This is an automated message:\nNo files were found in this submission"
+      end
+    end
+
     create_handler :rkt do |extracted_path, f|
       embeds = extracted_path.dirname.join("embedded")
       embeds.mkpath

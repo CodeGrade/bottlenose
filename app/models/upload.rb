@@ -79,11 +79,14 @@ class Upload < ApplicationRecord
     extracted_path.mkpath
     ArchiveUtils.extract(submission_path.to_s, mimetype, extracted_path.to_s)
     return unless postprocess
+    found_any = false
     Find.find(extracted_path) do |f|
       next unless File.file? f
+      found_any = true
       next if File.extname(f).empty?
       Postprocessor.process(extracted_path, f)
     end
+    Postprocessor.no_files_found(extracted_path) unless found_any
   end
 
   def upload_dir
