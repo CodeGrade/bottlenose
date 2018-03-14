@@ -12,7 +12,7 @@ class Team < ApplicationRecord
   validate :end_not_before_start
   validate :all_enrolled
 
-  before_save :delete_team_requests
+  before_create :delete_team_requests
 
   def to_s
     "Team #{self.id} - #{self.member_names}"
