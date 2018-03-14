@@ -236,11 +236,15 @@
       <%= rand.hidden_field "start_date" %>
       <%= rand.hidden_field "end_date" %>
       <span class="col-sm-4">Generate random teams of size <%= rand.spinner "size", 2, :min => 2, :max => 10 %></span>
-      <span class="col-sm-4">
+      <span class="col-sm-8">
         Match team members:
         <%= rand.select "teams_within",
-            options_for_select([["Within whole course", "course"]] +
-            @course.section_types.map{|t, v| ["Within #{t.pluralize(2)}", t]}) %>
+            grouped_options_for_select([
+            ["Create teams for the whole course",
+              [["From anywhere in the course", "course"]] +
+               @course.section_types.map{|t, v| ["From within the same #{t} section", t]}],
+            ["Create teams for an individual section",
+              @course.sections.map{|s| ["Section #{s}", s.crn.to_s]}]]) %>
       </span>
     </div>
     <p class="col-sm-12">

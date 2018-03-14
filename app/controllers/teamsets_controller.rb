@@ -159,12 +159,17 @@ class TeamsetsController < ApplicationController
   end
   
   def randomize
-    count = @teamset.randomize(params[:random][:size].to_i,
-                               params[:random][:teams_within],
-                               params[:random][:start_date],
-                               params[:random][:end_date])
-    redirect_back fallback_location: course_teamsets_path(@course),
-                  notice: "#{pluralize(count, 'random team')} created"
+    begin
+      count = @teamset.randomize(params[:random][:size].to_i,
+                                 params[:random][:teams_within],
+                                 params[:random][:start_date],
+                                 params[:random][:end_date])
+      redirect_back fallback_location: course_teamsets_path(@course),
+                    notice: "#{pluralize(count, 'random team')} created"
+    rescue ArgumentError => e
+      redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                    alert: "Could not create teams: #{e}"
+    end
   end
 
   def clone

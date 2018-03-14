@@ -35,7 +35,7 @@ class Teamset < ActiveRecord::Base
     case within_section
     when "course"
       grouped_students_to_team = [students_without_active_team]
-    else
+    when "lecture", "lab", "recitation", "online"
       unteamed_students = students_without_active_team
       reg_sections = RegistrationSection.where(registration_id: unteamed_students.map(&:reg_id)).group_by(&:section_id)
       sections = self.course.sections.group_by(&:type)
@@ -43,6 +43,12 @@ class Teamset < ActiveRecord::Base
       grouped_students_to_team = sections[within_section].map do |s|
         students_by_reg.values_at(*reg_sections[s.id]&.map(&:registration_id))
       end
+    else
+      section = self.course.sections.find_by(crn: within_section)
+      if section.nil?
+        raise ArgumentError, "No section with CRN '#{within_section}' within this course"
+      end
+      grouped_students_to_team = [users_without_active_team(section.active_students)]
     end
     leftovers = []
     grouped_students_to_team.each do |students_to_team|

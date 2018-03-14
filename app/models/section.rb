@@ -31,4 +31,39 @@ class Section < ApplicationRecord
   def prof_name=(username)
     self.instructor = User.find_by(username: username)
   end
+
+  def students
+    users.where("registrations.role": Registration::roles["student"])
+  end
+
+  def students_with_registrations
+    students.joins("JOIN registration_sections ON registrations.id = registration_sections.registration_id")
+      .joins("JOIN sections ON registration_sections.section_id = sections.id")
+  end
+
+  def users_with_drop_info
+    self.course.users_with_drop_info(self.users)
+  end
+
+  def students_with_drop_info
+    self.course.users_with_drop_info(self.students)
+  end
+
+  def active_students
+    self.students_with_drop_info.where("registrations.dropped_date": nil)
+  end
+
+  def professors
+    users.where("registrations.role": Registration::roles["professor"])
+  end
+
+  def graders
+    users.where("registrations.role": Registration::roles["grader"])
+  end
+
+  def staff
+    users
+      .where("registrations.role <> #{Registration::roles["student"]}")
+      .where("registrations.dropped_date is null")
+  end
 end
