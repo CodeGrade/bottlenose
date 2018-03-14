@@ -140,8 +140,8 @@ $(function() {
         <% teams.to_a.in_groups_of(10).each do |teams| %>
           <% teams.compact.each do |uid, tid| %><%= uid %>: <%= tid %>, <% end %>
         <% end %>
+        },
       <% end %>
-      },
   };
   $("#diff-teamsets select").change(function() {
     $("#diff-table > tbody > tr").remove();
