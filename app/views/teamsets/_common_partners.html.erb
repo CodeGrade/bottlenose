@@ -8,8 +8,8 @@
           <option value="lastname">By last name</option>
         </select>
       </div>
-      <div class="col-sm-12" id="student-selection">
-        <select id="student1" class="col-md-5">
+      <div class="col-sm-12" id="student-selection" style="display: flex; align-items: center;">
+        <select id="student1" style="flex: 5;">
           <option value="noone">&lt;No one&gt</option>
           <% @all_users.each do |uid, u| %>
           <option value="<%= uid %>"
@@ -18,8 +18,8 @@
                   data-displayname="<%= u.display_name %>"></option>
           <% end %>
         </select>
-        <span class="col-md-2 text-center">with</span>
-        <select id="student2" class="col-md-5">
+        <span class="text-center" style="flex: 2;">with</span>
+        <select id="student2" style="flex: 5;">
         </select>
       </div>
     </div>
