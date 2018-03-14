@@ -9,9 +9,6 @@
         </select>
         <span class="col-md-2 text-center">with</span>
         <select id="teamset2" class="col-md-5">
-          <% @assignments_to_teamsets.each do |aid, (aname, tsid)| %>
-          <option value="<%= tsid %>"><%= aname %></option>
-          <% end %>
         </select>
       </div>
     </div>
@@ -33,33 +30,4 @@
   </div>
 </div>
 <script>
-  var assnToTeamsets = <%= raw json_escape(JSON.generate(@assignments_to_teamsets).gsub("},", "},\n")) %>;
-  var activeTeams = <%= raw json_escape(JSON.generate(@active_teams).gsub("},", "},\n")) %>;
-  $("#diff-teamsets select").change(function() {
-    $("#diff-table > tbody > tr").remove();
-    var ts1 = $("#teamset1").val();
-    var ts2 = $("#teamset2").val();
-    if (ts1 == ts2) return;
-    for (var uid in allUsers) {
-      var t1 = activeTeams[ts1][uid];
-      var t2 = activeTeams[ts2][uid];
-      var userChanged = false;
-      if (t1 === undefined && t2 === undefined) {
-        // skip
-      } else if (t1 === undefined || t2 === undefined) {
-        userChanged = true;
-      } else {
-        var u1 = allTeams[t1].users.join(",");
-        var u2 = allTeams[t2].users.join(",");
-        userChanged = (u1 != u2);
-      }
-      if (userChanged) {
-        $("#diff-table > tbody").append(
-          $("<tr>").append($("<td>").append(linkTeam(t1, false)))
-                   .append($("<td>").append(showUser(uid, allUsers[uid])))
-                   .append($("<td>").append(linkTeam(t2, false)))
-        );
-      }
-    }
-  });
 </script>

@@ -57,7 +57,7 @@ class TeamsetsController < ApplicationController
   end
 
   def investigate
-    @assignments_to_teamsets = @course.assignments.where(team_subs: true).map do |a|
+    @assignments_to_teamsets = @course.assignments.where(team_subs: true).order(due_date: :desc).map do |a|
       [a.id, [a.name, a.teamset_id]]
     end.to_h
     @teamsets_by_id = {}
