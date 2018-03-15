@@ -60,7 +60,7 @@
             <% if current_user.site_admin? || cur_reg&.professor? %>
               <%= link_to "Grader info", stats_course_grades_path(@course), class: "btn btn-sm btn-default" %>
             <% end %>
-            <% if current_user.site_admin? || cur_reg&.assistant? %>
+            <% if current_user.site_admin? || cur_reg&.staff? %>
               <%= link_to "Student Facebook", facebook_course_path(@course), class: "btn btn-sm btn-default" %>
             <% end %>
             <% if current_user.site_admin? || cur_reg&.professor? %>

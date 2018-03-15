@@ -1,5 +1,6 @@
 <% @page_title = @course.name %>
 <% @sections = @course.sections %>
+<% cur_reg = current_user.registration_for(@course) %>
 
 <style>
   <% @sections.each do |s| %>
@@ -47,8 +48,13 @@
     <div class="col-md-2 text-center <%= @sections_by_student[s.reg_id].map{|sec| "sec_#{@section_crns[sec.section_id]}"}.join(" ") %>">
       <%= image_tag Upload.upload_path_for(s.profile || "silhouette.jpg"), 
           alt: s.display_name, style: "max-height: 200px; max-width: 100%;" %>
+      <% if current_user.site_admin? || cur_reg&.professor? %>
       <p><%= link_to s.display_name, user_path(s) %></p>
-      <% if s.dropped_date %><p>(withdrawn <%= s.dropped_date %>)</p><% end %>
+      <% if s.dropped_date %><p>(withdrawn <span class="local-time"><%= s.dropped_date.iso8601 %></span>)</p><% end %>
+      <% else %>
+      <p><%= s.display_name %></p>
+      <% if s.dropped_date %><p>(withdrawn)</p><% end %>
+      <% end %>
     </div>
     <% end %>
   </div>
