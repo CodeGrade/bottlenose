@@ -16,7 +16,7 @@
 <% sub_files.each_with_index do |f, i| %>
 <% index = (i + 1).to_s.rjust(sub_files.count.to_s.length, '0') %>
 <div class="file-pane tab-pane panel-tab-pane <%= if i == 0; 'active' end %>" id="file_<%= index %>_<%= root %>">
-  <% if f[:type] == "image" %>
+  <% if f[:type].starts_with?("image") %>
   <div class="nonCMwrapper" style="position: relative; display: inline-block;">
     <%= image_tag f[:link], id: "image_#{index}", alt: f[:name], style: "max-width: 100%; max-height: 100%;",
         skip_pipeline: true %>
