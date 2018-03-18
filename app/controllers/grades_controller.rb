@@ -4,7 +4,8 @@ class GradesController < ApplicationController
   before_action :find_course
   before_action :find_assignment
   before_action :find_submission, except: [:bulk_edit, :bulk_update]
-  before_action :find_grade
+  before_action :find_grade, except: [:bulk_edit, :bulk_update]
+  before_action :find_grader, only: [:bulk_edit, :bulk_update]
   before_action -> {
     require_admin_or_staff(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
                            : course_assignment_path(@course, @assignment))
@@ -114,6 +115,19 @@ class GradesController < ApplicationController
                   alert: "No such grader for that submission"
     end
     @grader = @grade.grader
+  end
+
+  def find_grader
+    @grader = Grader.find_by(id: params[:id])
+    if @grader.nil?
+      redirect_to course_assignment_path(params[:course_id], params[:assignment_id]),
+                  alert: "No such grader"
+      return
+    elsif @grader.assignment_id != @assignment.id
+      redirect_to course_assignment_path(params[:course_id], params[:assignment_id]),
+                  alert: "No such grader for that assignment"
+      return
+    end
   end
 
   def do_save_comments(cp, cp_to_comment)
@@ -263,7 +277,6 @@ class GradesController < ApplicationController
           end
         when "setGrades"
           sub = @assignment.used_sub_for(User.find(params[:user_id]))
-          @grader = @assignment.graders.first # and only config
           config = Grade.find_by(grader_id: @grader.id, submission_id: sub.id) if sub
           if (config && (config.updated_at > Time.parse(params[:timestamp])))
             render :json => {existingTimestamp: config.updated_at, yourTimestamp: params[:timestamp]},
