@@ -176,16 +176,8 @@
           </div>
         </th>
       </tr>
-      <% @team_requests.each do |tr| %>
-      <% sections = tr.map do |user|
-           (@sections_by_user[@users[user.id]&.reg_id] || []).map do |sec|
-             [@section_crns[sec.section_id], @section_types[sec.section_id]]
-           end
-         end.flatten(1).uniq.compact
-         hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
-           ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
-         end
-         classes = sections.map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
+      <% @team_requests.each do |tr, sections, hazards, history| %>
+      <% classes = sections.map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
       <tr class="<%= classes %>">
         <td>
           <% hazards.each do |hazard, warning| %>
@@ -195,7 +187,21 @@
         </td>
         <td>
           <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
-            <div class="btn btn-success btn-sm">
+            <% if !history.empty? %>
+            <div class="btn btn-info btn-sm dropdown">
+              <div class="dropdown-toggle" data-toggle="dropdown"
+                   title="Some of these team members have been partners before">
+                <i class="glyphicon glyphicon-question-sign"></i>
+                <span class="caret"></span>
+              </div>
+              <ul class="dropdown-menu dropdown-menu-right">
+                <% history.each do |info, link| %>
+                <li><%= link_to info, link, target: "_blank" %></li>
+                <% end %>
+              </ul>
+            </div>
+            <% end # commenting out the whitespace, so there's no gap...
+          %><div class="btn btn-success btn-sm">
             <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_request }) do |f| %>
             <%= fields_for "custom" do |custom| %>
             <%= custom.hidden_field "start_date" %>
@@ -374,14 +380,7 @@
       </thead>
       <tbody>
         <% @teams.each do |team| %>
-        <% sections = team.users.map do |user|
-             (@sections_by_user[@users[user.id]&.reg_id] || []).map do |sec|
-               [@section_crns[sec.section_id], @section_types[sec.section_id]]
-             end
-           end.flatten(1).uniq.compact
-           hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
-             ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
-           end
+        <% sections, hazards = @team_info[team.id]
            classes = sections.map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
         <tr class="<%= classes %>">
           <td>

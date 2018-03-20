@@ -224,7 +224,7 @@ class TeamsetsController < ApplicationController
     count = 0
     failure = []
     team = nil
-    @team_requests.each do |req|
+    @team_requests.each do |req, _, _, _|
       in_teams = req.select{|s| @swat[s.id].nil?}
       begin
         if in_teams.empty?
@@ -254,10 +254,12 @@ class TeamsetsController < ApplicationController
   def reject_all_requests
     if params[:section_id]
       setup_params(params[:section_id])
-      count = TeamRequest.where(teamset: @teamset, user_id: @team_requests.flatten.map(&:id)).delete_all
+      user_ids = @team_requests.map(&:first).flatten(1).map(&:id)
+      count = TeamRequest.where(teamset: @teamset, user_id: user_ids).delete_all
     else
+      setup_params
       count = TeamRequest.where(teamset: @teamset).delete_all
-    end      
+    end
     redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                   notice: "#{pluralize(@team_requests.count, 'team request')} (#{pluralize(count, 'student')}) rejected"
   end
@@ -295,7 +297,8 @@ class TeamsetsController < ApplicationController
   end
     
   def setup_params(section_id = nil)
-    @teams = @teamset.teams.includes(:users).where(Team.active_query, Date.current, Date.current)
+    @all_teams_for_course = @course.teams.includes(:users)
+    @teams = @all_teams_for_course.where(teamset: @teamset).where(Team.active_query, Date.current, Date.current)
     @others = @teamset.students_without_active_team
     @users = @course.users
                 .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
@@ -315,7 +318,7 @@ class TeamsetsController < ApplicationController
     @section_types = @course.sections.map{|sec| [sec.id, sec.type]}.to_h
     @team_requests = []
     # To compute the cliques among team requests, map each student to the set of usernames they requested
-    all_requests = @teamset.team_requests.map{|tr| [tr.user.username, tr.partners.to_set]}.to_h
+    all_requests = @teamset.team_requests.map{|tr| [@users[tr.user_id].username, tr.partners.to_set]}.to_h
     # Ensure each set of partners contain the requesting student's name
     all_requests.each do |un, partners|
       partners << un
@@ -335,5 +338,56 @@ class TeamsetsController < ApplicationController
         partners.any?{|p| @sections_by_user[p.reg_id].any?{|rs| rs.section_id.to_i == section_id.to_i}}
       end
     end
+    @teams_by_user = {}
+    @all_teams_for_course.each do |team|
+      team.users.each do |u|
+        @teams_by_user[u.id] ||= [].to_set
+        @teams_by_user[u.id] << team
+      end
+    end
+    @worked_together = {}
+    @team_requests.each do |tr|
+      tr.each do |u|
+        tr.each do |partner|
+          next if u == partner
+          next unless @teams_by_user[u.id] && @teams_by_user[partner.id]
+          common = @teams_by_user[u.id] & @teams_by_user[partner.id]
+          next if common.empty?
+          @worked_together ||= {}
+          @worked_together[u.id] ||= {}
+          @worked_together[u.id][partner.id] = common
+        end
+      end
+    end
+    @team_requests = @team_requests.map do |tr|
+      sections = tr.map do |user|
+        (@sections_by_user[@users[user.id]&.reg_id] || []).map do |sec|
+          [@section_crns[sec.section_id], @section_types[sec.section_id]]
+        end
+      end.flatten(1).uniq.compact
+      hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
+        ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
+      end
+      history = []
+      tr.combination(2).each do |user, partner|
+        if @worked_together.dig(user.id, partner.id)
+          history << ["#{[user.display_name, partner.display_name].to_sentence}",
+                      investigate_course_teamsets_path(@course, @teamset,
+                                                       anchor: "common_partners:student1=#{user.id}:student2=#{partner.id}")]
+        end
+      end
+      [tr, sections, hazards, history]
+    end
+    @team_info = @teams.map do |team|
+      sections = team.users.map do |user|
+        (@sections_by_user[@users[user.id]&.reg_id] || []).map do |sec|
+          [@section_crns[sec.section_id], @section_types[sec.section_id]]
+        end
+      end.flatten(1).uniq.compact
+      hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
+        ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
+      end
+      [team.id, [sections, hazards]]
+    end.to_h
   end
 end
