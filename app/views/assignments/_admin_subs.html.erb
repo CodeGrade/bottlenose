@@ -1,6 +1,6 @@
 <% cur_reg = current_user.registration_for(@course) %>
 <% cur_user_prof_ever = current_user.professor_ever? %>
-<% if cur_user_prof_ever || cur_reg&.assistant? %>
+<% if cur_user_prof_ever || cur_reg&.staff? %>
 <style>
   <% @course.sections.each do |s| %>
   #submissions.show_one .sec_<%= s.crn %> { display: none; }
@@ -102,6 +102,8 @@
 <% else %>
 <% if cur_user_prof_ever || cur_reg&.assistant? %>
 <%= render "grade_distribution" %>
+<% end %>
+<% if cur_user_prof_ever || cur_reg&.staff? %>
 <h4>Select a section: <select id="sections">
     <option value="show_all">Show all sections</option>
     <% @course.sections.each do |s| %>
