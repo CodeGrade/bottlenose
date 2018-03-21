@@ -237,7 +237,7 @@
       });
       $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
     });
-    <% if cur_user_prof_ever || cur_reg&.assistant? %>
+    <% if cur_user_prof_ever || cur_reg&.staff? %>
     $(function() {
       var prevSection = "show_all";
       $("#sections").change(function(e) {
