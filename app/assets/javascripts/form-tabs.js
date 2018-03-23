@@ -75,6 +75,7 @@ window.form_tabs_init = function (tabs_div) {
       });
     }
 
+    panes.addClass("active");
     top.find(".nav-tabs a").each(function(_ii, lnk) {
         var tab = $(lnk).data('tab');
         if (tab == val0) {
