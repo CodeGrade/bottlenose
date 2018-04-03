@@ -20,12 +20,28 @@ class TeamsetsController < ApplicationController
   # GET /staff/courses/:course_id/teams
   def index
     if current_user_site_admin? || current_user_staff_for?(@course)
-      @teams = @course.teams
+      @teams = @course.teams.includes(:users).order(end_date: :desc, id: :asc)
+      @sections_by_user = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
+      @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
+      @section_types = @course.sections.map{|sec| [sec.id, sec.type]}.to_h
+      @users = @course.users
+               .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
+               .map{|s| [s.id, s]}.to_h
+      @team_info = @teams.map do |team|
+        sections = team.users.map do |user|
+          (@sections_by_user[@users[user.id]&.reg_id] || []).map do |sec|
+            [@section_crns[sec.section_id], @section_types[sec.section_id]]
+          end
+        end.flatten(1).uniq.compact
+        hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
+          ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
+        end
+        [team.id, [sections, hazards]]
+      end.to_h
     else
-      @teams = current_user.teams.where(course: @course)
+      @teams = current_user.teams.where(course: @course).includes(:users).order(end_date: :desc, id: :asc)
     end
-    @teams = multi_group_by(@teams.includes(:users).order(end_date: :desc, id: :asc),
-                            [:course_id, :teamset_id])
+    @teams = multi_group_by(@teams, [:course_id, :teamset_id])
   end
 
   def edit

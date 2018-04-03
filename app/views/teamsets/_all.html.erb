@@ -7,28 +7,46 @@
 <% next unless (!expired) || (@teams[course.id] && teams.length != 0) %>
 <% no_active = false %>
 <<%= tag %>
-     <% if expired %>
-     class="team-heading collapsed" data-toggle="collapse" data-target="#assn_<%= a.id %>"
-     <% else %>
-     class="team-heading"
-     <% end %>>
+     class="team-heading <% if expired %>collapsed<% end %>"
+     data-toggle="collapse" data-target="#assn_<%= a.id %>">
     Teams for <%= a.name %>
     <% if admin && editable %>
     <%= link_to "Edit Teams", edit_course_teamset_path(course, a.teamset),
         class: "pull-right btn btn-success" %>
     <% end %>
-    <% if expired %>
     <i class="glyphicon glyphicon-chevron-down"></i>
     <i class="glyphicon glyphicon-chevron-up"></i>
-    <% elsif editable %>
+    <% if editable %>
     <%= link_to "Request teammates",
         course_teamset_team_requests_path(course, a.teamset), class:
         "pull-right btn btn-info" %>
     <% end %>
 </<%= tag %>>
-<div id="assn_<%= a.id %>" <% if expired %>class="collapse"<% end %>>
-<%= render "teamsets/table", teams: teams, id: "assn_#{a.id}_#{a.teamset_id}" %>
+<div id="assn_<%= a.id %>" class="collapse <% if !expired %>in<% end %>">
+  <% if admin && @team_info %>
+  <div class="col-md-12 text-center">
+    <h4>
+      Filter team requests by section: <select class="sections" data-target="table#assn_<%= a.id %>_<%= a.teamset_id %>">
+        <option value="show_all">Show all sections</option>
+        <% course.sections.each do |s| %>
+        <option value="show_one show_<%= s.type %> sec_<%= s.crn %>">Section <%= s.to_s %></option>
+        <% end %>
+      </select>
+    </h4>
+  </div>
+  <% end %>
+<%= render "teamsets/table", teams: teams, id: "assn_#{a.id}_#{a.teamset_id}", admin: admin %>
 </div>
+<script>
+  $("div#assn_<%= a.id %> select.sections").each(function() {
+    $(this).data("prevSection", "show_all");
+  });
+  $("div#assn_<%= a.id %> select.sections").change(function(e) {
+    var thisSelect = $(this);
+    $(thisSelect.data("target")).removeClass(thisSelect.data("prevSection")).addClass(thisSelect.val());
+    thisSelect.data("prevSection", thisSelect.val());
+  });
+</script>
 <% end %>
 <% if no_active %>
 <<%= tag %> class="team-heading">No active teams</<%= tag %>>

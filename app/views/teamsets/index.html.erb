@@ -7,7 +7,25 @@
   h3.collapsed i.glyphicon-chevron-up { display: initial; }
   h3.collapsed i.glyphicon-chevron-down { display: none; }
 </style>
-
+<style>
+  <% Section.types.each do |t, _| %>
+  table[id^="assn_"] .multi_<%= t %> { display: none; }
+  <% end %>
+  <% Section.types.each do |t, _| %>
+  table[id^="assn_"].show_<%= t %> .multi_<%= t %> { display: inline; }
+  <% end %>
+  <% @course.sections.each do |s| %>
+  table[id^="assn_"].show_one .sec_<%= s.crn %> { display: none; }
+  table[id^="assn_"].show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  <% end %>
+  table[id^="assn_"].show_one .show_all { display: none; }
+  <% @course.sections.each do |s| %>
+  table[id^="assn_"] div.sec_<%= s.crn %> { display: none; }
+  table[id^="assn_"].show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: inline-block; }
+  table[id^="assn_"].show_one tr.sec_<%= s.crn %> { display: none; }
+  table[id^="assn_"].show_one.sec_<%= s.crn %> tr.sec_<%= s.crn %> { display: table-row; }
+  <% end %>
+</style>
 <% if cur_reg&.staff? %>
 <%= link_to "Investigate Partners",
     investigate_course_teamsets_path(@course),
