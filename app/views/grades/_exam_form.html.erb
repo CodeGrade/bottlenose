@@ -159,6 +159,7 @@
               <td>Problem <%= q_num + 1 %>: <%= q["name"] %><% if q["extra"] %> (Extra Credit)<% end %></td>
               <% if q["parts"] %>
               <td></td>
+              <td></td>
               <% else %>
               <td>
                 <%= spinner_tag "question[#{i}]", "",
