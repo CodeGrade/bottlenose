@@ -109,6 +109,6 @@ class Exam < Assignment
   end
 
   def sections
-    [{name: "", count: self.questions.count}]
+    [{name: "", count: self.flattened_questions.count}]
   end
 end
