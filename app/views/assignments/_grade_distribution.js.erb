@@ -55,10 +55,11 @@ GoogleCharts.load('corechart', function() {
         transposed[i][j] = data[j][i] === undefined ? null : data[j][i];
       }
     }
+    var numLines = data.length / 4;
     var data = GoogleCharts.api.visualization.arrayToDataTable(transposed);
     var options = {
       title: type,
-      legend: { position: 'bottom', maxLines: data.length / 4 },
+      legend: { position: 'bottom', maxLines: numLines },
       interpolateNulls: false,
       hAxis: {type: 'category'},
       bar: {group: {gap: 8}},
