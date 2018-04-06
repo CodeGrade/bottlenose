@@ -32,9 +32,9 @@ GoogleCharts.load('corechart', function() {
   chart.draw(data, options);
 
 
-  var data = [];
   var colorStart = 9;
   for (var type in sectionTypes) {
+    var data = [];
     var sections = sectionTypes[type];
     for (var crn in sections) {
       var row = [];
