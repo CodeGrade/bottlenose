@@ -8,7 +8,7 @@
       100.0 * g[:staff_scores][:raw_score] / @gradesheet.max_score
     end,
     g[:staff_scores][:scores].map{|a| a[0]},
-    @sections_by_student[@students[g[:sub].user_id].reg_id].map{|s| @sections[s.section_id].crn}
+    (@sections_by_student[@students[g[:sub].user_id]&.reg_id] || []).map{|s| @sections[s.section_id].crn}
   ]
 end
 @sections_by_type = @course.sections.map{|s| [s.type, s.crn, s.to_s]}.group_by(&:first)
