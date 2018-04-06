@@ -1,4 +1,5 @@
 <%
+@sections = @course.sections.map{|s| [s.id, s]}.to_h
 @theGrades = @gradesheet.grades[:grades].values.map do |g|
   [
     if @gradesheet.max_score.zero?
@@ -6,11 +7,15 @@
     else
       100.0 * g[:staff_scores][:raw_score] / @gradesheet.max_score
     end,
-    g[:staff_scores][:scores].map{|a| a[0]}
+    g[:staff_scores][:scores].map{|a| a[0]},
+    @sections_by_student[@students[g[:sub].user_id].reg_id].map{|s| @sections[s.section_id].crn}
   ]
 end
+@sections_by_type = @course.sections.map{|s| [s.type, s.crn, s.to_s]}.group_by(&:first)
+  .map{|t, secs| [t.humanize.pluralize, secs.map{|s| s.drop(1)}.to_h]}.to_h
 %>
 var grades = <%= raw json_escape(JSON.generate(@theGrades)) %>;
+var sectionTypes = <%= raw json_escape(JSON.generate(@sections_by_type)) %>;
 GoogleCharts.load('corechart', function() {
   var colors = ['steelblue', 'maroon', 'gold', 'seagreen', 'orange', 'indigo',
                 'dodgerblue', 'firebrick', 'goldenrod', 'mediumseagreen', 'sandybrown', 'darkmagenta']
@@ -26,6 +31,49 @@ GoogleCharts.load('corechart', function() {
   var chart = new GoogleCharts.api.visualization.Histogram(document.getElementById('histogram'));
   chart.draw(data, options);
 
+
+  var data = [];
+  var colorStart = 9;
+  for (var type in sectionTypes) {
+    var sections = sectionTypes[type];
+    for (var crn in sections) {
+      var row = [];
+      var section = sections[crn];
+      row.push(section);
+      crn = Number.parseInt(crn);
+      for (var i = 0; i < grades.length; i++) {
+        if (grades[i][2].includes(crn))
+          row.push(grades[i][0]);
+      }
+      data.push(row);
+    }
+    var transposed = [];
+    var longest = Math.max.apply(null, data.map((r) => r.length));
+    for (var i = 0; i < longest; i++) {
+      transposed[i] = [];
+      for (var j = 0; j < data.length; j++) {
+        transposed[i][j] = data[j][i] === undefined ? null : data[j][i];
+      }
+    }
+    var data = GoogleCharts.api.visualization.arrayToDataTable(transposed);
+    var options = {
+      title: type,
+      legend: { position: 'bottom', maxLines: data.length / 4 },
+      interpolateNulls: false,
+      hAxis: {type: 'category'},
+      bar: {group: {gap: 8}},
+      colors: transposed[0].map((_, i) => colors[(i + colorStart) % colors.length]),
+      histogram: {bucketSize: 5, minValue: 0, hideBucketItems: true}
+    };
+    colorStart += transposed[0].length;
+    var container = document.getElementById("bySectionTypes");
+    var div = document.createElement("div");
+    container.appendChild(div);
+    var chart = new GoogleCharts.api.visualization.Histogram(div);
+    chart.draw(data, options);
+  }
+
+  
   var graders = <%= raw json_escape(JSON.generate(@gradesheet.grades[:graders].map(&:display_type))) %>;
   var maxes = <%= raw json_escape(JSON.generate(@gradesheet.grades[:graders].map(&:avail_score))) %>;
   <% question_names = @gradesheet.assignment.flattened_questions || []
@@ -97,6 +145,7 @@ GoogleCharts.load('corechart', function() {
       offset += sections[section].count;
     }
   }
-  document.getElementById("grade-histograms").classList.remove("in");
+  document.getElementById("grade-histograms").classList.remove("initial")
   document.getElementById("toggle-histograms").removeAttribute("disabled");
+  $("#grade-histograms .item").removeClass("active").first().addClass("active");
 });
