@@ -89,9 +89,13 @@ class Course < ApplicationRecord
     users.where("registrations.role": Registration::roles["student"])
   end
 
-  def students_with_registrations
-    students.joins("JOIN registration_sections ON registrations.id = registration_sections.registration_id")
+  def users_with_registrations(for_users = users)
+    for_users.joins("JOIN registration_sections ON registrations.id = registration_sections.registration_id")
       .joins("JOIN sections ON registration_sections.section_id = sections.id")
+  end
+  
+  def students_with_registrations
+    users_with_registrations(students)
   end
 
   def users_with_drop_info(for_users = nil)

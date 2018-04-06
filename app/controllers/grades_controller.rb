@@ -426,7 +426,7 @@ class GradesController < ApplicationController
     @sub_comments = @submission.grade_submission_comments(current_user.site_admin? || cur_reg.staff?)
     if @sub_comments.empty? && (@tests.nil? || @tests.count != num_comments)
       @error_header = <<HEADER.html_safe
-<p>There seems to be a problem displaying the #{type.camelcase.underscore.humanize}'s feedback on this submission.</p>
+<p>There seems to be a problem displaying the #{@grade.grader.type.humanize}'s feedback on this submission.</p>
 <p>Please email the professor, with the following information:</p>
 <ul>
 <li>Course: #{@course.id}</li>
@@ -434,6 +434,7 @@ class GradesController < ApplicationController
 <li>Submission: #{@submission.id}</li>
 <li>Grader: #{@grade.id}</li>
 <li>User: #{current_user.name} (#{current_user.id})</li>
+<li>Reason: #{if @sub_comments.empty? then "No comments" else "Wrong test count" end}</li>
 </li>
 HEADER
     end
@@ -707,7 +708,7 @@ HEADER
   def edit_exam_grades_for(students)
     # NOTE: students must be joined to the registrations table already, to provide section information
     @student_info = students.select(:username, :last_name, :first_name, :nickname, :nuid, :id)
-    @sections_by_student = @course.students_with_registrations.select(:id, "sections.crn AS crn").group_by(&:id)
+    @sections_by_student = @course.users_with_registrations(students).select(:id, "sections.crn AS crn").group_by(&:id)
     @used_subs = @assignment.used_submissions
     @grade_comments = multi_group_by(InlineComment.where(submission_id: @used_subs.map(&:id)),
                                      [:submission_id, :line], true)
