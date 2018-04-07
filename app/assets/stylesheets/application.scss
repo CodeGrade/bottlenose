@@ -1,7 +1,9 @@
 //= require codemirror/lib/codemirror
 //= require codemirror/theme/mdn-like
 //= require jquery-tablesorter/theme.bootstrap_2
+//= require jquery-ui/resizable
 //= require bootstrap-toggle
+//= require pdfjs-dist/web/pdf_viewer
 
 // Import the bootstrap overrides *before* bootstrap.
 @import "bootstrap-overrides";
@@ -221,49 +223,127 @@ div.grader-config {
    margin-top: 0;
 }
 
-div.CodeMirror-linewidget > div {
+div.CodeMirror-linewidget > div,
+div.pageComments > div,
+div.regionComments > div:not(.page) {
+   text-align: left;
    background: $btn-default-bg;
    border-radius: 5px;
    color: black;
    padding: 5px;
 }
 
-div.CodeMirror-linewidget > div td {
+div.CodeMirror-linewidget > div td,
+div.pageComments > div td,
+div.regionComments > div:not(.page) td {
    vertical-align: top;
 }
-div.CodeMirror-linewidget > div td.nowrap {
+div.CodeMirror-linewidget > div td.nowrap,
+div.pageComments > div td.nowrap,
+div.regionComments > div:not(.page) td.nowrap {
    white-space: nowrap;
 }
 
 
-div.CodeMirror-linewidget > div span {
+div.CodeMirror-linewidget > div span,
+div.regionComments > div:not(.page) span,
+div.pageComments > div span,
+div.pageContainer div.page > div.Region > span {
    margin-left: 3px;
    margin-right: 3px;
 }
-div.CodeMirror-linewidget > div span.label {
+div.CodeMirror-linewidget > div span.label,
+div.pageComments > div span.label,
+div.regionComments > div:not(.page) span.label {
    vertical-align: middle;
 }
-div.CodeMirror-linewidget > div span.description {
+div.CodeMirror-linewidget > div span.description,
+div.pageComments > div span.description,
+div.regionComments > div:not(.page) span.description {
    white-space: pre-line;
 }
-div.CodeMirror-linewidget > div span.glyphicon {
+div.CodeMirror-linewidget > div span.glyphicon,
+div.pageComments > div span.glyphicon,
+div.regionComments > div:not(.page) span.glyphicon {
    vertical-align: middle;
 }
 
-div.CodeMirror-linewidget > div.Error {
+div.commentEditor .save-status > .glyphicon { padding: 6px; border-radius: 4px; }
+
+div.regionComments > div.commentEditor {
+    z-index: 100;
+}
+
+div.CodeMirror-linewidget > div.Error,
+div.pageComments > div.Error.comment,
+div.regionComments > div.Error.comment,
+div.regionComments > div.Error.commentEditor {
    background: $alert-danger-bg;
 }
+div.Region.commentEditor.Error {
+    background: rgba(darken($alert-danger-bg, 25%), 0.25);
+}
+div.Region.commentEditor.Error span.btn {
+    display: none;
+}
+div.Region.commentEditor.Error:hover span.btn {
+    background: $alert-danger-bg;
+    display: inline-block;
+    border: 1px solid darken($alert-danger-bg, 10%);
+}
 
-div.CodeMirror-linewidget > div.Warning {
+div.CodeMirror-linewidget > div.Warning,
+div.pageComments > div.Warning.comment,
+div.regionComments > div.Warning.comment,
+div.regionComments > div.Warning.commentEditor {
    background: $alert-warning-bg;
 }
-
-div.CodeMirror-linewidget > div.Info {
-   background: $alert-info-bg;
+div.Region.commentEditor.Warning {
+    background: rgba(darken($alert-warning-bg, 25%), 0.25);
+}
+div.Region.commentEditor.Warning span.btn {
+    display: none;
+}
+div.Region.commentEditor.Warning:hover span.btn {
+    background: $alert-warning-bg;
+    display: inline-block;
+    border: 1px solid darken($alert-warning-bg, 10%);
 }
 
-div.CodeMirror-linewidget > div.Bonus {
+div.CodeMirror-linewidget > div.Info,
+div.pageComments > div.Info.comment,
+div.regionComments > div.Info.comment,
+div.regionComments > div.Info.commentEditor {
+   background: $alert-info-bg;
+}
+div.Region.commentEditor.Info {
+    background: rgba(darken($alert-info-bg, 25%), 0.25);
+}
+div.Region.commentEditor.Info span.btn {
+    display: none;
+}
+div.Region.commentEditor.Info:hover span.btn {
+    background: $alert-info-bg;
+    display: inline-block;
+    border: 1px solid darken($alert-info-bg, 10%);
+}
+
+div.CodeMirror-linewidget > div.Bonus,
+div.pageComments > div.Bonus.comment,
+div.regionComments > div.Bonus.comment,
+div.regionComments > div.Bonus.commentEditor {
    background: $alert-success-bg;
+}
+div.Region.commentEditor.Bonus {
+    background: rgba(darken($alert-success-bg, 25%), 0.25);
+}
+div.Region.commentEditor.Bonus span.btn {
+    display: none;
+}
+div.Region.commentEditor.Bonus:hover span.btn {
+    background: $alert-success-bg;
+    display: inline-block;
+    border: 1px solid darken($alert-success-bg, 10%);
 }
 
 li.list-group-item.unvisited {
@@ -323,3 +403,463 @@ li.list-group-item.unvisited {
 .graders-pane {
     height: 12em;
 }
+
+// Styles for PDFs
+.pdfToolbar {
+  width: 100%;
+  height: 32px;
+  background-color: #474747;
+  background-image: url(/assets/pdfjs-dist/web/images/texture.png),
+                    linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
+  z-index: 9999;
+  cursor: default;
+  box-shadow: inset 0 1px 1px hsla(0,0%,0%,.15),
+              inset 0 -1px 0 hsla(0,0%,100%,.05),
+              0 1px 0 hsla(0,0%,0%,.15),
+              0 1px 1px hsla(0,0%,0%,.1);
+}
+
+.loadingBar {
+  position: relative;
+  width: 100%;
+  height: 4px;
+  top: 32px;
+  background-color: #333;
+  border-bottom: 1px solid #333;
+}
+
+.loadingBar .progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background-color: #ddd;
+  overflow: hidden;
+  -webkit-transition: width 200ms;
+  transition: width 200ms;
+}
+
+@-webkit-keyframes progressIndeterminate {
+  0% { left: -142px; }
+  100% { left: 0; }
+}
+
+@keyframes progressIndeterminate {
+  0% { left: -142px; }
+  100% { left: 0; }
+}
+
+.loadingBar .progress.indeterminate {
+  background-color: #999;
+  -webkit-transition: none;
+  transition: none;
+  width: 100%;
+}
+
+.loadingBar .progress.indeterminate .glimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: calc(100% + 150px);
+
+  background: repeating-linear-gradient(135deg,
+                                        #bbb 0, #999 5px,
+                                        #999 45px, #ddd 55px,
+                                        #ddd 95px, #bbb 100px);
+
+  -webkit-animation: progressIndeterminate 950ms linear infinite;
+  animation: progressIndeterminate 950ms linear infinite;
+}
+
+.toolbarViewerMiddle {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+div.pdfDisplay[dir='ltr'] .toolbarViewerLeft,
+div.pdfDisplay[dir='rtl'] .toolbarViewerRight {
+  float: left;
+}
+div.pdfDisplay[dir='ltr'] .toolbarViewerRight,
+div.pdfDisplay[dir='rtl'] .toolbarViewerLeft {
+  float: right;
+}
+div.pdfDisplay[dir='ltr'] .toolbarViewerLeft > *,
+div.pdfDisplay[dir='ltr'] .toolbarViewerMiddle > *,
+div.pdfDisplay[dir='ltr'] .toolbarViewerRight > *,
+div.pdfDisplay[dir='ltr'] .findbar * {
+  position: relative;
+  float: left;
+}
+div.pdfDisplay[dir='rtl'] .toolbarViewerLeft > *,
+div.pdfDisplay[dir='rtl'] .toolbarViewerMiddle > *,
+div.pdfDisplay[dir='rtl'] .toolbarViewerRight > *,
+div.pdfDisplay[dir='rtl'] .findbar * {
+  position: relative;
+  float: right;
+}
+
+div.pdfDisplay[dir='ltr'] .splitToolbarButton {
+  margin: 3px 2px 4px 0;
+  display: inline-block;
+}
+div.pdfDisplay[dir='rtl'] .splitToolbarButton {
+  margin: 3px 0 4px 2px;
+  display: inline-block;
+}
+div.pdfDisplay[dir='ltr'] .splitToolbarButton > .toolbarButton {
+  border-radius: 0;
+  float: left;
+}
+div.pdfDisplay[dir='rtl'] .splitToolbarButton > .toolbarButton {
+  border-radius: 0;
+  float: right;
+}
+
+.toolbarButton {
+  border: 0 none;
+  background: none;
+  width: 32px;
+  height: 25px;
+}
+
+.toolbarButton > span {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.toolbarButton[disabled] {
+  opacity: .5;
+}
+
+.splitToolbarButton.toggled .toolbarButton {
+  margin: 0;
+}
+
+.splitToolbarButton:hover > .toolbarButton,
+.splitToolbarButton:focus > .toolbarButton,
+.splitToolbarButton.toggled > .toolbarButton,
+.toolbarButton.textButton {
+  background-color: hsla(0,0%,0%,.12);
+  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  border: 1px solid hsla(0,0%,0%,.35);
+  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.15) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+  -webkit-transition-property: background-color, border-color, box-shadow;
+  -webkit-transition-duration: 150ms;
+  -webkit-transition-timing-function: ease;
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+
+}
+.splitToolbarButton > .toolbarButton:hover,
+.splitToolbarButton > .toolbarButton:focus,
+.dropdownToolbarButton:hover {
+  background-color: hsla(0,0%,0%,.2);
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.15) inset,
+              0 0 1px hsla(0,0%,0%,.05);
+  z-index: 199;
+}
+.splitToolbarButton > .toolbarButton {
+  position: relative;
+}
+div.pdfDisplay[dir='ltr'] .splitToolbarButton > .toolbarButton:first-child,
+div.pdfDisplay[dir='rtl'] .splitToolbarButton > .toolbarButton:last-child {
+  position: relative;
+  margin: 0;
+  margin-right: -1px;
+  border-top-left-radius: 2px;
+  border-bottom-left-radius: 2px;
+  border-right-color: transparent;
+}
+div.pdfDisplay[dir='ltr'] .splitToolbarButton > .toolbarButton:last-child,
+div.pdfDisplay[dir='rtl'] .splitToolbarButton > .toolbarButton:first-child {
+  position: relative;
+  margin: 0;
+  margin-left: -1px;
+  border-top-right-radius: 2px;
+  border-bottom-right-radius: 2px;
+  border-left-color: transparent;
+}
+.splitToolbarButtonSeparator {
+  padding: 8px 0;
+  width: 1px;
+  background-color: hsla(0,0%,0%,.5);
+  z-index: 99;
+  box-shadow: 0 0 0 1px hsla(0,0%,100%,.08);
+  display: inline-block;
+  margin: 5px 0;
+}
+div.pdfDisplay[dir='ltr'] .splitToolbarButtonSeparator {
+  float: left;
+}
+div.pdfDisplay[dir='rtl'] .splitToolbarButtonSeparator {
+  float: right;
+}
+.splitToolbarButton:hover > .splitToolbarButtonSeparator,
+.splitToolbarButton.toggled > .splitToolbarButtonSeparator {
+  padding: 12px 0;
+  margin: 1px 0;
+  box-shadow: 0 0 0 1px hsla(0,0%,100%,.03);
+  -webkit-transition-property: padding;
+  -webkit-transition-duration: 10ms;
+  -webkit-transition-timing-function: ease;
+  transition-property: padding;
+  transition-duration: 10ms;
+  transition-timing-function: ease;
+}
+
+.toolbarButton,
+.dropdownToolbarButton {
+  min-width: 16px;
+  padding: 2px 6px 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: hsla(0,0%,100%,.8);
+  font-size: 12px;
+  line-height: 14px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  /* Opera does not support user-select, use <... unselectable="on"> instead */
+  cursor: default;
+  -webkit-transition-property: background-color, border-color, box-shadow;
+  -webkit-transition-duration: 150ms;
+  -webkit-transition-timing-function: ease;
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+div.pdfDisplay[dir='ltr'] .toolbarButton,
+div.pdfDisplay[dir='ltr'] .dropdownToolbarButton {
+  margin: 3px 2px 4px 0;
+}
+div.pdfDisplay[dir='rtl'] .toolbarButton,
+div.pdfDisplay[dir='rtl'] .dropdownToolbarButton {
+  margin: 3px 0 4px 2px;
+}
+
+.toolbarButton:hover,
+.toolbarButton:focus,
+.dropdownToolbarButton {
+  background-color: hsla(0,0%,0%,.12);
+  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  background-clip: padding-box;
+  border: 1px solid hsla(0,0%,0%,.35);
+  border-color: hsla(0,0%,0%,.32) hsla(0,0%,0%,.38) hsla(0,0%,0%,.42);
+  box-shadow: 0 1px 0 hsla(0,0%,100%,.05) inset,
+              0 0 1px hsla(0,0%,100%,.15) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+}
+
+.toolbarButton:hover:active,
+.dropdownToolbarButton:hover:active {
+  background-color: hsla(0,0%,0%,.2);
+  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  border-color: hsla(0,0%,0%,.35) hsla(0,0%,0%,.4) hsla(0,0%,0%,.45);
+  box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
+              0 0 1px hsla(0,0%,0%,.2) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+  -webkit-transition-property: background-color, border-color, box-shadow;
+  -webkit-transition-duration: 10ms;
+  -webkit-transition-timing-function: linear;
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 10ms;
+  transition-timing-function: linear;
+}
+
+.toolbarButton.toggled,
+.splitToolbarButton.toggled > .toolbarButton.toggled,
+.splitToolbarButton:hover > .toolbarButton.toggled {
+  background-color: hsla(208, 99%, 71.5%, 0.3);
+  background-image: linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
+  border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.45) hsla(0,0%,0%,.5);
+  box-shadow: 0 1px 1px hsla(0,0%,0%,.1) inset,
+              0 0 1px hsla(0,0%,0%,.2) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+  -webkit-transition-property: background-color, border-color, box-shadow;
+  -webkit-transition-duration: 10ms;
+  -webkit-transition-timing-function: linear;
+  transition-property: background-color, border-color, box-shadow;
+  transition-duration: 10ms;
+  transition-timing-function: linear;
+}
+
+.toolbarButton.toggled:hover,
+.toolbarButton.toggled:active,
+.toolbarButton.toggled:focus,
+.toolbarButton.toggled:hover:active,
+.splitToolbarButton.toggled > .toolbarButton.toggled:active,
+.splitToolbarButton.toggled > .toolbarButton.toggled:hover,
+.splitToolbarButton.toggled > .toolbarButton.toggled:focus,
+.splitToolbarButton.toggled > .toolbarButton.toggled:hover:active {
+  background-color: hsla(208,99%,71.5%,.4) !important;
+  border-color: hsla(0,0%,0%,.4) hsla(0,0%,0%,.5) hsla(0,0%,0%,.55);
+  box-shadow: 0 1px 1px hsla(0,0%,0%,.2) inset,
+              0 0 1px hsla(0,0%,0%,.3) inset,
+              0 1px 0 hsla(0,0%,100%,.05);
+}
+
+.dropdownToolbarButton {
+  width: 120px;
+  max-width: 120px;
+  padding: 0;
+  overflow: hidden;
+}
+ 
+
+.dropdownToolbarButton > select {
+  display: inline-block;
+  min-width: 120px;
+  font-size: 12px;
+  color: hsl(0,0%,95%);
+  margin: 0;
+  padding: 3px 2px 2px;
+  border: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: rgba(0,0,0,0); /* Opera does not support 'transparent' <select> background */
+}
+
+.dropdownToolbarButton > select > option {
+  background: hsl(0,0%,24%);
+}
+
+#pageWidthOption {
+  border-bottom: 1px rgba(255, 255, 255, .5) solid;
+}
+
+div.pdfDisplay[dir='ltr'] .splitToolbarButton:first-child,
+div.pdfDisplay[dir='ltr'] .toolbarButton:first-child,
+div.pdfDisplay[dir='rtl'] .splitToolbarButton:last-child,
+div.pdfDisplay[dir='rtl'] .toolbarButton:last-child {
+  margin-left: 4px;
+}
+div.pdfDisplay[dir='ltr'] .splitToolbarButton:last-child,
+div.pdfDisplay[dir='ltr'] .toolbarButton:last-child,
+div.pdfDisplay[dir='rtl'] .splitToolbarButton:first-child,
+div.pdfDisplay[dir='rtl'] .toolbarButton:first-child {
+  margin-right: 4px;
+}
+
+.toolbarButtonSpacer {
+  width: 30px;
+  display: inline-block;
+  height: 1px;
+}
+
+#PDFBug {
+  background: none repeat scroll 0 0 white;
+  border: 1px solid #666666;
+  position: fixed;
+  top: 32px;
+  right: 0;
+  bottom: 0;
+  font-size: 10px;
+  padding: 0;
+  width: 300px;
+}
+#PDFBug .controls {
+    background:#EEEEEE;
+    border-bottom: 1px solid #666666;
+    padding: 3px;
+}
+#PDFBug .panels {
+  bottom: 0;
+  left: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  position: absolute;
+  right: 0;
+  top: 27px;
+}
+#PDFBug button.active {
+  font-weight: bold;
+}
+.debuggerShowText {
+  background: none repeat scroll 0 0 yellow;
+  color: blue;
+}
+.debuggerHideText:hover {
+  background: none repeat scroll 0 0 yellow;
+}
+#PDFBug .stats {
+  font-family: courier;
+  font-size: 10px;
+  white-space: pre;
+}
+#PDFBug .stats .title {
+    font-weight: bold;
+}
+#PDFBug table {
+  font-size: 10px;
+}
+
+#viewer.textLayer-visible .textLayer {
+  opacity: 1.0;
+}
+
+#viewer.textLayer-visible .canvasWrapper {
+  background-color: rgb(128,255,128);
+}
+
+#viewer.textLayer-visible .canvasWrapper canvas {
+  mix-blend-mode: screen;
+}
+
+#viewer.textLayer-visible .textLayer > div {
+  background-color: rgba(255, 255, 0, 0.1);
+  color: black;
+  border: solid 1px rgba(255, 0, 0, 0.5);
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+#viewer.textLayer-hover .textLayer > div:hover {
+  background-color: white;
+  color: black;
+}
+
+#viewer.textLayer-shadow .textLayer > div {
+  background-color: rgba(255,255,255, .6);
+  color: black;
+}
+
+@media screen and (min-resolution: 2dppx) {
+  /* Rules for Retina screens */
+  .toolbarButton::before {
+    -webkit-transform: scale(0.5);
+    transform: scale(0.5);
+    top: -5px;
+  }
+  div.pdfDisplay[dir='ltr'] .toolbarButton::before,
+  div.pdfDisplay[dir='rtl'] .toolbarButton::before {
+    left: -1px;
+  }
+}
+
+
+// Styles for selecting regions in PDFs
+.ui-selectable-helper {
+  border: 1px dotted red;
+  background: rgba(255, 128, 0, .1);
+  position: absolute;
+}
+.ui-selectable-helper.big-enough {
+  border: 1px dotted black;
+  background: rgba(255, 255, 0, .1);
+}
+

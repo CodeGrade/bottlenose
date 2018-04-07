@@ -1,3 +1,5 @@
+<script src="/assets/pdfjs-dist/build/pdf.js"></script>
+<script src="/assets/pdfjs-dist/web/pdf_viewer.js"></script>
 <style>
 .embed-replaced { vertical-align: baseline; display: inline-block; }
 .embed-image { }
@@ -12,6 +14,46 @@
 .embed-splice::after { content: ",@"; font-size: 100%; top: 0; right: 0; position: absolute; color: blue; }
 .embed-xml { border: 1px solid green; margin: 2px; position: relative; padding-top: 1em; }
 .embed-xml::after { content: "\2039\203A"; font-size: 150%; top: -0.25em; right: 0; position: absolute; color: green; }
+
+.flexV {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.flexV > .warningContent + * {
+  flex: 1;
+  overflow-y: scroll;
+}
+
+div.pdfDisplay {
+  width: 100%; height: 100%;
+  background-color: #404040;
+  display: flex; flex-direction: column;
+  background-image: url(/assets/pdfjs-dist/web/images/texture.png);
+  text-align: center;
+}
+div.pdfPages {
+  overflow: scroll;
+  flex: 1;
+}
+div.pdfPages > div.pageContainer {
+  margin: 1em;
+  display: block;
+  position: relative;
+}
+div.pdfPages > div.pageContainer > div.regionComments,
+div.pdfPages > div.pageContainer > div.pageComments {
+  background: transparent;
+  display: block;
+  position: relative;
+  text-align: center;
+}
+div.pdfPages > div.pageContainer > div.regionComments > div.page {
+  border: 1px solid black;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
 </style>
 <% sub_files.each_with_index do |f, i| %>
 <% index = (i + 1).to_s.rjust(sub_files.count.to_s.length, '0') %>
@@ -20,11 +62,15 @@
   <div class="nonCMwrapper" style="position: relative; display: inline-block;">
     <%= image_tag f[:link], id: "image_#{index}", alt: f[:name], style: "max-width: 100%; max-height: 100%;",
         skip_pipeline: true %>
-    <a href="<%= f[:link] %>_<%= root %>" target="_blank"
+    <a href="<%= f[:link] %>" target="_blank"
        class="magnify-image btn btn-default" data-target="image_<%= index %>" data-container="file_<%= index %>"
        style="position: absolute; display: block; float: right; right: 0; top: 0; font-size: 300%;">
       <i class="glyphicon glyphicon-zoom-in"></i>
     </a>
+  </div>
+  <% elsif (f[:type] == "application/pdf") %>
+  <div class="nonCMwrapper" style="display: inline-block; width: 100%; overflow: hidden;">
+    <%= render "submissions/pdf_viewer", index: index, url: f[:link], alt: f[:name] %>
   </div>
   <% elsif (f[:type] == "application/xml") || (f[:type] == "text/html") %>
   <% begin
@@ -74,14 +120,20 @@
     </div>
   </div>
   <% rescue Exception => err %>
-  <div class="nonCMwrapper">
+  <div class="nonCMwrapper flexV">
+    <div class="warningContent">
     <p>Could not render <%= f[:name] %></p>
     <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
-    <p><%= err %>
+    <p><%= err %></p>
+    </div>
   </div>
   <% end %>
   <% elsif f[:type] == "zip" || f[:type] == "jar" %>
-  <div class="nonCMwrapper"><%= link_to "Download #{f[:name]}", f[:link] %></div>
+  <div class="nonCMwrapper flexV">
+    <div class="warningContent" data-source="<%= f[:link] %>">
+    <%= link_to "Download #{f[:name]}", f[:link] %>
+    </div>
+  </div>
   <% elsif f[:type] == "symlink" %>
   <div class="nonCMwrapper">Symbolic link to
     <% if f[:broken] %>
@@ -91,9 +143,11 @@
     <% end %>
   </div>
   <% elsif f[:contents].lines.length > 10000 %>
-  <div class="nonCMwrapper">
+  <div class="nonCMwrapper flexV">
+    <div class="warningContent" data-source="<%= f[:link] %>">
     <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
     <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+    </div>
   </div>  
   <% else %>
   <% begin
@@ -103,15 +157,26 @@
               data-source="<%= f[:link] %>"
               id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
   </div>
-  <% rescue Exception %>
-  <div class="nonCMwrapper">
+  <% rescue Exception => err %>
+  <div class="nonCMwrapper flexV">
+    <div class="warningContent" data-source="<%= f[:link] %>">
     <p>Could not render <%= f[:name] %></p>
     <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+    <p><%= err %></p>
+    </div>
   </div>
   <% end %>
   <% end %>
 </div>
 <% end %>
+<div id="selectionWrapperWrapper" class="hidden">
+  <div id="selectionWrapper">
+    <div id="translateWrapper"></div>
+  </div>
+</div>
 <script>
+  <%= render 'submissions/comment_edit_widgets.js.erb' %>
   <%= render 'submissions/render_embedded_images.js' %>
+  <%= render 'submissions/render_pdfs.js' %>
+  $(function() { $("div[id^='pdf_']").pdfViewer(); });
 </script>

@@ -8,12 +8,8 @@
 <script>
   <%= render 'submissions/purify.js' %>
 </script>
-<% if @commentsFrom %>
-<style>
-  div.CodeMirror-linewidget > div { display: none; }
-  div.CodeMirror-linewidget > div.grade_<%= @commentsFrom %> { display: block; }
-</style>
-<% end %>
+<%# Styles injected here by script to turn comment visibility on and off %>
+<style id="comment-styles"></style>
 <p>
   <%= link_to "< Back to submission", course_assignment_submission_path(@course, @assignment, @submission) %>
 </p>
@@ -39,9 +35,9 @@
 <% file = file.gsub(@submission.upload.extracted_path.to_s, "") %>
 <h3 style="margin-top: 0;"><%= if file == "" then "Overall" else file end %>:</h3>
   <% comments.each do |c| %>
-  <div class="<%= "#{c.severity.humanize(capitalize: false)} #{c.grade&.grader&.type&.humanize}" %>">
+  <div class="<%= "#{c.severity} #{c.grade&.grader&.type}" %>">
     <span class="label label-default">- <%= to_fixed(c.weight) %></span>
-    <span class="description"><%= c.title %>: <%= c.comment %></span>
+    <span class="description"><%= c.grade&.grader&.type&.underscore&.humanize %> <%= c.title %>: <%= c.comment %></span>
   </div>
   <% end %>
 <% end %>
@@ -90,13 +86,18 @@
     </div>
   </div>
   <div class="col-sm-9 tab-content">
-    <%= render "submissions/files", sub_files: @submission_files, root: "all-files" %>
+    <%= render "submissions/files", sub_files: @submission_files, root: "all-files", grade_id: @grade&.id %>
   </div>
 </div>
 
 <script>
   var lineComments = <%= raw json_escape(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
-  <%= render 'submissions/render_comments.js', sub_dirs: @submission_dirs, vertical: false, root: "all-files" %>
-  $(function() { renderComments(lineComments); });
+  <%= render "submissions/comment_edit_widgets.js" %>
+  <%= render "submissions/render_filepicker.js" %>
+  $(function() {
+    var dirInfo = <%= raw json_escape(JSON.pretty_generate(@submission_dirs)) %>;
+    activateFileView("all-files", "<%= @grade&.id || @submission.id %>", dirInfo, false, false, <%= @grade.nil? ? true : false %>);
+    renderComments(lineComments); 
+  });
 </script>
 <% end %>

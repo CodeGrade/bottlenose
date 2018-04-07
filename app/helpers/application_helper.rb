@@ -202,6 +202,8 @@ module ApplicationHelper
       "text/css"
     when ".tap", ".txt"
       "text/plain"
+    when ".pdf"
+      "application/pdf"
     else
       if File.basename(full_path.to_s) == "Makefile"
         "text/x-makefile"

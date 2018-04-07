@@ -4,9 +4,8 @@
 <script>
   <%= render 'submissions/purify.js' %>
 </script>
-<style id="comment-styles">
-  .save-status > .glyphicon { padding: 6px; border-radius: 4px; }
-</style>
+<%# Styles injected here by script to turn comment visibility on and off %>
+<style id="comment-styles"></style>
 
 <p>
   <%= link_to "Back to submission",
@@ -76,47 +75,24 @@
     </div>
   </div>
   <div class="col-sm-9 tab-content">
-    <%= render 'submissions/files', sub_files: @submission_files, root: "all-files" %>
+    <%= render "submissions/files", sub_files: @submission_files, root: "all-files", editable: true %>
   </div>
 </div>
 
 <script>
   var lineComments = <%= raw json_escape(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
-  <%= render 'submissions/render_comments.js', sub_dirs: @submission_dirs, vertical: false, root: "all-files" %>
-  <%= render 'grades/enter_comments.js', root: "all-files",
-      extra_credit: @grader.extra_credit, grade_id: @grade.id %>
+  <%= render "submissions/comment_edit_widgets.js" %>
+  <%= render "submissions/render_filepicker.js" %>
+  <%= render "grades/enter_comments.js" %>
   $(function() {
-    var manualComments = [];
-    for (var i = 0; i < lineComments.length; i++) {
-      manualComments[i] = lineComments[i]["<%= @grade.id %>"] || {};
-      delete lineComments[i]["<%= @grade.id %>"];
-    }
-    renderComments(lineComments);
-    $(".file-pane").each(function(index) {
-      var theseComments = lineComments[index] || {};
-      if (theseComments["noCommentsFor"]) return;
-      var cm = $(this).find(".CodeMirror")[0].CodeMirror;
-      cm.operation(function() {
-        var theseComments = manualComments[index];
-        var type = theseComments.type;
-        delete theseComments.type;
-        Object.keys(theseComments).forEach(function(line, _) {
-          var commentsOnLine = theseComments[line];
-          commentsOnLine.forEach(function(comment, _) {
-            // lines are off-by-one so they appear beneath the code they comment on
-            var isEditable = comment.editable || <%= cur_reg.professor? %>;
-            comment = registerComment(cm, Number.parseInt(line) - 1, comment, isEditable);
-            if (isEditable)
-              insertComment(cm, Number.parseInt(line) - 1, comment);
-            else
-              renderComment(cm, "<%= @grade.id %>", type, line, comment);
-          });
-        });
-      });
-    });
-    updateScore();
+    var dirInfo = <%= raw json_escape(JSON.pretty_generate(@submission_dirs)) %>;
+    activateFileView("all-files", "<%= @grade.id %>", dirInfo, true, false);
+    activateFileViewEditing("all-files");
+    activateCommentEditing(<%= @grader.extra_credit %>, <%= @grade.id %>, <%= @grade.out_of %>,
+      "<%= current_user.name %>", <%= cur_reg.professor? %>,
+      "<%= course_assignment_submission_grade_path(@course, @assignment, @submission, @grade) %>");
+    $("form").submit(ensureValidNumericInputOnSubmit);
   });
-  $("form").submit(ensureValidNumericInputOnSubmit);
 </script>
 
 <% end %>

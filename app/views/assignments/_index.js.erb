@@ -92,7 +92,6 @@ $(function() {
           var subId = data.getValue(sel.row, 6);
           var assnId = assnIds[assnIds.length - sel.row - 1];
           var sUrl = routeToSub.replace("(aid)", assnId).replace("(sid)", subId);
-          console.log(sUrl);
           window.open(sUrl, "_blank");
         },
         enabled: function() {

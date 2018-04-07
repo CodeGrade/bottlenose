@@ -3,6 +3,8 @@
 <script>
   <%= render 'submissions/purify.js' %>
 </script>
+<%# Styles injected here by script to turn comment visibility on and off %>
+<style id="comment-styles"></style>
 <%= render "layouts/standard_course_info" %>
 <% if @submission.errors.any? %>
 <div id="error_explanation" class="alert alert-danger">
@@ -85,7 +87,12 @@
       </div>
     </div>
     <script>
-      <%= render "render_comments.js", sub_dirs: sub_dirs, vertical: true, root: "sub_#{sub_id}" %>
+      <%= render "submissions/comment_edit_widgets.js" %>
+      <%= render "submissions/render_filepicker.js" %>
+      $(function() {
+        var dirInfo = <%= raw json_escape(JSON.pretty_generate(sub_dirs)) %>;
+        activateFileView("sub_<%= sub_id %>", "new-submission", dirInfo, false, true);
+      });
     </script>
   </div>
 

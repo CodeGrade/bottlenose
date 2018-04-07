@@ -11,7 +11,10 @@
 // GO AFTER THE REQUIRES BELOW.
 //
 //= require jquery
+//= require jquery-ui/widgets/draggable
+//= require jquery-ui/widgets/resizable
 //= require jquery-ui/widgets/sortable
+//= require jquery-ui/widgets/selectable
 //= require jquery_ujs
 //= require jquery.matchHeight
 //= require jquery-tablesorter

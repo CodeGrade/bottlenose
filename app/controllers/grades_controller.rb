@@ -220,7 +220,7 @@ class GradesController < ApplicationController
                         weight: c["deduction"],
                         suppressed: false,
                         title: "",
-                        info: nil)
+                        info: c["info"])
         comment
       rescue Exception => e
         { id: c["id"], error: e }

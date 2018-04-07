@@ -176,7 +176,7 @@
         for (var i = 0; i < props.length; i++) {
           if (props[i] === "type") continue;
           var id = "#" + type + "_" + props[i];
-          console.log(id, $(id).length, opt_data[props[i]]);
+          // console.log(id, $(id).length, opt_data[props[i]]);
           $(id).val(opt_data[props[i]]);
         }
         $("[href='#<%= new_grader %>_" + opt_data["type"] + "']").tab('show');

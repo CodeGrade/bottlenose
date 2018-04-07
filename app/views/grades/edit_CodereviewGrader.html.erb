@@ -4,6 +4,7 @@
 <script>
   <%= render 'submissions/purify.js' %>
 </script>
+<%# Styles injected here by script to turn comment visibility on and off %>
 <style id="comment-styles"></style>
 <% if @grade.errors.any? %>
 <div id="error_explanation" class="alert alert-danger">
@@ -78,7 +79,12 @@
       </div>
     </div>
     <script>
-      <%= render "submissions/render_comments.js", sub_dirs: sub_dirs, vertical: true, root: "sub_#{sub_id}" %>
+      <%= render "submissions/comment_edit_widgets.js" %>
+      <%= render "submissions/render_filepicker.js" %>
+      $(function() {
+        var dirInfo = <%= raw json_escape(JSON.pretty_generate(sub_dirs)) %>;
+        activateFileView("sub_<%= sub_id %>", "<%= @grade.id %>", dirInfo, false, true);
+      });
     </script>
   </div>
 
@@ -91,7 +97,8 @@
     <div class="spacer">&nbsp;</div>
   </div>
   <script>
-    <%= render "submissions/render_questions.js", root: "sub_#{sub_id}" %>
+    <%= render "submissions/render_questions.js" %>
+    $(function() { activateQuestions("sub_<%= sub_id %>"); });
   </script>
 </div>
 <% end %><%# @submissions_info.each %>
