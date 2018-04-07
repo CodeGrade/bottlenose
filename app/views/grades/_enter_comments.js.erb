@@ -216,8 +216,14 @@ $(function() {
     }
     window.insertPageComment = insertPageComment;
     function insertRegionComment(pdfViewer, page, options, comment) {
-      comment.info =
-        (options.left + ";" + options.top + ";" + options.width + ";" + options.height + ";" + options.dimensions);
+      comment.info = JSON.stringify({
+        type: "area",
+        left: options.left,
+        top: options.top,
+        width: options.width,
+        height: options.height,
+        dimensions: options.dimensions
+      });
       var areaComment = pdfViewer.createAreaComment(page, true, {
         gradeId: options.gradeId,
         left: options.left,
@@ -254,9 +260,14 @@ $(function() {
           } else if (details.hasOwnProperty("newSeverity")) {
             comment.severity = details.newSeverity.toLowerCase();
           } else if (details.hasOwnProperty("newSizes")) {
-            comment.info =
-              details.newSizes.left + ";" + details.newSizes.top + ";"
-              + details.newSizes.width + ";" + details.newSizes.height + ";" + details.newSizes.dimensions;
+            comment.info = JSON.stringify({
+              type: "area",
+              left: details.newSizes.left,
+              top: details.newSizes.top,
+              width: details.newSizes.width,
+              height: details.newSizes.height,
+              dimensions: details.newSizes.dimensions
+            });
           }
           details.widget.markDirty();
           comment.saved = false;
@@ -286,16 +297,23 @@ $(function() {
       var commentsForPage = theseComments[pageNum] || [];
       commentsForPage.forEach(function(comment, _) {
         var isEditable = comment.editable || profOverride;
+        var infoJson;
         if (comment.info) {
+          try {
+            infoJson = JSON.parse(comment.info);
+          } catch(e) {
+            infoJson = undefined;
+          }
+        }
+        if (infoJson && infoJson.type === "area") {
           comment = registerComment(page, pageNum, comment, isEditable);
           if (isEditable) {
-            var size = comment.info.split(";");
             insertRegionComment(pdfViewer, page, {
-              left: Number.parseFloat(size[0]),
-              top: Number.parseFloat(size[1]),
-              width: Number.parseFloat(size[2]),
-              height: Number.parseFloat(size[3]),
-              dimensions: "%",
+              left: infoJson.left,
+              top: infoJson.top,
+              width: infoJson.width,
+              height: infoJson.height,
+              dimensions: infoJson.dimensions,
               gradeId: gradeId,
               label: comment.label
             }, comment);

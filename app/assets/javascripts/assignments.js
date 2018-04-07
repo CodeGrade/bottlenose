@@ -88,26 +88,35 @@
   function renderRegionComment(rc, gradeId, type, line, comment) {
     var pdfViewer = $(rc).closest(".pdfDisplay").pdfViewer("instance");
     var $page = $(rc).find(".page");
-    var size = comment.info.split(";");
-    pdfViewer.createAreaComment($page, false, {
-      gradeId,
-      left: Number.parseFloat(size[0]),
-      top: Number.parseFloat(size[1]),
-      width: Number.parseFloat(size[2]),
-      height: Number.parseFloat(size[3]),
-      dimensions: "%",
-      type,
-      line,
-      label: comment.label,
-      id: comment.id,
-      severity: comment.severity,
-      label: comment.label,
-      author: comment.author,
-      deduction: comment.deduction,
-      title: comment.title,
-      comment: comment.comment,
-      suppressed: comment.suppressed        
-    });
+    var infoJson;
+    if (comment.info) {
+      try {
+        infoJson = JSON.parse(comment.info);
+      } catch(e) {
+        infoJson = undefined;
+      }
+    }
+    if (infoJson && infoJson.type === "area") {
+      pdfViewer.createAreaComment($page, false, {
+        gradeId,
+        left: infoJson.left,
+        top: infoJson.top,
+        width: infoJson.width,
+        height: infoJson.height,
+        dimensions: infoJson.dimensions,
+        type,
+        line,
+        label: comment.label,
+        id: comment.id,
+        severity: comment.severity,
+        label: comment.label,
+        author: comment.author,
+        deduction: comment.deduction,
+        title: comment.title,
+        comment: comment.comment,
+        suppressed: comment.suppressed
+      });
+    }
   }
   window.renderRegionComment = renderRegionComment;
 
