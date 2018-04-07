@@ -1,5 +1,5 @@
-<script src="/assets/pdfjs-dist/build/pdf.js"></script>
-<script src="/assets/pdfjs-dist/web/pdf_viewer.js"></script>
+<%= javascript_include_tag "pdfjs-dist/build/pdf.min.js" %>
+<%= javascript_include_tag "pdfjs-dist/web/pdf_viewer.js" %>
 <style>
 .embed-replaced { vertical-align: baseline; display: inline-block; }
 .embed-image { }
@@ -29,7 +29,7 @@ div.pdfDisplay {
   width: 100%; height: 100%;
   background-color: #404040;
   display: flex; flex-direction: column;
-  background-image: url(/assets/pdfjs-dist/web/images/texture.png);
+  background-image: url(<%= asset_path("pdfjs-dist/web/images/texture.png") %>);
   text-align: center;
 }
 div.pdfPages {

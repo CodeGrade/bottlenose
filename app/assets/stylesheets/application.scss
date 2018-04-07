@@ -409,7 +409,7 @@ li.list-group-item.unvisited {
   width: 100%;
   height: 32px;
   background-color: #474747;
-  background-image: url(/assets/pdfjs-dist/web/images/texture.png),
+  background-image: image-url("pdfjs-dist/web/images/texture.png"),
                     linear-gradient(hsla(0,0%,32%,.99), hsla(0,0%,27%,.95));
   z-index: 9999;
   cursor: default;
