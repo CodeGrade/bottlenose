@@ -3,9 +3,9 @@ require 'tap_parser'
 class GradesController < ApplicationController
   before_action :find_course
   before_action :find_assignment
-  before_action :find_submission, except: [:bulk_edit, :bulk_update]
-  before_action :find_grade, except: [:bulk_edit, :bulk_update]
-  before_action :find_grader, only: [:bulk_edit, :bulk_update]
+  before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
+  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
+  before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
   before_action -> {
     require_admin_or_staff(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
                            : course_assignment_path(@course, @assignment))
@@ -42,6 +42,14 @@ class GradesController < ApplicationController
 
   def bulk_update
     self.send("bulk_update_#{@assignment.type.capitalize}")
+  end
+
+  def bulk_edit_curve
+    self.send("bulk_edit_curve_#{@assignment.type.capitalize}")
+  end
+
+  def bulk_update_curve
+    self.send("bulk_update_curve_#{@assignment.type.capitalize}")
   end
 
   def update
@@ -98,6 +106,12 @@ class GradesController < ApplicationController
   end
   def questions_params
     params[:grades].to_unsafe_h.map{|k, v| [k, array_from_hash(v)]}.to_h
+  end
+  def curve_params
+    params[:grader].permit(:curveType, :gradeUnit,
+                           :flatPoints, :flatMax,
+                           :linearMapMin, :linearMapMax,
+                           :contrastDegree, :contrastWeight)
   end
 
   def find_grade
@@ -260,7 +274,24 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade editing for that assignment type is not supported"
   end
-
+  def bulk_edit_Codereview
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade editing for that assignment type is not supported"
+  end
+  
+  def bulk_edit_curve_Files
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk curved grade editing for that assignment type is not supported"
+  end
+  def bulk_edit_curve_Questions
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk curved grade editing for that assignment type is not supported"
+  end
+  def bulk_edit_curve_Codereview
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk curved grade editing for that assignment type is not supported"
+  end
+  
   # Bulk updates of grades
   def bulk_update_Exam
     respond_to do |f|
@@ -292,6 +323,112 @@ class GradesController < ApplicationController
       }
     end
   end
+
+  def bulk_edit_curve_Exam
+    edit_exam_grades_for(@course.students_with_drop_info)
+    
+    render "edit_#{@assignment.type.underscore}_curved_grades"
+  end
+  def bulk_update_curve_Exam
+    unless ["Points", "Percent"].member?(curve_params[:gradeUnit])
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "Unknown grade unit #{curve_params[:gradeUnit]} for curve"
+      return
+    end
+    unless ["flat", "linear", "contrast", "clear"].member?(curve_params[:curveType])
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "Unknown curve type #{curve_params[:curveType]}"
+      return
+    end
+    total = @assignment.graders.first.avail_score
+    newCurveCount = 0
+    existingCurveCount = 0
+    prompt = "curved"
+    case curve_params[:curveType]
+    when "flat"
+      added = curve_params[:flatPoints].to_f
+      cap = curve_params[:flatMax].to_f
+      case curve_params[:gradeUnit]
+      when "Points"
+        @assignment.submissions.each do |sub|
+          sub.set_curved_grade(current_user) do |num_questions, grades, curved|
+            if curved
+              existingCurveCount += 1
+              false
+            else
+              newCurveCount += 1
+              score = grades.sum{|c| c[:score]}
+              [cap, score + added].min
+            end
+          end
+        end
+      when "Percent"
+        @assignment.submissions.each do |sub|
+          sub.set_curved_grade(current_user) do |num_questions, grades, curved|
+            if curved
+              existingCurveCount += 1
+              false
+            else
+              newCurveCount += 1
+              score = grades.sum{|c| c[:score]}
+              [total * (cap / 100.0), score + (added / 100.0) * total].min
+            end
+          end
+        end
+      end
+    when "linear"
+      minCurved = curve_params[:linearMapMin].to_f
+      maxCurved = curve_params[:linearMapMax].to_f
+      case curve_params[:gradeUnit]
+      when "Points"
+        slope = (maxCurved - minCurved) / total
+      when "Percent"
+        slope = (maxCurved - minCurved) / 100
+      end
+      @assignment.submissions.each do |sub|
+        sub.set_curved_grade(current_user) do |num_questions, grades, curved|
+          if curved
+            existingCurveCount += 1
+            false
+          else
+            newCurveCount += 1
+            score = grades.sum{|c| c[:score]}
+            slope * score + minCurved
+          end
+        end
+      end
+    when "contrast"
+      degree = curve_params[:contrastDegree].to_f
+      weight = curve_params[:contrastWeight].to_f / 100.0
+      @assignment.submissions.each do |sub|
+        sub.set_curved_grade(current_user) do |num_questions, grades, curved|
+          if curved
+            existingCurveCount += 1
+            false
+          else
+            newCurveCount += 1
+            score = grades.sum{|c| c[:score]}
+            scorePct = (score / total)
+            contrast = scorePct ** degree
+            curved = (contrast * weight) + ((1 - weight) * scorePct)
+            curved * total
+          end
+        end
+      end
+    when "clear"
+      prompt = "uncurved"
+      @assignment.submissions.each do |sub|
+        newCurveCount += 1
+        sub.set_curved_grade(current_user, nil)
+      end
+    end
+    notice = "#{pluralize(newCurveCount, 'exam grade')} #{prompt}"
+    if existingCurveCount > 0
+      notice += " (#{pluralize(existingCurveCount, 'exam grade')} already curved)"
+    end
+    redirect_to course_assignment_path(@course, @assignment), notice: notice
+  end
+  
   def bulk_update_Files
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade updating for that assignment type is not supported"
@@ -301,6 +438,18 @@ class GradesController < ApplicationController
                   alert: "Bulk grade updating for that assignment type is not supported"
   end
   def bulk_update_Codereview
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
+  end
+  def bulk_update_curve_Files
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
+  end
+  def bulk_update_curve_Questions
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
+  end
+  def bulk_update_curve_Codereview
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade updating for that assignment type is not supported"
   end
@@ -699,7 +848,7 @@ HEADER
 
     render "show_SandboxGrader"
   end
-  def details_SanboxGrader
+  def details_SandboxGrader
     @grade.notes
   end
 

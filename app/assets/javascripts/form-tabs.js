@@ -38,9 +38,11 @@ window.form_tabs_init = function (tabs_div) {
                 $div.show();
                 $div.append($div.data("bn.detached-tab"));
                 $div.data("bn.detached-tab", $div.children());
+                $div.trigger("bn.showTab");
             }
             else if ($div.hasClass('active')) {
                 // while this saves the contents to the data attribute before detaching them all
+                $div.trigger("bn.hideTab");
                 $div.data("bn.detached-tab", $div.children());
                 $div.children().detach();
                 $div.removeClass('active');

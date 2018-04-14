@@ -89,7 +89,7 @@
     }
   });
   $("form").submit(function(e) {
-    var num = ensureValidNumericInputOnSubmit(e, "div.spinner > input");
+    var num = ensureValidNumericInputOnSubmit(e, "span.spinner > input");
     var files = ensureFilesPresentOnSubmit(e);
     return num && files;
   });

@@ -10,7 +10,7 @@ function getRow($row, $target, cb) {
     timeout: 500
   }).done(function(json) {
     if (json["grades"]) {
-      var $inputs = $target.find("div.spinner input");
+      var $inputs = $target.find("span.spinner input");
       var $hidden = $target.find("td.question > input[type='hidden']");
       $row.find("input[name='timestamp']").val(json.timestamp);
       $inputs.last().val("");
@@ -23,7 +23,7 @@ function getRow($row, $target, cb) {
       $target.find("h4.final_score").text(scores["final"]);
       cb();
     } else if (json["none found"]) {
-      var $inputs = $target.find("div.spinner input");
+      var $inputs = $target.find("span.spinner input");
       $inputs.val("");
       $target.find("h4.raw_score").text("");
       $inputs.last().val("");
@@ -74,7 +74,7 @@ function saveRow($row, cb) {
 
 function getGrades($table) {
   var ret = {grades: [], 'curved': undefined, 'raw': 0, 'final': 0};
-  var scores = $table.find("div.spinner input").toArray();
+  var scores = $table.find("span.spinner input").toArray();
   var sum = 0;
   for (var i = 0; i < scores.length - 1; i++) {
     var val = $(scores[i]).val();
@@ -117,7 +117,7 @@ $(function() {
     $("button.trigger").prop("disabled", true);
   });
   $("div.modal").on("shown.bs.modal", function() {
-    $(this).find("div.spinner input")[0].focus();
+    $(this).find("span.spinner input")[0].focus();
   });
   $("div.modal").on("hidden.bs.modal", function() {
     $("button.trigger").prop("disabled", false);

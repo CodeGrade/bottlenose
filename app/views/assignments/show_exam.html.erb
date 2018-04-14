@@ -18,10 +18,25 @@
 <%= render 'assignment_questions_info', gradesheet: @gradesheet,
     cur_reg: cur_reg %>
 <div>
-<div class="pull-right">
+<div class="pull-right btn-group">
 <%= link_to "Enter all grades",
     bulk_course_assignment_grader_path(@course, @assignment, @grader),
-    class: "btn btn-success" %>
+    class: "btn btn-md btn-success"
+    %><button type="button" class="btn btn-md btn-success dropdown-toggle"
+              stsyle="float: unset;" data-toggle="dropdown"
+              aria-haspopup="true" aria-expanded="false">
+  <span class="caret"></span>
+  <span class="sr-only">Toggle Dropdown</span>
+</button><ul class="dropdown-menu">
+  <li><%= link_to "Enter all grades",
+          bulk_course_assignment_grader_path(@course, @assignment, @grader),
+          class: "dropdown-item"
+          %></li>
+  <li><%= link_to "Edit curved grades",
+          bulk_curve_course_assignment_grader_path(@course, @assignment, @grader),
+          class: "dropdown-item"
+          %></li>
+</ul>
 </div>
 <h3 data-toggle="collapse" class="collapsed" data-target="#questions">
   Questions

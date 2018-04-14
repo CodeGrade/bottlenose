@@ -27,14 +27,16 @@ class ExamSub < Submission
     if curved_grade.nil? && block_given?
       comments = InlineComment.where(submission: self, suppressed: false).order(:line)
       grades = []
+      curved = nil
       comments.each do |c|
         if questions[c.line]
           grades[c.line] = {score: c.weight, out_of: questions[c.line]["weight"]}
         else
-          grades[c.line] = {curved: c.weight}
+          curved = c.weight
         end
       end
-      curved_grade = yield(num_questions, grades)
+      curved_grade = yield(num_questions, grades, curved)
+      return if curved_grade == false # Explicitly don't change the curved score
     end
     grader = self.assignment.graders.first
     grade_question!(who_graded, num_questions, curved_grade)

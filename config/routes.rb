@@ -75,6 +75,8 @@ Bottlenose::Application.routes.draw do
         member do
           get 'bulk' => 'grades#bulk_edit'
           post 'bulk' => 'grades#bulk_update'
+          get 'bulk_curve' => 'grades#bulk_edit_curve'
+          patch 'bulk_curve' => 'grades#bulk_update_curve'
         end
       end
       resources :matchings, only: [] do
