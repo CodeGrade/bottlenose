@@ -382,8 +382,10 @@ class GradesController < ApplicationController
       case curve_params[:gradeUnit]
       when "Points"
         slope = (maxCurved - minCurved) / total
+        intercept = minCurved
       when "Percent"
-        slope = (maxCurved - minCurved) / 100
+        slope = (maxCurved - minCurved) / 100.0
+        intercept = minCurved * (total / 100.0)
       end
       @assignment.submissions.each do |sub|
         sub.set_curved_grade(current_user) do |num_questions, grades, curved|
@@ -393,7 +395,7 @@ class GradesController < ApplicationController
           else
             newCurveCount += 1
             score = grades.sum{|c| c[:score]}
-            slope * score + minCurved
+            slope * score + intercept
           end
         end
       end
