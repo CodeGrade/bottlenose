@@ -5,7 +5,7 @@
 <% total_score = questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
 <% used_subs = @used_subs.group_by(&:user_id) %>
 
-<% if @student_info.length > 1 %>
+<% if @student_info.length >= 1 %>
 <style>
   <% @course.sections.each do |s| %>
   #grades-table.show_one .sec_<%= s.crn %> { display: none; }

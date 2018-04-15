@@ -138,7 +138,7 @@ GoogleCharts.load('corechart', function() {
     $(this).find(".pointsOrPercent").text(isPercent ? "percent" : "points");
     $(this).find(".pointsOrPercent.terse").text(isPercent ? "%" : "pts");
     var slope = (maxCurved - minCurved) / (maxVal - 0);
-    var intercept = minCurved * (maxVal / 100);
+    var intercept = minCurved;
     curveFunction = (function(slope, intercept) {
       return function(raw) { return slope * raw + intercept; };
     })(slope, intercept);
