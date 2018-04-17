@@ -232,13 +232,13 @@ class SubmissionsController < ApplicationController
         label: "Split submission",
         line: 0,
         filename: sub.upload.extracted_path,
-        grade_id: current_user.id,
+        grade_id: 0,
         severity: "info",
         comment: "This is copied from a previous team submission, for individual grading",
         weight: 0,
         suppressed: false,
         title: "",
-        info: nil)
+        info: {user: current_user.id}.to_json)
       sub_comment.save!
     end
     # Add a comment explaining the split
@@ -247,13 +247,13 @@ class SubmissionsController < ApplicationController
       label: "Split submission",
       line: 0,
       filename: @submission.upload.extracted_path,
-      grade_id: current_user.id,
+      grade_id: 0,
       severity: "info",
       comment: "This submission was split, to allow for individual grading",
       weight: 0,
       suppressed: false,
       title: "",
-      info: nil)
+      info: {user: current_user.id}.to_json)
     sub_comment.save!
     redirect_to course_assignment_path(@course, @assignment),
                 notice: "Group submission split for #{@submission.users.map(&:name).to_sentence}"
