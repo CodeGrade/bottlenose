@@ -191,13 +191,13 @@ class SubmissionsController < ApplicationController
         label: "Plagiarism",
         line: 0,
         filename: sub.upload.extracted_path,
-        grade_id: current_user.id,
+        grade_id: 0,
         severity: "error",
         comment: comment,
         weight: penalty,
         suppressed: false,
         title: "",
-        info: nil)
+        info: {user_id: current_user.id}.to_json)
       sub_comment.save!
     end
     # Add a comment explaining the split
@@ -206,13 +206,13 @@ class SubmissionsController < ApplicationController
       label: "Plagiarized submission",
       line: 0,
       filename: @submission.upload.extracted_path,
-      grade_id: current_user.id,
+      grade_id: 0,
       severity: "info",
       comment: "This submission has been reviewed for plagiarism and regraded accordingly.",
       weight: 0,
       suppressed: false,
       title: "",
-      info: nil)
+      info: {user_id: current_user.id}.to_json)
     sub_comment.save
     redirect_to course_assignment_path(@course, @assignment),
                 notice: "Submission marked as plagiarized for #{guilty_students.map{|uid, _| User.find(uid).name}.to_sentence}"
