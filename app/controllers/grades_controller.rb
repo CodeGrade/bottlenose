@@ -1,4 +1,5 @@
 require 'tap_parser'
+require 'audit'
 
 class GradesController < ApplicationController
   before_action :find_course
@@ -6,11 +7,15 @@ class GradesController < ApplicationController
   before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
   before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
   before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
+  before_action :require_current_user
   before_action -> {
     require_admin_or_staff(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
                            : course_assignment_path(@course, @assignment))
-  }, except: [:show, :update, :details]
-  before_action :require_current_user
+  }, except: [:show, :update, :details, :bulk_edit_curve, :bulk_update_curve]
+  before_action -> {
+    require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                               : course_assignment_path(@course, @assignment))
+  }, only: [:bulk_edit_curve, :bulk_update_curve]
   def edit
     if @grade.grader.autograde?
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
@@ -340,6 +345,7 @@ class GradesController < ApplicationController
                     alert: "Unknown curve type #{curve_params[:curveType]}"
       return
     end
+    puts "Curving assignment #{@assignment.id} (course #{@course.id}): user #{current_user.name} (id #{current_user.id}), params #{curve_params}"
     total = @assignment.graders.first.avail_score
     newCurveCount = 0
     existingCurveCount = 0
