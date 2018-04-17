@@ -227,12 +227,24 @@ class CourseSpreadsheet < Spreadsheet
           elsif plagiarism_status
             penalty = plagiarism_status.pluck(:weight).sum
             sheet.push_row(i, "Plagiarized (-#{penalty} pts)")
+            # (SumGrade - PlagiarismPenalty) / MaxPoints
             sum_grade = Formula.new(nil, "MAX", 0,
-                                    Formula.new(nil, "-", sum_grade, penalty))
+                                    Formula.new(sub[:sub].score, "/",
+                                                Formula.new(nil, "-",
+                                                            CellRef.new(nil,
+                                                                        Spreadsheet.col_name(weight.count - 4), true,
+                                                                        i + sheet.header_rows.length + 2, false,
+                                                                        nil),
+                                                            penalty),
+                                                CellRef.new(nil,
+                                                            Spreadsheet.col_name(weight.count - 4), true,
+                                                            3, true,
+                                                            nil)))
           else
             lc = assn.lateness_config
             penalty = lc.late_penalty(assn, sub[:sub]) / 100.0
             sheet.push_row(i, penalty)
+            # (SumGrade / PlagiarismPenalty) - LatenessPercent
             sum_grade = Formula.new(nil, "MAX", 0,
                                     Formula.new(nil, "-", sum_grade,
                                                 CellRef.new(nil,
