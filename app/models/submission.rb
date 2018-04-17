@@ -282,6 +282,13 @@ class Submission < ApplicationRecord
     self.compute_grade! if complete
   end
 
+  def plagiarism_status
+    InlineComment.where(submission: self, label: "Plagiarism")
+  end
+  def self.plagiarism_status(subs)
+    InlineComment.where(submission: subs, label: "Plagiarism").group_by(&:submission_id)
+  end
+  
   def compute_grade!
     ### A Submission's score is recorded as a percentage
     score = 0.0
@@ -297,7 +304,7 @@ class Submission < ApplicationRecord
       max_score += component_weight unless g.grader.extra_credit
       max_score_with_ec += component_weight
     end
-    plagiarism = InlineComment.where(submission: self, label: "Plagiarism")
+    plagiarism = self.plagiarism_status
     if plagiarism.count > 0
       penalty = plagiarism.pluck(:weight).sum
       log += "Plagiarism penalty => #{penalty}"

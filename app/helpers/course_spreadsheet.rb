@@ -203,9 +203,10 @@ class CourseSpreadsheet < Spreadsheet
           grades.graders.each do |g| sheet.push_row(i, "") end
           sheet.push_row(i, [0, "No submission", 0, 0])
         else
+          plagiarism_status = grades.plagiarism_status[sub_id.submission_id]
           sub[:staff_scores][:scores].each do |ss|
             sheet.push_row(i, ss[0] || "<none>")
-          end
+          end          
           sum_grade = Formula.new(sub[:sub].score, "SUM",
                                   Range.new(Spreadsheet.col_name(weight.count - @graders_count - 4), true,
                                             i + sheet.header_rows.length + 2, false,
@@ -223,6 +224,11 @@ class CourseSpreadsheet < Spreadsheet
 
           if sub[:sub].ignore_late_penalty
             sheet.push_row(i, "<ignore>")
+          elsif plagiarism_status
+            penalty = plagiarism_status.pluck(:weight).sum
+            sheet.push_row(i, "Plagiarized (-#{penalty} pts)")
+            sum_grade = Formula.new(nil, "MAX", 0,
+                                    Formula.new(nil, "-", sum_grade, penalty))
           else
             lc = assn.lateness_config
             penalty = lc.late_penalty(assn, sub[:sub]) / 100.0

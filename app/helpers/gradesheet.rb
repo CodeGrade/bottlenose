@@ -6,6 +6,7 @@ class Gradesheet
   attr_reader :raw_grades
   attr_reader :max_score
   attr_reader :grades
+  attr_reader :plagiarism_status
   def initialize(assignment, submissions)
     # A Grader specifies its relative weight compared to the other graders for that assignment
 
@@ -33,6 +34,7 @@ class Gradesheet
                   .map{|sid, gs| [sid, gs.map{|g| [g.grader_id, g]}.to_h]}
                   .to_h
     @missing_grades = false
+    @plagiarism_status = Submission.plagiarism_status(@submissions)
 
     @raw_score = 0
     @grades = {graders: @graders, grades: {}}
