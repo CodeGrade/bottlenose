@@ -33,8 +33,8 @@ class JavaStyleGrader < Grader
         ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
          files_dir.to_s,
          "+config", self.upload.submission_path.to_s,
-         "+pmdAddClassPath", Rails.root.join("lib/assets/tester-2.jar").to_s,
-         "+pmdAddClassPath", Rails.root.join("lib/assets/javalib.jar").to_s,
+         "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
+         "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
          "-maxPoints", self.avail_score.to_s]
       ]
     else
@@ -43,8 +43,8 @@ class JavaStyleGrader < Grader
         {},
         ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
          files_dir.to_s,
-         "+pmdAddClassPath", Rails.root.join("lib/assets/tester-2.jar").to_s,
-         "+pmdAddClassPath", Rails.root.join("lib/assets/javalib.jar").to_s,
+         "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
+         "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
          "-maxPoints", self.avail_score.to_s]
       ]
     end
