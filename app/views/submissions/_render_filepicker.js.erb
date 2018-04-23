@@ -206,7 +206,7 @@ $(function (){
     filesTree.on("nodeUnchecked", function(e, data) {
       $(data.$el).removeClass("unvisited");
       if ($(".unvisited").length === 0) {
-        $("#completed").removeClass("disabled").text("Mark grading as complete");
+        $("#completed").removeClass("disabled").prop("disabled", false).text("Mark grading as complete");
       }      
     })
     filesTree.treeview("getCollapsed").map(function(item) {

@@ -57,7 +57,7 @@
   <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission), @grade] do |f| %>
   <%= hidden_field_tag :finalScore %>
   <%= hidden_field_tag :comments %>
-  <%= f.submit "Give comments on all files below", id: "completed", class: "btn btn-success disabled" %>
+  <%= f.submit "Give comments on all files below", id: "completed", class: "btn btn-success disabled", disabled: true %>
   <% end %>
 </h3>
 <% end %>
