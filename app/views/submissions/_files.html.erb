@@ -151,6 +151,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </div>  
   <% else %>
   <% begin
+       raise "" if (f[:name].ends_with?(".class") && f[:contents].starts_with?("\xCA\xFE\xBA\xBE"))
        contents = render html: f[:contents] %>
   <div>
     <textarea class="sourceCode" data-lang="<%= f[:type] %>"
