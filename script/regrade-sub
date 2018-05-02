@@ -14,7 +14,9 @@ end
 
 asg = sub.assignment
 
-asg.grader_configs.each do |gc|
+asg.graders.each do |gc|
+  puts gc.inspect
   next unless gc.type == "SandboxGrader"
-  gc.autograde!(asg, sub)
+  puts "Autograde!"
+  gc.do_grading(asg, sub)
 end

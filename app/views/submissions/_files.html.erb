@@ -25,7 +25,7 @@
       <i class="glyphicon glyphicon-zoom-in"></i>
     </a>
   </div>
-  <% elsif f[:type] == "zip" || f[:type] == "jar" %>
+  <% elsif f[:type] == "zip" || f[:type] == "jar" || f[:link] =~ /pdf$/i %>
   <div class="nonCMwrapper"><%= link_to "Download #{f[:name]}", f[:link] %></div>
   <% elsif f[:type] == "symlink" %>
   <div class="nonCMwrapper">Symbolic link to

@@ -5,8 +5,8 @@ class SubmissionsController < CoursesController
   prepend_before_action :find_submission, except: [:index, :new, :create, :rerun_grader]
   prepend_before_action :find_course_assignment
   before_action :require_current_user, only: [:show, :files, :new, :create]
-  before_action :require_admin_or_staff, only: [:recreate_grade, :rerun_grader, :use_for_grading, :publish]
-  before_action :require_admin_or_prof, only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
+  before_action :require_admin_or_staff, only: [:rescind_lateness, :recreate_grade, :rerun_grader, :use_for_grading, :publish]
+  before_action :require_admin_or_prof, only: [:edit_plagiarism, :update_plagiarism, :split_submission]
   def show
     unless @submission.visible_to?(current_user)
       redirect_to course_assignment_path(@course, @assignment), alert: "That's not your submission."

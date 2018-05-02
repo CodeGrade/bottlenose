@@ -20,7 +20,7 @@ class SandboxGrader < Grader
     end
   end
 
-  protected
+  #protected
 
   def do_grading(assignment, sub)
     puts "== do grading? =="
@@ -74,13 +74,23 @@ class SandboxGrader < Grader
       raise Exception.new("Driver execution failed")
     end
 
+    utf8fix = {invalid: :replace, undef: :replace, replace: ''}
+    stdout = stdout.encode(Encoding.find('UTF-8'), utf8fix)
+    stderr = stderr.encode(Encoding.find('UTF-8'), utf8fix)
+
+    puts "== stdout =="
+    puts stdout
+    puts "== stderr =="
+    puts stderr
+    puts "== end of output =="
+
     parts = stdout.split("#{secret}\n")
     g.score = 0
     g.out_of = self.avail_score
 
     details_log = grader_dir.join("details.log")
     makefile_tap = grader_dir.join("makefile.tap")
-
+      
     File.open(details_log, "w") do |details|
       details.write "== stdout ==\n\n#{stdout}\n\n== stderr ==\n\n#{stderr}\n\n== end of output ==\n"
     end

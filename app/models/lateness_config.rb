@@ -47,7 +47,7 @@ class LatenessConfig < ApplicationRecord
     end
     #print "Penalty is now #{penalty}\n"
     #print "Score is #{score}\n"
-    ans = (score - penalty).clamp(0, 100)
+    ans = (score - penalty).clamp(0, 150)
     #print "Penalized score is #{ans}\n"
     ans
   end

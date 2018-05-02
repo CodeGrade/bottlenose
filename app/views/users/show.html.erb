@@ -37,6 +37,10 @@
         <td>NUID:</td>
         <td><%= @user.nuid_safe(current_user) %></td>
       </tr>
+      <tr>
+        <td>Username:</td>
+        <td><%= @user.username %></td>
+      </tr>
       <% if current_user.site_admin? %>
       <tr>
         <td>Site Admin?</td>

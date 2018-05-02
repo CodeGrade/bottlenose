@@ -8,7 +8,7 @@ TAR_LONGLINK = '././@LongLink'
 
 class ArchiveUtils
   def self.MAX_FILES
-    100
+    400
   end
   def self.MAX_SIZE
     10.megabytes

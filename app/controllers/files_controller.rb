@@ -1,6 +1,11 @@
 class FilesController < ApplicationController
   def upload
-    if File.file?(Upload.base_upload_dir.join(params[:path]))
+    file_path = Upload.base_upload_dir.join(params[:path])
+    unless File.file?(file_path)
+      file_path = Rails.root.join("private", params[:path])
+    end
+
+    if File.file?(file_path)
       case File.extname(params[:path]).downcase
       when ".jpg", ".jpeg", ".png", ".gif", ".tap"
         disp = "inline"
@@ -9,7 +14,7 @@ class FilesController < ApplicationController
       end
       mime = ApplicationHelper.mime_type(params[:path])
       
-      send_file Upload.base_upload_dir.join(params[:path]).to_s,
+      send_file file_path.to_s,
                 filename: File.basename(params[:path]),
                 disposition: disp,
                 type: mime

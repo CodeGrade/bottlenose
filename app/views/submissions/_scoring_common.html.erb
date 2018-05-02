@@ -128,7 +128,7 @@
     <td>
       <%= if @submission.ignore_late_penalty
             "(penalty ignored)"
-          elsif @submission.days_late > 0 && cur_reg&.professor?
+          elsif @submission.days_late > 0 && cur_reg&.staff?
             link_to("Rescind lateness penalty",
               rescind_lateness_course_assignment_submission_path(@course, @assignment, @submission),
               class: "btn btn-default", method: "patch")

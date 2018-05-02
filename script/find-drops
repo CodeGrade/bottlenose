@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+asgn = Assignment.find_by_id(ARGV[0].to_i)
+
+if asgn.nil?
+  puts "Must provide valid assign id."
+  exit(0)
+end
+
+course = asgn.course
+
+puts "Course: #{course.name}"
+
+has_sub = {}
+
+asgn.submissions.each do |sub|
+  has_sub[sub.user_id] = true
+end
+
+course.students.each do |stu|
+  if !has_sub[stu.id]
+    puts stu.name
+  end
+end
+

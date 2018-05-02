@@ -20,6 +20,12 @@ echo "" > /etc/apt/apt.conf.d/20auto-upgrades
 #add-apt-repository -y ppa:avsm/ppa
 
 export DEBIAN_FRONTEND=noninteractive
+
+wget https://packages.erlang-solutions.com/erlang-solutions_1.0_all.deb
+dpkg -i erlang-solutions_1.0_all.deb
+
+curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+
 apt-get update
 apt-get upgrade -y
 
@@ -29,6 +35,8 @@ apt-get install -y clang valgrind build-essential
 apt-get install -y openjdk-8-jdk
 apt-get install -y libfuse-dev pkg-config
 apt-get install -y wamerican libbsd-dev libgmp-dev
+apt-get install -y esl-erlang elixir nodejs
+
 
 #apt-get install -y ocaml ocaml-native-compilers camlp4-extra opam \
 #        nasm m4 gcc-multilib g++-multilib libc6-dev-i386 libc6-dev \

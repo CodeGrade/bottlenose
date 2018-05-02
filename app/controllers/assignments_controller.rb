@@ -1,3 +1,5 @@
+require 'sub_tarball'
+
 class AssignmentsController < ApplicationController
   layout 'course'
 
@@ -205,7 +207,7 @@ class AssignmentsController < ApplicationController
     else
       tb.update!
     end
-    redirect_to tb.path
+    redirect_to('/files' + tb.path)
   end
 
   def publish

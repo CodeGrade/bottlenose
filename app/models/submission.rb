@@ -292,12 +292,6 @@ class Submission < ApplicationRecord
       score += grade_component
       max_score += component_weight
     end
-    plagiarism = InlineComment.where(submission: self, label: "Plagiarism")
-    if plagiarism.count > 0
-      penalty = plagiarism.pluck(:weight).sum
-      log += "Plagiarism penalty => #{penalty}"
-      score -= penalty
-    end
     self.score = (100.0 * score.to_f) / max_score.to_f
     if self.ignore_late_penalty
       log += "Ignoring late penalty, "
@@ -306,6 +300,13 @@ class Submission < ApplicationRecord
     end
     log += "Final score: #{self.score}%"
 
+    plagiarism = InlineComment.where(submission: self, label: "Plagiarism")
+    if plagiarism.count > 0
+      penalty = plagiarism.pluck(:weight).sum
+      log += "Plagiarism penalty => #{penalty}"
+      self.score -= penalty
+    end
+ 
     Audit.log("Grading submission at #{DateTime.current}, grades are #{log}")
     self.save!
 
