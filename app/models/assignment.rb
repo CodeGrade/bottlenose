@@ -263,8 +263,8 @@ class Assignment < ApplicationRecord
       end
     elsif self.team_subs
       if only_used_subs
-        used_subs = multi_group_by(self.all_used_subs.where(user: users), [:user_id], true)
-        teams = used_subs.map{|_, s| s.user_ids.map{|uid| [uid, s.team]}}.flatten(1).to_h
+        used_subs = multi_group_by(self.all_used_subs.where(user: users).includes(:team, :user_submissions).references(:team, :user_submissions), [:user_id], true)
+        teams = used_subs.map{|_, s| s.user_submissions.map{|us| [us.user_id, s.team]}}.flatten(1).to_h
       else
         teams = self.teamset.active_teams_for(users, as_of)
       end
