@@ -15,6 +15,10 @@ class IndividualExtension < ApplicationRecord
     end
     subs.each{|s| s.compute_grade!}
   end
+
+  def to_s
+    "User #{self.user_id || '<nil>'}/Team #{self.team_id || '<nil>'} can work on assignment #{self.assignment_id} until #{self.due_date} (instead of #{self.assignment.due_date})"
+  end
   
   private
   def user_or_team

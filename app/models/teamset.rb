@@ -113,15 +113,15 @@ class Teamset < ActiveRecord::Base
     self.course.users_with_drop_info.order(:last_name, :first_name)
   end
 
-  def active_teams
-    self.teams.where(Team.active_query, Date.current, Date.current).includes(:users)
+  def active_teams(as_of = DateTime.now)
+    self.teams.where(Team.active_query, as_of, as_of).includes(:users)
   end
 
-  def active_teams_in_section(section_id)
+  def active_teams_in_section(section_id, as_of = DateTime.now)
     section = course.sections.find(section_id)
     return [] unless section
     users_in_section = section.users.map{|u| [u.id, true]}.to_h
-    self.active_teams.select do |team|
+    self.active_teams(as_of).select do |team|
       team.users.any?{|u| users_in_section[u.id]}
     end
   end
@@ -130,8 +130,8 @@ class Teamset < ActiveRecord::Base
     user.teams.where(course: self.course, teamset: self).select(&:active?).first
   end
 
-  def active_teams_for(users)
-    self.active_teams.map do |t|
+  def active_teams_for(users, as_of = DateTime.now)
+    self.active_teams(as_of).map do |t|
       t.users.map{|u| [u.id, t]}
     end.flatten(1).to_h.slice(*users.map(&:id))
   end

@@ -15,7 +15,7 @@
   <table class="table">
     <thead>
       <tr>
-        <% all_emails = users.order("LOWER(name)").map {|u| "#{u.name} <#{u.email}>"} %>
+        <% all_emails = users.order(Arel.sql("LOWER(name)")).map {|u| "#{u.name} <#{u.email}>"} %>
         <th><%= mail_to "#{current_user.name} <#{current_user.email}>", "@",
                            bcc: all_emails.join(","), title: "Email everyone (bcc)" %></th>
         <th>Name</th>
@@ -23,7 +23,7 @@
       </tr>
     </thead>
     <tbody>
-      <% users.order("LOWER(name)").each do |user| %>
+      <% users.order(Arel.sql("LOWER(name)")).each do |user| %>
       <tr>
         <td width="1em"><%= mail_to "#{user.name} <#{user.email}>", "@" %></td>
         <td>
@@ -57,7 +57,7 @@
   <table class="table">
     <thead>
       <tr>
-        <% all_emails = users.order("LOWER(name)").map {|u| "#{u.name} <#{u.email}>"} %>
+        <% all_emails = users.order(Arel.sql("LOWER(name)")).map {|u| "#{u.name} <#{u.email}>"} %>
         <th><%= mail_to all_emails.join(","), "@", title: "Email everyone" %></th>
         <th>Name</th>
         <th>Role</th>

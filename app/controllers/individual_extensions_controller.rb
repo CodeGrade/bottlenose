@@ -9,7 +9,8 @@ class IndividualExtensionsController < ApplicationController
   def edit
     if @assignment.team_subs?
       @existing_extensions = multi_group_by(@assignment.individual_extensions, [:team_id], true)
-      @all_potential = @assignment.teamset.active_teams
+      teams = @assignment.teamset.teams
+      @all_potential = teams.where(Team.active_query, DateTime.now, DateTime.now).or(teams.where(id: @existing_extensions.keys)).includes(:users)
     else
       @existing_extensions = multi_group_by(@assignment.individual_extensions, [:user_id], true)
       @all_potential = @course.students

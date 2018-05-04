@@ -231,9 +231,19 @@ class Assignment < ApplicationRecord
     self.team_subs = (@teamset_plan != "none")
   end
 
+  def effective_sub_due_date(sub)
+    if @cached
+      return @cached[:subs][sub.user_id] || self.due_date
+    elsif self.team_subs
+      self.individual_extensions.find_by(team_id: sub.team_id)&.due_date || self.due_date
+    else
+      self.individual_extensions.find_by(user_id: sub.user_id)&.due_date || self.due_date
+    end
+  end
+  
   def effective_due_date(user, team)
     if @cached
-      return @cached[user.id || team.id] || self.due_date
+      return @cached[:all][user.id] || self.due_date
     elsif self.team_subs
       self.individual_extensions.find_by(team: team)&.due_date || self.due_date
     else
@@ -241,31 +251,46 @@ class Assignment < ApplicationRecord
     end
   end
 
-  def extensions_for_users(users)
+  def extensions_for_users(users, only_used_subs, as_of = DateTime.now)
     if users.is_a? User
       users = [users]
     end
     if @cached
-      return users.map{|u| [u.id, @cached[u.id] || self.due_date]}.to_h
+      if only_used_subs
+        return users.map{|u| [u.id, @cached[:all][u.id] || self.due_date]}.to_h
+      else
+        return users.map{|u| [u.id, @cached[:subs][u.id] || self.due_date]}.to_h
+      end
     elsif self.team_subs
-      active_teams = self.teamset.active_teams_for(users)
-      extensions = multi_group_by(self.individual_extensions.where(team: active_teams.values), [:team_id], true)
-      users.map{|u| [u.id, extensions[active_teams[u.id]&.id]]}.to_h
+      if only_used_subs
+        used_subs = multi_group_by(self.all_used_subs.where(user: users), [:user_id], true)
+        teams = used_subs.map{|_, s| s.user_ids.map{|uid| [uid, s.team]}}.flatten(1).to_h
+      else
+        teams = self.teamset.active_teams_for(users, as_of)
+      end
+      extensions = self.individual_extensions.where(team: teams.values)
+      extensions = multi_group_by(extensions, [:team_id], true)
+      users.map do |u|
+        [u.id, extensions[teams[u.id]&.id]&.due_date]
+      end.to_h
     else
       extensions = multi_group_by(self.individual_extensions.where(user: users), [:user_id], true)
-      users.map{|u| [u.id, extensions[u.id]]}.to_h
+      users.map{|u| [u.id, extensions[u.id]&.due_date]}.to_h
     end
   end
 
-  def effective_due_dates(users)
-    extensions_for_users(users).map do |uid, ext|
-      [uid, ext&.due_date || self.due_date]
+  def effective_due_dates(users, only_used_subs)
+    extensions_for_users(users, only_used_subs, self.due_date).map do |uid, ext|
+      [uid, ext || self.due_date]
     end.to_h
   end
 
   def cache_effective_due_dates!(users)
     @cached = nil
-    @cached = effective_due_dates(users)
+    @cached = {
+      subs: effective_due_dates(users, true),
+      all: effective_due_dates(users, false)
+    }
   end
   
   def sub_late?(sub)

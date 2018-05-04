@@ -162,7 +162,7 @@ class Course < ApplicationRecord
     assns = self.assignments.where("available < ?", DateTime.current)
     effective_due_dates =
       multi_group_by(
-        assns.map{|a| a.effective_due_dates(for_students).map{|uid, due| [uid, a.id, a, due]}}.flatten(1),
+        assns.map{|a| a.effective_due_dates(for_students, true).map{|uid, due| [uid, a.id, a, due]}}.flatten(1),
         [:first, :second], true)
     subs_by_user = UsedSub.where(user: for_students, assignment: assns)
       .joins(:submission)

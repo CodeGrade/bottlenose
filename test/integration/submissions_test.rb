@@ -13,13 +13,84 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     Upload.cleanup_test_uploads!
   end
 
+  def clean(summary)
+    summary.map do |v|
+      v.delete(:used)
+      [v.delete(:s).id, v]
+    end.to_h
+  end
+
+  test "extensions should work with teams even when they are dissolved" do
+    @as1 = create(:assignment, course: @cs101, teamset: @ts1, team_subs: true,
+                  due_date: Date.current - 1.days + 12.hours,
+                  points_available: 5)
+    @as1.reload # needed for the lateness config
+    @team1 = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 2.days, end_date: nil)
+    @team1.users = [@john, @sarah]
+    @team1.save
+
+    @sub1 = create(:submission, user: @john, assignment: @as1, team: @team1, created_at: @as1.due_date + 1.hours)
+    @sub1.set_used_sub!
+
+    assert_equal(@as1.sub_late?(@sub1), true, "Submitting late should be marked late")
+    assert_equal(@as1.effective_due_date(@john, @team1), @as1.due_date,
+                 "Without an extension, effective due date is assignment due date")
+    assert_equal(@as1.effective_due_dates([@john], true)[@john.id], @as1.due_date,
+                 "Without an extension, effective due date is assignment due date")
+
+    @as1.cache_effective_due_dates!(@sub1.users)
+    assert_equal(@as1.effective_due_date(@john, @team1), @as1.due_date,
+                 "Without an extension, cached effective due date is assignment due date")
+    assert_equal(@as1.effective_due_dates([@john], true)[@john.id], @as1.due_date,
+                 "Without an extension, cached effective due date is assignment due date")
+
+    @ext1 = IndividualExtension.create!(assignment: @as1, team: @team1, due_date: @as1.due_date + 1.days)
+    @as1.reload
+    @as1.cache_effective_due_dates!(@sub1.users)
+    assert_equal(@as1.sub_late?(@sub1), false, "Submitting late, with an extension, should be marked on time")
+    assert_equal(@as1.effective_due_date(@john, @team1), @ext1.due_date,
+                 "With an extension, effective due date is extended due date")
+    assert_equal(@as1.effective_due_dates([@john], true)[@john.id], @ext1.due_date,
+                 "With an extension, effective due date is extended due date")
+
+    @team1.dissolve(@as1.due_date + 2.hours)
+    @as1.reload
+    @as1.cache_effective_due_dates!(@sub1.users)
+    assert_equal(@as1.sub_late?(@sub1), false, "Submitting late, with an extension, in an inactive team, should be marked on time")
+    assert_equal(@as1.effective_sub_due_date(@sub1), @ext1.due_date,
+                 "Submitting late, with an extension, in an inactive team, should be marked on time")
+
+    assert_equal(@as1.effective_due_date(@john, @team1), @as1.due_date,
+                 "With an extension, even with an inactive team, effective due date is normal due date")
+    assert_equal(@as1.effective_due_dates([@john], true)[@john.id], @as1.due_date,
+                 "With an extension, even with an inactive team, effective due date is normal due date")
+
+    @team2 = Team.new(course: @cs101, teamset: @ts1, start_date: @team1.end_date, end_date: nil)
+    @team2.users = [@john, @sarah, @andy]
+    @team2.save
+
+    @as1.reload
+    @as1.cache_effective_due_dates!(@sub1.users)
+    assert_equal(@as1.sub_late?(@sub1), false, "Submitting late, with an extension, in an inactive team, should be marked on time")
+    assert_equal(@as1.effective_sub_due_date(@sub1), @ext1.due_date,
+                 "Submitting late, with an extension, in an inactive team, should be marked on time")
+
+    assert_equal(@as1.effective_due_date(@john, @team1), @as1.due_date,
+                 "With an extension, even with an inactive team, effective due date is normal due date")
+    assert_equal(@as1.effective_due_dates([@john], true)[@john.id], @as1.due_date,
+                 "With an extension, even with an inactive team, effective due date is normal due date")
+
+    @ext2 = IndividualExtension.create!(assignment: @as1, team: @team2, due_date: @as1.due_date + 3.days)
+    @as1.reload
+    @as1.cache_effective_due_dates!(@sub1.users)
+    assert_equal(@as1.sub_late?(@sub1), false, "Submitting late, with an extension, in an inactive team, should be marked on time")
+    assert_equal(@as1.effective_due_date(@john, @team2), @ext2.due_date,
+                 "With a new extension on a new team for #{@john.id}, effective due date is extended due date")
+    assert_equal(@as1.effective_due_dates([@john], true)[@john.id], @ext2.due_date,
+                 "With a new extension on a new team for #{@john.id}, effective due date is extended due date")
+  end
+  
   test "course summaries should handle all submission transitions correctly" do
-    def clean(summary)
-      summary.map do |v|
-        v.delete(:used)
-        [v.delete(:s).id, v]
-      end.to_h
-    end
     @as1 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now - 1.days, points_available: 5)
     @as1.reload # needed for the lateness config
     @summary = clean(@cs101.score_summary(@john))

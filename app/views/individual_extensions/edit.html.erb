@@ -15,6 +15,7 @@
   <table class="table">
     <thead>
       <tr>
+        <th style="width: 2.1em;"></th>
         <th><%= if @assignment.team_subs? then "Team" else "Student" end %></th>
         <th>Extend until</th>
         <th></th>
@@ -23,6 +24,11 @@
     <tbody>
       <% @all_potential.each do |tu| %>
       <tr>
+        <td>
+          <% if @assignment.team_subs && tu.end_date %>
+          <span class="glyphicon glyphicon-alert" title="Inactive team"></span>
+          <% end %>
+        </td>
         <td class="col-sm-6">
           <%= form_tag patch_course_assignment_extensions_path(@course, @assignment),
               id: "ext_#{tu.id}", method: :patch do %>
