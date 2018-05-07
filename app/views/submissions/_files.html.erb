@@ -93,13 +93,13 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </div>
   <% elsif (f[:pdf_path] || (f[:type] == "application/pdf" && f[:contents].starts_with?("%PDF"))) %>
   <div class="nonCMwrapper" style="display: inline-block; width: 100%; overflow: hidden;">
-    <%= render "submissions/pdf_viewer", index: index, url: f[:link], source: f[:pdf_path], alt: f[:name] %>
+    <%= render "submissions/pdf_viewer", index: index, url: f[:link], source: f[:pdf_path], alt: File.basename(f[:name]) %>
   </div>
   <% elsif (f[:type] == "text/markdown") %>
   <ul class="nav nav-tabs">
     <li class="active"><a href="#markup_src_<%= i %>_<%= root %>" data-toggle="tab">Markdown source</a></li>
     <li id="tab_markdown_<%= i %>_<%= root %>"><a href="#markup_markdown_<%= i %>_<%= root %>" data-toggle="tab">Markdown preview<sup>β</sup> (links, scripts disabled)</a></li>
-    <li><%= link_to "Download #{f[:name]}", f[:link] %></li>
+    <li><%= link_to "Download #{File.basename(f[:name])}", f[:link] %></li>
   </ul>
   <div class="tab-content" style="height: 100%;">
     <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">
@@ -127,7 +127,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   <ul class="nav nav-tabs">
     <li class="active"><a href="#markup_src_<%= i %>_<%= root %>" data-toggle="tab"><%= type %> source</a></li>
     <li id="tab_image_<%= i %>_<%= root %>"><a href="#markup_image_<%= i %>_<%= root %>" data-toggle="tab"><%= type %> preview (scripts disabled)</a></li>
-    <li><%= link_to "Download #{f[:name]}", f[:link] %></li>
+    <li><%= link_to "Download #{File.basename(f[:name])}", f[:link] %></li>
   </ul>
   <div class="tab-content" style="height: 100%;">
     <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">

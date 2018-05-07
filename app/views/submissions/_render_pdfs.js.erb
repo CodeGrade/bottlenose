@@ -2,6 +2,9 @@ $(function() {
   pdfjsLib.GlobalWorkerOptions.workerSrc = "<%= asset_path('pdfjs-dist/build/pdf.worker.min.js') %>";
   var CSS_UNITS = 96/72;
   $(document.body).prepend($("#selectionWrapperWrapper").detach());
+  function encodePath(str) {
+    return str.split('/').map(encodeURIComponent).join('/');
+  }
   $.widget("bn.pdfViewer", {
     options: { },
     _create: function() {
@@ -11,7 +14,7 @@ $(function() {
       ////////////////////////////////////////
       //////////////////// Rendering
       ////////////////////////////////////////
-      pdfjsLib.getDocument($div.data("rendered")).then(createPages);
+      pdfjsLib.getDocument(encodePath($div.data("rendered"))).then(createPages);
       function createPages(pdf) {
         // Page numbers are 1-based
         $pages.data("pdf", pdf);
@@ -194,13 +197,13 @@ $(function() {
       ////////////////////////////////////////
       var clickingDownload = false;
       $div.find("#new_window").click(function(e) {
-        window.open($div.data("source"), "_blank");
+        window.open(encodePath($div.data("source")), "_blank");
         e.stopPropagation();
       });
       $div.find("#download").click(function(e) {
         // console.log("Clicking on button");
         var dm = new pdfjsViewer.DownloadManager({});
-        dm.downloadUrl($div.data("source"), $div.data("alt"));
+        dm.downloadUrl(encodePath($div.data("source")), $div.data("alt"));
         e.stopPropagation();
       });
     },

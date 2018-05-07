@@ -44,6 +44,7 @@ function processEmbeds(embeds) {
       .addClass("embed-replaced").addClass("embed-image");
   };
   Processors["image-file"] = function(content) {
+    content = content.split('/').map(encodeURIComponent).join('/');
     return $("<img>").attr("src", content)
       .addClass("embed-replaced").addClass("embed-image");
   };
