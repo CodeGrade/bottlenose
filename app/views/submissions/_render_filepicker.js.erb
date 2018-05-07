@@ -144,7 +144,14 @@ $(function (){
         var codeHeight = windowHeight - footerHeight - parentBulk;
         var filesHeight = windowHeight - footerHeight - toggleCommentsHeight;
       }
-      var tabbarHeight = $("#" + root).find(".nav-tabs").outerHeight(true) || 0;
+      var tabbar = $("#" + root).find(".nav-tabs").first();
+      var tabbarHeight = 0;
+      if (tabbar.length > 0) { // tabbar may not be visible, so clone it to get its height
+        var clone = tabbar.clone();
+        $(document.body).append(clone);
+        tabbarHeight = clone.outerHeight(true);
+        clone.remove();
+      }
       var tabpane = $("#" + root).find(".tab-pane").first();
       var tabpaneBulk = tabpane.outerHeight() - tabpane.height();
       $("#" + root).find(".CodeMirror").each(function(index, cm) {
@@ -154,7 +161,7 @@ $(function (){
         $(nested).find(".CodeMirror").each(function(index, cm) {
           cm.CodeMirror.setSize(null, codeHeight - tabbarHeight - tabpaneBulk);
         });
-        $(nested).find("iframe").height(codeHeight - tabbarHeight - tabpaneBulk);
+        $(nested).find("iframe, div[id^='iframe_']").height(codeHeight - tabbarHeight - tabpaneBulk);
       });
       $("#" + root).find(".nonCMwrapper").height(codeHeight);
       $("#" + root).find(".files-sidebar .files-treeview").height(filesHeight);
@@ -182,7 +189,7 @@ $(function (){
       if (fileMap[root][index] && fileMap[fileMap[root][index]])
         return fileTrees[root].selectNode(fileMap[fileMap[root][index]]);
     }
-    if (document.location.hash !== "") {
+    if (document.location.hash !== "" && fileMap[document.location.hash] !== undefined) {
       return selectTreeviewFileByHref(root, document.location.hash);
     } else {
       return selectTreeviewFileByIndex(root, 0);

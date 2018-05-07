@@ -157,7 +157,7 @@ module ApplicationHelper
     end
     sanitize(html, options)
   end
-
+  
   def self.mime_type(full_path)
     case File.extname(full_path).downcase
     when ".java"
@@ -171,7 +171,7 @@ module ApplicationHelper
     when ".ml", ".mli"
       "mllike"
     when ".md"
-      "markdown"
+      "text/markdown"
     when ".mly"
       "text/x-ebnf"
     when ".c", ".h"
@@ -204,6 +204,8 @@ module ApplicationHelper
       "text/plain"
     when ".pdf"
       "application/pdf"
+    when ".rtf"
+      "application/rtf"
     else
       if File.basename(full_path.to_s) == "Makefile"
         "text/x-makefile"

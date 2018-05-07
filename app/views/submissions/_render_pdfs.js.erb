@@ -11,7 +11,7 @@ $(function() {
       ////////////////////////////////////////
       //////////////////// Rendering
       ////////////////////////////////////////
-      pdfjsLib.getDocument($div.data("source")).then(createPages);
+      pdfjsLib.getDocument($div.data("rendered")).then(createPages);
       function createPages(pdf) {
         // Page numbers are 1-based
         $pages.data("pdf", pdf);

@@ -1,4 +1,40 @@
 module SubmissionsHelper
+  class MarkupScrubber < Rails::Html::PermitScrubber
+    PROXY = "https://deliberately.invalid?url="
+    def initialize
+      @attributes = Loofah::HTML5::WhiteList::ALLOWED_ATTRIBUTES
+    end
+    def scrub(node)
+      if (node.name == "script")
+        # allow MathJax "scripts" to go through unchanged
+        if node.attribute_nodes.any?{|attr| attr.name == "type" && attr.value.starts_with?("math/tex")}
+          return node
+        end
+      end
+      # otherwise use typical scrubbing
+      super
+    end
+    def scrub_attribute(node, attr_node)
+      # proxy any URLs we don't like
+      attr_name = if attr_node.namespace
+                    "#{attr_node.namespace.prefix}:#{attr_node.node_name}"
+                  else
+                    attr_node.node_name
+                  end
+      if Loofah::HTML5::WhiteList::ATTR_VAL_IS_URI.include?(attr_name) ||
+         Loofah::HTML5::WhiteList::SVG_ATTR_VAL_ALLOWS_REF.include?(attr_name) ||
+         (Loofah::HTML5::WhiteList::SVG_ALLOW_LOCAL_HREF.include?(node.name) && attr_name == 'xlink:href' && attr_node.value =~ /^\s*[^#\s].*/m) ||
+         (attr_name == 'src' && attr_node.value !~ /[^[:space:]]/)
+        unless attr_node.value.starts_with? "#"
+          if node['title'].nil?
+            node['title'] = "(Was:  #{attr_node.value})"
+          end
+          attr_node.value = PROXY + attr_node.value
+        end
+      end
+      Loofah::HTML5::Scrub.force_correct_attribute_escaping! node
+    end
+  end
   def check_questions_schema(questions, answers, questions_count, related_files = nil)
     questions.keys.each_with_index do |sub_id, sub_num|
       questions[sub_id].zip(answers[sub_id]).each_with_index do |(q, a), i|

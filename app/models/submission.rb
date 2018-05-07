@@ -353,6 +353,7 @@ class Submission < ApplicationRecord
         @submission_files.push({
           link: item[:public_link],
           name: item[:public_link].sub(/^.*extracted\//, ""),
+          pdf_path: item[:converted_path],
           contents: File.read(item[:full_path].to_s),
           type: ApplicationHelper.mime_type(item[:full_path]),
           href: @submission_files.count + 1,

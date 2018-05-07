@@ -40,6 +40,8 @@ gem 'font-awesome-rails'
 
 gem 'addressable'
 
+gem 'kramdown' # needed for markdown support
+
 # needed to run graders in the background
 gem 'backburner'
 gem 'beaneater'

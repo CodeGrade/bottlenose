@@ -1,13 +1,17 @@
 // copied and modified from https://github.com/cure53/DOMPurify/tree/master/demos
-function purifyMarkup(markupString) {
+(function() {
+
   // Specify proxy URL
-  var proxy = 'https://deliberately.invalid?url='; 
+  var proxy = '<%= SubmissionsHelper::MarkupScrubber::PROXY %>'; 
 
   // What do we allow? Not much for now. But it's tight.
   var config = {
     ADD_TAGS: ["iframe", // safe, given below
                // needed for SVG animations
-               "animate", "set"], 
+               "animate", "set",
+               // needed to allow MathJax -- see hook below
+               "script"
+              ], 
     ADD_ATTR: ["version", "from", "to"], // needed for SVG animations
     WHOLE_DOCUMENT: true
   };
@@ -97,6 +101,16 @@ function purifyMarkup(markupString) {
       var output  = [];
       addCSSRules(output, node.sheet.cssRules);
       node.textContent = output.join("\n");
+    } else if (data.tagName === 'script') {
+      if (!("type" in node.attributes &&
+            (node.attributes["type"].value === "text/x-mathjax-config"
+             || node.attributes["type"].value.startsWith("math/tex")))) {
+        DOMPurify.removed.push({ element: node });
+        if (node.parentNode)
+          return node.parentNode.removeChild(node);
+        else
+          node.outerHTML = "";
+      }
     }
   });
 
@@ -152,8 +166,10 @@ function purifyMarkup(markupString) {
       }
     }
   });
-  // Clean HTML string
-  var ans = DOMPurify.sanitize(markupString, config);//.innerHTML;
-  var anyChanges = DOMPurify.removed.length > 0;
-  return {contents: ans, anyChanges: anyChanges};
-}
+  window.purifyMarkup = function purifyMarkup(markupString) {
+    // Clean HTML string
+    var ans = DOMPurify.sanitize(markupString, config);//.innerHTML;
+    var anyChanges = DOMPurify.removed.length > 0;
+    return {contents: ans, anyChanges: anyChanges};
+  }
+})();

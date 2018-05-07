@@ -16,7 +16,7 @@ window.form_tabs_init = function (tabs_div) {
     var val0 = top.data('init-tab');
 
     function show_tab(tab) {
-        top.find('.nav-tabs a').each(function (_ii, lnk) {
+        top.find('> .nav-tabs a').each(function (_ii, lnk) {
             var this_tab = $(lnk).data('tab');
             var item = $(lnk).closest('li');
 
@@ -28,7 +28,7 @@ window.form_tabs_init = function (tabs_div) {
             }
         });
 
-        top.find('.tab-pane').each(function (_ii, div) {
+        top.find('> .tab-pane, > .form-tabs-content > .tab-pane').each(function (_ii, div) {
             var this_tab = $(div).data('tab');
             var $div = $(div);
 
@@ -93,7 +93,7 @@ window.form_tabs_init = function (tabs_div) {
 };
 
 window.form_tabs_init_all = function (thing) {
-    $(thing).find('.form-tabs').each(function (_ii, el) {
+  $(thing).find('.form-tabs').each(function (_ii, el) {
         form_tabs_init(el);
     });
 };

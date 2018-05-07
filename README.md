@@ -50,6 +50,13 @@ that, Bottlenose uses xvfb:
 sudo apt-get install xvfb
 ```
 
+The server will also support converting .rtf files to .pdf files,
+using LibreOffice:
+
+```sh
+sudo apt-get install libreoffice-core libreoffice-base
+```
+
 Make certain that the following programs are available in your path
 (configured in whatever login shell the `bottlenose` user uses):
 
@@ -57,6 +64,7 @@ Make certain that the following programs are available in your path
  * `xvfb-run` and `racket` (needed for Racket autograder)
  * `ip`, `ls`, `hostname` (needed for general configuration)
  * `convert` (from imagemagick, needed for profile photos)
+ * `soffice` (from libreoffice, needed to convert .rtf to .pdf)
 
 ### Postgres
 
