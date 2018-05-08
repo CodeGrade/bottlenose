@@ -40,7 +40,6 @@ module UploadsHelper
       # since only one output file is created
       converted_path = extracted_path.dirname.join("converted")
       output_path = File.dirname(f).to_s.gsub(extracted_path.to_s, converted_path.to_s)
-      puts "Making .rtf output for #{f} go to #{output_path}"
       Pathname.new(output_path).mkpath
       output, err, status, timed_out = ApplicationHelper.capture3("soffice", "--headless",
                                                                   "--convert-to", "pdf:writer_pdf_Export",
@@ -48,9 +47,9 @@ module UploadsHelper
                                                                   f,
                                                                   timeout: 30)
       if status.success? && !timed_out
+        Audit.log "Successfully processed #{f} to #{output_path}"
         return true
       else
-        puts "Failed!"
         FileUtils.rm "#{output_path}/#{File.basename(f, '.*')}.pdf", force: true
         Audit.log <<ERROR
 ================================
@@ -63,14 +62,73 @@ ERROR
         return false
       end
     end
-    
+
+    create_handler :doc do |extracted_path, f|
+      return false unless (File.read(f, 8) == "\xD0\xCF\x11\xE0\xA1\xB1\x1A\xE1" rescue false)
+      # Creates the path .../converted/directory/where/file/is/
+      # and excludes the filename from the directory structure,
+      # since only one output file is created
+      converted_path = extracted_path.dirname.join("converted")
+      output_path = File.dirname(f).to_s.gsub(extracted_path.to_s, converted_path.to_s)
+      Pathname.new(output_path).mkpath
+      output, err, status, timed_out = ApplicationHelper.capture3("soffice", "--headless",
+                                                                  "--convert-to", "pdf:writer_pdf_Export",
+                                                                  "--outdir", output_path,
+                                                                  f,
+                                                                  timeout: 30)
+      if status.success? && !timed_out
+        Audit.log "Successfully processed #{f} to #{output_path}"
+        return true
+      else
+        FileUtils.rm "#{output_path}/#{File.basename(f, '.*')}.pdf", force: true
+        Audit.log <<ERROR
+================================
+Problem processing #{f}:
+Status: #{status}
+Error: #{err}
+Output: #{output}
+================================
+ERROR
+        return false
+      end
+    end
+
+    create_handler :docx do |extracted_path, f|
+      return false unless (File.read(f, 4) == "\x50\x4B\x03\x04" rescue false)
+      # Creates the path .../converted/directory/where/file/is/
+      # and excludes the filename from the directory structure,
+      # since only one output file is created
+      converted_path = extracted_path.dirname.join("converted")
+      output_path = File.dirname(f).to_s.gsub(extracted_path.to_s, converted_path.to_s)
+      Pathname.new(output_path).mkpath
+      output, err, status, timed_out = ApplicationHelper.capture3("soffice", "--headless",
+                                                                  "--convert-to", "pdf:writer_pdf_Export",
+                                                                  "--outdir", output_path,
+                                                                  f,
+                                                                  timeout: 30)
+      if status.success? && !timed_out
+        Audit.log "Successfully processed #{f} to #{output_path}"
+        return true
+      else
+        FileUtils.rm "#{output_path}/#{File.basename(f, '.*')}.pdf", force: true
+        Audit.log <<ERROR
+================================
+Problem processing #{f}:
+Status: #{status}
+Error: #{err}
+Output: #{output}
+================================
+ERROR
+        return false
+      end
+    end
+
     create_handler :rkt do |extracted_path, f|
       embeds_path = extracted_path.dirname.join("embedded")
       # Creates the path .../embedded/path/to/filename.rkt/embed#.png
       # includes the filename in the directory structure deliberately,
       # in case multiple racket files coexist in the same directory
       output_path = f.to_s.gsub(extracted_path.to_s, embeds_path.to_s)
-      puts "Making .rkt output for #{f} go to #{output_path}"
       Pathname.new(output_path).mkpath
       output, err, status = Open3.capture3("xvfb-run", "-a", "--server-num", "1",
                                            "racket", Rails.root.join("lib/assets/render-racket.rkt").to_s,
@@ -83,7 +141,7 @@ ERROR
           f.write contents.gsub(Upload.base_upload_dir.to_s, "/files")
         end
         FileUtils.rm(f + "ext")
-        Audit.log "Successfully processed #{f}"
+        Audit.log "Successfully processed #{f} to #{output_path}"
         return true
       else
         FileUtils.rm (f + "ext"), force: true
