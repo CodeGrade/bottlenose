@@ -42,14 +42,16 @@ module UploadsHelper
       output_path = File.dirname(f).to_s.gsub(extracted_path.to_s, converted_path.to_s)
       puts "Making .rtf output for #{f} go to #{output_path}"
       Pathname.new(output_path).mkpath
-      output, err, status = Open3.capture3("soffice", "--headless",
-                                           "--convert-to", "pdf:writer_pdf_Export",
-                                           "--outdir", output_path,
-                                           f)
-      if status.success?
+      output, err, status, timed_out = ApplicationHelper.capture3("soffice", "--headless",
+                                                                  "--convert-to", "pdf:writer_pdf_Export",
+                                                                  "--outdir", output_path,
+                                                                  f,
+                                                                  timeout: 30)
+      if status.success? && !timed_out
         return true
       else
-        FileUtils.rm "#{File.dirname(f)}/#{File.basename(f, '.*').pdf}", force: true
+        puts "Failed!"
+        FileUtils.rm "#{output_path}/#{File.basename(f, '.*')}.pdf", force: true
         Audit.log <<ERROR
 ================================
 Problem processing #{f}:

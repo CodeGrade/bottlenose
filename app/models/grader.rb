@@ -239,32 +239,6 @@ class Grader < ApplicationRecord
 
   protected
 
-  def capture3(*cmd, stdin_data: '', binmode: false, timeout: nil, signal: :TERM, **opts)
-    Open3.popen3(*cmd, opts) do |i, o, e, t|
-      if binmode
-        i.binmode
-        o.binmode
-        e.binmode
-      end
-      out_reader = Thread.new { o.read }
-      err_reader = Thread.new { e.read }
-      begin
-        i.write stdin_data
-      rescue Errno::EPIPE
-      end
-      i.close
-      timed_out = false
-      if timeout
-        if !t.join(timeout)
-          timed_out = true
-          Process.kill(signal, t.pid)
-          # t.value below will implicitly .wait on the process
-        end
-      end
-      [out_reader.value, err_reader.value, t.value, timed_out]
-    end
-  end
-
   def recompute_grades
     # nothing to do by default
   end
@@ -295,7 +269,7 @@ class Grader < ApplicationRecord
 
     Audit.log("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Timeout: #{timeout || 'unlimited'}.  Command line: #{args.join(' ')}")
     print("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Timeout: #{timeout || 'unlimited'}.  Command line: #{args.join(' ')}\n")
-    output, err, status, timed_out = capture3(env, *args, timeout: timeout)
+    output, err, status, timed_out = ApplicationHelper.capture3(env, *args, timeout: timeout)
     File.open(grader_dir.join(tap_out), "w") do |style|
       replacements&.each do |rep, with|
         output = output.gsub(rep, with)

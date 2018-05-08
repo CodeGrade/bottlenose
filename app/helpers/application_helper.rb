@@ -157,7 +157,33 @@ module ApplicationHelper
     end
     sanitize(html, options)
   end
-  
+
+  def self.capture3(*cmd, stdin_data: '', binmode: false, timeout: nil, signal: :TERM, **opts)
+    Open3.popen3(*cmd, opts) do |i, o, e, t|
+      if binmode
+        i.binmode
+        o.binmode
+        e.binmode
+      end
+      out_reader = Thread.new { o.read }
+      err_reader = Thread.new { e.read }
+      begin
+        i.write stdin_data
+      rescue Errno::EPIPE
+      end
+      i.close
+      timed_out = false
+      if timeout
+        if !t.join(timeout)
+          timed_out = true
+          Process.kill(signal, t.pid)
+          # t.value below will implicitly .wait on the process
+        end
+      end
+      [out_reader.value, err_reader.value, t.value, timed_out]
+    end
+  end
+
   def self.mime_type(full_path)
     case File.extname(full_path).downcase
     when ".java"

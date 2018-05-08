@@ -107,9 +107,10 @@ class JunitGrader < Grader
             next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
             Audit.log "#{prefix}: Compiling #{file}"
             details.write("javac -cp #{classpath} #{file}\n")
-            comp_out, comp_err, comp_status, timed_out = capture3("javac", "-cp", classpath, file,
-                                                                  chdir: build_dir.to_s,
-                                                                  timeout: Grader::DEFAULT_COMPILE_TIMEOUT)
+            comp_out, comp_err, comp_status, timed_out =
+                                             ApplicationHelper.capture3("javac", "-cp", classpath, file,
+                                                                        chdir: build_dir.to_s,
+                                                                        timeout: Grader::DEFAULT_COMPILE_TIMEOUT)
             details.write("Compiling #{file}: (exit status #{comp_status})\n")
             details.write(comp_out)
             if timed_out
@@ -136,8 +137,10 @@ class JunitGrader < Grader
           Audit.log("#{prefix}: Running JUnit with timeout of #{Grader::DEFAULT_GRADING_TIMEOUT}")
           details.write("java -cp #{classpath} edu.neu.TAPRunner #{self.test_class}}\n")
           test_out, test_err, test_status, timed_out =
-                                           capture3("java", "-cp", classpath, "edu.neu.TAPRunner", self.test_class,
-                                                    chdir: build_dir.to_s, timeout: Grader::DEFAULT_GRADING_TIMEOUT)
+                                           ApplicationHelper.capture3("java", "-cp", classpath,
+                                                                      "edu.neu.TAPRunner", self.test_class,
+                                                                      chdir: build_dir.to_s,
+                                                                      timeout: Grader::DEFAULT_GRADING_TIMEOUT)
           details.write("JUnit output: (exit status #{test_status})\n")
           details.write(test_out)
           if timed_out
