@@ -4,7 +4,7 @@
   .nav-tabs
      .li a ...    <- click this
   .tab-pane ...   <- to find these
-     .form-group  <- and swap these, so only one exists at at a time
+     ....         <- and swap these, so only one .tab-pane at a time has attached children
 
 Both "a" and ".tab-pane" should be marked with matching data-tab attrs.
 
@@ -14,10 +14,9 @@ Both "a" and ".tab-pane" should be marked with matching data-tab attrs.
 window.form_tabs_init = function (tabs_div) {
     var top  = $(tabs_div);
     var val0 = top.data('init-tab');
-    var tabs = {};
 
     function show_tab(tab) {
-        top.find('.nav-tabs a').each(function (_ii, lnk) {
+        top.find('> .nav-tabs a').each(function (_ii, lnk) {
             var this_tab = $(lnk).data('tab');
             var item = $(lnk).closest('li');
 
@@ -29,23 +28,23 @@ window.form_tabs_init = function (tabs_div) {
             }
         });
 
-        top.find('.tab-pane').each(function (_ii, div) {
+        top.find('> .tab-pane, > .form-tabs-content > .tab-pane').each(function (_ii, div) {
             var this_tab = $(div).data('tab');
             var $div = $(div);
 
             if (tab == this_tab) {
+                // Note: this deliberately updates the data attribute after restoring the old contents,
                 $div.addClass('active');
                 $div.show();
-                if (tabs[this_tab]) {
-                    $div.append(tabs[tab]);
-                }
+                $div.append($div.data("bn.detached-tab"));
+                $div.data("bn.detached-tab", $div.children());
+                $div.trigger("bn.showTab");
             }
-            else {
-                var fg = $div.find('.form-group');
-                if (fg[0]) {
-                    tabs[this_tab] = fg[0];
-                    $(fg[0]).detach();
-                }
+            else if ($div.hasClass('active')) {
+                // while this saves the contents to the data attribute before detaching them all
+                $div.trigger("bn.hideTab");
+                $div.data("bn.detached-tab", $div.children());
+                $div.children().detach();
                 $div.removeClass('active');
                 $div.hide();
             }
@@ -55,7 +54,30 @@ window.form_tabs_init = function (tabs_div) {
     // Match height before we hide anything.
     var panes = top.find('.tab-pane');
     panes.matchHeight({byRow: false, property: 'height'});
+    // matchHeight will trigger on onload and on window-resize
+    // so be sure to refill and unhide all the inert tabs before trying to
+    // recompute their heights
+    var oldBefore = $.fn.matchHeight._beforeUpdate;
+    var oldActive = null;
+    $.fn.matchHeight._beforeUpdate = function(e, groups) {
+      oldActive = top.find('.tab-pane.active');
+      panes.each(function(_, div) {
+        var $div = $(div);
+        $div.addClass('active').append($div.data("bn.detached-tab")).show();
+      });
+      if (oldBefore)
+        oldBefore(e, groups);
+    }
+    var oldAfter = $.fn.matchHeight._afterUpdate;
+    $.fn.matchHeight._afterUpdate = function(e, groups) {
+      if (oldAfter)
+        oldAfter(e, groups);
+      oldActive.each(function(_, div) {
+        show_tab($(div).data('tab'));
+      });
+    }
 
+    panes.addClass("active");
     top.find(".nav-tabs a").each(function(_ii, lnk) {
         var tab = $(lnk).data('tab');
         if (tab == val0) {
@@ -71,7 +93,7 @@ window.form_tabs_init = function (tabs_div) {
 };
 
 window.form_tabs_init_all = function (thing) {
-    $(thing).find('.form-tabs').each(function (_ii, el) {
+  $(thing).find('.form-tabs').each(function (_ii, el) {
         form_tabs_init(el);
     });
 };

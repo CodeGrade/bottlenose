@@ -1,0 +1,221 @@
+<% questions = @assignment.questions %>
+<% flat_questions = @assignment.flattened_questions %>
+<% col_count = flat_questions.count %>
+<% any_parts = (questions.count != col_count) %>
+<% total_score = questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
+<% used_subs = @used_subs.group_by(&:user_id) %>
+
+<% if @student_info.length >= 1 %>
+<style>
+  <% @course.sections.each do |s| %>
+  #grades-table.show_one .sec_<%= s.crn %> { display: none; }
+  #grades-table.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  <% end %>
+  #grades-table td { vertical-align: middle; }
+  .curveSample { height: 100%; }
+  .tab-pane::after { clear: both; content: " "; display: table; }
+  table.table { border: 1px solid black; margin-top: 8px; }
+  table.table tr > td:first-child { font-weight: bold; }
+  table.table > tbody > tr > td,
+  table.table > thead > tr > td { padding-top: 4px; paddin-bottom: 4px; }
+</style>
+
+<% grades_info = @student_info.map do |u|
+      sub = used_subs[u.id]&.first
+      grades = @grade_comments[sub.id] if sub
+      grades = (0..col_count - 1).map{|i| grades[i].weight } if grades
+      curve = grades&.dig(flat_questions.count)&.weight
+      score = grades&.sum
+      { nuid: u.nuid, sub_id: sub&.id, name: u.name, grades: grades, score: score, curve: curve }
+    end
+%>
+
+<div class="row">
+  <h4>Select curve type</h4>
+  <div class="form-tabs" data-init-tab="FlatPoints">
+    <ul class="nav nav-tabs">
+      <li><a href="#" data-tab="FlatPoints">Flat boost</a></li>
+      <li><a href="#" data-tab="Linear">Linear scaling</a></li>
+      <li><a href="#" data-tab="Contrast">Contrast curve</a></li>
+      <li><a href="#" data-tab="Clear">Clear curved grades</a></li>
+    </ul>
+    <div class="form-tabs-content tabs-content">
+      <div class="tab-pane" data-tab="FlatPoints">
+        <%= form_for [@course, @assignment.becomes(Assignment), @grader.becomes(Grader)],
+                     url: {action: "bulk_update_curve"}, controller: "grades" do |f| %>
+        <% f.object = @grader.becomes(@grader.class) %>
+        <input type="hidden" name="grader[curveType]" value="flat" />
+        <div class="form-group col-md-6">
+          <p>A flat boost gives everyone an equal increase in grade.</p>
+          <p>Grades are in <select name="grader[gradeUnit]">
+              <option value="Points">Raw points</option>
+              <option value="Percent" selected>Percent</option>
+            </select>
+          </p>
+          <p>Give everyone
+            <span style="display: inline-block; vertical-align: middle;">
+              <%= f.spinner "flatPoints", 0.0, min: 0, text: {id: "flatPoints"} %>
+            </span>
+            extra <span class="pointsOrPercent">points</span></p>
+          <p>Cap score at a maximum of
+            <span style="display: inline-block; vertical-align: middle;">
+              <%= f.spinner "flatMax", 100.0, min: 0, text: {id: "flatMax"} %>
+            </span> <span class="pointsOrPercent"></span></p>
+          <p class="text-center"><%= f.submit "Apply flat curve", class: "btn btn-md btn-success" %></p>
+        </div>
+        <div class="text-center curveSample col-md-6"></div>
+        <% end %>
+      </div>
+      <div class="tab-pane" data-tab="Linear">
+        <%= form_for [@course, @assignment.becomes(Assignment), @grader.becomes(Grader)],
+                     url: {action: "bulk_update_curve"}, controller: "grades" do |f| %>
+        <% f.object = @grader.becomes(@grader.class) %>
+        <input type="hidden" name="grader[curveType]" value="linear" />
+        <div class="form-group col-md-6">
+          <p>A linear curve simply interpolates between two reference
+            points.  Specify the curved values of minimum and maximum
+            grades.</p>
+          <p>Grades are in <select name="grader[gradeUnit]">
+              <option value="Points">Raw points</option>
+              <option value="Percent" selected>Percent</option>
+            </select>
+          </p>
+          <p>A raw grade of <span id="linearRawMin">0</span><span class="pointsOrPercent terse"></span>
+            should map to 
+            <span style="display: inline-block; vertical-align: middle;">
+              <%= f.spinner "linearMapMin", 0.0, min: 0, text: {id: "linearMapMin"} %>
+            </span> <span class="pointsOrPercent terse"></span>
+          </p>
+          <p>A raw grade of <span id="linearRawMax">100</span><span class="pointsOrPercent terse"></span>
+            should map to 
+            <span style="display: inline-block; vertical-align: middle;">
+              <%= f.spinner "linearMapMax", 100.0, min: 0, text: {id: "linearMapMax"} %>
+            </span> <span class="pointsOrPercent terse"></span>
+          </p>
+          <p class="text-center"><%= f.submit "Apply linear curve", class: "btn btn-md btn-success" %></p>
+        </div>
+        <div class="text-center curveSample col-md-6"></div>
+        <% end %>
+      </div>
+      <div class="tab-pane" data-tab="Contrast">
+        <%= form_for [@course, @assignment.becomes(Assignment), @grader.becomes(Grader)],
+                     url: {action: "bulk_update_curve"}, controller: "grades" do |f| %>
+        <% f.object = @grader.becomes(@grader.class) %>
+        <input type="hidden" name="grader[curveType]" value="contrast" />
+        <div class="form-group col-md-6">
+          <p>A contrast curve treats all grades as percentages, and
+            raises them to a power between zero and one.  Powers close to
+            one will provide very minimal enhancement; powers close to
+            zero will strongly increase low grades. An exact zero and a
+            perfect score will stay unchanged.</p>
+          <p>Grades are in <select name="grader[gradeUnit]">
+              <option value="Points">Raw points</option>
+              <option value="Percent" selected>Percent</option>
+            </select>
+          </p>
+          <p>Use an exponent of 
+            <span style="display: inline-block; vertical-align: middle;">
+              <%= f.spinner "contrastDegree", 0.5, min: 0, max: 1, delta: 0.05, text: {id: "contrastDegree"} %>
+            </span>
+          </p>
+          <p>To flatten this curve, average it with the original
+          grade.  
+            <span style="display: inline-block; vertical-align: middle;">
+              <%= f.spinner "contrastWeight", 100.0, min: 0, max: 100, delta: 5, text: {id: "contrastWeight"} %>
+            </span>%
+          </p>
+          <p class="text-center"><%= f.submit "Apply contrast curve", class: "btn btn-md btn-success" %></p>
+        </div>
+        <div class="text-center curveSample col-md-6"></div>
+        <% end %>
+      </div>
+      <div class="tab-pane" data-tab="Clear">
+        <%= form_for [@course, @assignment.becomes(Assignment), @grader.becomes(Grader)],
+                     url: {action: "bulk_update_curve"}, controller: "grades" do |f| %>
+        <% f.object = @grader.becomes(@grader.class) %>
+        <input type="hidden" name="grader[curveType]" value="clear" />
+        <div class="form-group col-md-6">
+          <p class="alert alert-danger">Are you sure you want to clear the curved
+            grades for everyone?</p>
+          <p>Grades are in <select name="grader[gradeUnit]">
+              <option value="Points">Raw points</option>
+              <option value="Percent" selected>Percent</option>
+            </select>
+          </p>
+          <p class="text-center"><%= f.submit "Clear curve", class: "btn btn-md btn-success" %></p>
+        </div>
+        <div class="text-center curveSample col-md-6"></div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <div id="curveGraphs">
+    <div id="rawScore" style="width: 85%; display: inline-block;"></div>
+    <table id="rawStats" class="table hidden" style="width: 13%; display: inline-block;">
+      <thead>
+        <tr>
+          <td colspan=2>Uncurved stats</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Min:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Median:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Mean:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Max:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Stdev:</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+    <div id="curvedScore" style="width: 85%; display: inline-block;"></div>
+    <table id="curvedStats" class="table hidden" style="width: 13%; display: inline-block;">
+      <thead>
+        <tr>
+          <td colspan=2>Curved stats</td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Min:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Median:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Mean:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Max:</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Stdev:</td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  var grades = <%= raw json_escape(JSON.generate(grades_info).gsub("},", "},\n")) %>;
+  var maxScore = <%= total_score %>;
+  <%= render "exam_curve_form.js" %>
+</script>
+<% end %>

@@ -15,4 +15,8 @@ unless File.exists?(key_file)
   kk.close
 end
 
-Bottlenose::Application.config.secret_token = File.open(key_file).read
+if Rails.version.to_f <= 5.0
+  Bottlenose::Application.config.secret_token = File.open(key_file).read
+else
+  Bottlenose::Application.config.secret_key_base = File.open(key_file).read
+end

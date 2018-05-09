@@ -10,7 +10,7 @@ class Exam < Assignment
   end
   
   def set_exam_graders
-    return true unless self.new_record?
+    return true unless (self.new_record? || self.assignment_upload_id_changed?)
     upload = @assignment_file_data
     if upload.nil?
       if self.assignment_upload.nil?
@@ -72,13 +72,14 @@ class Exam < Assignment
 
   def update_exam_submission_times
     self.available = self.due_date # for exams, there's no window in which "the assignment is available"
-    self.submissions.update_attributes({created_at: self.due_date - 1.minute,
-                                        updated_at: self.due_date - 1.minute})
+    self.submissions.update_all({created_at: self.due_date - 1.minute,
+                                 updated_at: self.due_date - 1.minute})
   end
 
   def questions
-    qs = YAML.load(File.read(self.assignment_upload.submission_path))
-    qs.each_with_index do |q, q_num|
+    return @questions if @questions
+    @questions = YAML.load(File.read(self.assignment_upload.submission_path))
+    @questions.each_with_index do |q, q_num|
       q["name"] = "Problem #{q_num + 1}" unless q["name"]
       if q["parts"]
         grade = 0
@@ -89,7 +90,7 @@ class Exam < Assignment
         q["weight"] = grade unless q["weight"]
       end
     end
-    qs
+    @questions
   end
 
   def flattened_questions
@@ -105,5 +106,9 @@ class Exam < Assignment
       end
     end
     flat
+  end
+
+  def sections
+    [{name: "", count: self.flattened_questions.count}]
   end
 end

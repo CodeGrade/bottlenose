@@ -48,7 +48,7 @@ class RegRequestsControllerTest < ActionController::TestCase
       post :create, params: {
         course_id: @cs301.id,
         reg_request: {
-          new_sections: [@section.crn],
+          new_sections: [@section],
           notes: "Let me in"
         }
       }

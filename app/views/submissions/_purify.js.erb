@@ -1,0 +1,175 @@
+// copied and modified from https://github.com/cure53/DOMPurify/tree/master/demos
+(function() {
+
+  // Specify proxy URL
+  var proxy = '<%= SubmissionsHelper::MarkupScrubber::PROXY %>'; 
+
+  // What do we allow? Not much for now. But it's tight.
+  var config = {
+    ADD_TAGS: ["iframe", // safe, given below
+               // needed for SVG animations
+               "animate", "set",
+               // needed to allow MathJax -- see hook below
+               "script"
+              ], 
+    ADD_ATTR: ["version", "from", "to"], // needed for SVG animations
+    WHOLE_DOCUMENT: true
+  };
+
+  // Specify attributes to proxy -- derived from the attributes at
+  // https://raw.githubusercontent.com/cure53/HTTPLeaks/master/leak.html
+  // that can be used to leak; most of these are typically benign,
+  var attributes = ['background', 'href', 'poster', 'src', 'dynsrc', 'lowsrc', 'srcset',
+                    'manifest', 'implementation', 'url', 'content', 'longdesc',
+                    'action', 'formaction', 'data', 'movie',
+                    'codebase', 'code', 'icon', 'archive', 'object', 'cursor', 'xlink:href'
+                   ];
+
+  // specify the regex to detect external content
+  var regex = /((url|image)\(['"]?)(?!data:)/gim;
+
+  /**
+   *  Take CSS property-value pairs and proxy URLs in values,
+   *  then add the styles to an array of property-value pairs
+   */
+  function addStyles(output, styles) {
+    for (var prop = 0; prop < styles.length; prop++) {
+      if (styles[styles[prop]]) {
+        var url = styles[styles[prop]].replace(regex, '$1' + proxy);
+        styles[styles[prop]] = url;
+      }
+      if (styles[styles[prop]]) {
+        output.push(styles[prop] + ':' + styles[styles[prop]] + ';');
+      }
+    }
+  }
+
+  /**
+   * Take CSS rules and analyze them, proxy URLs via addStyles(),
+   * then create matching CSS text for later application to the DOM
+   */
+  function addCSSRules(output, cssRules) {
+    for (var index = 0; index < cssRules.length; index++) {
+      var rule = cssRules[index];
+      // check for rules with selector
+      if (rule.type == 1 && rule.selectorText) {
+        output.push(rule.selectorText + '{')
+        if (rule.style) {
+          addStyles(output, rule.style)
+        }
+        output.push('}');
+        // check for @media rules
+      } else if (rule.type === rule.MEDIA_RULE) {
+        output.push('@media ' + rule.media.mediaText + '{');
+        addCSSRules(output, rule.cssRules)
+        output.push('}');
+        // check for @font-face rules
+      } else if (rule.type === rule.FONT_FACE_RULE) {
+        output.push('@font-face {');
+        if (rule.style) {
+          addStyles(output, rule.style)
+        }
+        output.push('}');
+        // check for @keyframes rules
+      } else if (rule.type === rule.KEYFRAMES_RULE) {
+        output.push('@keyframes ' + rule.name + '{');
+        for (var i=0; i<rule.cssRules.length; i++) {
+          var frame = rule.cssRules[i];
+          if (frame.type === 8 && frame.keyText) {
+            output.push(frame.keyText + '{');
+            if (frame.style) {
+              addStyles(output, frame.style);
+            }
+            output.push('}');
+          }
+        }
+        output.push('}');
+      }
+    }
+  }
+
+  /**
+   * Proxy a URL whenever it points to the handin server itself
+   */
+  function proxyAttribute(url) {
+    return proxy+escape(url);
+  }
+
+  // Add a hook to enforce proxy for leaky CSS rules
+  DOMPurify.addHook('uponSanitizeElement', function(node, data) {
+    if (data.tagName === 'style') {
+      var output  = [];
+      addCSSRules(output, node.sheet.cssRules);
+      node.textContent = output.join("\n");
+    } else if (data.tagName === 'script') {
+      if (!("type" in node.attributes &&
+            (node.attributes["type"].value === "text/x-mathjax-config"
+             || node.attributes["type"].value.startsWith("math/tex")))) {
+        DOMPurify.removed.push({ element: node });
+        if (node.parentNode)
+          return node.parentNode.removeChild(node);
+        else
+          node.outerHTML = "";
+      }
+    }
+  });
+
+  // Add a hook to enforce proxy for all HTTP leaks incl. inline CSS
+  DOMPurify.addHook('afterSanitizeAttributes', function(node) {
+
+    // Check all src attributes and proxy them
+    for(var i = 0; i <= attributes.length-1; i++) {
+      if (node.hasAttribute(attributes[i])) {
+        DOMPurify.removed.push({attribute: node.getAttribute(attributes[i]), from: node});
+        node.setAttribute(attributes[i], proxyAttribute(
+          node.getAttribute(attributes[i])));
+      }
+    }
+
+    if (node.hasAttribute('attributeName') &&
+        (node.getAttribute('attributeName') === "xlink:href" ||
+         node.getAttribute('attributeName').toLowerCase() === "innerhtml" ||
+         node.getAttribute('attributeName').startsWith("on"))) {
+      const names = ["to", "from", "values"];
+      for (var i = 0; i < names.length; i++) {
+        if (node.hasAttribute(names[i])) {
+          DOMPurify.removed.push({attribute: node.getAttribute(names[i]), from: node});
+          node.setAttribute(names[i], proxyAttribute(node.getAttribute(names[i])));
+        }
+      }
+    }
+
+    // Check all style attribute values and proxy them
+    if (node.hasAttribute('style')) {
+      var styles = node.style;
+      var output = [];
+      var changed = false;
+      var attr = node.getAttribute('style');
+      for(var prop = 0; prop < styles.length; prop++) {
+        // we re-write each property-value pair to remove invalid CSS
+        if (node.style[styles[prop]] && regex.test(node.style[styles[prop]])) {
+          var orig = node.style[styles[prop]];
+          var url = node.style[styles[prop]].replace(regex, '$1' + proxy)
+          node.style[styles[prop]] = url;
+          changed = changed || (orig != url);
+        }
+        output.push(styles[prop] + ':' + node.style[styles[prop]] + ';');
+      }
+      // re-add styles in case any are left
+      if (output.length) {
+        node.setAttribute('style', output.join(""));    
+      } else {
+        node.removeAttribute('style');
+      }
+      if (changed) {
+        DOMPurify.removed.push({attribute: attr, from: node});
+      }
+    }
+  });
+  window.purifyMarkup = function purifyMarkup(markupString) {
+    // Clean HTML string
+    var ans = DOMPurify.sanitize(markupString, config);//.innerHTML;
+    var anyChanges = DOMPurify.removed.length > 0;
+    return {contents: ans, anyChanges: anyChanges};
+  }
+})();

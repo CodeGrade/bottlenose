@@ -12,11 +12,13 @@ class ApplicationController < ActionController::Base
 
   protected
 
-  def multi_group_by(hash, keys, index = 0)
+  def multi_group_by(hash, keys, last_key_unique = false, index = 0)
     if index >= keys.count || hash.nil?
       hash
+    elsif index == keys.count - 1 && last_key_unique
+      Hash[hash.map{|v| [(v[keys[index]] rescue v.__send__(keys[index])), v]}]
     else
-      Hash[hash.group_by(&(keys[index])).map {|k, v| [k, multi_group_by(v, keys, index + 1)]}]
+      Hash[hash.group_by(&(keys[index])).map {|k, v| [k, multi_group_by(v, keys, last_key_unique, index + 1)]}]
     end
   end
 
@@ -73,6 +75,11 @@ class ApplicationController < ActionController::Base
     current_user && (current_user.site_admin? || current_user.registration_for(course).professor?)
   end
 
+  def current_user_assistant_for?(course)
+    return false if course.nil?
+    current_user && (current_user.site_admin? || current_user.registration_for(course).assistant?)
+  end
+
   def current_user_staff_for?(course)
     current_user && (current_user.site_admin? || current_user.registration_for(course).staff?)
   end
@@ -114,12 +121,35 @@ class ApplicationController < ActionController::Base
   
   # Course stuff
 
-  def find_course
+  def find_course(id = nil)
     return unless @course.nil?
 
-    @course = Course.find_by(id: params[:course_id] || params[:id])
+    @course = Course.find_by(id: id || params[:course_id])
     if @course.nil?
       redirect_to courses_path, alert: "No such course"
+      return
+    end
+  end
+
+  def find_assignment(id = nil)
+    return unless @assignment.nil?
+
+    @assignment = Assignment.find_by(id: id || params[:assignment_id])
+    if @assignment.nil? || (@assignment.course_id != @course.id)
+      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
+      return
+    end
+  end
+
+  def find_submission(id = nil)
+    @submission = Submission.find_by(id: id || params[:submission_id])
+    if @submission.nil?
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "No such submission"
+      return
+    end
+    if @submission.assignment_id != @assignment.id
+      redirect_back fallback_location: course_assignment_path(@course, @assignment), alert: "No such submission for this assignment"
       return
     end
   end
@@ -142,16 +172,34 @@ class ApplicationController < ActionController::Base
     end
   end
 
-  def require_admin_or_prof
+  def require_admin_or_prof(fallback_path = nil)
+    fallback_path ||= root_path
     unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_back fallback_location: root_path, alert: "Must be an admin or professor."
+      redirect_back fallback_location: fallback_path, alert: "Must be an admin or professor."
       return
     end
   end
 
-  def require_admin_or_staff
+  def require_admin_or_prof_ever(fallback_path = nil)
+    fallback_path ||= root_path
+    unless current_user_site_admin? || current_user&.professor_ever?
+      redirect_back fallback_location: fallback_path, alert: "Must be an admin or a professor."
+      return
+    end
+  end
+
+  def require_admin_or_assistant(fallback_path = nil)
+    fallback_path ||= root_path
+    unless current_user_site_admin? || current_user_assistant_for?(@course)
+      redirect_back fallback_location: fallback_path, alert: "Must be an admin, professor or assistant."
+      return
+    end
+  end
+
+  def require_admin_or_staff(fallback_path = nil)
+    fallback_path ||= root_path
     unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_back fallback_location: root_path, alert: "Must be an admin or staff."
+      redirect_back fallback_location: fallback_path, alert: "Must be an admin or staff."
       return
     end
   end

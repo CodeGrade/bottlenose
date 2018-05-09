@@ -18,11 +18,11 @@
     </div>
     <div class="form-group">
       <%= f.label :term_id, "Term" %>
-      <%= select("course", "term_id", (
-        Term.where(archived: false).to_a.map do |tt|
-          [tt.name, tt.id]
-        end
-      ), class: 'form-control') %>
+      <%= select("course", "term_id", 
+          Term.where(archived: false).or(Term.where(id: @course.term_id))
+              .sort_by(&:canonical_name).reverse!.map do |tt|
+            [tt.name, tt.id]
+          end, class: 'form-control') %>
     </div>
     <div class="form-group">
       <%= f.label "Sections" %>

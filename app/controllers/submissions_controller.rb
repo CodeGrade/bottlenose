@@ -1,12 +1,19 @@
 require 'tempfile'
 require 'audit'
 
-class SubmissionsController < CoursesController
-  prepend_before_action :find_submission, except: [:index, :new, :create, :rerun_grader]
-  prepend_before_action :find_course_assignment
-  before_action :require_current_user, only: [:show, :files, :new, :create]
-  before_action :require_admin_or_staff, only: [:recreate_grade, :rerun_grader, :use_for_grading, :publish]
-  before_action :require_admin_or_prof, only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
+class SubmissionsController < ApplicationController
+  layout 'course'
+  
+  before_action :find_course
+  before_action :find_assignment
+  before_action -> { find_submission(params[:id]) }, except: [:index, :new, :create, :rerun_grader]
+  before_action :require_current_user, only: [:show, :index, :new, :create, :details]
+  before_action -> { require_admin_or_staff(course_assignment_path(@course, @assignment)) },
+                only: [:rerun_grader]
+  before_action -> { require_admin_or_staff(course_assignment_submission_path(@course, @assignment, @submission)) },
+                only: [:recreate_grade, :use_for_grading, :publish]
+  before_action -> { require_admin_or_prof(course_assignment_submission_path(@course, @assignment, @submission)) },
+                only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
   def show
     unless @submission.visible_to?(current_user)
       redirect_to course_assignment_path(@course, @assignment), alert: "That's not your submission."
@@ -48,19 +55,29 @@ class SubmissionsController < CoursesController
     end
 
     if current_user.id == true_user&.id
-      SubmissionView.find_or_create_by!(user: current_user, assignment: @assignment, team: @team)
+      @submission_view = SubmissionView.find_or_initialize_by(user: current_user, assignment: @assignment, team: @team)
+      @submission_view_new = @submission_view.new_record?
+      @submission_view.save
     end
 
-    sub_blocked = @assignment.submissions_blocked(current_user)
-    if sub_blocked && !current_user.course_staff?(@course)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: sub_blocked
-      return
+    sub_blocked = @assignment.submissions_blocked(current_user, @team)
+    if sub_blocked
+      if current_user.course_staff?(@course) || prof_override?
+        # allow submission
+      else
+        redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                      alert: sub_blocked
+        return
+      end
     end
 
     self.send("new_#{@assignment.type.capitalize}")
   end
 
+  def prof_override?
+    (current_user.id != true_user&.id && true_user&.course_staff?(@course))
+  end
+  
   def create
     asgn_type = @assignment.type
     sub_type = submission_params[:type]
@@ -74,24 +91,31 @@ class SubmissionsController < CoursesController
                   alert: "That submission type (#{sub_type}) does not match the assignment type (#{asgn_type})."
       return
     end
-    sub_blocked = @assignment.submissions_blocked(current_user)
-    if sub_blocked && !current_user.course_staff?(@course)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: sub_blocked
-      return
+    if @assignment.team_subs?
+      @team = current_user.active_team_for(@course, @assignment)
+    else
+      @team = nil
+    end
+    sub_blocked = @assignment.submissions_blocked(current_user, @team)
+    if sub_blocked
+      if current_user.course_staff?(@course) ||
+         (current_user.id != true_user&.id && true_user&.course_staff?(@course))
+        # allow submission
+      else
+        redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                      alert: sub_blocked
+        return
+      end
     end
 
     @submission = Submission.new(submission_params)
     @submission.assignment = @assignment
-    if @assignment.team_subs?
-      @team = current_user.active_team_for(@course, @assignment)
-      @submission.team = @team
-    end
+    @submission.team = @team
 
     if true_user_staff_for?(@course) || current_user_staff_for?(@course)
       @submission.user ||= current_user
       @submission.ignore_late_penalty = (submission_params[:ignore_late_penalty].to_i > 0)
-      if submission_params[:created_at] and !@submission.ignore_late_penalty
+      if submission_params[:created_at] && !@submission.ignore_late_penalty
         @submission.created_at = submission_params[:created_at]
       end
     else
@@ -131,7 +155,7 @@ class SubmissionsController < CoursesController
   end
 
   def rescind_lateness
-    @submission.update_attribute(:ignore_late_penalty, true)
+    @submission.update(ignore_late_penalty: true)
     @submission.compute_grade!
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
@@ -167,13 +191,13 @@ class SubmissionsController < CoursesController
         label: "Plagiarism",
         line: 0,
         filename: sub.upload.extracted_path,
-        grade_id: current_user.id,
+        grade_id: 0,
         severity: "error",
         comment: comment,
         weight: penalty,
         suppressed: false,
         title: "",
-        info: nil)
+        info: {user_id: current_user.id}.to_json)
       sub_comment.save!
     end
     # Add a comment explaining the split
@@ -182,16 +206,16 @@ class SubmissionsController < CoursesController
       label: "Plagiarized submission",
       line: 0,
       filename: @submission.upload.extracted_path,
-      grade_id: current_user.id,
+      grade_id: 0,
       severity: "info",
       comment: "This submission has been reviewed for plagiarism and regraded accordingly.",
       weight: 0,
       suppressed: false,
       title: "",
-      info: nil)
+      info: {user_id: current_user.id}.to_json)
     sub_comment.save
     redirect_to course_assignment_path(@course, @assignment),
-                notice: "Submission marked as plagiarized for #{guilty_students.map{|uid, _| User.find(uid).name}.join(', ')}"
+                notice: "Submission marked as plagiarized for #{guilty_students.map{|uid, _| User.find(uid).name}.to_sentence}"
   end
 
   def split_submission
@@ -208,13 +232,13 @@ class SubmissionsController < CoursesController
         label: "Split submission",
         line: 0,
         filename: sub.upload.extracted_path,
-        grade_id: current_user.id,
+        grade_id: 0,
         severity: "info",
         comment: "This is copied from a previous team submission, for individual grading",
         weight: 0,
         suppressed: false,
         title: "",
-        info: nil)
+        info: {user: current_user.id}.to_json)
       sub_comment.save!
     end
     # Add a comment explaining the split
@@ -223,18 +247,27 @@ class SubmissionsController < CoursesController
       label: "Split submission",
       line: 0,
       filename: @submission.upload.extracted_path,
-      grade_id: current_user.id,
+      grade_id: 0,
       severity: "info",
       comment: "This submission was split, to allow for individual grading",
       weight: 0,
       suppressed: false,
       title: "",
-      info: nil)
+      info: {user: current_user.id}.to_json)
     sub_comment.save!
     redirect_to course_assignment_path(@course, @assignment),
-                notice: "Group submission split for #{@submission.users.map(&:name).join(', ')}"
+                notice: "Group submission split for #{@submission.users.map(&:name).to_sentence}"
   end
 
+  def publish
+    @submission.grades.where(score: nil).each do |g| g.grade(assignment, used) end
+    @submission.grades.update_all(:available => true)
+    @submission.compute_grade!
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
+  end
+
+
+  private
   def split_sub(orig_sub, for_user, score = nil)
     team = orig_sub.team
     if team
@@ -248,39 +281,32 @@ class SubmissionsController < CoursesController
       team.save
     end
     # Create the new submission, reusing the prior submitted file
-    sub = Submission.new(
-      assignment: @assignment,
-      user: for_user,
-      time_taken: orig_sub.time_taken,
-      created_at: orig_sub.created_at,
-      ignore_late_penalty: false,
-      score: score || orig_sub.score,
-      team: team,
-      upload_id: @submission.upload_id,
-      type: @submission.type)
-    sub.save
+    sub = orig_sub.dup
+    sub.user = for_user
+    sub.ignore_late_penalty = false
+    sub.created_at = orig_sub.created_at
+    sub.score = score || orig_sub.score
+    sub.team = team
+    sub.save!
     sub.set_used_sub!
     # Copy any grades
     orig_sub.grades.each do |g|
       new_g = g.dup
       new_g.submission = sub
       new_g.save
+      g.inline_comments.each do |c|
+        new_c = c.dup
+        new_c.grade = new_g
+        new_c.submission = sub
+        new_c.save
+      end
     end
     sub
   end
 
-  def publish
-    @submission.grades.where(score: nil).each do |g| g.grade(assignment, used) end
-    @submission.grades.update_all(:available => true)
-    @submission.compute_grade!
-    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
-  end
-
-
-  private
 
   def submission_params
-    if true_user_prof_for?(@course) or current_user_prof_for?(@course)
+    if true_user_prof_for?(@course) || current_user_prof_for?(@course)
       params[:submission].permit(:assignment_id, :user_id, :student_notes, :type,
                                  :auto_score, :calc_score, :created_at, :updated_at, :upload,
                                  :grading_output, :grading_uid, :team_id,
@@ -299,49 +325,6 @@ class SubmissionsController < CoursesController
     params[:answers].to_unsafe_h.map{|k, v| [k, array_from_hash(v)]}.to_h
   end
 
-  def require_admin_or_staff
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
-                    alert: "Must be an admin or staff."
-      return
-    end
-  end
-
-  def require_admin_or_prof
-    unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
-                    alert: "Must be an admin or professor."
-      return
-    end
-  end
-
-  def find_course_assignment
-    @course = Course.find_by(id: params[:course_id])
-    @assignment = Assignment.find_by(id: params[:assignment_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
-      return
-    end
-    if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
-      return
-    end
-  end
-
-  def find_submission
-    @submission = Submission.find_by(id: params[:id])
-    if @submission.nil?
-      redirect_back fallback_location: course_assignment_path(params[:course_id], params[:assignment_id]),
-                    alert: "No such submission"
-      return
-    end
-    if @submission.assignment_id != @assignment.id
-      redirect_back fallback_location: course_assignment_path(@course, @assignment), alert: "No such submission for this assignment"
-      return
-    end
-  end
-
-
   ######################
   # Assignment types
   # NEW
@@ -351,19 +334,6 @@ class SubmissionsController < CoursesController
 
   def new_Questions
     @questions = @assignment.questions
-    if @assignment.related_assignment
-      related_sub = @assignment.related_assignment.used_sub_for(current_user)
-      Audit.log("User #{current_user.id} (#{current_user.name}) is viewing the self-eval for assignment #{@assignment.related_assignment.id} and has agreed not to submit further files to it.\n")
-      if related_sub.nil?
-        @submission_files = []
-        @submission_dirs = []
-      else
-        @submission_dirs, @submission_files = related_sub.get_submission_files(current_user)
-      end
-    else
-      @submission_files = []
-      @submission_dirs = []
-    end
     render "new_#{@assignment.type.underscore}"
   end
 
@@ -379,14 +349,30 @@ class SubmissionsController < CoursesController
 
   def new_Codereview
     if @assignment.review_target == "self"
-      @subs_to_review = used_subs
+      @subs_to_review = [@assignment.related_assignment.used_sub_for(current_user)].compact
+      Audit.log("User #{current_user.id} (#{current_user.name}) is viewing the self-eval for assignment #{@assignment.related_assignment.id} and has agreed not to submit further files to it.")
     else
-      setup_matchings
+      @team = current_user.active_team_for(@course, @assignment)
+
+      if @team.nil? && current_user.course_staff?(@course)
+        @team = Team.new(course: @course, start_date: DateTime.now, teamset: @assignment.teamset)
+        @team.users = [current_user]
+        @team.save
+      end
+
+      if (@assignment.team_subs? && @team) || !@assignment.team_subs?
+        setup_matchings
+      end
     end
     @submission.related_subs = @subs_to_review
-    @submission_info = @subs_to_review.map do |s|
+    @submission_info = @subs_to_review&.map do |s|
       d, f = s.get_submission_files(current_user)
       [d, f, s.id]
+    end
+    if @submission_info.count < @assignment.review_count && @submission_view_new
+      # don't bother interlocking this assignment with the underlying one,,
+      # since there's nothing to see yet
+      @submission_view.delete
     end
     @questions = @assignment.questions
     render "new_#{@assignment.type.underscore}"
@@ -394,7 +380,13 @@ class SubmissionsController < CoursesController
 
   # CREATE
   def create_Files
-    if (@submission.save_upload and @submission.save)
+    if prof_override?
+      prof_overrides = {file_size: params[:override_size], file_count: params[:override_count]}
+    else
+      prof_overrides = {file_size: false, file_count: false}
+    end
+
+    if (@submission.save_upload(prof_overrides) && @submission.save)
       @submission.set_used_sub!
       @submission.create_grades!
       @submission.autograde!
@@ -411,14 +403,22 @@ class SubmissionsController < CoursesController
 
     @submission.related_files = {}
 
-    if @submission.save_upload && @submission.save
+    if prof_override?
+      prof_overrides = {file_size: params[:override_size], file_count: params[:override_count]}
+    else
+      prof_overrides = {file_size: false, file_count: false}
+    end
+
+    if @submission.save_upload(prof_overrides) && @submission.save
       @submission.set_used_sub!
       @submission.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)
       redirect_to(path, notice: 'Response was successfully created.')
     else
       @submission.cleanup!
-      new_Questions
+      @answers = [["newsub", @submission.answers]].to_h
+      @questions = @assignment.questions
+      render "new_#{@assignment.type.underscore}"
     end
   end
 
@@ -435,7 +435,14 @@ class SubmissionsController < CoursesController
       _, files = sub.get_submission_files(current_user)
       @submission.related_files[sub.id] = files
     end
-    if @submission.save_upload && @submission.save
+
+    if prof_override?
+      prof_overrides = {file_size: params[:override_size], file_count: params[:override_count]}
+    else
+      prof_overrides = {file_size: false, file_count: false}
+    end
+
+    if @submission.save_upload(prof_overrides) && @submission.save
       @submission.set_used_sub!
       @submission.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)
@@ -509,7 +516,10 @@ class SubmissionsController < CoursesController
   def details_Files
     respond_to do |f|
       f.html {
-        @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, true)
+        show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
+        @lineCommentsByFile = @submission.grade_line_comments(current_user, show_hidden)
+        @sub_comments = @submission.grade_submission_comments(show_hidden)
+        @submission_dirs, @submission_files = @submission.get_submission_files(current_user, @lineCommentsByFile, true)
         render "details_files"
       }
       f.text {
@@ -557,7 +567,8 @@ class SubmissionsController < CoursesController
     render "details_questions"
   end
   def details_Exam
-    render "details_exam"
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                  alert: "No more detailed information about this exam"
   end
   def details_Codereview
     @questions = @assignment.questions
@@ -581,7 +592,7 @@ class SubmissionsController < CoursesController
     @submission_info = @related_subs.map do |sub, answers|
       d, f = sub.get_submission_files(current_user)
       @answers_are_newer << (sub.created_at < @submission.created_at)
-      [d, f, sub.id]
+      [d, f, sub.id, sub.team&.to_s, sub.user.display_name]
     end
     render "details_codereview"
   end
@@ -610,7 +621,7 @@ class SubmissionsController < CoursesController
         else
           matchings.map(&:target_user_id).compact
         end
-      @subs_to_review = @assignment.related_assignment.used_submissions.where(user_id: users)
+      @subs_to_review = @assignment.related_assignment.used_submissions.where(user_id: users).to_a
       # If there aren't enough allocations yet,
       if @subs_to_review.count < @assn_review_count
         used_sub_ids = current_user.used_submissions_for(@assignment.related_assignment).map(&:submission_id)

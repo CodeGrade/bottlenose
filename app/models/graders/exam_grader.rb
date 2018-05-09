@@ -53,8 +53,12 @@ class ExamGrader < Grader
     end
 
     g.updated_at = DateTime.now
-    g.available = ((comments.count == @num_questions) or !curved.nil?)
+    g.available = false
     g.save!
+
+    if g.score != sub.score
+      sub.update(score: nil) # wipe out score until it's republished
+    end
 
     return g.score
   end

@@ -1,5 +1,5 @@
 <div class="row">
-  <div class="col-md-6">
+  <div class="col-sm-6">
     <p>
       <b>Name:</b>
       <%= gradesheet.assignment.name %>
@@ -9,6 +9,19 @@
       <b>Due Date:</b>
       <span class="local-time"><%= gradesheet.assignment.due_date.iso8601 %></span>
     </p>
+    <% if @user || @team %>
+      <% extension = gradesheet.assignment.effective_due_date(@user, @team)
+         if extension != gradesheet.assignment.due_date %>
+      <p><i>
+        <b>Extended until:</b>
+        <span class="local-time"><%= extension.iso8601 %></span>
+      </i></p>
+      <% end %>
+    <% end %>
+    <p>
+      <b>Extra Credit:</b>
+      <%= gradesheet.assignment.extra_credit? ? "Yes" : "No" %>
+    </p>
     <p>
       <b>Grading Hidden:</b>
       <%= gradesheet.assignment.hide_grading? ? "Yes" : "No" %>
@@ -17,7 +30,7 @@
       <b>Teams:</b>
       <%= gradesheet.assignment.team_subs? ? "Yes" : "No" %>
     </p>
-    <% if (current_user.site_admin? || cur_reg&.professor?) and !gradesheet.assignment.assignment_file_name.blank? %>
+    <% if (current_user.site_admin? || cur_reg&.professor?) && !gradesheet.assignment.assignment_file_name.blank? %>
       <p>
         <b>Questions Download:</b>
         <%= link_to gradesheet.assignment.assignment_file_name, gradesheet.assignment.assignment_file_path %>
@@ -25,7 +38,7 @@
     <% end %>
   </div>
 
-  <div class="col-md-6">
+  <div class="col-sm-6">
     <div class="panel panel-default">
       <div class="panel-heading">
         <h3 class="panel-title">Description</h3>

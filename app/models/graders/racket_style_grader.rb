@@ -20,13 +20,24 @@ class RacketStyleGrader < Grader
     end
   end
 
+  after_initialize :load_style_params
+  before_validation :set_style_params
+
+  def assign_attributes(attrs)
+    super
+    set_style_params
+  end
+  
   protected
   
   def do_grading(assignment, sub)
-    Headless.ly do
-      sub.upload.extract_contents_to!(nil, sub.upload.extracted_path, false)
-      run_command_produce_tap assignment, sub
-      sub.upload.extract_contents_to!(nil, sub.upload.extracted_path, true)
+    g = self.grade_for sub
+    Dir.mktmpdir("grade-#{sub.id}-#{g.id}_") do |tmpdir|
+      @tmpdir = tmpdir
+      sub.upload.extract_contents_to!(nil, Pathname.new(tmpdir), false)
+      Headless.ly(display: g.id) do
+        run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT
+      end
     end
   end
 
@@ -36,7 +47,23 @@ class RacketStyleGrader < Grader
       {"XDG_RUNTIME_DIR" => nil},
       ["racket", Rails.root.join("lib/assets/checkstyle.rkt").to_s,
        "--max-points", self.avail_score.to_s,
-       sub.upload.extracted_path.to_s]
+       "--line-width", self.line_length.to_s,
+       @tmpdir],
+      [[@tmpdir, sub.upload.extracted_path.to_s]].to_h
     ]
+  end
+
+  def load_style_params
+    return if new_record?
+    self.line_length = self.params.to_i
+  end
+
+  def set_style_params
+    self.params = "#{self.line_length}"
+  end
+
+  def recompute_grades
+    # nothing to do:
+    # we already compute the score here based on the TAP output
   end
 end

@@ -12,7 +12,14 @@ class RegistrationsController < ApplicationController
   def index
     @students = @course.students
     @staff = @course.staff
-    @requests = @course.reg_requests.joins(:user).order('role desc', 'name').includes(:user)
+    @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
+    @requests = @course.reg_requests.joins(:user).order('role desc', 'name')
+                .includes(:user).includes(:reg_request_sections)
+    if current_user.site_admin?
+      @role = "professor"
+    else
+      @role = current_user.registration_for(@course).role
+    end
   end
 
   def new
@@ -37,41 +44,54 @@ class RegistrationsController < ApplicationController
       redirect_to course_registrations_path(@course),
                   notice: 'Registration was successfully created.'
     else
-
+      if @registration && !@registration.new_record?
+        @registration.delete
+      end
       render action: :new
     end
   end
 
   def bulk_edit
     @course = Course.find(params[:course_id])
+    @cur_role = current_user.registration_for(@course)&.role
     if params[:role] == "student"
       @registrations = @course.registrations
                        .where(role: Registration::roles["student"])
+    elsif @cur_role != "professor"
+      redirect_back fallback_location: course_registrations_path(@course),
+                    alert: "You are not allowed to edit staff registrations"
+      return
     else
       @registrations = @course.registrations
                        .where.not(role: Registration::roles["student"])
     end
-    @registrations = @registrations
-                     .includes(:user)
-                     .includes(:registration_sections)
-                     .to_a.sort_by{|r| r.user.display_name}
+    @sections = @course.sections.map{|s| [s.id, s]}.to_h
+    @registrations = @registrations.includes(:user)
+    @reg_sections = RegistrationSection.where(registration: @registrations).group_by(&:registration_id)
+                    .map{|rid, regs| [rid, regs.map{|r| @sections[r.section_id]}]}.to_h
+    @registrations = @registrations.to_a.sort_by{|r| r.user.display_name}
   end
 
   def bulk_update
     respond_to do |f|
       f.json {
         @reg = Registration.find(params[:id])
-        if @reg.nil? or @reg.course.id != @course.id
+        if @reg.nil? || (@reg.course.id != @course.id)
           render :json => {failure: "Unknown registration"}
+          return
         else
+          if (current_user.registration_for(@course).role != "professor")
+            params.delete(:role) # Only professors may edit roles
+          end
           changed = false
           @reg.dropped_date = nil if params[:reenroll]
-          @reg.role = params[:role]
+          @reg.role = params[:role] if params[:role]
+          sections = @course.sections.map{|sec| [sec.crn.to_s, sec.id]}.to_h
           section_changes = params[:orig_sections].zip(params[:new_sections])
           section_changes.each do |orig, new|
-            rs = RegistrationSection.find_by(registration_id: @reg.id, section_id: orig)
+            rs = RegistrationSection.find_by(registration_id: @reg.id, section_id: sections[orig])
             if rs
-              rs.section_id = new
+              rs.section_id = sections[new]
               if rs.changed?
                 changed = true
                 rs.save
@@ -103,18 +123,20 @@ class RegistrationsController < ApplicationController
         r = Registration.find_by(course_id: @course, user_id: uu.id)
       end
       if r
-        r.assign_attributes(course_id: @course.id, new_sections: row[1..-1],
+        r.assign_attributes(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
+                                                                               crn: row[1..-1]),
                             username: row[0], role: "student")
       else
         # Create @registration object for errors.
-        r = Registration.new(course_id: @course.id, new_sections: row[1..-1],
+        r = Registration.new(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
+                                                                                crn: row[1..-1]),
                              username: row[0], role: "student")
       end
 
       if (r.save && r.save_sections)
         num_added += 1
       else
-        failed << row[0]
+        failed << "#{row[0]} (#{r.errors.full_messages.to_sentence})"
       end
     end
 
@@ -124,8 +146,8 @@ class RegistrationsController < ApplicationController
     else
       failed.each do |f| @course.errors.add(:base, f) end
       redirect_to course_registrations_path(@course),
-                  notice: "Added #{num_added} students.",
-                  alert: "Could not add #{pluralize(failed.count, 'student')}: #{failed.join(", ")}"
+                  notice: "Added #{pluralize(num_added, 'student')}.",
+                  alert: "Could not add #{pluralize(failed.count, 'student')}: #{failed.to_sentence}"
     end
   end
 
@@ -147,7 +169,12 @@ class RegistrationsController < ApplicationController
     ans = params.require(:registration)
           .permit(:course_id, :orig_sections, :new_sections, :role, :username, :show_in_lists, :tags)
     ans[:course_id] = params[:course_id]
-    ans[:new_sections] = params[:new_sections].reject(&:blank?)
+    if params[:new_sections]
+      ans[:new_sections] = Section.where(crn: params[:new_sections].reject(&:blank?), course: params[:course_id])
+    end
+    if params[:orig_sections]
+      ans[:orig_sections] = Section.where(crn: params[:orig_sections].reject(&:blank?), course: params[:course_id])
+    end
     ans
   end
 

@@ -22,17 +22,19 @@ class JavaStyleGrader < Grader
   protected
   
   def do_grading(assignment, sub)
-    run_command_produce_tap assignment, sub
+    run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT
   end
   def get_command_arguments(assignment, sub)
     files_dir = sub.upload.extracted_path
-    if self.upload and self.upload.submission_path and File.file?(self.upload.submission_path)
+    if self.upload && self.upload.submission_path && File.file?(self.upload.submission_path)
       [
         "style.tap",
         {},
         ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
          files_dir.to_s,
          "+config", self.upload.submission_path.to_s,
+         "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
+         "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
          "-maxPoints", self.avail_score.to_s]
       ]
     else
@@ -40,8 +42,16 @@ class JavaStyleGrader < Grader
         "style.tap",
         {},
         ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
-         files_dir.to_s, "-maxPoints", self.avail_score.to_s]
+         files_dir.to_s,
+         "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
+         "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
+         "-maxPoints", self.avail_score.to_s]
       ]
     end
+  end
+
+  def recompute_grades
+    # nothing to do:
+    # we already compute the score here based on the TAP output
   end
 end

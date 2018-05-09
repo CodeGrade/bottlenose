@@ -7,8 +7,7 @@
 <p><strong>Interlocks</strong></p>
 <p>Restrict submissions to <i>this</i> assignment based on activity 
   in <i>other</i> assignments.</p>
-<o id="<%= asgn.type %>_interlocks" class="graders-list grader-defns"
-   style="list-style-type: none;">
+<o id="<%= asgn.type %>_interlocks" class="interlocks-list interlock-defns">
   <%= f.fields_for :interlocks, asgn.interlocks do |il| %>
   <li class="nested-fields"><div style="position: relative; vertical-align: middle;"><%= il.object.to_s %>
     <%= link_to_remove_association "Remove", il, class: 'btn btn-danger pull-right',

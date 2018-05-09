@@ -1,15 +1,24 @@
-class MatchingAllocationsController < CoursesController
-  prepend_before_action :find_course_assignment
+require 'csv'
+class MatchingAllocationsController < ApplicationController
+  layout 'course'
+  
+  before_action :find_course
+  before_action :find_assignment
   before_action :require_current_user
-  before_action :require_admin_or_prof
+  before_action -> { require_admin_or_prof(course_assignment_path(@course, @assignment)) }
 
   def edit
+    if @assignment.review_target == "self"
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "Cannot specify teams for self-reviews: they must be the same as the underlying submissions."
+      return
+    end
     @existing_matchings = CodereviewMatching.where(assignment: @assignment)
     @needed_teams = Team.where(id: (@existing_matchings.pluck(:team_id) +
                                     @existing_matchings.pluck(:target_team_id)).compact)
                     .includes(:users).map{|t| [t.id, t]}.to_h
     @needed_users = User.where(id: (@existing_matchings.pluck(:user_id) +
-                                    @existing_matchings.pluck(:target_team_id)).compact)
+                                    @existing_matchings.pluck(:target_user_id)).compact)
                     .map{|u| [u.id, u]}.to_h
 
     @targets =
@@ -124,6 +133,96 @@ class MatchingAllocationsController < CoursesController
       end
     end
   end
+  def bulk_enter
+    @num_added = 0
+    @failed = []
+
+    @allTeams = @assignment.teamset.teams
+    @allUsers = @course.users
+    def find_users_or_fail(ids)
+      ids = [ids] unless ids.is_a? Array
+      any_dups = ids.group_by{|v| v}.select{|k, v| v.size > 1}.map(&:first)
+      unless any_dups.blank?
+        @failed << "Found duplicate #{'id'.pluralize(any_dups.count)}: #{any_dups.to_sentence}"
+        return nil
+      end
+      ans = @allUsers.where(id: ids).to_a
+      if ans.length != ids.length
+        missing = ids.to_set - ans.map(&:id).to_set
+        @failed <<
+          "Could not find #{'user'.pluralize(missing.count)} with #{'id'.pluralize(missing.count)} #{missing.to_a.to_sentence}"
+        return nil
+      end
+      ans
+    end
+    def find_teams_or_fail(ids)
+      ids = [ids] unless ids.is_a? Array
+      any_dups = ids.group_by{|v| v}.select{|k, v| v.size > 1}.map(&:first)
+      unless any_dups.blank?
+        @failed << "Found duplicate #{'id'.pluralize(any_dups.count)}: #{any_dups.to_sentence}"
+        return nil
+      end
+      ans = @allTeams.where(id: ids).to_a
+      if ans.length != ids.length
+        missing = ids.to_set - ans.map(&:id).to_set
+        @failed <<
+          "Could not find #{'team'.pluralize(missing.count)} with #{'id'.pluralize(missing.count)} #{missing.to_a.to_sentence}"
+        return nil
+      end
+      ans
+    end
+    def save_if_possible(match)
+      begin
+        match.save!
+        @num_added += 1
+      rescue ActiveRecord::RecordNotUnique => e
+        @failed << "Matching already exists: #{match}"
+      end
+    end
+    CSV.parse(params[:matchings]) do |row|
+      nums = row.map{|v| Integer(v) rescue false}
+      next unless nums.all?
+      case [@assignment.team_subs?, @assignment.related_assignment.team_subs?]
+      when [true, true]
+        reviewer_team = find_teams_or_fail(nums[0])&.first
+        target_teams = find_teams_or_fail(nums[1..-1])
+        next if reviewer_team.nil? || target_teams.nil?
+        target_teams.each do |tt|
+          save_if_possible(CodereviewMatching.new(assignment: @assignment, team: reviewer_team, target_team: tt))
+        end
+      when [true, false]
+        reviewer_team = find_teams_or_fail(nums[0])&.first
+        target_users = find_users_or_fail(nums[1..-1])
+        next if reviewer_team.nil? || target_users.nil?
+        target_users.each do |tu|
+          save_if_possible(CodereviewMatching.new(assignment: @assignment, team: reviewer_team, target_user: tu))
+        end
+      when [false, true]
+        reviewer_user = find_users_or_fail(nums[0])&.first
+        target_teams = find_teams_or_fail(nums[1..-1])
+        next if reviewer_user.nil? || target_teams.nil?
+        target_teams.each do |tt|
+          save_if_possible(CodereviewMatching.new(assignment: @assignment, user: reviewer_user, target_team: tt))
+        end
+      when [false, false]
+        reviewer_user = find_users_or_fail(nums[0])&.first
+        target_users = find_users_or_fail(nums[1..-1])
+        next if reviewer_user.nil? || target_users.nil?
+        target_users.each do |tu|
+          save_if_possible(CodereviewMatching.new(assignment: @assignment, user: reviewer_user, target_user: tu))
+        end
+      end
+    end
+    if @failed.blank?
+      redirect_to edit_course_assignment_matchings_path(@course, @assignment),
+                  notice: "Added #{pluralize(@num_added, 'matching')}."
+    else
+      @failed.each do |f| @assignment.errors.add(:base, f) end
+      redirect_to edit_course_assignment_matchings_path(@course, @assignment),
+                  notice: "Added #{pluralize(@num_added, 'matching')}.",
+                  alert: "Could not add #{pluralize(@failed.count, 'matching')}: #{@failed.to_sentence}"
+    end
+  end
   def update
     CodereviewMatching.transaction do
       case [@assignment.team_subs?, @assignment.related_assignment.team_subs?]
@@ -183,30 +282,13 @@ class MatchingAllocationsController < CoursesController
                     alert: "That matching does not belong to this assignment"
     end      
   end
+  def delete_all
+    matchings = @assignment.codereview_matchings.destroy_all
+    redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
+                  notice: "#{pluralize(matchings.count, 'matching')} deleted"
+  end
 
   private
-  def find_course_assignment
-    @course = Course.find_by(id: params[:course_id])
-    @assignment = Assignment.find_by(id: params[:assignment_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
-      return
-    end
-    if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
-      return
-    end
-  end
-
-  def require_admin_or_prof
-    unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "Must be an admin or professor."
-      return
-    end
-  end
-
-
   def general_update(reviewers, targets, get_reviewer_users, get_target_users, disjoint_users, create_matching)
     review_counts = targets.map{|t| [t.id, 0]}.to_h
     targets_ids_map = targets.map{|t| [t.id, t]}.to_h
@@ -214,13 +296,13 @@ class MatchingAllocationsController < CoursesController
     target_ids.shuffle!
     @count = 0
     reviewers.each do |r|
-      r_users = get_reviewer_users(r)
+      r_users = get_reviewer_users.call(r)
       assoc = []
-      target_ids.each do |t|
-        t = targets[t]
+      target_ids.each do |tid|
+        t = targets_ids_map[tid]
         break if assoc.length == @assignment.review_count
         next if review_counts[t.id].nil?
-        if disjoint_users(r_users, get_target_users(t))
+        if disjoint_users.call(r_users, get_target_users.call(t))
           assoc << t
           review_counts[t.id] += 1
           if review_counts[t.id] == @assignment.review_count
@@ -229,7 +311,7 @@ class MatchingAllocationsController < CoursesController
         end
       end
       assoc.each do |a|
-        create_matching(r, a)
+        create_matching.call(r, a)
         @count += 1
       end
     end

@@ -1,7 +1,23 @@
-<% @page_title = "Codereview Grader" %>
+<% @page_title = @grader.display_type %>
 <% cur_reg = current_user.registration_for(@course) %>
 <% content_for :wide_content_before do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
+<%# Styles injected here by script to turn comment visibility on and off %>
 <style id="comment-styles"></style>
+<% if @grade.errors.any? %>
+<div id="error_explanation" class="alert alert-danger">
+  <h2><%= pluralize(@grade.errors.count, "error") %> prohibited
+  this grading from being saved:</h2>
+
+  <ul>
+    <% @grade.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+    <% end %>
+  </ul>
+</div>
+<% end %>
 
 <p>
   <%= link_to "Back to submission",
@@ -24,7 +40,7 @@
 <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission), @grade] do |f| %>
 <%= f.hidden_field :related_sub_ids, value: @submission_info.map{|si| si[2]} %>
 <% @count = 0 %>
-<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id), index|
+<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id, sub_team, sub_user), index|
    @submission_dirs = sub_dirs
    @submission_files = sub_files %>
 <% if @submission_info.length != 1 %>
@@ -63,16 +79,26 @@
       </div>
     </div>
     <script>
-      <%= render "submissions/render_comments.js", sub_dirs: sub_dirs, vertical: true, root: "sub_#{sub_id}" %>
+      <%= render "submissions/comment_edit_widgets.js" %>
+      <%= render "submissions/render_filepicker.js" %>
+      $(function() {
+        var dirInfo = <%= raw json_escape(JSON.pretty_generate(sub_dirs)) %>;
+        activateFileView("sub_<%= sub_id %>", "<%= @grade.id %>", dirInfo, false, true);
+      });
     </script>
   </div>
 
   <div class="responses form-group col-sm-6">
+    <span class="well well-sm well-info col-sm-12 text-center">This review is for the
+    <%= link_to "submission from #{sub_team || sub_user}",
+        course_assignment_submission_path(@course, @assignment.related_assignment, sub_id) %>
+    </span>
     <%= render "submissions/render_questions", root: "sub_#{sub_id}", sub_id: sub_id %>
     <div class="spacer">&nbsp;</div>
   </div>
   <script>
-    <%= render "submissions/render_questions.js", root: "sub_#{sub_id}" %>
+    <%= render "submissions/render_questions.js" %>
+    $(function() { activateQuestions("sub_<%= sub_id %>"); });
   </script>
 </div>
 <% end %><%# @submissions_info.each %>

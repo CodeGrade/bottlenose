@@ -23,3 +23,14 @@
         <li><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || current_user.id == uu.id, uu) %></li>
     <% end %>
 </ul>
+
+<h4>Submissions</h4>
+<% if @team.used_submissions.empty? %>
+<p>None</p>
+<% else %>
+<ul>
+  <% @team.used_submissions.each do |s| %>
+  <li><%= link_to s.assignment.name, course_assignment_submission_path(@course, s.assignment, s) %></li>
+  <% end %>
+</ul>
+<% end %>

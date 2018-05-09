@@ -1,5 +1,6 @@
 require 'securerandom'
 require 'audit'
+require 'addressable/uri'
 
 class Assignment < ApplicationRecord
   enum question_kind: [:yes_no, :true_false, :multiple_choice, :numeric, :text]
@@ -29,10 +30,16 @@ class Assignment < ApplicationRecord
   has_many :graders, dependent: :destroy, autosave: true
   accepts_nested_attributes_for :graders, allow_destroy: true
 
+  has_many :grader_allocations, dependent: :destroy
+  
   has_many :interlocks, dependent: :destroy
   has_many :related_interlocks, :foreign_key => "related_assignment_id", :class_name => "Interlock"
   accepts_nested_attributes_for :interlocks, allow_destroy: true
+  has_many :submission_views
 
+  has_many :codereview_matchings, dependent: :destroy
+  has_many :individual_extensions, dependent: :destroy
+  
   validates :name,      :uniqueness => { :scope => :course_id }
   validates :name,      :presence => true
   validates :course_id, :presence => true
@@ -44,18 +51,21 @@ class Assignment < ApplicationRecord
   validates :graders, :presence => true
 
 
-  def submissions_blocked(user)
-    subs = self.submissions_for(user)
+  def submissions_blocked(user, team)
     locks = self.interlocks.group_by(&:constraint)
-    if locks["no_submission_unless_submitted"]
-      if subs.empty?
-        lock = locks["no_submission_unless_submitted"].first
+    locks["no_submission_unless_submitted"]&.each do |lock|
+      if lock.related_assignment.submissions_for(user).empty?
         return "You have not submitted to #{lock.related_assignment.name}, and so cannot submit to this assignment"
       end
     end
-    if locks["no_submission_after_viewing"]
-      lock = locks["no_submission_after_viewing"].first
-      if !subs.empty?
+    locks["no_submission_after_viewing"]&.each do |lock|
+      views =
+        if self.team_subs?
+          SubmissionView.where(assignment: lock.related_assignment, team: team)
+        else
+          SubmissionView.where(assignment: lock.related_assignment, user: user)
+        end
+      if !views.empty?
         return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
       end
     end
@@ -149,7 +159,7 @@ class Assignment < ApplicationRecord
           self.errors.add(:base, "The specified teamset to be copied does not exist")
           return false
         end
-        self.teamset = ts.dup
+        self.teamset = ts.dup(nil, "Teamset for #{self.name}")
       end
     elsif @teamset_plan == "use"
       if @teamset_source_use.empty?
@@ -199,12 +209,14 @@ class Assignment < ApplicationRecord
         self.errors.add(:base, "The specified teamset to be copied does not exist")
         return false
       end
-      self.teamset = ts.dup
+      self.teamset = ts.dup(nil, "Teamset for #{self.name}")
       self.teamset.make_solo_teams_for(self)
     elsif @teamset_plan == "unique"
       # nothing to do
     elsif @teamset_plan == "use"
-      if @teamset_source_use.blank?
+      if action[:existing]
+        # nothing to do
+      elsif @teamset_source_use.blank?
         self.errors.add(:base, "The teamset to be used was not specified")
         return false
       else
@@ -213,12 +225,74 @@ class Assignment < ApplicationRecord
       end
     elsif @teamset_plan == "clone"
       if self.teamset.assignments.count > 1 # no need to dup if it's already unique
-        self.teamset = self.teamset.dup(self)
+        self.teamset = self.teamset.dup(self, "Teamset for #{self.name}")
       end
     end
     self.team_subs = (@teamset_plan != "none")
   end
 
+  def effective_sub_due_date(sub)
+    if @cached
+      return @cached[:subs][sub.user_id] || self.due_date
+    elsif self.team_subs
+      self.individual_extensions.find_by(team_id: sub.team_id)&.due_date || self.due_date
+    else
+      self.individual_extensions.find_by(user_id: sub.user_id)&.due_date || self.due_date
+    end
+  end
+  
+  def effective_due_date(user, team)
+    if @cached
+      return @cached[:all][user.id] || self.due_date
+    elsif self.team_subs
+      self.individual_extensions.find_by(team: team)&.due_date || self.due_date
+    else
+      self.individual_extensions.find_by(user: user)&.due_date || self.due_date
+    end
+  end
+
+  def extensions_for_users(users, only_used_subs, as_of = DateTime.now)
+    if users.is_a? User
+      users = [users]
+    end
+    if @cached
+      if only_used_subs
+        return users.map{|u| [u.id, @cached[:all][u.id] || self.due_date]}.to_h
+      else
+        return users.map{|u| [u.id, @cached[:subs][u.id] || self.due_date]}.to_h
+      end
+    elsif self.team_subs
+      if only_used_subs
+        used_subs = multi_group_by(self.all_used_subs.where(user: users).includes(:team, :user_submissions).references(:team, :user_submissions), [:user_id], true)
+        teams = used_subs.map{|_, s| s.user_submissions.map{|us| [us.user_id, s.team]}}.flatten(1).to_h
+      else
+        teams = self.teamset.active_teams_for(users, as_of)
+      end
+      extensions = self.individual_extensions.where(team: teams.values)
+      extensions = multi_group_by(extensions, [:team_id], true)
+      users.map do |u|
+        [u.id, extensions[teams[u.id]&.id]&.due_date]
+      end.to_h
+    else
+      extensions = multi_group_by(self.individual_extensions.where(user: users), [:user_id], true)
+      users.map{|u| [u.id, extensions[u.id]&.due_date]}.to_h
+    end
+  end
+
+  def effective_due_dates(users, only_used_subs)
+    extensions_for_users(users, only_used_subs, self.due_date).map do |uid, ext|
+      [uid, ext || self.due_date]
+    end.to_h
+  end
+
+  def cache_effective_due_dates!(users)
+    @cached = nil
+    @cached = {
+      subs: effective_due_dates(users, true),
+      all: effective_due_dates(users, false)
+    }
+  end
+  
   def sub_late?(sub)
     self.lateness_config.late?(self, sub)
   end
@@ -244,10 +318,10 @@ class Assignment < ApplicationRecord
   end
 
   def rate_limit?(sub)
-    if self.max_attempts.to_i > 0 and self.submissions.count >= self.max_attempts.to_i
+    if (self.max_attempts.to_i > 0) && (self.submissions.count >= self.max_attempts.to_i)
       "permanent"
-    elsif self.rate_per_hour.to_i > 0 and
-         self.submission.where('created_at >= ?', DateTime.now - 1.hour).count > self.rate_per_hour.to_i
+    elsif (self.rate_per_hour.to_i > 0) &&
+          (self.submission.where('created_at >= ?', DateTime.now - 1.hour).count > self.rate_per_hour.to_i)
       "temporary"
     else
       false
@@ -262,7 +336,7 @@ class Assignment < ApplicationRecord
   end
   
   def assignment_upload
-    Upload.find_by_id(assignment_upload_id)
+    Upload.find_by(id: assignment_upload_id)
   end
 
   def assignment_file
@@ -285,7 +359,7 @@ class Assignment < ApplicationRecord
     if assignment_upload_id.nil?
       ""
     else
-      assignment_upload.path
+      Addressable::URI.encode_component(assignment_upload.path, Addressable::URI::CharacterClasses::PATH)
     end
   end
   def assignment_file=(data)
@@ -379,8 +453,16 @@ class Assignment < ApplicationRecord
     UsedSub.find_by(user_id: user.id, assignment_id: self.id)&.submission
   end
 
+  def self.cached_grades_complete(assns, subs)
+    completed_grades = Grade.where(submission: subs, available: true).group(:submission_id).count
+    graders = Grader.where(assignment: assns).group(:assignment_id).count
+    subs.map do |s|
+      [s.id, completed_grades[s.id] == graders[s.assignment_id]]
+    end.to_h
+  end
+  
   def main_submissions
-    used_subs.map do |sfg|
+    used_subs.includes(:subsmissions).map do |sfg|
       sfg.submission
     end
   end

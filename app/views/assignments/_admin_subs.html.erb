@@ -1,9 +1,18 @@
 <% cur_reg = current_user.registration_for(@course) %>
 <% cur_user_prof_ever = current_user.professor_ever? %>
+<% if cur_user_prof_ever || cur_reg&.staff? %>
+<style>
+  <% @course.sections.each do |s| %>
+  #submissions.show_one .sec_<%= s.crn %> { display: none; }
+  #submissions.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  <% end %>
+</style>
+<% end %>
+<div style="display: flex; flex-direction: row; align-items: baseline; justify-content: space-between;">
 <h3 style="display: inline-block">
   <%= type[:noun].pluralize(2).capitalize %> (<%= @gradesheet.submissions.count %>)
 </h3>
-<div style="padding-bottom: 0.5em; display: inline-block;">
+<div style="padding-bottom: 0.5em; display: inline-block; flex-grow: 1;">
   <% if @gradesheet.assignment.due_date <= DateTime.now %>
      <div class="btn-group" style="white-space: nowrap;">
        <%= link_to "Download all", 
@@ -33,37 +42,39 @@
         method: 'post', class: "btn btn-warning",
         data: { confirm: "This may take a while; please be patient" } %>
     <% end %>
-    <% if @all_complete %>
-    <%= link_to "Publish grades", 
-        course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'), class: "btn btn-default",
-        method: 'patch',
-        data: { confirm: "Are you sure you want to publish all grades?" } %>
-    <% else %>
-    <div class="btn-group" style="white-space: nowrap;">
-    <%= link_to "Publish completed grades", 
-        course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
-        class: "btn btn-default",
-        method: 'patch',
-        data: { confirm: "Are you sure you want to publish all completed grades?" }
-        %><button type="button" class="btn btn-md btn-default dropdown-toggle"
-                 style="float: unset;"
-                 data-toggle="dropdown"
-                 aria-haspopup="true" aria-expanded="false">
-         <span class="caret"></span>
-         <span class="sr-only">Toggle Dropdown</span>
-       </button><% #
-       %><ul class="dropdown-menu">
-         <li><%= link_to "Publish completed grades", 
-                 course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
-                 method: 'patch',
-                 data: { confirm: "Are you sure you want to publish all grades?" } %></li>
-         <li><%= link_to "Publish ALL grades", 
-                 course_assignment_publish_path(@course, @gradesheet.assignment, all: 'true'),
-                 method: 'patch',
-                 data: { confirm: "Not all assignments have been graded!\n" +
-                                  "Are you sure you want to publish all grades, even the incomplete ones?" } %></li>
-      </ul>
-    </div>
+    <% if cur_reg&.assistant? %>
+      <% if @all_complete %>
+      <%= link_to "Publish grades", 
+          course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'), class: "btn btn-default",
+          method: 'patch',
+          data: { confirm: "Are you sure you want to publish all grades?" } %>
+      <% else %>
+      <div class="btn-group" style="white-space: nowrap;">
+      <%= link_to "Publish completed grades", 
+          course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
+          class: "btn btn-default",
+          method: 'patch',
+          data: { confirm: "Are you sure you want to publish all completed grades?" }
+          %><button type="button" class="btn btn-md btn-default dropdown-toggle"
+                   style="float: unset;"
+                   data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false">
+           <span class="caret"></span>
+           <span class="sr-only">Toggle Dropdown</span>
+         </button><% #
+         %><ul class="dropdown-menu">
+           <li><%= link_to "Publish completed grades", 
+                   course_assignment_publish_path(@course, @gradesheet.assignment, all: 'false'),
+                   method: 'patch',
+                   data: { confirm: "Are you sure you want to publish all completed grades?" } %></li>
+           <li><%= link_to "Publish ALL grades", 
+                   course_assignment_publish_path(@course, @gradesheet.assignment, all: 'true'),
+                   method: 'patch',
+                   data: { confirm: "Not all assignments have been graded!\n" +
+                                    "Are you sure you want to publish all grades, even the incomplete ones?" } %></li>
+        </ul>
+      </div>
+      <% end %>
     <% end %>
     <% else %>
     <%= link_to "New #{type[:noun].capitalize}", 
@@ -77,12 +88,30 @@
     <% end %>
   <% end %>
 </div>
+  <span style="flex-grow: 1;">&nbsp;</span>  
+  <button class="btn btn-default collapsed" data-toggle="collapse" disabled
+        data-target="#grade-histograms" id="toggle-histograms">
+    Show/hide grade histograms
+  </button>
+</div>
 
 <% if @gradesheet.submissions.empty? %>
   <div class="well">
     No <%= type[:noun].pluralize(2) %> yet.
   </div>
 <% else %>
+<% if cur_user_prof_ever || cur_reg&.assistant? %>
+<%= render "grade_distribution" %>
+<% end %>
+<% if cur_user_prof_ever || cur_reg&.staff? %>
+<h4>Select a section: <select id="sections">
+    <option value="show_all">Show all sections</option>
+    <% @course.sections.each do |s| %>
+    <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
+    <% end %>
+  </select>
+</h4>
+<% end %>
   <table id="submissions" class="table table-striped row-vcenter">
     <thead>
       <tr>
@@ -97,10 +126,13 @@
               class: "btn btn-default no-resort",
               title: "Rerun #{c.display_type} for all used submissions",
               method: :post do %><i class="glyphicon glyphicon-refresh"></i><% end %>
-          <% elsif cur_reg && (cur_reg.professor? || cur_reg.assistant?) %>
+          <% elsif !c.autograde? && cur_reg && (cur_reg.professor? || cur_reg.assistant?) %>
           <%= link_to course_assignment_grader_allocations_path(@course, @gradesheet.assignment, c),
               class: "btn btn-default no-resort",
               title: "Assign graders" do %><i class="glyphicon glyphicon-list-alt"></i><% end %>
+          <% end %>
+          <% if c.extra_credit %>
+          <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
           <% end %>
           <%= c.display_type %>
         </th>
@@ -113,11 +145,14 @@
     <tbody>
     <% @gradesheet.grades[:grades].each do |id, grade| %>
       <% sub = grade[:sub] %>
-      <% if sub.stale_team? %>
-      <tr class='text-muted'>
-      <% else %>
-      <tr>
-      <% end %>
+      <% classes = ""
+         if sub.stale_team? then classes += " text-muted" end
+         if cur_user_prof_ever || cur_reg&.staff?
+         classes += (" " +
+           (@sections_by_student[@students[sub.user_id]&.reg_id] || []).map{|sec| "sec_#{@section_crns[sec.section_id]}"}.join(" "))
+         end
+         %>
+      <tr class="<%= classes %>">
       <td><%= maybe_link_user(current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
                             sub.user) %></td>
         <td><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
@@ -202,5 +237,14 @@
       });
       $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
     });
+    <% if cur_user_prof_ever || cur_reg&.staff? %>
+    $(function() {
+      var prevSection = "show_all";
+      $("#sections").change(function(e) {
+        $("#submissions").removeClass(prevSection).addClass($(this).val());
+        prevSection = $(this).val();
+      });
+    });
+    <% end %>
   </script>
 <% end %>

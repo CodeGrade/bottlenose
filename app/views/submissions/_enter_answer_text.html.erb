@@ -1,5 +1,5 @@
 <div class="form-group">
   <% value = @answers&.dig(sub_id.to_s, index, "main") %>
   <textarea name="answers[<%= sub_id %>][<%= index %>][main]" id="answer_<%= sub_id %>_<%= index %>"
-            rows="5" class="form-control"><%= value %></textarea>
+            rows="5" class="form-control optional"><%= value %></textarea>
 </div>

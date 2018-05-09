@@ -11,7 +11,10 @@
 // GO AFTER THE REQUIRES BELOW.
 //
 //= require jquery
+//= require jquery-ui/widgets/draggable
+//= require jquery-ui/widgets/resizable
 //= require jquery-ui/widgets/sortable
+//= require jquery-ui/widgets/selectable
 //= require jquery_ujs
 //= require jquery.matchHeight
 //= require jquery-tablesorter
@@ -29,7 +32,12 @@
 //= require codemirror/mode/mllike/mllike
 //= require codemirror/mode/ebnf/ebnf
 //= require codemirror/mode/javascript/javascript
+//= require codemirror/mode/markdown/markdown
 //= require codemirror/mode/scheme/scheme
+//= require codemirror/mode/css/css
+//= require codemirror/mode/xml/xml
+//= require codemirror/mode/htmlmixed/htmlmixed
+//= require dompurify/dist/purify.min
 //= require pyret-codemirror-mode/mode/pyret
 //= require_tree .
 
@@ -134,6 +142,25 @@ function ensureFilesPresentOnSubmit(e, sel) {
   return !problems;
 }
 
+function makeFriendlyDate(str, showTime) {
+  var dd = moment(Date.parse(str));
+  if (!dd.isValid()) { dd = moment(str); }
+
+  if (dd.isValid()) {
+    var today = moment().startOf('day');
+    var tomorrow = moment(today).add(1, 'days');
+    var twodays = moment(tomorrow).add(1, 'days');
+    if (today.isSameOrBefore(dd) && dd.isBefore(tomorrow))
+      return ("Today, " + dd.format("h:mm:ssa"));
+    else if (tomorrow.isSameOrBefore(dd) && dd.isBefore(twodays))
+      return ("Tomorrow, " + dd.format("h:mm:ssa"));
+    else if (showTime)
+      return (dd.format("MMM D YYYY, h:mm:ssa"));
+    else
+      return (dd.format("MMM D, YYYY"));
+  }
+}
+
 $(function() {
   $('[data-toggle="tooltip"]').each(function(elt) {
     $(this).tooltip({
@@ -144,20 +171,7 @@ $(function() {
   });
 
   $('.local-time').each(function(_) {
-    var dd = moment(Date.parse($(this).text()));
-    if (!dd.isValid()) { dd = moment($(this).text()); }
-
-    if (dd.isValid()) {
-      var today = moment().startOf('day');
-      var tomorrow = moment(today).add(1, 'days');
-      var twodays = moment(tomorrow).add(1, 'days');
-      if (today.isSameOrBefore(dd) && dd.isBefore(tomorrow))
-        $(this).text("Today, " + dd.format("h:mm:ssa"));
-      else if (tomorrow.isSameOrBefore(dd) && dd.isBefore(twodays))
-        $(this).text("Tomorrow, " + dd.format("h:mm:ssa"));
-      else
-        $(this).text(dd.format("MMM D YYYY, h:mm:ssa"));
-    }
+    $(this).text(makeFriendlyDate($(this).text(), true));
   });
 
   $("input.numeric").on("keydown", validateNumericInput);
@@ -284,3 +298,39 @@ function makeSpinner(options) {
   activateSpinner(div, options);
   return div;
 }
+
+// Based on npm package "google-charts"
+var GoogleCharts = {
+  loader: function() {
+    if (!GoogleCharts.loaderPromise) {
+      GoogleCharts.loaderPromise = new Promise((resolve) => {
+        const head = document.getElementsByTagName('head')[0];
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.onload = function () {
+          GoogleCharts.api = window.google;
+          GoogleCharts.api.charts.load('current', {'packages': ['corechart']});
+          GoogleCharts.api.charts.setOnLoadCallback(() => {
+            resolve();
+          })
+        }
+        script.src = 'https://www.gstatic.com/charts/loader.js';
+        head.appendChild(script);
+      });
+    }
+    return GoogleCharts.loaderPromise;
+  },
+  load: function(type, callback) {
+    return GoogleCharts.loader().then(() => {
+      if (type) {
+        if(!type.length) {
+          type = [type];
+        }
+        GoogleCharts.api.charts.load('current', {'packages': type});
+        GoogleCharts.api.charts.setOnLoadCallback(callback);
+      } else {
+        callback();
+      }
+    })
+  }
+};

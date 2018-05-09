@@ -1,0 +1,23 @@
+<% @page_title = "#{@course.name}: Investigate partners" %>
+<style>
+  .older-team {
+  background: linear-gradient(to right, white, #dff0d8);
+  }
+  .newer-team {
+  background: linear-gradient(to left, white, #dff0d8);
+  }
+</style>
+<div>
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#common-partners" data-toggle="tab">Find common partners</a></li>
+    <li><a href="#diff-teamsets" data-toggle="tab">Compare teamsets</a></li>
+  </ul>
+
+  <div class="tab-content">
+    <%= render 'common_partners' %>
+    <%= render 'diff_teamsets' %>
+  </div>
+</div>
+<script>
+  <%= render 'investigate.js' %>
+</script>

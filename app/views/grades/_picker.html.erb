@@ -8,7 +8,7 @@
     <% @target = target %>
     <% @new_grader = new_grader %>
     <% def tab_if_type(type, text)
-         if (@in_use and (type == @target.type)) or !@in_use
+         if (@in_use && (type == @target.type)) || !@in_use
            content_tag(:a, text, data: {toggle: "tab"}, href: "##{@new_grader}_#{type}")
          else
            content_tag(:a, text, data: {toggle: ""})
@@ -176,7 +176,7 @@
         for (var i = 0; i < props.length; i++) {
           if (props[i] === "type") continue;
           var id = "#" + type + "_" + props[i];
-          console.log(id, $(id).length, opt_data[props[i]]);
+          // console.log(id, $(id).length, opt_data[props[i]]);
           $(id).val(opt_data[props[i]]);
         }
         $("[href='#<%= new_grader %>_" + opt_data["type"] + "']").tab('show');

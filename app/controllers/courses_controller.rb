@@ -4,13 +4,15 @@ require 'course_spreadsheet'
 class CoursesController < ApplicationController
   layout 'course'
 
-  before_action :find_course, except: [:index, :new, :create]
+  before_action -> { find_course(params[:id])}, except: [:index, :new, :create]
   before_action :require_current_user, except: [:public]
   before_action :require_registered_user, except: [:public, :index, :new, :create]
-  before_action :require_admin_or_prof, except: [:index, :new, :show, :public, :withdraw]
+  before_action :require_admin_or_prof, only: [:edit, :update, :gradesheet]
+  before_action :require_admin_or_prof_ever, only: [:new, :create]
+  before_action :require_admin_or_staff, only: [:facebook]
 
   def index
-    @courses_by_term = Course.order(:name).group_by(&:term)
+    @courses_by_term = Course.order(:name).includes(:term).group_by(&:term)
 
     # We can't use the course layout if we don't have a @course.
     render layout: 'application'
@@ -19,12 +21,9 @@ class CoursesController < ApplicationController
   def show
     if current_user_staff_for?(@course)
       @pending_grading = @course.pending_grading
-   else
+    else
       @pending_grading = {}
     end
-    # elsif @registration.staff?
-    #   @pending_grading = []
-    #   @assignments = []
     @allocated_grading = @course.grading_assigned_for(current_user)
     @completed_grading = @course.grading_done_for(current_user)
     @assignments = Assignment
@@ -51,17 +50,15 @@ class CoursesController < ApplicationController
   end
 
   def facebook
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_back fallback_location: root_path, alert: "Must be an admin or professor."
-      return
-    end
     @students = @course.students
                 .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
                 .order("users.last_name", "users.first_name")
     @reg_sections = RegistrationSection.where(registration: @course.registrations)
+    @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
     @students_by_section = @reg_sections.group_by(&:section_id).map do |section_id, regs|
-      [section_id, @students.where("registrations.id": regs.map(&:registration_id))]
+      [@section_crns[section_id], @students.where("registrations.id": regs.map(&:registration_id)).to_a]
     end.to_h
+    @students = @students.to_a
     @sections_by_student = @reg_sections.group_by(&:registration_id)
   end
 

@@ -1,8 +1,26 @@
 require 'clamp'
 class CodereviewGrader < Grader
-  attr_accessor :review_target
-  attr_accessor :review_count
-  attr_accessor :review_threshold
+  def review_target
+    @review_target
+  end
+  def review_target=(value)
+    params_will_change! if review_target != value
+    @review_target = value
+  end
+  def review_count
+    @review_count
+  end
+  def review_count=(value)
+    params_will_change! if review_count != value
+    @review_count = value
+  end
+  def review_threshold
+    @review_threshold
+  end
+  def review_threshold=(value)
+    params_will_change! if review_threshold != value
+    @review_threshold = value
+  end
 
   after_initialize :load_review_params
   before_validation :set_review_params
@@ -47,6 +65,13 @@ class CodereviewGrader < Grader
     end
   end
 
+  def guess_who_graded(subs)
+    grades = Grade.where(grader_id: self, submission: subs).where.not(grading_output: nil).group_by(&:submission_id)
+    return grades.map do |sub_id, g|
+      [sub_id, YAML.load(File.open(g.first.grading_output))["grader"].to_i]
+    end.to_h
+  end
+  
   protected
 
   def do_grading(assignment, sub)
@@ -78,5 +103,11 @@ class CodereviewGrader < Grader
 
   def set_review_params
     self.params = "#{self.review_target};#{self.review_count};#{self.review_threshold}"
+  end
+
+  def recompute_grades
+    self.grades.each do |g|
+      self.do_grading(self.assignment, g.submission) if g.score
+    end
   end
 end

@@ -12,7 +12,7 @@ class Term < ApplicationRecord
     ym   = /\d\d\d\d/.match(name)
     year = ym.nil? ? nil : ym[0]
 
-    if year.nil? and (ym = /\d\d/.match(name))
+    if year.nil? && (ym = /\d\d/.match(name))
       year = "20#{ym[0]}"
     end
 

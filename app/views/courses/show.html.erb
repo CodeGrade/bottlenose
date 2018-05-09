@@ -31,7 +31,7 @@
           course: @course, tag: "h4", editable: false
           %>
     </div>
-    <% unless @allocated_grading.empty? and @completed_grading.empty? %>
+    <% unless @allocated_grading.empty? && @completed_grading.empty? %>
     <%= render "grader_allocations/grading_due", course: @course %>
     <% end %>
     <% if show_grading %>

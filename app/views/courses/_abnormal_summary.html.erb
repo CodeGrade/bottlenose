@@ -33,7 +33,7 @@
           <h4><%= link_to a.name, course_assignment_path(@course, a.id) %></h4>
           <ul>
           <% @unpublished[a.id].group_by(&:id).each do |sub_id, subs| %>
-            <% usernames = subs.map(&:user_name).join(", ") %>  
+            <% usernames = subs.map(&:user_name).to_sentence %>  
             <li><%= link_to usernames, course_assignment_submission_path(@course,
                     a.id, sub_id) %></li>
           <% end %>

@@ -44,7 +44,12 @@
       <p>
         This is the percentage of the final grade that this
         assignment is worth.  Default: same as previous assignment.</p>
-      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+      <span class="col-sm-9" style="padding-left: 0;">
+        <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+      </span>
+      <span class="pull-right">
+        <%= f.check_box :extra_credit, data: {toggle: "toggle", on: "Extra credit", off: "Regular"} %>
+      </span>
     </div>
 
     <%= render 'questions_schema', id: "review-schema" %>
@@ -90,7 +95,7 @@
       <%= f.label :prevent_late_submissions, "Prevent re-submission to related assignment?" %>
       <p>If selected, prevent students from submitting to the related
         assignment once they've viewed this assignment</p>
-      <%= f.check_box :prevent_late_submissions, checked: asgn.prevent_late_submissions,
+      <%= f.check_box :prevent_late_submissions, checked: asgn.prevent_late_submissions?,
           data: {toggle: "toggle", on: "Yes", off: "No"} %>
       <p>
     </div>

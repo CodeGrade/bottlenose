@@ -50,6 +50,6 @@ production:
   adapter: postgresql
   encoding: unicode
   database: bottlenose_production
-  pool: 5
+  pool: 30
   username: bottlenose
   password:

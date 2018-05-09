@@ -17,10 +17,10 @@ class LatePerDayConfig < LatenessConfig
     if self.days_per_assignment.nil?
       days_allowed = "unlimited late days"
     else
-      days_allowed = plural(self.days_per_assignment, "late day")
+      days_allowed = pluralize(self.days_per_assignment, "late day")
     end
       
-    "Allow #{days_allowed}, penalizing #{self.percent_off}% each #{plural(self.frequency, 'day')} up to #{self.max_penalty}%"
+    "Allow #{days_allowed}, penalizing #{self.percent_off}% each #{pluralize(self.frequency, 'day')} up to #{self.max_penalty}%"
   end
 
   def ==(other)
@@ -31,17 +31,6 @@ class LatePerDayConfig < LatenessConfig
         self.percent_off == other.percent_off
     else
       false
-    end
-  end
-
-  private
-  def plural(n, sing, pl = nil)
-    if n == 1
-      "1 #{sing}"
-    elsif pl
-      "#{n} #{pl}"
-    else
-      "#{n} #{sing}s"
     end
   end
 end

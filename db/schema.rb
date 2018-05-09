@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170827140156) do
+ActiveRecord::Schema.define(version: 20180302211623) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -38,6 +38,7 @@ ActiveRecord::Schema.define(version: 20170827140156) do
     t.integer "related_assignment_id"
     t.boolean "request_time_taken", default: false
     t.integer "teamset_id", null: false
+    t.boolean "extra_credit", default: false, null: false
     t.index ["course_id"], name: "index_assignments_on_course_id"
   end
 
@@ -47,6 +48,10 @@ ActiveRecord::Schema.define(version: 20170827140156) do
     t.integer "team_id"
     t.integer "target_user_id"
     t.integer "target_team_id"
+    t.index ["assignment_id", "team_id", "target_team_id"], name: "unique_team_team_matchings", unique: true, where: "((user_id IS NULL) AND (target_user_id IS NULL))"
+    t.index ["assignment_id", "team_id", "target_user_id"], name: "unique_team_user_matchings", unique: true, where: "((user_id IS NULL) AND (target_team_id IS NULL))"
+    t.index ["assignment_id", "user_id", "target_team_id"], name: "unique_user_team_matchings", unique: true, where: "((team_id IS NULL) AND (target_user_id IS NULL))"
+    t.index ["assignment_id", "user_id", "target_user_id"], name: "unique_user_user_matchings", unique: true, where: "((team_id IS NULL) AND (target_team_id IS NULL))"
     t.index ["assignment_id"], name: "index_codereview_matchings_on_assignment_id"
     t.index ["team_id"], name: "index_codereview_matchings_on_team_id"
     t.index ["user_id"], name: "index_codereview_matchings_on_user_id"
@@ -88,6 +93,7 @@ ActiveRecord::Schema.define(version: 20170827140156) do
     t.integer "order", null: false
     t.integer "assignment_id", null: false
     t.integer "extra_upload_id"
+    t.boolean "extra_credit", default: false, null: false
   end
 
   create_table "grades", id: :serial, force: :cascade do |t|
@@ -100,6 +106,20 @@ ActiveRecord::Schema.define(version: 20170827140156) do
     t.datetime "updated_at"
     t.boolean "available", default: false
     t.index ["submission_id"], name: "index_grades_on_submission_id"
+  end
+
+  create_table "individual_extensions", force: :cascade do |t|
+    t.integer "assignment_id", null: false
+    t.integer "user_id"
+    t.integer "team_id"
+    t.datetime "due_date", null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.index ["assignment_id", "team_id"], name: "unique_assn_team_extension", unique: true, where: "(user_id IS NULL)"
+    t.index ["assignment_id", "user_id"], name: "unique_assn_user_extension", unique: true, where: "(team_id IS NULL)"
+    t.index ["assignment_id"], name: "index_individual_extensions_on_assignment_id"
+    t.index ["team_id"], name: "index_individual_extensions_on_team_id"
+    t.index ["user_id"], name: "index_individual_extensions_on_user_id"
   end
 
   create_table "inline_comments", id: :serial, force: :cascade do |t|
@@ -118,8 +138,11 @@ ActiveRecord::Schema.define(version: 20170827140156) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["filename"], name: "index_inline_comments_on_filename"
+    t.index ["grade_id"], name: "index_inline_comments_on_grade_id"
     t.index ["label"], name: "index_inline_comments_on_label"
+    t.index ["severity"], name: "index_inline_comments_on_severity"
     t.index ["submission_id", "grade_id", "line"], name: "index_inline_comments_on_submission_id_and_grade_id_and_line"
+    t.index ["submission_id"], name: "index_inline_comments_on_submission_id"
   end
 
   create_table "interlocks", force: :cascade do |t|
@@ -200,7 +223,7 @@ ActiveRecord::Schema.define(version: 20170827140156) do
     t.integer "instructor_id", null: false
     t.integer "type", default: 0, null: false
     t.index ["course_id"], name: "index_sections_on_course_id"
-    t.index ["crn"], name: "index_sections_on_crn", unique: true
+    t.index ["crn", "course_id"], name: "index_sections_on_crn_and_course_id", unique: true
   end
 
   create_table "submission_views", force: :cascade do |t|
@@ -229,6 +252,17 @@ ActiveRecord::Schema.define(version: 20170827140156) do
     t.index ["assignment_id"], name: "index_submissions_on_assignment_id"
     t.index ["user_id", "assignment_id"], name: "index_submissions_on_user_id_and_assignment_id"
     t.index ["user_id"], name: "index_submissions_on_user_id"
+  end
+
+  create_table "team_requests", force: :cascade do |t|
+    t.integer "teamset_id", null: false
+    t.integer "user_id", null: false
+    t.string "partner_names", null: false
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.index ["teamset_id", "user_id"], name: "index_team_requests_on_teamset_id_and_user_id", unique: true
+    t.index ["teamset_id"], name: "index_team_requests_on_teamset_id"
+    t.index ["user_id"], name: "index_team_requests_on_user_id"
   end
 
   create_table "team_users", id: :serial, force: :cascade do |t|

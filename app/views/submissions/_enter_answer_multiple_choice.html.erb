@@ -8,18 +8,18 @@
     <label>
       <input name="answers[<%= sub_id %>][<%= index %>][main]" id="answer_<%= sub_id %>_<%= index %>_<%= opt_idx %>"
              type="radio" value="<%= opt_idx %>" <%= if value == opt_idx then 'checked' end %>
-             class="other <% if @answers and value.to_s.empty? %>unanswered<% end %>">
+             class="other <% if @answers && value.to_s.empty? %>unanswered<% end %>">
       Other:
     </label>
     <input name="answers[<%= sub_id %>][<%= index %>][detail]" type="text" id="answer_<%= sub_id %>_<%= index %>_other"
            <% unless detail.to_s.empty? %>value="<%= detail %>"<% end %>
            style="display: inline-block; width: 90%;"
-           class="form-control <% if @answers and detail.to_s.empty? %>unanswered<% end %>">
+           class="form-control <% if @answers && detail.to_s.empty? %>unanswered<% end %>">
     <% else %>
     <label>
       <input name="answers[<%= sub_id %>][<%= index %>][main]" id="answer_<%= sub_id %>_<%= index %>_<%= opt_idx %>"
              type="radio" value="<%= opt_idx %>" <%= if value == opt_idx then 'checked' end %>
-             <% if @answers and value.to_s.empty? %>class="unanswered"<% end %>>
+             <% if @answers && value.to_s.empty? %>class="unanswered"<% end %>>
       <%= sanitize_question(opt, allow_code: true) %>
     </label>
     <% end %>

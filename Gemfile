@@ -5,9 +5,9 @@ gem 'rails', '~> 5.1'
 gem 'rack'
 gem 'i18n'
 
-gem 'devise', github: 'plataformatec/devise' # FIXME: Remove github when devise updates.
+gem 'devise'
 gem 'erubis'
-gem 'devise_ldap_authenticatable' # needed to use LDAP instead of email auth
+gem 'devise_ldap_authenticatable', github: 'cschiewek/devise_ldap_authenticatable' # needed to use LDAP instead of email auth
 
 gem 'pg'
 gem "passenger", ">= 5.0.25", require: "phusion_passenger/rack_handler"
@@ -38,6 +38,10 @@ gem 'bootstrap-toggle-rails' # for toggle buttons instead of checkboxes
 gem 'momentjs-rails', '>= 2.9.0' # needed for human-friendly textual dates
 gem 'font-awesome-rails'
 
+gem 'addressable'
+
+gem 'kramdown' # needed for markdown support
+
 # needed to run graders in the background
 gem 'backburner'
 gem 'beaneater'
@@ -53,7 +57,7 @@ gem 'pretender'
 
 group :development do
   #gem "flatten_migrations"
-  gem "better_errors", git: 'https://github.com/charliesome/better_errors.git', branch: 'master'
+  gem "better_errors"
   gem "binding_of_caller"
   gem "listen"
 end
@@ -70,7 +74,7 @@ group :test do
   gem 'capybara'
   gem 'capybara-webkit' # Needs qt5-default qt5-qmake libqt5webkit5-dev
   gem 'launchy'
-  gem 'factory_girl_rails'
+  gem 'factory_bot_rails'
   gem 'rails-controller-testing'
   gem 'single_test'
 end

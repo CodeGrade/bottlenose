@@ -26,7 +26,7 @@ module Bottlenose
     # Add subdirectories of models
     config.autoload_paths += Dir[Rails.root.join("app", "models", "{*/}")]
 
-    config.assets.precompile += ["codemirror*", "codemirror/**/*"]
+    config.assets.precompile += ["codemirror*", "codemirror/**/*", "pdfjs-dist*", "pdfjs-dist/**/*"]
 
     config.active_job.queue_adapter = :backburner
 

@@ -2,7 +2,7 @@
 <% flat_questions = @assignment.flattened_questions %>
 <% col_count = flat_questions.count %>
 <% any_parts = (questions.count != col_count) %>
-<% total_score = questions.map do |q| q["weight"] end.sum %>
+<% total_score = questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
 
 <% if @student_info.length > 1 %>
 <style>
@@ -10,17 +10,24 @@
   #grades-table.show_one .sec_<%= s.crn %> { display: none; }
   #grades-table.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
   <% end %>
+  #grades-table td { vertical-align: middle; }
 </style>
 <h4>Select a section: <select id="sections">
     <option value="show_all">Show all sections</option>
     <% @course.sections.each do |s| %>
     <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
     <% end %>
-</select></h4>
+  </select>
+</h4>
 <% end %>
-<table id="grades-table" class="table table-striped col-sm-12">
+<% classes = "table table-striped col-sm-12"
+   if @student_info.length > 1
+     classes += " hide-dropped"
+   end %>
+<table id="grades-table" class="<%= classes %>">
   <thead>
     <tr style="vertical-align: top;">
+      <th>NUID<% if any_parts %><br>&nbsp;<% end %></th>
       <th>Last name<% if any_parts %><br>&nbsp;<% end %></th>
       <th>First name<% if any_parts %><br>&nbsp;<% end %></th>
       <% questions.each do |q| %>
@@ -34,15 +41,38 @@
       <% end %>
       <th>Curved <% if any_parts %><br><% end %>grade</th>
       <th>Final <% if any_parts %><br><% end %>grade</th>
-      <th class="col-sm-1"></th>
+      <th class="col-sm-1">
+        <% if @student_info.length > 1 %>
+        <div style="width: 0px; overflow: visible;">
+          <div id="toggle-dropped" class="btn-xs btn btn-default">Show dropped students</div>
+        </div>
+        <script>
+          $("#toggle-dropped").on("click", function(e) {
+            $("#grades-table").toggleClass("hide-dropped");
+            if ($("#grades-table").hasClass("hide-dropped")) {
+              $(this).text("Show dropped students");
+            } else {
+              $(this).text("Hide dropped students");
+            }
+            e.stopPropagation();
+            e.preventDefault();
+          });
+        </script>
+        <% end %>
+      </th>
       <th style="width: 2rem; padding-left: 0px;"></th>
     </tr>
   </thead>
   <tbody id="grades">
   <% used_subs = @used_subs.group_by(&:user_id) %>
-  <% @student_info.order("LOWER(last_name)", "LOWER(first_name)").each do |u| %>
-    <% sections = @students_by_section[u.id].map{|u| "sec_#{u.crn}"}.join(' ') %>
+  <% @student_info.order(Arel.sql("LOWER(last_name)"), Arel.sql("LOWER(first_name)")).each do |u| %>
+    <% sections = @sections_by_student[u.id].map{|u| "sec_#{u.crn}"}.join(' ') %>
+    <% if u.dropped_date %>
+    <tr id="<%= u.id %>" class="<%= sections %> dropped warning">
+    <% else %>
     <tr id="<%= u.id %>" class="<%= sections %>">
+    <% end %>
+      <td class="text-muted small "><%= u.nuid %></td>
       <td>
         <form id="grade_<%= u.id %>">
           <input type="hidden" name="user_id" value="<%= u.id %>" />
@@ -56,13 +86,13 @@
       <% sub = used_subs[u.id].first if used_subs[u.id] %>
       <% grades = @grade_comments[sub.id] if sub %>
       <% grades = (0..col_count).map do |i|
-           (grades and grades.find do |g| g.line == i end) or {weight: nil}
+           grades&.dig(i) || {weight: nil}
          end %>
       <% score = 0 %>
       <% col_count.times do |i| %>
       <td class="question">
         <input form="grade_<%= u.id %>" type="hidden" name="student[<%= u.id %>][<%= i %>]" />
-        <span><% if grades and grades[i] and grades[i]["weight"] %>
+        <span><% if (grades[i] && grades[i]["weight"]) %>
         <% score += grades[i]["weight"] %>
         <%= show_score(grades[i]["weight"]) %>
         <% end %></span>
@@ -95,6 +125,15 @@
   <% end %>
   </tbody>
 </table>
+<script>
+  <% raw_dropped_info = @student_info.select{|u| u.dropped_date}.map{|u| [u.id.to_s, u.dropped_date.iso8601]}.to_h %>
+  var dropped_dates = <%= raw json_escape(JSON.pretty_generate(raw_dropped_info)) %>;
+  for (var id in dropped_dates) {
+    dropped_dates[id] = makeFriendlyDate(dropped_dates[id], true);
+    $("tr#" + id).attr("title", "Withdrawn on <span class='local-time'>" + dropped_dates[id] + "</span>")
+                 .tooltip({animated: 'fade', placement: "top", html: true});
+  }
+</script>
 
 <div id="enter_grades" class="modal" role="dialog">
   <div class="modal-dialog">
@@ -119,6 +158,7 @@
             <tr>
               <td>Problem <%= q_num + 1 %>: <%= q["name"] %><% if q["extra"] %> (Extra Credit)<% end %></td>
               <% if q["parts"] %>
+              <td></td>
               <td></td>
               <% else %>
               <td>

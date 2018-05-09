@@ -3,12 +3,15 @@ class Teamset < ActiveRecord::Base
   has_many   :teams
   has_many   :submissions, through: :teams
   has_many   :assignments
+  has_many   :team_requests
 
+  attr_accessor :bulk_teams
+  
   def to_s
     "Teamset #{self.id}"
   end
   
-  def dup(revise_subs_for_assn = nil)
+  def dup(revise_subs_for_assn = nil, name = nil)
     # This method duplicates this team set, and duplicates all the
     # active teams associated with this teamset (assuming the relevant
     # students are still enrolled).  If an assignment is supplied,
@@ -19,7 +22,7 @@ class Teamset < ActiveRecord::Base
     # copy teams and modify assignments, anyway).
     
     # TODO: should this be in a transaction?
-    new_ts = Teamset.new(course: self.course, name: "Copy of #{self.name}")
+    new_ts = Teamset.new(course: self.course, name: name || "Copy of #{self.name}")
     new_ts.save!
     new_ts.copy_from(self, revise_subs_for_assn)
     return new_ts
@@ -32,14 +35,20 @@ class Teamset < ActiveRecord::Base
     case within_section
     when "course"
       grouped_students_to_team = [students_without_active_team]
-    else
+    when "lecture", "lab", "recitation", "online"
       unteamed_students = students_without_active_team
       reg_sections = RegistrationSection.where(registration_id: unteamed_students.map(&:reg_id)).group_by(&:section_id)
       sections = self.course.sections.group_by(&:type)
       students_by_reg = unteamed_students.map{|s| [s.reg_id, s]}.to_h
       grouped_students_to_team = sections[within_section].map do |s|
-        students_by_reg.values_at(*reg_sections[s.crn].map(&:registration_id))
+        students_by_reg.values_at(*reg_sections[s.id]&.map(&:registration_id))
       end
+    else
+      section = self.course.sections.find_by(crn: within_section)
+      if section.nil?
+        raise ArgumentError, "No section with CRN '#{within_section}' within this course"
+      end
+      grouped_students_to_team = [users_without_active_team(section.active_students)]
     end
     leftovers = []
     grouped_students_to_team.each do |students_to_team|
@@ -55,6 +64,8 @@ class Teamset < ActiveRecord::Base
           
           if @team.save
             count += 1
+          else
+            debugger
           end
         else
           leftovers += t
@@ -87,8 +98,12 @@ class Teamset < ActiveRecord::Base
     return count
   end
 
-  def dissolve_all(end_time = DateTime.current)
-    active = self.active_teams
+  def dissolve_all(end_time = DateTime.current, section_id=nil)
+    if section_id
+      active = self.active_teams_in_section(section_id)
+    else
+      active = self.active_teams
+    end
     count = active.count
     active.each do |t| t.dissolve(end_time) end
     return count
@@ -98,18 +113,42 @@ class Teamset < ActiveRecord::Base
     self.course.users_with_drop_info.order(:last_name, :first_name)
   end
 
-  def active_teams
-    self.teams.where(Team.active_query, Date.current, Date.current)
+  def active_teams(as_of = DateTime.now)
+    self.teams.where(Team.active_query, as_of, as_of).includes(:users)
+  end
+
+  def active_teams_in_section(section_id, as_of = DateTime.now)
+    section = course.sections.find(section_id)
+    return [] unless section
+    users_in_section = section.users.map{|u| [u.id, true]}.to_h
+    self.active_teams(as_of).select do |team|
+      team.users.any?{|u| users_in_section[u.id]}
+    end
+  end
+
+  def active_team_for(user)
+    user.teams.where(course: self.course, teamset: self).select(&:active?).first
+  end
+
+  def active_teams_for(users, as_of = DateTime.now)
+    self.active_teams(as_of).map do |t|
+      t.users.map{|u| [u.id, t]}
+    end.flatten(1).to_h.slice(*users.map(&:id))
   end
 
   def students_without_active_team
-    @swdi = self.course.students_with_drop_info
+    users_without_active_team(self.course.students)
+  end
+
+  def users_without_active_team(for_users = nil)
+    for_users = self.course.users unless for_users
+    @uwdi = self.course.users_with_drop_info(for_users)
     @relevant_teams = Team
                       .joins(:team_users)
                       .select("teams.*", "team_users.user_id as uid")
-                      .where("team_users.user_id IN (?)", @swdi.pluck(:id))
+                      .where("team_users.user_id IN (?)", @uwdi.pluck(:id))
                       .group_by(&:uid)
-    @swdi.where("registrations.dropped_date": nil).reject do |student|
+    @uwdi.where("registrations.dropped_date": nil).reject do |student|
       @relevant_teams[student.id]&.any? do |t| t.teamset_id == self.id && t.active? end
     end
   end

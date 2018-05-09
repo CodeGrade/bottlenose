@@ -4,6 +4,7 @@ class Team < ApplicationRecord
   has_many   :team_users, dependent: :destroy
   has_many   :users, through: :team_users
   has_many   :submissions
+  has_many   :individual_extensions, dependent: :destroy
 
   validates :course_id,  presence: true
   validates :start_date, presence: true
@@ -11,12 +12,14 @@ class Team < ApplicationRecord
   validate :end_not_before_start
   validate :all_enrolled
 
+  before_create :delete_team_requests
+
   def to_s
     "Team #{self.id} - #{self.member_names}"
   end
 
   def member_names
-    users.sort_by(&:sort_name).map(&:name).join(", ")
+    users.sort_by(&:sort_name).map(&:display_name).to_sentence
   end
 
   # If the end date of a team is not set (nil) then this team does not
@@ -33,7 +36,7 @@ class Team < ApplicationRecord
     end
   end
   def self.active_query
-    "((end_date IS NULL) OR (start_date >= ? AND ? < end_date))"
+    "(start_date <= ? AND (end_date IS NULL OR ? < end_date))"
   end
 
   def dissolve(as_of)
@@ -52,12 +55,18 @@ class Team < ApplicationRecord
     User.where(id: user_ids).distinct
   end
 
+  def used_submissions
+    Submission.joins("INNER JOIN used_subs ON submissions.id = used_subs.submission_id")
+      .where(team: self)
+  end
+
   private
 
   def all_enrolled
     not_enrolled = users.select {|u| u.registration_for(course).nil?}
     if not_enrolled.count > 0
-      errors.add(:base, "Not all team members are enrolled in this course: " + not_enrolled.to_a.to_s)
+      errors.add(:base, "The following team members are not enrolled in this course: " +
+                        not_enrolled.to_a.map(&:username).to_sentence)
     end
   end
 
@@ -67,5 +76,9 @@ class Team < ApplicationRecord
     if end_date < start_date
       errors.add(:end_date, "must be not be before the start date")
     end
+  end
+
+  def delete_team_requests
+    TeamRequest.where(teamset: self.teamset, user: self.users.map(&:id)).delete_all
   end
 end

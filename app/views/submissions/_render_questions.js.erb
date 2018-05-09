@@ -1,25 +1,39 @@
 $(function() {
   $('.spinner').each(function() { activateSpinner(this, {precision: 2}) });
-  var prevLine = {};
-  function showFile(href, line) {
-    selectTreeviewFileByHref("<%= root %>", href);
-    var cm = $(href).find(".CodeMirror")[0].CodeMirror;
-    var newY = cm.charCoords({line: line - 10, ch: 1}, "local"); // minus 10, for visual context
-    cm.scrollTo(null, newY.top);
-    if (prevLine[href])
-      cm.removeLineClass(prevLine[href] - 1, "background", "highlightLine");
-    cm.addLineClass(line - 1, "background", "highlightLine");
-    prevLine[href] = line;
+  function activateQuestions(root) {
+    var prevLine = {};
+    function showFile(href, line) {
+      selectTreeviewFileByHref(root, href);
+      var cm = $(href).find(".CodeMirror");
+      if (cm.length === 0) {
+        // Page numbers are 1-based
+        var pages = $(href).find(".pageContainer").eq(line - 1);
+        if (pages.length > 0) {
+          var parent = pages.parent();
+          parent.scrollTop(pages.offset().top - parent.offset().top + parent.scrollTop());
+        }
+      } else {
+        cm = cm[0].CodeMirror;
+        if (cm === undefined) return;
+        var newY = cm.charCoords({line: line - 10, ch: 1}, "local"); // minus 10, for visual context
+        cm.scrollTo(null, newY.top);
+        if (prevLine[href])
+          cm.removeLineClass(prevLine[href] - 1, "background", "highlightLine");
+        cm.addLineClass(line - 1, "background", "highlightLine");
+        prevLine[href] = line;
+      }
+    }
+    $('[data-show-file]').click(function(d) {
+      var args = $(this).data('showFile');
+      showFile(args[0], args[1]);
+    });
+    var footerHeight = $(".footer").outerHeight();
+    var divResponses = $("#responses");
+    $(window).resize(function() {
+      var windowHeight = $(window).height();
+      divResponses.css('min-height', (windowHeight - footerHeight) + "px");
+    });
+    $(window).resize();
   }
-  $('[data-show-file]').click(function(d) {
-    var args = $(this).data('showFile');
-    showFile(args[0], args[1]);
-  });
-  var footerHeight = $(".footer").outerHeight();
-  var divResponses = $("#responses");
-  $(window).resize(function() {
-    var windowHeight = $(window).height();
-    divResponses.css('min-height', (windowHeight - footerHeight) + "px");
-  });
-  $(window).resize();
+  window.activateQuestions = activateQuestions;
 });

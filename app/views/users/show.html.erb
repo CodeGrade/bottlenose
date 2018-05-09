@@ -8,11 +8,11 @@
       class: "btn btn-primary pull-right" %>
 </h2>
 <div class="row">
-  <div class="col-sm-3 text-center">
+  <div class="col-sm-4 col-md-3 text-center">
     <%= image_tag Upload.upload_path_for(@user.profile || "silhouette.jpg"),
         alt: @user.display_name, style: 'max-height: 300px; max-width: 300px;' %>
   </div>
-  <div class="col-sm-9">
+  <div class="col-sm-8 col-md-9">
     <table class="table">
       <tr>
         <td>Name:</td>
@@ -22,7 +22,6 @@
         <td>Nickname:</td>
         <td><%= @user.nickname %></td>
       </tr>
-      
       <tr>
         <td>Email:</td>
         <td>
@@ -37,6 +36,10 @@
         <td>NUID:</td>
         <td><%= @user.nuid_safe(current_user) %></td>
       </tr>
+      <tr>
+        <td>Username:</td>
+        <td><%= @user.username %></td>
+      </tr>      
       <% if current_user.site_admin? %>
       <tr>
         <td>Site Admin?</td>
@@ -72,8 +75,11 @@
     <% if role_name == 'student' %>
     <p>Registered for
       <%= info[:sections].map do |sec_type, sections| 
-         "#{sec_type} #{'section'.pluralize(sections.count)} #{sections.map(&:crn).join(", ")}"
-         end.join(", ") %>
+         "#{sec_type} #{'section'.pluralize(sections.count)} #{sections.map(&:crn).to_sentence}"
+         end.to_sentence %>
+      <% if info[:withdrawn] %>
+      (withdrawn <span class="local-time"><%= info[:withdrawn].iso8601 %></span>)
+      <% end %>
     </p>
     <% end %>
   </li>

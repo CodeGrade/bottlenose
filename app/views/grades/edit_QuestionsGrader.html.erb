@@ -1,7 +1,23 @@
-<% @page_title = "Questions Grader" %>
+<% @page_title = @grader.display_type %>
 <% cur_reg = current_user.registration_for(@course) %>
 <% content_for :wide_content_before do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
+<%# Styles injected here by script to turn comment visibility on and off %>
 <style id="comment-styles"></style>
+<% if @grade.errors.any? %>
+<div id="error_explanation" class="alert alert-danger">
+  <h2><%= pluralize(@grade.errors.count, "error") %> prohibited
+  this grading from being saved:</h2>
+
+  <ul>
+    <% @grade.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+    <% end %>
+  </ul>
+</div>
+<% end %>
 
 <p>
   <%= link_to "Back to submission",
@@ -36,7 +52,12 @@
       </div>
     </div>
     <script>
-      <%= render "submissions/render_comments.js", sub_dirs: @submission_dirs, vertical: true, root: "all-files" %>
+      <%= render "submissions/comment_edit_widgets.js" %>
+      <%= render "submissions/render_filepicker.js" %>
+      $(function() {
+        var dirInfo = <%= raw json_escape(JSON.pretty_generate(@submission_dirs)) %>;
+        activateFileView("all-files", "<%= @grade.id %>", dirInfo, false, true);
+      });      
     </script>
   </div>
 </div>
@@ -57,9 +78,10 @@
     $(code).addClass("cm-s-mdn-like cm-s-default");
   });
   });
-  <%= render "submissions/render_questions.js", root: "sub_#{@submission.id}" %>
+  <%= render "submissions/render_questions.js" %>
+  $(function() { activateQuestions("sub_<%= @submission.id %>"); });
 </script>
-<div id="responses" class="form-group container">
+<div class="responses form-group container">
 <%= render "submissions/render_questions", start: 0, root: "all-files", sub_id: @submission.id %>
 <span class="col-sm-12 text-center">
 <%= f.submit "Submit grade", id: "completed", class: "btn btn-success" %>
