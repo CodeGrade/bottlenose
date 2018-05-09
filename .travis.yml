@@ -1,4 +1,8 @@
 dist: xenial
+addons:
+  apt:
+    packages:
+      - libqtwebkit-dev
 sudo: true
 language:
     - ruby
