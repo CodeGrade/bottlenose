@@ -29,7 +29,7 @@ class Grader < ApplicationRecord
       job[:id]
     end
     def self.perform(grader_id, assn_id, sub_id)
-      Grader.find(grader_id).grade_sync!(assn_id, sub_id)
+      Grader.find(grader_id).grade_sync!(Assignment.find(assn_id), Submission.find(sub_id))
     end
 
     def self.prune(threshold = 250)
@@ -132,10 +132,7 @@ class Grader < ApplicationRecord
     select(column_names - ["id"]).distinct
   end
 
-  def grade_sync!(asn_id, sub_id)
-    assignment = Assignment.find(asn_id)
-    submission = Submission.find(sub_id)
-
+  def grade_sync!(assignment, submission)
     ans = do_grading(assignment, submission)
     submission.compute_grade! if submission.grade_complete?
     ans
@@ -145,7 +142,7 @@ class Grader < ApplicationRecord
     if autograde?
       GradingJob.enqueue self, assignment, submission, prio: 1000 + prio, ttr: 1200
     else
-      grade_sync!(assignment.id, submission.id)
+      grade_sync!(assignment, submission)
     end
   end
 
