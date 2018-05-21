@@ -87,10 +87,22 @@
   $(function() {
     var dirInfo = <%= raw json_escape(JSON.pretty_generate(@submission_dirs)) %>;
     activateFileView("all-files", "<%= @grade.id %>", dirInfo, true, false);
-    activateFileViewEditing("all-files");
+    activateFileViewEditing("all-files", function(e, reason) {
+      $("#completed").removeClass("disabled").prop("disabled", false).val("Mark grading as complete");
+    });
     activateCommentEditing(<%= @grader.extra_credit %>, <%= @grade.id %>, <%= @grade.out_of %>,
       "<%= current_user.name %>", <%= cur_reg.professor? %>,
-      "<%= course_assignment_submission_grade_path(@course, @assignment, @submission, @grade) %>");
+      "<%= course_assignment_submission_grade_path(@course, @assignment, @submission, @grade) %>",
+      function(e, reason) {
+        var $completed = $("#completed");
+        if ($completed.val().startsWith("Give comments")) { return; }
+        if (reason === "autosaving") {
+          $completed.addClass("disabled").prop("disabled", true).val("Please wait until autosave completes");
+        } else {
+          $completed.removeClass("disabled").prop("disabled", false).val("Mark grading as complete");
+        }
+      }
+    );
     $("form").submit(ensureValidNumericInputOnSubmit);
   });
 </script>

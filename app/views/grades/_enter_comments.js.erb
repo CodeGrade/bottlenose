@@ -1,5 +1,5 @@
 $(function() {
-  function activateCommentEditing(extraCredit, gradeId, maxScore, username, profOverride, ajaxCommentUrl) {
+  function activateCommentEditing(extraCredit, gradeId, maxScore, username, profOverride, ajaxCommentUrl, disableSubmit) {
     ////////////////////////////////////////
     //////////////////// Score administration
     ////////////////////////////////////////
@@ -33,12 +33,17 @@ $(function() {
     }
     window.updateScore = updateScore;
 
-    $("form").submit(function() {
-      $("#comments").val(JSON.stringify(commentObjs));
+    $("form").submit(function(e) {
+      if (autosavePromise) {
+        e.preventDefault();
+        alert("Please wait for autosave to complete");
+        return false;
+      } else {
+        $("#comments").val(JSON.stringify(commentObjs));
+      }
     });
 
 
-    var autosaveHandle = undefined;
     var autosavePromise = undefined;
     var commentObjs = [];
     var inertComments = [];
@@ -46,6 +51,7 @@ $(function() {
     var widgetsById = {};
     function autosave() {
       if (autosavePromise === undefined) {
+        if (disableSubmit) disableSubmit(undefined, "autosaving")
         autosavePromise = new Promise((resolve, reject) => {
           console.log("Sending:");
           console.log(commentObjs);
@@ -79,14 +85,16 @@ $(function() {
                   widgetsById[c.id] = w;
                 }
               }
+              if (disableSubmit) disableSubmit(data, "autosaveComplete");
               resolve(data);
               autosavePromise = undefined;
             },
             error: function(xhr, status, error) {
               console.error("XHR failed: " + status + ": " + error);
               console.error(xhr.responseText);
+              if (disableSubmit) disableSubmit({xhr: xhr, status: status, error: error}, "autosaveFailed");
               reject(status);
-              autosavePromise = false; // don't trigger more XHRs
+              autosavePromise = Promise.resolve(false); // don't trigger more XHRs
             }
           });
         });
@@ -137,11 +145,14 @@ $(function() {
         comment: comment.comment,
         suppressed: comment.suppressed,
         focusout: function(e, details) {
+          if (e.relatedTarget && e.relatedTarget.type === "submit") {
+            return;
+          }
           autosave();
         },
         close: function(e, details) {
           comment.shouldDelete = true
-          autosave().then(() => {
+          autosave().finally(() => {
             ret.cmWidget.clear();
             updateScore();
           });
@@ -187,11 +198,14 @@ $(function() {
         comment: comment.comment,
         suppressed: comment.suppressed,
         focusout: function(e, details) {
+          if (e.relatedTarget && e.relatedTarget.type === "submit") {
+            return;
+          }
           autosave();
         },
         close: function(e, details) {
           comment.shouldDelete = true;
-          autosave().then(() => {
+          autosave().finally(() => {
             commentEditor.remove();
             updateScore();
           });
@@ -242,11 +256,14 @@ $(function() {
         comment: comment.comment,
         suppressed: comment.suppressed,
         focusout: function(e, details) {
+          if (e.relatedTarget && e.relatedTarget.type === "submit") {
+            return;
+          }
           autosave();
         },
         close: function(e, details) {
           comment.shouldDelete = true;
-          autosave().then(() => {
+          autosave().finally(() => {
             areaCommentWidget.destroy();
             areaComment.remove();
             updateScore();

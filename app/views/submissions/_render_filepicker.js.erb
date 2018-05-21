@@ -197,7 +197,7 @@ $(function (){
   }
   window.activateFileView = activateFileView;
 
-  function activateFileViewEditing(root) {
+  function activateFileViewEditing(root, onAllVisited) {
     var filesTree = $("#" + root + " .files");
     filesTree.on("nodeChecked", function(e, data) {
       if (data.href !== undefined && data.href !== "#") {
@@ -213,7 +213,7 @@ $(function (){
     filesTree.on("nodeUnchecked", function(e, data) {
       $(data.$el).removeClass("unvisited");
       if ($(".unvisited").length === 0) {
-        $("#completed").removeClass("disabled").prop("disabled", false).text("Mark grading as complete");
+        if (onAllVisited) { onAllVisited(e, "allVisited"); }
       }      
     })
     filesTree.treeview("getCollapsed").map(function(item) {
