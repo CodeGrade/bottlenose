@@ -54,7 +54,7 @@
           <% end %>
           <b>Failed:</b> <%= t[:info]["header"] %>
         </p>
-        <p>Message: <code class="text-muted"><%= t[:info]["message"] %></code></p>
+        <p>Message: <code class="text-muted" style="white-space: pre-wrap;"><%= t[:info]["message"] %></code></p>
         <p style="display: inline-block;">Stack:</p>
         <pre><%= t[:info]["stack"].join("\n") %></pre>
       </div>
