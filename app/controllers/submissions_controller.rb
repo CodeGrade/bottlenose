@@ -224,8 +224,15 @@ class SubmissionsController < ApplicationController
                     alert: "Submission is not a team-submission; no need to split it"
       return
     end
+    # Make sure to copy over any grader allocations, too
+    existing_allocs = GraderAllocation.where(assignment: @assignment, submission: @submission)
     @submission.users.each do |student|
       sub = split_sub(@submission, student)
+      existing_allocs.each do |alloc|
+        new_alloc = alloc.dup
+        new_alloc.submission_id = sub.id
+        new_alloc.save
+      end
       # Add a comment explaining the split
       sub_comment = InlineComment.new(
         submission: sub,
@@ -241,6 +248,9 @@ class SubmissionsController < ApplicationController
         info: {user: current_user.id}.to_json)
       sub_comment.save!
     end
+    # Destroy any existing allocations, since they've been migrated to the new submissions
+    existing_allocs.destroy_all
+
     # Add a comment explaining the split
     sub_comment = InlineComment.new(
       submission: @submission,

@@ -21,7 +21,7 @@ class ManualGrader < Grader
   end
 
   def guess_who_graded(subs)
-    grades = Grade.where(grader_id: self.id, submission: subs)
+    grades = Grade.where(grader_id: self.id, submission: subs).where.not(score: nil)
     comments = InlineComment.where(grade_id: grades.map(&:id))
                .order(:submission_id)
                .select("submission_id",
