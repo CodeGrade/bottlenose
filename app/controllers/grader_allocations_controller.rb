@@ -217,9 +217,13 @@ class GraderAllocationsController < ApplicationController
       unknown = @who_grades[nil]
       @who_grades[nil] = []
       grading_guesses = @grader.guess_who_graded unknown
-      unknown.each do |sub|
-        uid = grading_guesses[sub.id]
-        @who_grades[uid].push sub # pushes back onto @who_grades[nil] if unknown
+      if grading_guesses.nil?
+        @who_grades[nil] = unknown
+      else
+        unknown.each do |sub|
+          uid = grading_guesses[sub.id]
+          @who_grades[uid].push sub # pushes back onto @who_grades[nil] if unknown
+        end
       end
     end
   end
