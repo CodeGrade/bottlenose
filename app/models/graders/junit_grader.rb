@@ -176,7 +176,11 @@ class JunitGrader < Grader
             g.save!
 
             Audit.log("#{prefix}: JUnit gives raw score of #{g.score} / #{g.out_of}")
-            return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
+            if (tap.points_available.to_f == 0)
+              return 0.0
+            else
+              return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
+            end
           end
         end
       end
