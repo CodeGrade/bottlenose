@@ -20,7 +20,8 @@ FactoryBot.define do
   end
 
   factory :term do
-    sequence(:name) {|n| "Fall #{2010 + n}" }
+    semester Term.semesters[:fall]
+    sequence(:year) {|n| Date.today.year + n}
     archived false
   end
 

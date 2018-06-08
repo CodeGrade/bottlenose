@@ -9,7 +9,17 @@ class TermsController < ApplicationController
   end
 
   def new
-    @term = Term.new
+    @term = Term.new(year: Date.today.year)
+    case Date.today.month # NOTE: not all months pre-populate a guess for semester
+    when 8, 9
+      @term.semester = Term.semesters[:fall]
+    when 12, 1
+      @term.semester = Term.semesters[:spring]
+    when 4, 5
+      @term.semester = Term.semesters[:summer_1]
+    when 6, 7
+      @term.semester = Term.semesters[:summer_2]
+    end
   end
 
   def edit
@@ -67,6 +77,6 @@ class TermsController < ApplicationController
   end
 
   def term_params
-    params[:term].permit(:name, :archived)
+    params.require(:term).permit(:year, :semester, :archived, :id)
   end
 end
