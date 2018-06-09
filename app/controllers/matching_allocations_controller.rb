@@ -54,7 +54,12 @@ class MatchingAllocationsController < ApplicationController
     end
     case [@assignment.team_subs?, @assignment.related_assignment.team_subs?]
     when [true, true]
-      reviewer = Team.find(params[:reviewer])
+      reviewer = Team.find_by(id: params[:reviewer])
+      if reviewer.nil?
+        redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
+                      alert: "No such reviewer team"
+        return
+      end
       targets = Team.where(id: params[:target])
       if CodereviewMatching.where(assignment: @assignment, team: reviewer).count == @assignment.review_count
         redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
@@ -74,7 +79,12 @@ class MatchingAllocationsController < ApplicationController
                     notice: "Created #{pluralize(targets.count, 'matching')}"
       end
     when [true, false]
-      reviewer = Team.find(params[:reviewer])
+      reviewer = Team.find_by(id: params[:reviewer])
+      if reviewer.nil?
+        redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
+                      alert: "No such reviewer team"
+        return
+      end
       targets = User.where(id: params[:target])
       if CodereviewMatching.where(assignment: @assignment, team: reviewer).count == @assignment.review_count
         redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
@@ -94,7 +104,12 @@ class MatchingAllocationsController < ApplicationController
                     notice: "Created #{pluralize(targets.count, 'matching')}"
       end
     when [false, true]
-      reviewer = User.find(params[:reviewer])
+      reviewer = User.find_by(id: params[:reviewer])
+      if reviewer.nil?
+        redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
+                      alert: "No such reviewer user"
+        return
+      end
       targets = Team.where(id: params[:target])
       if CodereviewMatching.where(assignment: @assignment, user: reviewer).count == @assignment.review_count
         redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
@@ -113,7 +128,12 @@ class MatchingAllocationsController < ApplicationController
                     notice: "Created #{pluralize(targets.count, 'matching')}"
       end
     when [false, false]
-      reviewer = User.find(params[:reviewer])
+      reviewer = User.find_by(id: params[:reviewer])
+      if reviewer.nil?
+        redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
+                      alert: "No such reviewer user"
+        return
+      end
       targets = User.where(id: params[:target])
       if CodereviewMatching.where(assignment: @assignment, user: reviewer).count == @assignment.review_count
         redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
@@ -272,7 +292,12 @@ class MatchingAllocationsController < ApplicationController
                 notice: "#{@count} matchings created"
   end
   def delete
-    m = CodereviewMatching.find(params[:id])
+    m = CodereviewMatching.find_by(id: params[:id])
+    if m.nil?
+      redirect_back fallback_location: edit_course_assignment_matchings_path(@course, @assignment),
+                    alert: "No such matching found"
+      return
+    end
     if m.assignment_id == @assignment.id
       m.delete
       redirect_to edit_course_assignment_matchings_path(@course, @assignment),

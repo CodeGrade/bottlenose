@@ -47,12 +47,11 @@ class RegistrationsController < ApplicationController
       if @registration && !@registration.new_record?
         @registration.delete
       end
-      render action: :new
+      render action: :new, status: 400
     end
   end
 
   def bulk_edit
-    @course = Course.find(params[:course_id])
     @cur_role = current_user.registration_for(@course)&.role
     if params[:role] == "student"
       @registrations = @course.registrations
@@ -75,9 +74,9 @@ class RegistrationsController < ApplicationController
   def bulk_update
     respond_to do |f|
       f.json {
-        @reg = Registration.find(params[:id])
+        @reg = Registration.find_by(id: params[:id])
         if @reg.nil? || (@reg.course.id != @course.id)
-          render :json => {failure: "Unknown registration"}
+          render :json => {failure: "Unknown registration"}, status: 400
           return
         else
           if (current_user.registration_for(@course).role != "professor")
@@ -113,7 +112,6 @@ class RegistrationsController < ApplicationController
   end
 
   def bulk_enter
-    @course = Course.find(params[:course_id])
     num_added = 0
     failed = []
 
@@ -160,7 +158,12 @@ class RegistrationsController < ApplicationController
   private
 
   def find_registration
-    @registration = Registration.find(params[:id])
+    @registration = Registration.find_by(id: params[:id])
+    if @registration.nil?
+      redirect_back fallback_location: (@course ? course_registrations_path(@course) : root_path),
+                    alert: "No such registration"
+      return
+    end
     @course = @registration.course
     @user   = @registration.user
   end

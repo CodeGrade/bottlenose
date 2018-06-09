@@ -128,7 +128,12 @@ class SubmissionsController < ApplicationController
   end
 
   def recreate_grade
-    @grader = Grader.find(params[:grader_id])
+    @grader = Grader.find_by(id: params[:grader_id])
+    if @grader.nil?
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "No such grader"
+      return
+    end
     if @submission.recreate_missing_grade(@grader)
       @submission.compute_grade! if @submission.grade_complete?
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
@@ -139,7 +144,12 @@ class SubmissionsController < ApplicationController
   end
 
   def rerun_grader
-    @grader = Grader.find(params[:grader_id])
+    @grader = Grader.find_by(id: params[:grader_id])
+    if @grader.nil?
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "No such grader to run"
+      return
+    end
     count = 0
     @assignment.used_submissions.each do |sub|
       @grader.grade(@assignment, sub)
@@ -173,6 +183,12 @@ class SubmissionsController < ApplicationController
                     alert: "You haven't selected any students as being involved"
       return
     end
+    guilty_users = User.where(id: guilty_students.keys).map{|u| [u.id, u]}.to_h
+    if guilty_users.count != guilty_students.count
+      redirect_back fallback_location: edit_plagiarism_course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "Could not find all the relevant students"
+      return
+    end
     comment = params[:comment]
     if comment.to_s.empty?
       redirect_back fallback_location: edit_plagiarism_course_assignment_submission_path(@course, @assignment, @submission),
@@ -183,7 +199,7 @@ class SubmissionsController < ApplicationController
     @max_points = @assignment.graders.map(&:avail_score).sum
     guilty_students.each do |id, penalty|
       penaltyPct = (100.0 * penalty.to_f) / @max_score.to_f
-      student = User.find(id)
+      student = guilty_users[id]
       sub = split_sub(@submission, student, [@submission.score.to_f - penaltyPct, 0].max)
       # Add the penalty comment
       sub_comment = InlineComment.new(
@@ -215,7 +231,7 @@ class SubmissionsController < ApplicationController
       info: {user_id: current_user.id}.to_json)
     sub_comment.save
     redirect_to course_assignment_path(@course, @assignment),
-                notice: "Submission marked as plagiarized for #{guilty_students.map{|uid, _| User.find(uid).name}.to_sentence}"
+                notice: "Submission marked as plagiarized for #{guilty_users.values.map(&:name)}.to_sentence}"
   end
 
   def split_submission

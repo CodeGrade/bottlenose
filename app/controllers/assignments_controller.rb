@@ -112,9 +112,16 @@ class AssignmentsController < ApplicationController
 
   def update_weights
     no_problems = true
+    assignments = Assignment.where(id: params[:weight].keys).map{|a| [a.id.to_s, a]}.to_h
+    if assignments.count != params[:weight].keys.count
+      missing = (params[:weight].keys.to_set - assignments.keys.to_set).to_a
+      @course.errors.add(:base, "Could not find all requested assignments: " + missing.to_sentence)
+      render action: "edit_weights", status: 400
+      return
+    end
     params[:weight].each do |kv|
       if !(Float(kv[1]) rescue false)
-        @course.errors.add(:base, "#{Assignment.find(kv[0]).name} has non-numeric weight `#{kv[1]}`")
+        @course.errors.add(:base, "#{assignments[kv[0]].name} has non-numeric weight `#{kv[1]}`")
         no_problems = false
       end
     end
@@ -123,8 +130,8 @@ class AssignmentsController < ApplicationController
       return
     end
     Assignment.transaction do
-      Assignment.find(params[:weight].keys).each do |assn|
-        new_weight = params[:weight][assn.id.to_s].to_f
+      assignments.each do |aid, assn|
+        new_weight = params[:weight][aid].to_f
         assn.update_attribute(:points_available, new_weight) if new_weight != assn.points_available
       end
     end
@@ -163,7 +170,7 @@ class AssignmentsController < ApplicationController
       @assignment = new_assn
       @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
       new
-      render action: "new"
+      render action: "new", status: 400
     end
   end
 
@@ -198,7 +205,7 @@ class AssignmentsController < ApplicationController
                   notice: "Assignment was successfully updated; #{pluralize(count, 'grade')} unpublished."
     else
       @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
-      render action: "edit"
+      render action: "edit", status: 400
     end
   end
 
@@ -208,7 +215,11 @@ class AssignmentsController < ApplicationController
   end
 
   def show_user
-    assignment = Assignment.find(params[:id])
+    assignment = Assignment.find_by(id: params[:id])
+    if assignment.nil?
+      redirect_back fallback_location: course_path(@course), alert: "No such assignment"
+      return
+    end
     if !current_user
       redirect_back fallback_location: root_path, alert: "Must be logged in"
       return
@@ -220,7 +231,12 @@ class AssignmentsController < ApplicationController
       return
     end
 
-    @user = User.find(params[:user_id])
+    @user = User.find_by(id: params[:user_id])
+    if @user.nil?
+      redirect_back fallback_location: course_assignment_path(@course, assignment),
+                    alert: "No such student"
+      return
+    end
     subs = @user.submissions_for(assignment)
     submissions = subs.select("submissions.*").includes(:users).order(created_at: :desc).to_a
     @gradesheet = Gradesheet.new(assignment, submissions)

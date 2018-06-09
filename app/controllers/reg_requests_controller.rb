@@ -25,12 +25,17 @@ class RegRequestsController < ApplicationController
       errors = @reg_request.errors
       @reg_request = @reg_request.dup
       @reg_request.errors.copy!(errors)
-      render :new
+      render :new, status: 400
     end
   end
 
   def accept
-    @request = RegRequest.find(params[:id])
+    @request = RegRequest.find_by(id: params[:id])
+    if @request.nil?
+      redirect_back fallback_location: course_registrations_path(@course),
+                    alert: "No such request"
+      return
+    end
     errs = accept_help(@request)
     if errs
       redirect_to course_registrations_path(@course), alert: errs
@@ -77,7 +82,13 @@ class RegRequestsController < ApplicationController
   
 
   def reject
-    RegRequest.find(params[:id]).destroy
+    request = RegRequest.find_by(id: params[:id])
+    if request.nil?
+      redirect_back fallback_location: course_registrations_path(@course),
+                    alert: "No such request"
+      return
+    end
+    request.destroy
     redirect_to course_registrations_path(@course)
   end
 

@@ -1,10 +1,6 @@
 class UsersController < ApplicationController
+  before_action :require_site_admin, only: [:index]
   def index
-    unless current_user_site_admin?
-      redirect_to root_path, alert: "Must be an admin"
-      return
-    end
-
     @users = User.order(:name)
     @user  = User.new
   end
@@ -15,7 +11,7 @@ class UsersController < ApplicationController
       return
     end
 
-    @user = User.find(params[:id])
+    find_user
   end
 
   def edit
@@ -24,7 +20,7 @@ class UsersController < ApplicationController
       return
     end
 
-    @user = User.find(params[:id])
+    find_user
   end
 
   def lookup
@@ -34,7 +30,7 @@ class UsersController < ApplicationController
         if u
           render :json => {name: u.name}
         else
-          render :json => {name: "no one found"}
+          render :json => {name: "no one found"}, status: 400
         end
       }
     end
@@ -46,7 +42,7 @@ class UsersController < ApplicationController
       return
     end
 
-    @user = User.find(params[:id])
+    find_user(courses_path)
 
     up = user_params
 
@@ -71,7 +67,7 @@ class UsersController < ApplicationController
     else
       FileUtils.rm(up[:profile]) if up[:profile] # cleanup orphaned file
       render action: "edit", 
-             alert: "Error updating user: #{@user.errors.full_messages.join('; ')}"
+             alert: "Error updating user: #{@user.errors.full_messages.join('; ')}", status: 400
     end
   end
 
@@ -81,7 +77,7 @@ class UsersController < ApplicationController
       return
     end
 
-    @user = User.find(params[:id])
+    find_user(root_path)
     impersonate_user(@user)
     redirect_to root_path, notice: "You are impersonating #{@user.display_name}."
   end
@@ -98,6 +94,15 @@ class UsersController < ApplicationController
       params[:user].permit(:email, :name, :nickname, :first_name, :last_name, :nuid, :profile, :site_admin)
     else
       params[:user].permit(:email, :name, :nickname, :first_name, :last_name, :nuid, :profile)
+    end
+  end
+
+  def find_user(fallback_path = nil)
+    fallback_path ||= users_path
+    @user = User.find_by(id: params[:id])
+    if @user.nil?
+      redirect_back fallback_location: fallback_path, alert: "No such user"
+      return
     end
   end
 end

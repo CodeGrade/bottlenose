@@ -35,6 +35,8 @@ class TermsControllerTest < ActionController::TestCase
     assert_no_difference('Term.count') do
       post :create, params: {term: { year: @term.year, semester: @term.semester }}
     end
+
+    assert_response 400
   end
 
   test "should show term" do

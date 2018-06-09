@@ -76,7 +76,7 @@ class CoursesController < ApplicationController
       end
       @course.destroy
       @course = new_course
-      render :new, layout: 'application'
+      render :new, layout: 'application', status: 400
     end
   end
 
@@ -86,7 +86,7 @@ class CoursesController < ApplicationController
     if @course.save
       redirect_to course_path(@course), notice: 'Course was successfully updated.'
     else
-      render :edit
+      render :edit, status: 400
     end
   end
 

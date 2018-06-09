@@ -27,7 +27,7 @@ class SandboxesController < ApplicationController
     if @sandbox.save
       redirect_to @sandbox, notice: 'Sandbox was successfully created.'
     else
-      render :new
+      render :new, status: 400
     end
   end
 
@@ -36,7 +36,7 @@ class SandboxesController < ApplicationController
     if @sandbox.update(sandbox_params)
       redirect_to @sandbox, notice: 'Sandbox was successfully updated.'
     else
-      render :edit
+      render :edit, status: 400
     end
   end
 
@@ -49,7 +49,12 @@ class SandboxesController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_sandbox
-      @sandbox = Sandbox.find(params[:id])
+      @sandbox = Sandbox.find_by(id: params[:id])
+      if @sandbox.nil?
+        redirect_back fallback_location: root_path,
+                      alert: "No such sandbox"
+        return
+      end
     end
 
     # Only allow a trusted parameter "white list" through.

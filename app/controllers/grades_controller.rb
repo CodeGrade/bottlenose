@@ -62,7 +62,7 @@ class GradesController < ApplicationController
       self.send("update_#{@assignment.type.capitalize}")
     else
       respond_to do |f|
-        f.json { render :json => {unauthorized: "Must be an admin or staff"} }
+        f.json { render :json => {unauthorized: "Must be an admin or staff"}, status: 400 }
         f.html {
           redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                         alert: "Must be an admin or staff."
@@ -303,7 +303,12 @@ class GradesController < ApplicationController
       f.json {
         case params[:grade_action]
         when "getGrades"
-          sub = @assignment.used_sub_for(User.find(params[:user_id]))
+          user = User.find_by(id: params[:user_id])
+          if user.nil?
+            render :json => {"no such user": params[:user_id]}, status: 400
+            return
+          end
+          sub = @assignment.used_sub_for(user)
           if sub
             comments = InlineComment.where(submission_id: sub.id)
             render :json => {grades: (comments.to_a.map do |c| [c.line, c.weight] end.to_h),
@@ -312,7 +317,12 @@ class GradesController < ApplicationController
             render :json => {"none found": true}
           end
         when "setGrades"
-          sub = @assignment.used_sub_for(User.find(params[:user_id]))
+          user = User.find_by(id: params[:user_id])
+          if user.nil?
+            render :json => {"no such user": params[:user_id]}, status: 400
+            return
+          end
+          sub = @assignment.used_sub_for(user)
           config = Grade.find_by(grader_id: @grader.id, submission_id: sub.id) if sub
           if (config && (config.updated_at > Time.parse(params[:timestamp])))
             render :json => {existingTimestamp: config.updated_at, yourTimestamp: params[:timestamp]},
@@ -494,7 +504,7 @@ class GradesController < ApplicationController
                  [@submission.id.to_s,
                   questions_params[@submission.id.to_s].map{|q| [q.delete("index").to_i, q]}.to_h]].to_h
       @show_grades = true
-      render "edit_QuestionsGrader"
+      render "edit_QuestionsGrader", status: 400
       return
     end
   end
@@ -519,7 +529,7 @@ class GradesController < ApplicationController
       end
       setup_CodereviewGrader
       @grades = questions_params
-      render "edit_CodereviewGrader"
+      render "edit_CodereviewGrader", status: 400
       return
     end
 

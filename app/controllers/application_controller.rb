@@ -72,24 +72,24 @@ class ApplicationController < ActionController::Base
 
   def current_user_prof_for?(course)
     return false if course.nil?
-    current_user && (current_user.site_admin? || current_user.registration_for(course).professor?)
+    current_user && (current_user.site_admin? || current_user.registration_for(course)&.professor?)
   end
 
   def current_user_assistant_for?(course)
     return false if course.nil?
-    current_user && (current_user.site_admin? || current_user.registration_for(course).assistant?)
+    current_user && (current_user.site_admin? || current_user.registration_for(course)&.assistant?)
   end
 
   def current_user_staff_for?(course)
-    current_user && (current_user.site_admin? || current_user.registration_for(course).staff?)
+    current_user && (current_user.site_admin? || current_user.registration_for(course)&.staff?)
   end
 
   def true_user_prof_for?(course)
-    true_user && (true_user.site_admin? || true_user.registration_for(course).professor?)
+    true_user && (true_user.site_admin? || true_user.registration_for(course)&.professor?)
   end
 
   def true_user_staff_for?(course)
-    true_user && (true_user.site_admin? || true_user.registration_for(course).staff?)
+    true_user && (true_user.site_admin? || true_user.registration_for(course)&.staff?)
   end
 
   def current_user_has_id?(id)

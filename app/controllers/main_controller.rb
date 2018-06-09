@@ -48,7 +48,6 @@ class MainController < ApplicationController
   end
 
   def clear_queue
-    require_site_admin
     cleared = Grader::GradingJob.clear_all!
     if cleared.is_a? String
       redirect_to server_status_path, alert: cleared

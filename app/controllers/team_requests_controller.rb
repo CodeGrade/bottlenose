@@ -21,7 +21,7 @@ class TeamRequestsController < ApplicationController
       errors = @team_request.errors
       @team_request = @team_request.dup
       @team_request.errors.copy!(errors)
-      render :index
+      render :index, status: 400
     end
   end
   def update

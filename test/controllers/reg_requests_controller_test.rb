@@ -54,7 +54,7 @@ class RegRequestsControllerTest < ActionController::TestCase
       }
     end
 
-    assert_response :success
+    assert_response 400
   end
 
   test "should show reg_request" do

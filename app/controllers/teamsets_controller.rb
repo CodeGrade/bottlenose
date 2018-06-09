@@ -57,8 +57,16 @@ class TeamsetsController < ApplicationController
   def update
     @team = Team.new(team_params)
 
-    users = params["users"] || []
-    @team.users = users.map { |user_id| User.find(user_id.to_i) }
+    users = (params["users"] || []).map(&:to_i)
+    found_users = Users.where(id: users).to_a
+    if found_users.count != users.count
+      setup_params
+      missing = (users.to_set - found_users.map(&:id).to_set).to_a
+      @team.errors.add(:base, "Could not find all specified users for team: " + missing.to_sentence)
+      render :edit, status: 400
+      return
+    end
+    @team.users = found_users
 
     if @team.save
       redirect_to edit_course_teamset_path(@course, @teamset),
@@ -68,7 +76,7 @@ class TeamsetsController < ApplicationController
       @team.errors.full_messages.each do |e|
         @teamset.errors.add(:base, e)
       end
-      render :edit
+      render :edit, status: 400
     end
   end
 
@@ -153,7 +161,7 @@ class TeamsetsController < ApplicationController
         @teamset.errors.add(:base, "Could not save all teams: #{e}")
         setup_params
         @teamset.bulk_teams = params[:bulk_teams]
-        render :edit
+        render :edit, status: 500
         return
       end
       redirect_to edit_course_teamset_path(@course, @teamset),
@@ -164,7 +172,7 @@ class TeamsetsController < ApplicationController
       end
       setup_params
       @teamset.bulk_teams = params[:bulk_teams]
-      render :edit
+      render :edit, status: 400
     end
   end
 
@@ -189,7 +197,12 @@ class TeamsetsController < ApplicationController
   end
 
   def clone
-    source = Teamset.find(params[:teamset])
+    source = Teamset.find_by(id: params[:teamset])
+    if source.nil?
+      redirect_back fallback_location: course_teamsets_path(@course),
+                    alert: "No such teamset"
+      return
+    end
     count = @teamset.copy_from(source, nil)
     redirect_back fallback_location: course_teamsets_path(@course),
                   notice: "#{pluralize(count, 'team')} copied from #{source.name}"
@@ -203,7 +216,7 @@ class TeamsetsController < ApplicationController
       missing = uids - (team_info["users"].map(&:id))
       setup_params
       @teamset.errors.add(:base, "Could not find all users for request: missing #{pluralize('id', missing.count)} #{missing.to_sentence}")
-      render :edit
+      render :edit, status: 400
       return
     end
 
@@ -219,13 +232,13 @@ class TeamsetsController < ApplicationController
         @team.errors.full_messages.each do |e|
           @teamset.errors.add(:base, e)
         end
-        render :edit
+        render :edit, status: 400
       end
     else
       setup_params
       @teamset.errors.add(:base, "Could not create team: #{in_teams.map(&:username).to_sentence} " +
                                  "#{'is'.pluralize(in_teams.count)} already in an active team")
-      render :edit
+      render :edit, status: 400
     end
   end
   def reject_request
@@ -264,7 +277,7 @@ class TeamsetsController < ApplicationController
       failure.each do |msg|
         @teamset.errors.add(:base, msg)
       end
-      render :edit
+      render :edit, status: 400
     end
   end
   def reject_all_requests
