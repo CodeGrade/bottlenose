@@ -58,7 +58,7 @@ class TeamsetsController < ApplicationController
     @team = Team.new(team_params)
 
     users = (params["users"] || []).map(&:to_i)
-    found_users = Users.where(id: users).to_a
+    found_users = User.where(id: users).to_a
     if found_users.count != users.count
       setup_params
       missing = (users.to_set - found_users.map(&:id).to_set).to_a
