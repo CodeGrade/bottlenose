@@ -1,7 +1,7 @@
 class Term < ApplicationRecord
   # For use with querying university rosters: numbers are set by university,
   # and there are a few other semester types, but we never use them...
-  enum semester: { fall: 10, winter: 20, spring: 30, summer_1: 40, summer: 50, summer_2: 60 }
+  enum semester: { fall: 10, spring: 30, summer_1: 40, summer: 50, summer_2: 60 }
   has_many :courses, :dependent => :restrict_with_error
 
   validates :semester, inclusion: {in: Term.semesters.keys},
@@ -23,7 +23,7 @@ class Term < ApplicationRecord
   def canonical_name
     season = "#{Term.semesters[semester]}_#{semester}"
     
-    # Fall and winter are part of numerically-next *academic* year
+    # Fall is part of numerically-next *academic* year
     effective_year = year
     effective_year += 1    if Term.semesters[semester] < Term.semesters[:spring]
 
