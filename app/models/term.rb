@@ -4,7 +4,12 @@ class Term < ApplicationRecord
   enum semester: { fall: 10, winter: 20, spring: 30, summer_1: 40, summer: 50, summer_2: 60 }
   has_many :courses, :dependent => :restrict_with_error
 
-  validates :semester, inclusion: {in: Term.semesters.keys}
+  validates :semester, inclusion: {in: Term.semesters.keys},
+            uniqueness: {
+              scope: :year,
+              message: ->(object, data) do
+                "Terms must be unique, but the semester/year pair <code>#{object.name}</code> already exists"
+              end}
   
   def self.all_sorted
     terms = Term.all

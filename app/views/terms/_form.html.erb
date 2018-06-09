@@ -4,8 +4,10 @@
       <h2><%= pluralize(@term.errors.count, "error") %> prohibited this term from being saved:</h2>
 
       <ul>
-      <% @term.errors.full_messages.each do |msg| %>
-        <li><%= msg %></li>
+      <% @term.errors.messages.each do |attr, msgs| %>
+        <% msgs.each do |msg| %>
+        <li><%= if (attr == :semester) then msg.html_safe else full_message(attr, msg) end %></li>
+        <% end %>
       <% end %>
       </ul>
     </div>

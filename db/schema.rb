@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_08_211724) do
+ActiveRecord::Schema.define(version: 2018_06_09_014742) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -294,6 +294,7 @@ ActiveRecord::Schema.define(version: 2018_06_08_211724) do
     t.datetime "updated_at"
     t.integer "semester", default: 0, null: false
     t.integer "year", default: 0, null: false
+    t.index ["semester", "year"], name: "index_terms_on_semester_and_year", unique: true
   end
 
   create_table "uploads", id: :serial, force: :cascade do |t|
