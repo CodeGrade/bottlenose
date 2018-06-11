@@ -115,6 +115,10 @@ class CoursesController < ApplicationController
 
   def withdraw
     @course = Course.find_by(id: params[:id])
+    if @course.nil?
+      redirect_to root_path, alert: "No such course or that material is not public."
+      return
+    end
 
     reg = current_user.registration_for(@course)
     if reg.nil?

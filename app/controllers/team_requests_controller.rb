@@ -30,6 +30,11 @@ class TeamRequestsController < ApplicationController
 
   def destroy
     tr = TeamRequest.find_by(id: params[:id])
+    if tr.nil?
+      redirect_to course_teamset_team_requests_path(@course, @teamset),
+                  alert: "No such team request"
+      return
+    end
     if (tr.user_id == current_user.id) || true_user&.course_staff?(@course)
       tr.destroy
       redirect_to course_teamset_team_requests_path(@course, @teamset),

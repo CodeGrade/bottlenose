@@ -215,7 +215,7 @@ class User < ApplicationRecord
   end
 
   def registration_for(course)
-    Registration.find_by(user_id: self.id, course_id: course.id)
+    Registration.find_by(user_id: self.id, course_id: course&.id)
   end
 
   def invert_name
