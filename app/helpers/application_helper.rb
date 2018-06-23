@@ -222,6 +222,8 @@ module ApplicationHelper
       "jar"
     when ".zip"
       "zip"
+    when ".7z"
+      "application/x-7z-compressed"
     when ".svg", ".xml"
       "application/xml"
     when ".html"
@@ -246,6 +248,8 @@ module ApplicationHelper
   end
   def self.binary?(mimetype)
     # NOTE: The mimetypes here must match the ones produced by mime_type above
+    # NOTE: text/unknown is treated as binary, so that (a) browsers won't try to execute it,
+    # but (b) it won't be forced to UTF-8 in Submission#get_submission_files
     case mimetype
     when "text/x-java",
          "text/javascript",
@@ -261,8 +265,7 @@ module ApplicationHelper
          "text/html",
          "text/css",
          "text/plain",
-         "text/x-makefile",
-         "text/unknown"
+         "text/x-makefile"
       false
     when "application/java-vm",
          "image/gif",
@@ -272,9 +275,11 @@ module ApplicationHelper
          "image/webp",
          "jar",
          "zip",
+         "application/x-7z-compressed",
          "application/pdf",
          "application/rtf",
-         "audio/mpeg"
+         "audio/mpeg",
+         "text/unknown"
       true
     else
       true
