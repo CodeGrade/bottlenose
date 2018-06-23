@@ -188,6 +188,8 @@ module ApplicationHelper
     case File.extname(full_path).downcase
     when ".java"
       "text/x-java"
+    when ".class"
+      "application/java-vm"
     when ".js"
       "text/javascript"
     when ".arr"
@@ -232,12 +234,50 @@ module ApplicationHelper
       "application/pdf"
     when ".rtf"
       "application/rtf"
+    when ".mp3"
+      "audio/mpeg"
     else
       if File.basename(full_path.to_s) == "Makefile"
         "text/x-makefile"
       else
         "text/unknown"
       end
+    end
+  end
+  def self.binary?(mimetype)
+    # NOTE: The mimetypes here must match the ones produced by mime_type above
+    case mimetype
+    when "text/x-java",
+         "text/javascript",
+         "pyret",
+         "scheme",
+         "mllike",
+         "text/markdown",
+         "text/x-ebnf",
+         "text/x-csrc",
+         "text/x-c++src",
+         "text/x-csharp",
+         "application/xml",
+         "text/html",
+         "text/css",
+         "text/plain",
+         "text/x-makefile",
+         "text/unknown"
+      false
+    when "application/java-vm",
+         "image/gif",
+         "image/jpeg",
+         "image/png",
+         "image/tiff",
+         "image/webp",
+         "jar",
+         "zip",
+         "application/pdf",
+         "application/rtf",
+         "audio/mpeg"
+      true
+    else
+      true
     end
   end
 end

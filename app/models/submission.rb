@@ -349,17 +349,33 @@ class Submission < ApplicationRecord
     @lineCommentsByFile = line_comments || self.grade_line_comments(nil, show_hidden)
     @submission_files = []
     @show_deductions = show_deductions
+    def ensure_utf8(str, mimetype)
+      if ApplicationHelper.binary?(mimetype)
+        str
+      else
+        if str.is_utf8?
+          str
+        else
+          if str.dup.force_encoding(Encoding::CP1252).valid_encoding?
+            str.encode(Encoding::UTF_8, Encoding::CP1252)
+          else
+            str.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: '?')
+          end
+        end
+      end
+    end
     def with_extracted(item)
       return nil if item.nil?
       if item[:public_link]
         return nil if File.basename(item[:full_path].to_s) == ".DS_Store"
         comments = @lineCommentsByFile[item[:public_link].to_s] || {noCommentsFor: item[:public_link].to_s}
+        mimetype = ApplicationHelper.mime_type(item[:full_path])
         @submission_files.push({
           link: item[:public_link],
           name: item[:public_link].sub(/^.*extracted\//, ""),
           pdf_path: item[:converted_path],
-          contents: File.read(item[:full_path].to_s),
-          type: ApplicationHelper.mime_type(item[:full_path]),
+          contents: ensure_utf8(File.read(item[:full_path].to_s), mimetype),
+          type: mimetype,
           href: @submission_files.count + 1,
           lineComments: comments
           })

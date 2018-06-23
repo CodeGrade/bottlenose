@@ -173,7 +173,18 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
     </div>
   </div>
   <% end %>
-  <% elsif f[:type] == "zip" || f[:type] == "jar" %>
+  <% elsif f[:type] == "audio/mpeg" %>
+  <div class="nonCMwrapper flexV">
+    <audio controls>
+      <source src="<%= f[:link] %>" type="audio/mpeg">
+      <div class="warningContent">
+        <p>Could not render <%= f[:name] %></p>
+        <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+      </div>        
+    </audio>
+    <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+  </div>
+  <% elsif ApplicationHelper::binary?(f[:type]) %>
   <div class="nonCMwrapper flexV">
     <div class="warningContent" data-source="<%= f[:link] %>">
     <%= link_to "Download #{f[:name]}", f[:link] %>
