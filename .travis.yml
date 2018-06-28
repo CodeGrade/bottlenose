@@ -1,5 +1,8 @@
 dist: xenial
+services:
+  - postgresql
 addons:
+  postgresql: '9.6'
   apt:
     packages:
       - libqtwebkit-dev
