@@ -379,6 +379,7 @@ class Assignment < ApplicationRecord
 
       up = Upload.new
       up.user_id = user.id
+      up.assignment = self
       begin
         up.store_upload!(@assignment_file_data, {
           type:       "Assignment File",

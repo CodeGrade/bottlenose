@@ -21,6 +21,8 @@ class Upload < ApplicationRecord
   validate :data_and_metadata_stored
 
   belongs_to :user
+  belongs_to :assignment
+  has_one :course, through: :assignment
 
   after_initialize :generate_secret_key!
   before_destroy :cleanup!
@@ -88,10 +90,10 @@ class Upload < ApplicationRecord
     end
     Postprocessor.no_files_found(extracted_path) unless found_any
   end
-
+  
   def upload_dir
     pre = secret_key.slice(0, 2)
-    Upload.base_upload_dir.join(pre, secret_key)
+    Upload.base_upload_dir.join(course&.id.to_i.to_s, assignment&.id.to_i.to_s, pre, secret_key)
   end
 
   def path

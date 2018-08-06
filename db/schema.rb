@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_06_09_014742) do
+ActiveRecord::Schema.define(version: 2018_08_01_182418) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -303,6 +303,8 @@ ActiveRecord::Schema.define(version: 2018_06_09_014742) do
     t.string "secret_key"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.integer "assignment_id", default: 0, null: false
+    t.index ["assignment_id"], name: "index_uploads_on_assignment_id"
     t.index ["secret_key"], name: "index_uploads_on_secret_key", unique: true
   end
 

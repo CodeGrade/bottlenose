@@ -143,6 +143,7 @@ class Submission < ApplicationRecord
 
     up = Upload.new
     up.user_id = user.id
+    up.assignment = assignment
     begin
       up.store_upload!(data, {
         type:       "Submission",
@@ -206,6 +207,7 @@ class Submission < ApplicationRecord
 
     up = Upload.new
     up.user_id = user.id
+    up.assignment = assignment
     up.store_upload!(data, {
       type:       "Submission Comments",
       user:       "Some teacher for #{user.name} (#{user.id})",

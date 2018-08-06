@@ -196,6 +196,7 @@ class Grader < ApplicationRecord
 
     up = Upload.new
     up.user = User.find_by(id: self.upload_by_user_id)
+    up.assignment = assignment
     up.store_upload!(data, {
                        type: "#{type} Configuration",
                        date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
@@ -216,6 +217,7 @@ class Grader < ApplicationRecord
 
     up = Upload.new
     up.user = User.find_by(id: self.upload_by_user_id)
+    up.assignment = assignment
     up.store_upload!(data, {
                        type: "#{type} Extra Configuration",
                        date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
