@@ -196,7 +196,7 @@ class AssignmentsController < ApplicationController
     need_to_unpublish_grades =
       @assignment.graders.any?{|g| g.new_record? || g.changed? || g.marked_for_destruction?}
     
-    if @assignment.save_upload && @assignment.save
+    if @assignment.save
       count = 0
       if need_to_unpublish_grades
         count = @assignment.submissions.where.not(score: nil).update_all(score: nil)

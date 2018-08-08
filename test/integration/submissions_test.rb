@@ -280,7 +280,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     
     @helloReview.graders = [build(:grader, assignment: @helloReview, type: "CodereviewGrader",
                                   params: "peer;2;75", avail_score: 5)]
-    @helloReview.save_upload && @helloReview.save
+    @helloReview.save
 
     # Visit the begin-codereview page for each user in each team
     @largeTs.teams.each do |t|
@@ -326,7 +326,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     
     @helloReview.graders = [build(:grader, assignment: @helloReview, type: "CodereviewGrader",
                                   params: "peer;2;75", avail_score: 5)]
-    @helloReview.save_upload && @helloReview.save
+    @helloReview.save
 
 
     teams = @largeTs.teams.to_a
