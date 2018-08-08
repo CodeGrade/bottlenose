@@ -225,8 +225,8 @@ class Upload < ApplicationRecord
   end
 
   def self.cleanup_test_uploads!
-    dir = base_upload_dir.join("test").to_s
-    if dir.length > 8 && dir =~ /test/
+    dir = base_upload_dir.to_s
+    if Rails.env === "test" && dir =~ /test/
       FileUtils.rm_rf(dir)
     end
   end
