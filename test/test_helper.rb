@@ -6,8 +6,13 @@ require 'fake_upload'
 require 'simplecov'
 require 'backburner'
 require 'beaneater'
+require 'minitest/reporters'
 
 SimpleCov.start
+Minitest::Reporters.use! [
+  Minitest::Reporters::DefaultReporter.new(:color => true)
+#  Minitest::Reporters::SpecReporter.new(color: true)
+]
 
 class ActionController::TestCase
   include Devise::Test::ControllerHelpers
