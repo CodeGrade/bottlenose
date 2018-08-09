@@ -259,20 +259,20 @@ class ArchiveUtils
   # File counts
   ##############################
   def self.zip_too_many_files?(file, limit)
-    Zip::File.open(file) do |zip| helper_too_many_files?(file, zip, limit) end
+    Zip::File.open(file) do |zip| helper_too_many_files?(file, 'zip', zip, limit) end
   end
   def self.tar_too_many_files?(file, limit)
     File.open(file) do |stream|
-      Gem::Package::TarReader.new(stream) do |tar| helper_too_many_files?(file, tar, limit) end
+      Gem::Package::TarReader.new(stream) do |tar| helper_too_many_files?(file, 'tar', tar, limit) end
     end
   end
   def self.tar_gz_too_many_files?(file, limit)
     Zlib::GzipReader.open(file) do |stream|
-      Gem::Package::TarReader.new(stream) do |tar| helper_too_many_files?(file, tar, limit) end
+      Gem::Package::TarReader.new(stream) do |tar| helper_too_many_files?(file, 'tgz', tar, limit) end
     end
   end
 
-  def self.helper_too_many_files?(file, stream, limit)
+  def self.helper_too_many_files?(file, type, stream, limit)
     count = 0
     stream.each do |f|
       count += 1
@@ -284,7 +284,7 @@ class ArchiveUtils
   rescue FileCountLimit => l
     raise l
   rescue Exception => e
-    raise FileReadError.new(file, 'zip', e)
+    raise FileReadError.new(file, type, e)
   end
 
 
@@ -301,7 +301,7 @@ class ArchiveUtils
   end
   def self.tar_gz_invalid_paths?(file)
     Zlib::GzipReader.open(file) do |stream|
-      Gem::Package::TarReader.new(stream) do |tar| return helper_invalid_paths?(file, 'tar_gz', tar) end
+      Gem::Package::TarReader.new(stream) do |tar| return helper_invalid_paths?(file, 'tgz', tar) end
     end
   end
 
