@@ -194,6 +194,10 @@ class User < ApplicationRecord
     reg.role == "professor" || reg.role == "assistant" || reg.role == "grader"
   end
 
+  def self.professors
+    User.joins(:registrations).where("registrations.role": Registration::roles["professor"]).distinct.order(:id)
+  end
+  
   def professor_ever?
     Registration.where(user_id: self.id, role: Registration::roles["professor"]).count > 0
   end
