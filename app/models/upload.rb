@@ -137,6 +137,7 @@ class Upload < ApplicationRecord
     unless (metadata.dig(:prof_override, :file_size) rescue false)
       ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
     end
+    ArchiveUtils.invalid_paths?(upload_path, effective_mime)
 
     extract_contents!(effective_mime)
 

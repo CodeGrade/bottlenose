@@ -10,7 +10,7 @@ require 'minitest/reporters'
 
 SimpleCov.start
 Minitest::Reporters.use! [
-  Minitest::Reporters::DefaultReporter.new(:color => true)
+  Minitest::Reporters::DefaultReporter.new(color: true, detailed_skip: false)
 #  Minitest::Reporters::SpecReporter.new(color: true)
 ]
 

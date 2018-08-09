@@ -6,6 +6,84 @@ require 'fileutils'
 
 TAR_LONGLINK = '././@LongLink'
 
+# Since Zip::File and Gem::Package::TarReader are autoloaded,
+# simply reopening the classes will fail.  These two patches
+# harmonize the interfaces to both Zips and Tars, so that we
+# can extract them using the same logic.
+Zip::File.class_exec do
+  class WrapZipEntry
+    def initialize(e)
+      @entry = e
+    end
+    def read
+      @entry.get_input_stream.read
+    end
+    def directory?
+      @entry.directory?
+    end
+    def file?
+      @entry.file?
+    end
+    def symlink?
+      @entry.symlink?
+    end
+    def name
+      @entry.name
+    end
+    def unix_perms
+      if @entry.directory?
+        nil
+      else
+        @entry.unix_perms
+      end
+    end
+  end
+  def safe_each
+    self.each do |e|
+      yield(WrapZipEntry.new(e))
+    end
+  end
+end
+Gem::Package::TarReader.class_exec do
+  class WrapTarEntry
+    def initialize(e, name)
+      @entry = e
+      @name = name
+    end
+    def read
+      @entry.read
+    end
+    def directory?
+      @entry.directory?
+    end
+    def file?
+      @entry.file?
+    end
+    def symlink?
+      @entry.symlink?
+    end
+    def name
+      @name
+    end
+    def unix_perms
+      @entry.header.mode
+    end
+  end
+  def safe_each
+    # from https://dracoater.blogspot.com/2013/10/extracting-files-from-targz-with-ruby.html
+    self.rewind
+    dest = ""
+    self.each do |entry|
+      if entry.full_name == TAR_LONGLINK
+        dest = dest + entry.read.strip
+        next
+      else
+        yield(WrapTarEntry.new(entry, dest + entry.full_name))
+        dest = ""
+      end
+    end
+  end
+end
 class ArchiveUtils
   def self.ARCHIVE_EXTENSIONS
     # Supported file types
@@ -114,6 +192,26 @@ class ArchiveUtils
     end      
   end
 
+  def self.invalid_paths?(file, mime)
+    if is_zip?(file, mime)
+      zip_invalid_paths?(file)
+    elsif is_tar?(file, mime)
+      tar_invalid_paths?(file)
+    elsif is_tar_gz?(file, mime)
+      tar_gz_invalid_paths?(file)
+    elsif is_gz?(file, mime)
+      if !(file.encode("utf-8").valid_encoding? rescue false)
+        raise FileReadError(file, mime, "File name is not valid UTF-8")
+      end
+      return false # A .gz file only contains a single file
+    else
+      if !(file.encode("utf-8").valid_encoding? rescue false)
+        raise FileReadError(file, mime, "File name is not valid UTF-8")
+      end
+      return false # it's a single file
+    end      
+  end
+
   def self.total_size_too_large?(file, mime, limit = ArchiveUtils.MAX_SIZE)
     if is_zip?(file, mime)
       zip_total_size_too_large?(file, limit)
@@ -189,6 +287,37 @@ class ArchiveUtils
     raise FileReadError.new(file, 'zip', e)
   end
 
+
+  ##############################
+  # Valid path names
+  ##############################
+  def self.zip_invalid_paths?(file)
+    Zip::File.open(file) do |zip| return helper_invalid_paths?(file, 'zip', zip) end
+  end
+  def self.tar_invalid_paths?(file)
+    File.open(file) do |stream|
+      Gem::Package::TarReader.new(stream) do |tar| return helper_invalid_paths?(file, 'tar', tar) end
+    end
+  end
+  def self.tar_gz_invalid_paths?(file)
+    Zlib::GzipReader.open(file) do |stream|
+      Gem::Package::TarReader.new(stream) do |tar| return helper_invalid_paths?(file, 'tar_gz', tar) end
+    end
+  end
+
+  def self.helper_invalid_paths?(file, type, stream)
+    stream.safe_each do |entry|
+      if !(entry.name.encode("utf-8").valid_encoding? rescue false)
+        raise FileReadError.new(file, type, "Entry name `#{entry.name}` is not valid UTF-8")
+      end
+    end
+    return false
+  rescue FileReadError => e
+    raise e
+  rescue Exception => e
+    raise FileReadError.new(file, type, e)
+  end
+  
   ##############################
   # File sizes
   ##############################
@@ -259,7 +388,7 @@ class ArchiveUtils
   # File extraction
   ##############################
 
-  public
+  private
   def self.safe_realdir(path)
     # Returns the realdirpath of some maximal safe prefix of path by eliminating safe suffixes
     # A safe prefix or suffix is one that doesn't use ./ or ../ anywhere
@@ -279,7 +408,6 @@ class ArchiveUtils
     end
     return File.realdirpath(path)
   end
-  private
   def self.encode_or_escape(str)
     begin
       str.encode("utf-8")
@@ -292,51 +420,49 @@ class ArchiveUtils
       end
     end
   end
-  def self.zip_extract(file, dest)
-    Zip::File.open(file) do |zf|
-      seen_symlinks = false
-      zf.each do |entry|
-        out = encode_or_escape(File.join(dest, entry.name.gsub("\\", "/")))
-        if out.to_s.match?("__MACOSX") || out.to_s.match?(".DS_Store")
-          next
-        end
-        if (safe_realdir(out).starts_with?(dest.to_s) rescue false)
-          if entry.directory?
-            FileUtils.rm_rf out unless File.directory? out
-            FileUtils.mkdir_p(File.dirname(out))
-          elsif entry.file?
-            FileUtils.rm_rf out unless File.file? out
-            FileUtils.mkdir_p(File.dirname(out))
-            File.open(out, "wb") do |f|
-              f.print entry.get_input_stream.read
-            end
-            FileUtils.chmod entry.unix_perms, out, :verbose => false if entry.unix_perms
-          else
-            FileUtils.rm_rf out unless File.file? out
-            FileUtils.mkdir_p(File.dirname(out))
-            seen_symlinks = true
-            # skip creating the symlink for now
-          end
-        else
-          puts safe_realdir(out)
-          puts dest
-          puts file
-          puts entry.name
-          raise SafeExtractionError.new(file, dest, entry.name)
-        end
+  def self.helper_extract(file, type, archive, dest)
+    seen_symlinks = false
+    archive.safe_each do |entry|
+      out = encode_or_escape(File.join(dest, entry.name.gsub("\\", "/").sub(/\/$/, "")))
+      if out.to_s.match?("__MACOSX") || out.to_s.match?(".DS_Store")
+        next
       end
-      if seen_symlinks
-        # Now go through again, only for creating the symlinks
-        zf.each do |entry|
-          if entry.symlink?
-            out = encode_or_escape(File.join(dest, entry.name))
-            link_target = entry.get_input_stream.read
-            # Using realdirpath because symlinks shouldn't need to create any directories
-            if (File.realdirpath(link_target, dest).to_s.starts_with?(dest.to_s) rescue false)
-              File.symlink link_target, out
-            else
-              raise SafeExtractionError.new(file, dest.to_s, entry.name)
-            end
+      if (safe_realdir(out).starts_with?(dest.to_s) rescue false)
+        if entry.directory?
+          FileUtils.rm_rf out unless File.directory? out
+          FileUtils.mkdir_p out, mode: entry.unix_perms, verbose: false
+        elsif entry.file?
+          FileUtils.rm_rf out unless File.file? out
+          FileUtils.mkdir_p(File.dirname(out))
+          File.open(out, "wb") do |f|
+            f.print entry.read
+          end
+          FileUtils.chmod entry.unix_perms, out, verbose: false if entry.unix_perms
+        else
+          FileUtils.rm_rf out unless File.file? out
+          FileUtils.mkdir_p(File.dirname(out))
+          seen_symlinks = true
+          # skip creating the symlink for now
+        end
+      else
+        puts safe_realdir(out)
+        puts dest
+        puts file
+        puts entry.name
+        raise SafeExtractionError.new(file, dest, entry.name)
+      end
+    end
+    if seen_symlinks
+      # Now go through again, only for creating the symlinks
+      archive.safe_each do |entry|
+        if entry.symlink?
+          out = encode_or_escape(File.join(dest, entry.name))
+          link_target = entry.read
+          # Using realdirpath because symlinks shouldn't need to create any directories
+          if (File.realdirpath(link_target, dest).to_s.starts_with?(dest.to_s) rescue false)
+            File.symlink link_target, out
+          else
+            raise SafeExtractionError.new(file, dest.to_s, entry.name)
           end
         end
       end
@@ -345,19 +471,18 @@ class ArchiveUtils
   rescue Exception => e
     puts e
     puts e.backtrace
-    raise FileReadError.new(file, 'zip', e)
+    raise FileReadError.new(file, type, e)
   end
-  
+
+  def self.zip_extract(file, dest)
+    Zip::File.open(file) do |zf| helper_extract(file, 'zip', zf, dest) end
+  end
   def self.tar_extract(file, dest)
-    File.open(file) do |source| helper_extract(file, source, dest) end
-    return true
+    File.open(file) do |source| helper_extract(file, 'tar', Gem::Package::TarReader.new(source), dest) end
   end
-
   def self.tar_gz_extract(file, dest)
-    Zlib::GzipReader.open(file) do |source| helper_extract(file, source, dest) end
-    return true
+    Zlib::GzipReader.open(file) do |source| helper_extract(file, 'tar_gz', Gem::Package::TarReader.new(source), dest) end
   end
-
   def self.gzip_extract(file, dest)
     Zlib::GzipReader.open(file) do |input_stream|
       File.open(dest, "w") do |output_stream|
@@ -365,71 +490,5 @@ class ArchiveUtils
       end
     end
     return true
-  end
-
-  def self.helper_extract(file, source, destination)
-    # from https://dracoater.blogspot.com/2013/10/extracting-files-from-targz-with-ruby.html
-    Gem::Package::TarReader.new(source) do |tar|
-      seen_symlinks = false
-      dest = nil
-      tar.each do |entry|
-        if entry.full_name == TAR_LONGLINK
-          dest = encode_or_escape(File.join destination, entry.read.strip)
-          next
-        end
-        dest ||= encode_or_escape(File.join(destination, entry.full_name)).gsub("\\", "/").sub(/\/$/, "")
-        if dest.to_s.match?("__MACOSX") || dest.to_s.match?(".DS_Store")
-          dest = nil
-          next
-        end
-        if (safe_realdir(dest).to_s.starts_with?(destination.to_s) rescue false)
-          if entry.directory?
-            FileUtils.rm_rf dest unless File.directory? dest
-            FileUtils.mkdir_p dest, :mode => entry.header.mode, :verbose => false
-          elsif entry.file?
-            FileUtils.rm_rf dest unless File.file? dest
-            FileUtils.mkdir_p(File.dirname(dest))
-            File.open dest, "wb" do |f|
-              f.print entry.read
-            end
-            FileUtils.chmod entry.header.mode, dest, :verbose => false if entry.header.mode
-          elsif entry.header.typeflag == '2' #Symlink!
-            FileUtils.rm_rf dest unless File.file? dest
-            FileUtils.mkdir_p(File.dirname(dest))
-            seen_symlinks = true
-            # skip creating the symlink for now
-          end
-        else
-          puts safe_realdir(dest).to_s
-          puts destination.to_s
-          raise SafeExtractionError.new(file, dest, entry.full_name)
-        end
-        dest = nil
-      end
-      if seen_symlinks
-        # Now go through again, only for creating the symlinks
-        tar.rewind
-        dest = nil
-        tar.each do |entry|
-          if entry.full_name == TAR_LONGLINK
-            dest = encode_or_escape(File.join(destination, entry.read.strip))
-            next
-          end
-          dest ||= encode_or_escape(File.join(destination, entry.full_name.gsub("\\", "/")))
-          if entry.header.typeflag == '2' #Symlink!
-            # Be careful: symlinks should not escape the destination directory
-            if File.realdirpath(entry.header.linkname, destination)
-                .to_s
-                .starts_with?(destination.to_s)
-              File.symlink entry.header.linkname, dest
-            else
-              # where = File.realdirpath(entry.header.linkname, destination)
-              raise SafeExtractionError.new(file, dest, entry.full_name)
-            end
-          end
-          dest = nil
-        end
-      end
-    end
   end
 end
