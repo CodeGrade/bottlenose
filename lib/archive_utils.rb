@@ -280,11 +280,23 @@ class ArchiveUtils
     return File.realdirpath(path)
   end
   private
+  def self.encode_or_escape(str)
+    begin
+      str.encode("utf-8")
+    rescue Exception => e
+      str.force_encoding("utf-8")
+      if str.valid_encoding?
+        str
+      else
+        str.scrub{|bytes| '<'+bytes.unpack('H*')[0]+'>' }
+      end
+    end
+  end
   def self.zip_extract(file, dest)
     Zip::File.open(file) do |zf|
       seen_symlinks = false
       zf.each do |entry|
-        out = File.join(dest, entry.name.gsub("\\", "/"))
+        out = encode_or_escape(File.join(dest, entry.name.gsub("\\", "/")))
         if out.to_s.match?("__MACOSX") || out.to_s.match?(".DS_Store")
           next
         end
@@ -317,7 +329,7 @@ class ArchiveUtils
         # Now go through again, only for creating the symlinks
         zf.each do |entry|
           if entry.symlink?
-            out = File.join(dest, entry.name)
+            out = encode_or_escape(File.join(dest, entry.name))
             link_target = entry.get_input_stream.read
             # Using realdirpath because symlinks shouldn't need to create any directories
             if (File.realdirpath(link_target, dest).to_s.starts_with?(dest.to_s) rescue false)
@@ -362,10 +374,10 @@ class ArchiveUtils
       dest = nil
       tar.each do |entry|
         if entry.full_name == TAR_LONGLINK
-          dest = File.join destination, entry.read.strip
+          dest = encode_or_escape(File.join destination, entry.read.strip)
           next
         end
-        dest ||= (File.join destination, entry.full_name.gsub("\\", "/")).sub(/\/$/, "")
+        dest ||= encode_or_escape(File.join(destination, entry.full_name)).gsub("\\", "/").sub(/\/$/, "")
         if dest.to_s.match?("__MACOSX") || dest.to_s.match?(".DS_Store")
           dest = nil
           next
@@ -400,10 +412,10 @@ class ArchiveUtils
         dest = nil
         tar.each do |entry|
           if entry.full_name == TAR_LONGLINK
-            dest = File.join destination, entry.read.strip
+            dest = encode_or_escape(File.join(destination, entry.read.strip))
             next
           end
-          dest ||= File.join destination, entry.full_name.gsub("\\", "/")
+          dest ||= encode_or_escape(File.join(destination, entry.full_name.gsub("\\", "/")))
           if entry.header.typeflag == '2' #Symlink!
             # Be careful: symlinks should not escape the destination directory
             if File.realdirpath(entry.header.linkname, destination)
