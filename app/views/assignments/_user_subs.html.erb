@@ -1,5 +1,7 @@
 <% cur_reg = current_user.registration_for(@course)
-   cur_reg_staff = cur_reg&.staff? %>
+   cur_reg_staff = cur_reg&.staff?
+   used_sub = gradesheet.assignment.used_sub_for(user)
+   %>
 <% if gradesheet.submissions.empty? %>
   <div class="well">
     No submissions yet.
@@ -22,17 +24,22 @@
 
   <% gradesheet.grades[:grades].each do |id, grade| %>
     <% sub = grade[:sub] %>
-    <% used_sub = gradesheet.assignment.used_sub_for(user) %>
     <% used = (!used_sub.nil? && used_sub.id == sub.id) %>
-    <% if sub.stale_team? %>
-    <tr class='muted'>
+    <% if used && sub.stale_team? %>
+    <tr class='warning'>
     <% elsif used %>
     <tr class='success'>
+    <% elsif sub.stale_team? %>
+    <tr class='muted'>
     <% else %>
     <tr>
     <% end %>
       <td>
-        <% if sub.stale_team? %>
+        <% if sub.stale_team? && used %>
+        <span class="well-sm glyphicon glyphicon-exclamation-sign" 
+              data-toggle="tooltip" data-placement="top"
+              title="Team was dissolved before homework was due, but submission is being used anyway"></span>
+        <% elsif sub.stale_team? %>
         <span class="well-sm glyphicon glyphicon-alert" 
               data-toggle="tooltip" data-placement="top"
               title="Team was dissolved before homework was due"></span>

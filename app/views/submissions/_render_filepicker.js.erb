@@ -1,0 +1,232 @@
+$(function (){
+  var styles = document.getElementById("comment-styles").sheet;
+  var contexts = ["div.CodeMirror-linewidget",
+                  "div.pageComments",
+                  "div.regionComments", "div.regionComments > div.page"]
+
+  function activateFileView(root, gradeId, dirInfo, editable, vertical, showAll) {
+    var showOurCommentsSelector = contexts.map((c) => c + " > div.comment.grade_" + gradeId).join(", ")
+    var showOurComments = styles.insertRule(showOurCommentsSelector + " { display: block; }",
+                                            styles.cssRules.length);
+    var hideOtherCommentsSelector = contexts.map((c) => c + " > div.comment").join(", ")
+    var hideOtherComments;
+    function hideOthers() {
+      hideOtherComments = styles.insertRule(hideOtherCommentsSelector + " { display: none; }",
+                                            styles.cssRules.length);
+    }
+    function showOthers() {
+      styles.deleteRule(hideOtherComments);
+    }
+
+    $("#toggle-comments").change(function() {
+      if ($(this).prop("checked"))
+        showOthers();
+      else
+        hideOthers();
+    });
+    if (!showAll) hideOthers();
+    $("#" + root).find("textarea.sourceCode").each(function(index, code) {
+      if ($(code).data("lang")) {
+        var cm = CodeMirror.fromTextArea(code, {
+          readOnly: true, indentUnit: 2,
+          mode: $(code).data("lang"),
+          theme: 'mdn-like', viewportMargin: Infinity,
+          lineNumbers: true, lineWrapping: false,
+          styleActiveLine: true
+        });
+        if ($(code).data("lang") === "scheme") {
+          renderInlineImages(cm, code);
+        }
+      }
+      $(code).addClass("cm-s-mdn-like cm-s-default");
+    });
+    $("#" + root).find("div.warningContent").each(function(index, warning) {
+      var $parent = $(warning).parent();
+      $(warning).addClass("grade_" + gradeId);
+      if (editable) {
+        $(warning).append($("<p>").addClass("btn btn-info addComment").text("Add comment on this file"));
+      }
+      $parent.append(
+        $("<div>").addClass("pageContainer").append(
+          $("<div>").addClass("pageComments").data("source", $(warning).data("source"))));
+    });
+    var curActive = {};
+    $("#" + root).find(".files").treeview({
+      expandIcon: 'glyphicon glyphicon-chevron-down', // deliberately the same
+      collapseIcon: 'glyphicon glyphicon-chevron-down', // always expanded
+      enableLinks: true,
+      onNodeSelected: function(e, data) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (data.href !== undefined && data.href !== "#") {
+          if (curActive[root])
+            curActive[root].removeClass("active");
+          // make sure any comments are visible
+          var newPane = $(data.href);
+          curActive[root] = newPane;
+          var cm = newPane.addClass("active").find(".CodeMirror");
+          if (cm.length > 0) {
+            cm = cm[0].CodeMirror;
+            cm.refresh();
+          }
+          newPane.find(".magnify-image").each(magnifyImages);
+        }
+      },
+      data: dirInfo
+    });
+    var filesTreeview = $("#" + root).find(".files").treeview(true);
+    filesTreeview.expandAll({ silent: true });
+    document.addEventListener("keydown", function(e) {
+      var sel = $(document.getSelection().focusNode).parent(".files li.node-files-" + root);
+      if (sel.length === 0) return;
+      sel = filesTreeview.getSelected();
+      if (!sel) return;
+      sel = sel[0].href;
+      var sib = -10;
+      for (var i = 0; i < fileMap[root].length; i++) {
+        if (fileMap[root][i] === sel) {
+          sib = i;
+          break;
+        }
+      }
+      var move = false;
+      if (e.key === "ArrowDown") {
+        sib++;
+        move = true;
+      } else if (e.key === "ArrowUp") {
+        sib--;
+        move = true;
+      }
+      if (move && sib >= 0 && sib < fileMap[root].length) {
+        selectTreeviewFileByIndex(root, sib);
+        e.preventDefault();
+        e.stopPropagation();
+        sel = filesTreeview.getSelected();
+        if (sel) sel = sel[0];
+        if (sel) sel = sel.$el;
+        if (sel) sel = sel[0];
+        if (sel.scrollIntoView)
+          sel.scrollIntoView();
+      }
+    });
+    var footerHeight = $(".footer").outerHeight() + 4; // adds a bit of padding
+    var divSurround = $(".CodeMirror").first().closest(".tab-pane");
+    var parentBulk = $(divSurround).outerHeight() - $(divSurround).height();
+    var toggleComments = $("#toggle-comments");
+    var toggleCommentsHeight = 0;
+    if (toggleComments.length > 0) {
+      toggleCommentsHeight = toggleComments.first().closest("p").outerHeight(true);
+    }
+    var navBar = $("nav.navbar").first();
+    if (navBar.length > 0) {
+      // Note: this will be overruled in application.scss if the window is resized too narrowly
+      $(".files-sidebar-container").css("top", navBar.outerHeight() + "px");
+    } else {
+      $(".files-sidebar-container").css("top", "0px");
+    }
+    function magnifyImages(index, btn) {
+      var target = document.getElementById($(btn).data("target"));
+      var container = $("#" + root).find("#" + $(btn).data("container") + "_" + root);
+      if (target.naturalHeight > container.height() || target.naturalWidth > container.width()) {
+        $(btn).show();
+      } else {
+        $(btn).hide();
+      }
+    }
+    $(window).resize(function() {
+      var windowHeight = $(window).height();
+      if (vertical) {
+        var navBarHeight = $("#" + root).prev(".navbar").outerHeight(true) || 0;
+        var codeFraction = 0.8;
+        var codeHeight = (windowHeight - footerHeight - navBarHeight) * codeFraction - parentBulk;
+        var filesHeight = (windowHeight - footerHeight - navBarHeight) * (1.0 - codeFraction);
+      } else {
+        var codeHeight = windowHeight - footerHeight - parentBulk;
+        var filesHeight = windowHeight - footerHeight - toggleCommentsHeight;
+      }
+      var tabbar = $("#" + root).find(".nav-tabs").first();
+      var tabbarHeight = 0;
+      if (tabbar.length > 0) { // tabbar may not be visible, so clone it to get its height
+        var clone = tabbar.clone();
+        $(document.body).append(clone);
+        tabbarHeight = clone.outerHeight(true);
+        clone.remove();
+      }
+      var tabpane = $("#" + root).find(".tab-pane").first();
+      var tabpaneBulk = tabpane.outerHeight() - tabpane.height();
+      $("#" + root).find(".CodeMirror").each(function(index, cm) {
+        cm.CodeMirror.setSize(null, codeHeight);
+      });
+      $("#" + root).find(".tab-pane.nested").each(function(index, nested) {
+        $(nested).find(".CodeMirror").each(function(index, cm) {
+          cm.CodeMirror.setSize(null, codeHeight - tabbarHeight - tabpaneBulk);
+        });
+        $(nested).find("iframe, div[id^='iframe_']").height(codeHeight - tabbarHeight - tabpaneBulk);
+      });
+      $("#" + root).find(".nonCMwrapper").height(codeHeight);
+      $("#" + root).find(".files-sidebar .files-treeview").height(filesHeight);
+      $("#" + root).find(".files").height(filesHeight);
+      $("#" + root).find(".magnify-image").each(magnifyImages);
+    });
+    $(window).resize();
+    if (window.fileMap === undefined)
+      window.fileMap = {};
+    if (fileMap[root] === undefined)
+      fileMap[root] = [];
+    if (window.fileTrees === undefined)
+      window.fileTrees = {};
+    window.fileTrees[root] = filesTreeview;
+    filesTreeview.findNodes('', 'href').forEach(function(n, i) {
+      n.href += "_" + root;
+      fileMap[n.href] = n;
+      fileMap[root][i] = n.href;
+    });
+    window.selectTreeviewFileByHref = function(root, href) {
+      if (fileMap[href]) window.fileTrees[root].selectNode(fileMap[href]);
+      return fileMap[href];
+    }
+    window.selectTreeviewFileByIndex = function(root, index) {
+      if (fileMap[root][index] && fileMap[fileMap[root][index]])
+        return fileTrees[root].selectNode(fileMap[fileMap[root][index]]);
+    }
+    if (document.location.hash !== "" && fileMap[document.location.hash] !== undefined) {
+      return selectTreeviewFileByHref(root, document.location.hash);
+    } else {
+      return selectTreeviewFileByIndex(root, 0);
+    }
+  }
+  window.activateFileView = activateFileView;
+
+  function activateFileViewEditing(root, onAllVisited) {
+    var filesTree = $("#" + root + " .files");
+    filesTree.on("nodeChecked", function(e, data) {
+      if (data.href !== undefined && data.href !== "#") {
+        if ($(data.href).find(".CodeMirror").length > 0)
+          $(data.$el).addClass("unvisited");
+        if ($(data.href).find("div[id^='pdf_']").length > 0)
+          $(data.$el).addClass("unvisited");
+        if ($(data.href).find(".pageContainer").length > 0)
+          $(data.$el).addClass("unvisited");
+      } else
+        filesTree.treeview("uncheckNode", data);
+    });
+    filesTree.on("nodeUnchecked", function(e, data) {
+      $(data.$el).removeClass("unvisited");
+      if ($(".unvisited").length === 0) {
+        if (onAllVisited) { onAllVisited(e, "allVisited"); }
+      }      
+    })
+    filesTree.treeview("getCollapsed").map(function(item) {
+      filesTree.treeview("checkNode", item);
+    });
+
+    filesTree.on("nodeSelected", function(e, data) {
+      e.preventDefault();
+      e.stopPropagation();
+      filesTree.treeview("uncheckNode", data);
+    });
+    filesTree.treeview("uncheckNode", filesTree.treeview("getCollapsed")[0]);
+    selectTreeviewFileByIndex(root, 0);
+  }
+  window.activateFileViewEditing = activateFileViewEditing;
+});

@@ -1,33 +1,39 @@
 class Term < ApplicationRecord
+  # For use with querying university rosters: numbers are set by university,
+  # and there are a few other semester types, but we never use them...
+  enum semester: { fall: 10, spring: 30, summer_1: 40, summer: 50, summer_2: 60 }
   has_many :courses, :dependent => :restrict_with_error
 
-  validates :name, :presence => true, :format => { :with => /\d\d/ }
-
+  validates :semester, inclusion: {in: Term.semesters.keys},
+            uniqueness: {
+              scope: :year,
+              message: ->(object, data) do
+                "Terms must be unique, but the semester/year pair <code>#{object.name}</code> already exists"
+              end}
+  
   def self.all_sorted
     terms = Term.all
     terms.sort_by {|tt| tt.canonical_name }.reverse
   end
 
+  def name
+    "#{semester.humanize} #{year}"
+  end
+
   def canonical_name
-    ym   = /\d\d\d\d/.match(name)
-    year = ym.nil? ? nil : ym[0]
-
-    if year.nil? and (ym = /\d\d/.match(name))
-      year = "20#{ym[0]}"
-    end
-
-    if year.nil?
-      raise Exception.new("Cannot canonicalize name")
-    end
-
-    season = "0_Top"
-    season = "1_Winter" if name =~ /winter/i
-    season = "2_Spring" if name =~ /spring/i
-    season = "3_Summer" if name =~ /summer/i
-    season = "4_Fall"   if name =~ /fall/i
+    season = "#{Term.semesters[semester]}_#{semester}"
+    
+    # Fall is part of numerically-next *academic* year
+    effective_year = year
+    effective_year += 1    if Term.semesters[semester] < Term.semesters[:spring]
 
     arch = archived? ? "a" : "z"
 
-    "#{arch} #{year} #{season} #{name}"
+    "#{arch} #{effective_year} #{season} #{name}"
+  end
+
+  def query_code
+    # For use with querying university rosters
+    "#{year}#{Term.semesters[semester]}"
   end
 end

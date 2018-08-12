@@ -7,4 +7,7 @@ class Files < Assignment
   def flattened_questions
     nil
   end
+  def sections
+    nil
+  end
 end

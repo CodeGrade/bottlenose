@@ -1,0 +1,33 @@
+<div id="diff-teamsets" class="tab-pane">
+  <div class="alert alert-info" style="color: black;">
+    <div class="row">
+      <div class="col-md-12" style="display: flex; align-items: center;">
+        <select id="teamset1" style="flex: 5;">
+          <% @assignments_to_teamsets.each do |aid, (aname, tsid)| %>
+          <option value="<%= tsid %>"><%= aname %></option>
+          <% end %>
+        </select>
+        <span class="text-center" style="flex: 2;">with</span>
+        <select id="teamset2" style="flex: 5;">
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <table id="diff-table" class="table col-md-12">
+        <thead>
+          <tr>
+            <th class="col-md-5">Team 1</th>
+            <th class="col-md-2">Student</th>
+            <th class="col-md-5">Team 2</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+</script>

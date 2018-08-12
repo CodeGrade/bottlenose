@@ -5,10 +5,13 @@
   "main": "index.js",
   "dependencies": {
     "codemirror": "latest",
+    "dompurify": "latest",
+    "pdfjs-dist": "latest",
     "pyret-codemirror-mode": "git://github.com/brownplt/pyret-codemirror-mode#master"
   },
   "devDependencies": {
-    "babel-preset-es2015": "^6.24.1"
+    "babel-preset-es2015": "^6.24.1",
+    "webpack": "^3.6.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

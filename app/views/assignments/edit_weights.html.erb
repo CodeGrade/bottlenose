@@ -18,22 +18,31 @@
   <thead>
     <th class="col-sm-4">Assignment Name</th>
     <th>Weight</th>
+    <th></th>
   </thead>
   <tbody>
 <% @course.assignments.order(:due_date).each do |a| %>
     <tr>
       <td><%= label_tag("weight[#{a.id}]", a.name) %></td>
       <td><%= text_field_tag "weight[#{a.id}]", a.points_available,
-      class: "weight form-field numeric" %></td>
+              class: "weight #{if a.extra_credit then 'extra_credit' end} form-field numeric" %></td>
+      <td><%= if a.extra_credit then "(Extra credit)" end %></td>
     </tr>
 <% end %>
    <tr id="total-row" class="alert alert-success">
      <td>Points currently assigned</td>
      <td id="total"></td>
+     <td></td>
    </tr>
    <tr id="remaining-row" class="alert alert-info">
      <td>Remaining points</td>
      <td id="remaining"></td>
+     <td></td>
+   </tr>
+   <tr id="extra-row" class="alert alert-success">
+     <td>Available extra credit points</td>
+     <td id="extra"></td>
+     <td></td>
    </tr>
   </tbody>
 </table>
@@ -43,15 +52,23 @@
 <script type="text/javascript">
 $(function() {
   var weights = $("input.weight");
-  
+  var format = new Intl.NumberFormat('en', {minimumFractionDigits: 1, maximumFractionDigits: 10});
   function refresh() {
     var sum = 0;
+    var extra = 0;
     weights.each(function() {
       var val = Number($(this).val());
-      if (!isNaN(val)) sum += val;
+      if (!isNaN(val)) {
+        $(this).val(format.format(val));
+        if ($(this).hasClass("extra_credit"))
+          extra += val;
+        else
+          sum += val;
+      }
     });
     $("#remaining").text(100 - sum);
     $("#total").text(sum);
+    $("#extra").text(extra);
     if (sum > 100) {
      $("#remaining-row").removeClass("alert-info").addClass("alert-danger");
      $("#total-row").removeClass("alert-success").addClass("alert-danger");

@@ -1,4 +1,4 @@
-<% @page_title = "JUnit Grader" %>
+<% @page_title = @grader.display_type %>
 <% cur_reg = current_user.registration_for(@course)
    cur_reg_staff = cur_reg&.staff? %>
 
@@ -32,7 +32,11 @@
 <pre><%= @grading_output %></pre>
 <% else %>
 <div id="tests">
-  <% @tests.each do |t| %>
+  <% if @grading_header == "Selected test results" && @tests.empty? %>
+  <h4>There is at least one failed test, but this assignment is not
+    going to show you any hints.</h4>
+  <% end %>
+  <% @tests&.each do |t| %>
     <% if t[:passed] %>
       <div class="alert alert-success">
         <p>
@@ -50,7 +54,7 @@
           <% end %>
           <b>Failed:</b> <%= t[:info]["header"] %>
         </p>
-        <p>Message: <code class="text-muted"><%= t[:info]["message"] %></code></p>
+        <p>Message: <code class="text-muted" style="white-space: pre-wrap;"><%= t[:info]["message"] %></code></p>
         <p style="display: inline-block;">Stack:</p>
         <pre><%= t[:info]["stack"].join("\n") %></pre>
       </div>

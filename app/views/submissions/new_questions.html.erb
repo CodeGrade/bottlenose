@@ -1,4 +1,20 @@
 <% @page_title = "New Response: #{@assignment.name}" %>
+<% content_for :wide_content_before do %>
+<%= render "layouts/standard_course_info" %>
+<% if @submission.errors.any? %>
+<div id="error_explanation" class="alert alert-danger">
+  <h2><%= pluralize(@submission.errors.count, "error") %> prohibited
+  this response from being saved:</h2>
+
+  <ul>
+    <% @submission.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+    <% end %>
+  </ul>
+</div>
+<% end %>
+
+<% end %>
 <% content_for :wide_content do %>
 <% sub_id = "newsub" %>
 
@@ -10,31 +26,12 @@
      staff_override = true_user.course_staff?(@course)
      %>
   <%= f.hidden_field :type, value: "QuestionsSub" %>
-<div class="container">
   <%= render "new_common", f: f, type: {noun: "response", verb: "respond", gerund: "responding" },
-      not_following: not_following, allowed: allowed, rate_limit: rate_limit, staff_override: staff_override %>
-</div>
+      not_following: not_following, allowed: allowed,
+      rate_limit: rate_limit, staff_override: staff_override,
+      container_style: "container" do %>
 
 <% if (allowed && not_following && !rate_limit) || staff_override %>
-<% if @assignment.related_assignment_id %>
-<div id="all-files">
-<div class="col-sm-6 files-sidebar-container">
-  <div class="files-sidebar">
-    <div class="files-treeview">
-      <div id="files" class="nav treeview condensed"></div>
-    </div>
-    <div class="tab-content">
-      <%= render "files", sub_files: @submission_files, root: "all-files" %>
-    </div>
-  </div>
-  <script>
-    <%= render "render_comments.js", sub_dirs: @submission_dirs, vertical: true, root: "all-files" %>
-  </script>
-</div>
-</div>
-<% end %>
-
-<% if @assignment.related_assignment_id.nil? %>
 <script>
   $(function() {
   $("textarea.sourceCode").each(function(index, code) {
@@ -51,10 +48,7 @@
   });
   });
 </script>
-<div id="responses" class="form-group container">
-<% else %>
-<div id="responses" class="form-group col-sm-6">
-<% end %>  
+<div class="responses form-group container">
   <% count = 0 %>
   <% @questions.each do |section| %>
     <% section.each do |name, qs| %>
@@ -79,7 +73,7 @@
                       locals: {i: i, sub_id: sub_id, count: count, part_ans: part_ans, part_i: part_i, sub_files: @submission_files} %>
                   <% elsif part["text"] %>
                   <p><%= sanitize_question(part["text"], allow_code: true) %></p>
-                  <textarea class="form-control" rows="5"
+                  <textarea class="form-control optional" rows="5"
                             name="answers[<%= sub_id %>][<%= i + count %>][parts][<%= part_i %>][info]"><%= part_ans&.dig("info") %></textarea>
                   <% elsif part["requiredText"] %>
                   <p><%= sanitize_question(part["requiredText"], allow_code: true) %></p>
@@ -111,8 +105,8 @@
 <div class="container">
 </div>
 <script>
-  <%= render partial: "new_questions.js", locals: {count: (count - 1)} %>
-  var deadline = moment(Date.parse("<%= @assignment.due_date.strftime("%Y/%m/%d %H:%M") %>")).valueOf();
+  <%= render partial: "new_questions.js", locals: {count: count} %>
+  var deadline = moment(Date.parse("<%= @assignment.effective_due_date(current_user, @team).strftime("%Y/%m/%d %H:%M") %>")).valueOf();
   var now = moment().valueOf();
   setTimeout(function() {
     var warning = $("#late-warning");
@@ -124,6 +118,7 @@
     return ensureValidNumericInputOnSubmit(e, "input.numeric:not([disabled])");
   });
 </script>
+<% end %>
 <% end %>
 <% end %>
 <% end %>

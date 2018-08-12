@@ -1,5 +1,41 @@
 module SubmissionsHelper
-  def check_questions_schema(questions, answers, questions_count)
+  class MarkupScrubber < Rails::Html::PermitScrubber
+    PROXY = "https://deliberately.invalid?url="
+    def initialize
+      @attributes = Loofah::HTML5::WhiteList::ALLOWED_ATTRIBUTES
+    end
+    def scrub(node)
+      if (node.name == "script")
+        # allow MathJax "scripts" to go through unchanged
+        if node.attribute_nodes.any?{|attr| attr.name == "type" && attr.value.starts_with?("math/tex")}
+          return node
+        end
+      end
+      # otherwise use typical scrubbing
+      super
+    end
+    def scrub_attribute(node, attr_node)
+      # proxy any URLs we don't like
+      attr_name = if attr_node.namespace
+                    "#{attr_node.namespace.prefix}:#{attr_node.node_name}"
+                  else
+                    attr_node.node_name
+                  end
+      if Loofah::HTML5::WhiteList::ATTR_VAL_IS_URI.include?(attr_name) ||
+         Loofah::HTML5::WhiteList::SVG_ATTR_VAL_ALLOWS_REF.include?(attr_name) ||
+         (Loofah::HTML5::WhiteList::SVG_ALLOW_LOCAL_HREF.include?(node.name) && attr_name == 'xlink:href' && attr_node.value =~ /^\s*[^#\s].*/m) ||
+         (attr_name == 'src' && attr_node.value !~ /[^[:space:]]/)
+        unless attr_node.value.starts_with? "#"
+          if node['title'].nil?
+            node['title'] = "(Was:  #{attr_node.value})"
+          end
+          attr_node.value = PROXY + attr_node.value
+        end
+      end
+      Loofah::HTML5::Scrub.force_correct_attribute_escaping! node
+    end
+  end
+  def check_questions_schema(questions, answers, questions_count, related_files = nil)
     questions.keys.each_with_index do |sub_id, sub_num|
       questions[sub_id].zip(answers[sub_id]).each_with_index do |(q, a), i|
         prefix = "Section #{sub_num + 1}, question #{i + 1}"
@@ -7,29 +43,30 @@ module SubmissionsHelper
           self.errors.add(:base, "#{prefix} is missing an answer")
           next
         end
-        if q["YesNo"]
+        case q["type"]
+        when "YesNo"
           unless ["yes", "no"].member?(a["main"].downcase)
             self.errors.add(:base, "#{prefix} has a non-Yes/No answer")
           end
-        elsif q["TrueFalse"]
+        when"TrueFalse"
           unless ["true", "false"].member?(a["main"].downcase)
             self.errors.add(:base, "#{prefix} has non-true/false answer")
           end
-        elsif q["Numeric"]
+        when "Numeric"
           if !(Float(a["main"]) rescue false)
             self.errors.add(:base, "#{prefix} has a non-numeric answer")
-          elsif Float(a["main"]) < q["Numeric"]["min"] || Float(a["main"]) > q["Numeric"]["max"]
+          elsif Float(a["main"]) < q["min"] || Float(a["main"]) > q["max"]
             self.errors.add(:base, "#{prefix} has a numeric answer outside the valid range")
           end
-        elsif q["MultipleChoice"]
+        when "MultipleChoice"
           if a["main"].nil?
           # nothing, was handled above
           elsif !(Integer(a["main"]) rescue false)
             self.errors.add(:base, "#{prefix} has an invalid multiple-choice answer")
-          elsif a["main"].to_i < 0 || a["main"].to_i >= q[type]["options"].count
+          elsif a["main"].to_i < 0 || a["main"].to_i >= q["options"].count
             self.errors.add(:base, "#{prefix} has an invalid multiple-choice answer")
           end
-        elsif q["Text"]
+        when "Text"
           # nothing
         end
         if q["parts"]
@@ -42,7 +79,7 @@ module SubmissionsHelper
                   if ap["file"].to_s == "<none>"
                   # nothing
                   else
-                    file = @related_files[sub_id.to_i].find{|f| f[:link] == ap["file"].to_s}
+                    file = related_files&.dig(sub_id.to_i)&.find{|f| f[:link] == ap["file"].to_s}
                     line_num = (Integer(ap["line"]) rescue nil)
                     if file.nil? || line_num.nil?
                       self.errors.add(:base, "#{prefix} part #{j + 1} has an invalid code-tag")

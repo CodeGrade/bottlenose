@@ -7,10 +7,10 @@ require 'archive_utils'
 
 class Upload < ApplicationRecord
   def self.MAX_FILES
-    100
+    ArchiveUtils.MAX_FILES
   end
   def self.MAX_SIZE
-    10.megabytes
+    ArchiveUtils.MAX_SIZE
   end
 
   include UploadsHelper
@@ -79,11 +79,14 @@ class Upload < ApplicationRecord
     extracted_path.mkpath
     ArchiveUtils.extract(submission_path.to_s, mimetype, extracted_path.to_s)
     return unless postprocess
+    found_any = false
     Find.find(extracted_path) do |f|
       next unless File.file? f
+      found_any = true
       next if File.extname(f).empty?
       Postprocessor.process(extracted_path, f)
     end
+    Postprocessor.no_files_found(extracted_path) unless found_any
   end
 
   def upload_dir
@@ -126,8 +129,12 @@ class Upload < ApplicationRecord
     end
     effective_mime = metadata[:mimetype] || upload.content_type
 
-    ArchiveUtils.too_many_files?(upload_path, effective_mime, Upload.MAX_FILES)
-    ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
+    unless (metadata.dig(:prof_override, :file_count) rescue false)
+      ArchiveUtils.too_many_files?(upload_path, effective_mime, Upload.MAX_FILES) 
+    end
+    unless (metadata.dig(:prof_override, :file_size) rescue false)
+      ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
+    end
 
     extract_contents!(effective_mime)
 
@@ -138,7 +145,7 @@ class Upload < ApplicationRecord
     begin
       YAML.load(File.open(metadata_path))
     rescue Exception => e
-      Audit.log("Problems reading metadata for #{metadata_path}: #{e}\n")
+      Audit.log("Problems reading metadata for #{metadata_path}: #{e}")
       {}
     end
   end
@@ -153,7 +160,17 @@ class Upload < ApplicationRecord
             broken: (!File.exists?(File.realpath(child)) rescue true)
           }
         elsif child.file?
-          {path: child.basename.to_s, full_path: child, public_link: Upload.upload_path_for(child)}
+          converted_path = Pathname.new(child.to_s.gsub(extracted_path.to_s,
+                                                        extracted_path.dirname.join("converted").to_s))
+          converted_path = converted_path.dirname.join(child.basename(child.extname).to_s + ".pdf")
+          if File.exists?(converted_path)
+            {path: child.basename.to_s,
+             full_path: child,
+             converted_path: Upload.upload_path_for(converted_path),
+             public_link: Upload.upload_path_for(child)}
+          else
+            {path: child.basename.to_s, full_path: child, public_link: Upload.upload_path_for(child)}
+          end
         elsif child.directory?
           {path: child.basename.to_s, children: rec_path(child)}
         end
@@ -180,11 +197,21 @@ class Upload < ApplicationRecord
   end
 
   def self.upload_path_for(p)
-    p.to_s.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files")
+    p = p.to_s
+    if p.starts_with?(Rails.root.to_s)
+      p.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files")
+    else
+      p
+    end
   end
 
   def self.full_path_for(p)
-    Rails.root.join("private").to_s + self.upload_path_for(p)
+    p = p.to_s
+    if p.starts_with?("/files")
+      p.gsub("/files", Rails.root.join("private", "uploads", Rails.env).to_s)
+    else
+      p
+    end
   end
 
   def cleanup!

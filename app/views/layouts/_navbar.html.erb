@@ -18,7 +18,24 @@
              name = current_user.first_name if name.to_s.empty?
              name = current_user.name if name.to_s.empty? %>
           <li><%= link_to name, user_path(current_user), title: "View user profile" %></li>
+          <% active_courses = current_user.active_courses %>
+          <% if active_courses.empty? %>
           <li><%= link_to "Courses", courses_path %></li>
+          <% else %>
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Courses <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <% active_courses.each do |term_name, cs| %>
+              <li class="menu-separator"><span><%= term_name %></span></li>
+              <% cs.each do |c| %>
+              <li><%= link_to c.name, course_path(c) %></li>
+              <% end %>
+              <% end %>
+              <li class="menu-separator"><span style="padding: 0;"></span></li>
+              <li><%= link_to "All courses", courses_path %></li>
+            </ul>
+          </li>
+          <% end %>
         </ul>
       <% end %>
 

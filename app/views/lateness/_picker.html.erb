@@ -1,6 +1,6 @@
 <% default_tab =
      if !within_course
-       "LatePerDayConfig"
+       @course&.lateness_config&.type || "LatePerDayConfig"
      elsif f.object.lateness_config_id.nil? || f.object.lateness_config_id == @course&.lateness_config_id
        'default'
      else
@@ -41,6 +41,7 @@
       <div class="tab-pane" data-tab="default">
         <div class="form-group">
           <%= f.fields_for :lateness_config do |cd| %>
+          <%= cd.hidden_field :id, value: @course&.lateness_config_id %>
           <p>Use course-default lateness policy:</p>
           <p><%= @course.lateness_config.to_s %></p>
           <% end %>
@@ -52,6 +53,7 @@
       <div class="form-group">
         <%= f.fields_for :lateness_config do |lpd| %>
           <%  cfg = lpd.object %>
+          <%= lpd.hidden_field :id, value: (within_course && @course&.lateness_config_id == cfg.id) ? nil : cfg.id %>
           <%= lpd.hidden_field :type, value: "LatePerDayConfig" %>
           <div class="form-inline">
             Deduct
@@ -79,6 +81,7 @@
       <%= f.fields_for :lateness_config do |lph| %>
         <div class="form-group">
           <%  cfg = lph.object %>
+          <%= lph.hidden_field :id, value: (within_course && @course&.lateness_config_id == cfg.id) ? nil : cfg.id %>
           <%= lph.hidden_field :type, value: "LatePerHourConfig" %>
           <div class="form-inline">
             <%= lph.hidden_field "frequency", value: "1" %>
@@ -102,6 +105,7 @@
       <%= f.fields_for :lateness_config do |fd| %>
         <div class="form-group">
           <%  cfg = fd.object %>
+          <%= fd.hidden_field :id, value: (within_course && @course&.lateness_config_id == cfg.id) ? nil : cfg.id %>
           <%= fd.hidden_field :type, value: "FixedDaysConfig" %>
           <div class="form-inline">
             Allow users or teams at most

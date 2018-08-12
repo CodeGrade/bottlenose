@@ -4,22 +4,22 @@
     <% part_ans = @answers&.dig(sub_id.to_s, i + count, "parts", part_i) %>
     <% if part["codeTag"] %>
     <p><%= sanitize_question(part["codeTag"]) %></p>
-    <% if part_ans['file'] == "<none>" %>
+    <% if part_ans&.dig('file') == "<none>" %>
     <span class="btn btn-default btn-sm btn-disabled">&lt;none&gt;</span>
     <% else %>
-    <% sub_file = @submission_files.find{|f| f[:link] == part_ans['file']} %>
+    <% sub_file = @submission_files.find{|f| f[:link] == part_ans&.dig('file')} %>
     <% if sub_file %>
     <span class="btn btn-default btn-sm btn-disabled"
-          data-show-file="<%= ["#{sub_file[:href]}_#{root}", part_ans['line'].to_i] %>">
-      <%= sub_file[:name] %>, line <%= part_ans["line"] %>
+          data-show-file="<%= ["#{sub_file[:href]}_#{root}", part_ans&.dig('line').to_i] %>">
+      <%= sub_file[:name] %>, line <%= part_ans&.dig("line") %>
     </span>
     <% else %>
-    <span class="btn btn-default btn-sm btn-disabled"><%= part_ans['file'].gsub(Regexp.new(".*extracted/?"), "") %> (not found)</span>
+    <span class="btn btn-default btn-sm btn-disabled"><%= part_ans&.dig('file')&.gsub(Regexp.new(".*extracted/?"), "") %> (not found)</span>
     <% end %>
     <% end %>
     <% elsif part["text"] %>
     <p><%= sanitize_question(part["text"]) %></p>
-    <textarea disabled class="form-control" rows="5"
+    <textarea disabled class="form-control optional" rows="5"
               name="answers[<%= sub_id %>][<%= i %>][parts][<%= part_i %>][info]"><%= part_ans&.dig('info') %></textarea>
     <% elsif part["requiredText"] %>
     <p><%= sanitize_question(part["requiredText"]) %></p>

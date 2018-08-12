@@ -1,7 +1,10 @@
 <%= f.hidden_field :type, value: "ManualGrader" %>
 <%= f.hidden_field :order %>
 
-<div class="form-inline">
-  <%= f.label "avail_score", "Points available:" %>
-  <%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %>
-</div>
+<table class="table no-first-row" style="margin-bottom: 0px;">
+  <tr class="form-group">
+    <td class="col-sm-2"><%= f.label "avail_score", "Points available:" %></td>
+    <td class="col-sm-3"><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>
+    <td><%= f.check_box :extra_credit, data: {toggle: "toggle", on: "Extra credit", off: "Regular"} %></td>
+  </tr>
+</table>

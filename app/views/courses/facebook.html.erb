@@ -1,5 +1,6 @@
 <% @page_title = @course.name %>
 <% @sections = @course.sections %>
+<% cur_reg = current_user.registration_for(@course) %>
 
 <style>
   <% @sections.each do |s| %>
@@ -20,19 +21,19 @@
     <% end %>
   </select>
   <span id="emails" class="pull-right show_all">
-    <% all_emails = @students.map{|u| "#{u.name} <#{u.email}>" } %>
+    <% all_emails = @students.reject{|u| u.dropped_date}.map{|u| "#{u.name} <#{u.email}>" } %>
     <span class="btn btn-default btn-large show_all">
       <%= mail_to "#{current_user.name} <#{current_user.email}>",
                   "Email all sections",
-                  bcc: all_emails.join(","), title: "Email everyone (bcc)" %>
+                  bcc: all_emails.join(","), title: "Email everyone currently enrolled (bcc)" %>
     </span>
     <% @sections.each do |s|
        next unless @students_by_section[s.crn]&.length.to_i != 0
-       all_emails = @students_by_section[s.crn].sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>" } %>
+       all_emails = @students_by_section[s.crn].reject{|u| u.dropped_date}.map {|u| "#{u.name} <#{u.email}>" } %>
     <span class="btn btn-default btn-large sec_<%= s.crn %>">
       <%= mail_to "#{current_user.name} <#{current_user.email}>",
                   "Email section #{s.crn}",
-                  bcc: all_emails.join(","), title: "Email everyone in this section (bcc)" %>
+                  bcc: all_emails.join(","), title: "Email everyone currently enrolled in this section (bcc)" %>
     </span>
     <% end %>
   </span>
@@ -44,11 +45,16 @@
   <% @students.each_slice(6) do |row| %>
   <div class="row">
     <% row.each do |s| %>
-    <div class="col-md-2 text-center <%= @sections_by_student[s.reg_id].map{|sec| "sec_#{sec.section_id}"}.join(" ") %>">
+    <div class="col-md-2 text-center <%= @sections_by_student[s.reg_id].map{|sec| "sec_#{@section_crns[sec.section_id]}"}.join(" ") %>">
       <%= image_tag Upload.upload_path_for(s.profile || "silhouette.jpg"), 
           alt: s.display_name, style: "max-height: 200px; max-width: 100%;" %>
+      <% if current_user.site_admin? || cur_reg&.professor? %>
       <p><%= link_to s.display_name, user_path(s) %></p>
-      <% if s.dropped_date %><p>(withdrawn <%= s.dropped_date %>)</p><% end %>
+      <% if s.dropped_date %><p>(withdrawn <span class="local-time"><%= s.dropped_date.iso8601 %></span>)</p><% end %>
+      <% else %>
+      <p><%= s.display_name %></p>
+      <% if s.dropped_date %><p>(withdrawn)</p><% end %>
+      <% end %>
     </div>
     <% end %>
   </div>

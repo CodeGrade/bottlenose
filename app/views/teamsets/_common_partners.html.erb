@@ -1,0 +1,79 @@
+<div id="common-partners" class="tab-pane active">
+  <div class="alert alert-info" style="color: black;">
+    <div class="row">
+      <div class="col-sm-12 text-center">
+        Sort students by
+        <select id="student-sort">
+          <option value="displayname" selected>By first name</option>
+          <option value="lastname">By last name</option>
+        </select>
+      </div>
+      <div class="col-sm-12" id="student-selection" style="display: flex; align-items: center;">
+        <select id="student1" style="flex: 5;">
+          <option value="noone">&lt;No one&gt</option>
+          <% @all_users.each do |uid, u| %>
+          <option value="<%= uid %>"
+                  data-profile="<%= user_image(u) %>"
+                  data-lastname="<%= u.sort_name %>"
+                  data-displayname="<%= u.display_name %>"></option>
+          <% end %>
+        </select>
+        <span class="text-center" style="flex: 2;">with</span>
+        <select id="student2" style="flex: 5;">
+        </select>
+      </div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <h4>Same team</h4>
+      <table id="results1" class="table">
+        <thead>
+          <tr>
+            <th class="col-md-4">Student 1</th>
+            <th class="col-md-4">was in the same team as</th>
+            <th class="col-md-2">Student 2</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-md-12">
+      <h4>One indirect team <small>(green highlighting points towards newer team)</small></h4>
+      <table id="results2" class="table col-md-12">
+        <thead>
+          <tr>
+            <th class="col-md-2">Student 1</th>
+            <th class="col-md-3">was in the same team as</th>
+            <th class="col-md-2">this partner</th>
+            <th class="col-md-3">who was in the same team as</th>
+            <th class="col-md-2">Student 2</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-md-12">
+      <h4>Two indirect teams <small>(green highlighting points towards newer team)</small></h4>
+      <table id="results3" class="table col-md-12">
+        <thead>
+          <tr>
+            <th class="col-md-2">Student 1</th>
+            <th class="col-md-2">was in the same team as</th>
+            <th class="col-md-1">this partner</th>
+            <th class="col-md-2">who was in the same team as</th>
+            <th class="col-md-1">this partner</th>
+            <th class="col-md-2">who was in the same team as</th>
+            <th class="col-md-2">Student 2</th>
+          </tr>
+        </thead>
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+</script>

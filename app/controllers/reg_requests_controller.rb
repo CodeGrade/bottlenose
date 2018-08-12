@@ -3,7 +3,7 @@ class RegRequestsController < ApplicationController
 
   before_action :require_current_user
   before_action :find_course
-  before_action :require_admin_or_prof, only: [:accept, :accept_all, :reject, :reject_all]
+  before_action :require_admin_or_assistant, only: [:accept, :accept_all, :reject, :reject_all]
 
   # GET /courses/:course_id/reg_requests/new
   def new
@@ -16,33 +16,47 @@ class RegRequestsController < ApplicationController
     @reg_request.user = current_user
 
     if @reg_request.save
-      @course.professors.each do |teacher|
-        NotificationMailer.got_reg_request(teacher,
-          @reg_request, root_url).deliver_later
-      end
-
-      redirect_to courses_path, notice: 'A registration request will be sent.'
+      # @course.professors.each do |teacher|
+      #   NotificationMailer.got_reg_request(teacher,
+      #     @reg_request, root_url).deliver_later
+      # end
+      redirect_to courses_path, notice: 'Your registration request has been sent.'
     else
       errors = @reg_request.errors
       @reg_request = @reg_request.dup
       @reg_request.errors.copy!(errors)
-      render :new
+      render :new, status: 400
     end
   end
 
   def accept
-    @request = RegRequest.find(params[:id])
+    @request = RegRequest.find_by(id: params[:id])
+    if @request.nil?
+      redirect_back fallback_location: course_registrations_path(@course),
+                    alert: "No such request"
+      return
+    end
     errs = accept_help(@request)
     if errs
-      redirect_back fallback_location: course_registrations_path(@course), alert: errs
+      redirect_to course_registrations_path(@course), alert: errs
     else
-      redirect_back fallback_location: course_registrations_path(@course)
+      redirect_to course_registrations_path(@course)
     end
   end
 
   def accept_all
+    requests = RegRequest.where(course_id: params[:course_id])
+    if params[:crn]
+      section = @course.sections.find_by(crn: params[:crn])
+      if section.nil?
+        redirect_back fallback_location: course_registrations_path,
+                      alert: "Could not accept requests: Unknown section"
+        return
+      end
+      requests = requests.joins(:reg_request_sections).where('reg_request_sections.section_id': section)
+    end
     count = 0
-    RegRequest.where(course_id: params[:course_id]).each do |req|
+    requests.each do |req|
       errs = accept_help(req)
       if errs
         redirect_back fallback_location: course_registrations_path(@course), alert: errs
@@ -50,8 +64,8 @@ class RegRequestsController < ApplicationController
       end
       count = count + 1
     end
-    redirect_back fallback_location: course_registrations_path(@course),
-                  notice: "#{pluralize(count, 'registration')} added"
+    redirect_to course_registrations_path(@course),
+                notice: "#{pluralize(count, 'registration')} added"
   end
 
   def accept_help(request)
@@ -68,13 +82,31 @@ class RegRequestsController < ApplicationController
   
 
   def reject
-    RegRequest.find(params[:id]).destroy
-    redirect_back fallback_location: course_registrations_path(@course)
+    request = RegRequest.find_by(id: params[:id])
+    if request.nil?
+      redirect_back fallback_location: course_registrations_path(@course),
+                    alert: "No such request"
+      return
+    end
+    request.destroy
+    redirect_to course_registrations_path(@course)
   end
 
   def reject_all
-    RegRequest.where(course_id: params[:course_id]).destroy_all
-    redirect_back fallback_location: course_registrations_path(@course)
+    requests = RegRequest.where(course_id: params[:course_id])
+    if params[:crn]
+      section = @course.sections.find_by(crn: params[:crn])
+      if section.nil?
+        redirect_back fallback_location: course_registrations_path,
+                      alert: "Could not accept requests: Unknown section"
+        return
+      end
+      requests = requests.joins(:reg_request_sections).where('reg_request_sections.section_id': section)
+    end
+    count = requests.count
+    requests.destroy_all
+    redirect_to course_registrations_path(@course),
+                alert: "#{pluralize(count, 'registration request')} deleted"
   end
 
   private

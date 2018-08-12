@@ -1,6 +1,7 @@
 require 'open3'
 require 'tap_parser'
 require 'audit'
+require 'headless'
 
 class CheckerGrader < Grader
   validates :upload, presence: true
@@ -24,7 +25,7 @@ class CheckerGrader < Grader
       filename = "<no file>"
     end
     "#{self.avail_score} points: Run Checker tests in #{test_class} from #{filename}, " +
-      "and show #{errors_to_show} #{'failed test'.pluralize(errors_to_show)}"
+      "and show #{pluralize(errors_to_show, 'failed test')}"
   end
 
   protected
@@ -53,7 +54,7 @@ class CheckerGrader < Grader
     # to.join("src").mkpath
     # to.join("test").mkpath
     
-    if Dir.exists?(from.join("src")) and Dir.exists?(from.join("test"))
+    if Dir.exists?(from.join("src")) && Dir.exists?(from.join("test"))
       Audit.log("#{prefix}From = #{from} and contains src/ and test/")
       # FileUtils.cp_r("#{from.join('src')}/.", "#{to.join('src')}/")
       # FileUtils.cp_r("#{from.join('test')}/.", "#{to.join('test')}/")
@@ -79,54 +80,69 @@ class CheckerGrader < Grader
     File.open(grader_dir.join("checker.tap"), "w") do |checker|
       File.open(grader_dir.join("details.log"), "w") do |details|
         Dir.mktmpdir("grade-#{sub.id}-#{g.id}") do |build_dir|
-        # build_dir = grader_dir.join("build")
-        # build_dir.mkpath
-          Audit.log("#{prefix}: Grading in #{build_dir}")
-          if (Dir.exists?(self.upload.extracted_path.join("starter")) and
-              Dir.exists?(self.upload.extracted_path.join("testing")))
-            copy_srctest_from_to(self.upload.extracted_path.join("starter"), build_dir, prefix)
-          end
-          copy_srctest_from_to(u.extracted_path, build_dir, prefix)
-          FileUtils.cp("#{assets_dir}/tester-2.jar", build_dir)
-          FileUtils.cp("#{assets_dir}/javalib.jar", build_dir)
-          if (Dir.exists?(self.upload.extracted_path.join("starter")) and
-              Dir.exists?(self.upload.extracted_path.join("testing")))
-            copy_srctest_from_to(self.upload.extracted_path.join("testing"), build_dir, prefix)
-          else
-            copy_srctest_from_to(self.upload.extracted_path, build_dir, prefix)
-          end
-          details.write "Contents of temp directory are:\n"
-          output, status = Open3.capture2("ls", "-R", build_dir.to_s)
-          details.write output
+          Headless.ly(display: g.id) do
+          # build_dir = grader_dir.join("build")
+          # build_dir.mkpath
+            Audit.log("#{prefix}: Grading in #{build_dir}")
+            if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
+                Dir.exists?(self.upload.extracted_path.join("testing")))
+              copy_srctest_from_to(self.upload.extracted_path.join("starter"), build_dir, prefix)
+            end
+            copy_srctest_from_to(u.extracted_path, build_dir, prefix)
+            FileUtils.cp("#{assets_dir}/tester-2.jar", build_dir)
+            FileUtils.cp("#{assets_dir}/javalib.jar", build_dir)
+            if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
+                Dir.exists?(self.upload.extracted_path.join("testing")))
+              copy_srctest_from_to(self.upload.extracted_path.join("testing"), build_dir, prefix)
+            else
+              copy_srctest_from_to(self.upload.extracted_path, build_dir, prefix)
+            end
+            details.write "Contents of temp directory are:\n"
+            output, status = Open3.capture2("ls", "-R", build_dir.to_s)
+            details.write output
 
-          classpath = "tester-2.jar:javalib.jar:.:./*"
-          
-          FileUtils.cd(build_dir) do
+            classpath = "tester-2.jar:javalib.jar:.:./*"
+
             any_problems = false
-            Dir.glob("**/*.java").each do |file|
+            Dir.glob("#{build_dir}/**/*.java").each do |file|
               next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
               Audit.log "#{prefix}: Compiling #{file}"
-              comp_out, comp_err, comp_status = Open3.capture3("javac", "-cp", classpath, file, *Dir.glob("*.java"))
+              comp_out, comp_err, comp_status, timed_out =
+                                               ApplicationHelper.capture3("javac", "-cp", classpath, file,
+                                                                          *Dir.glob("#{build_dir}/*.java"),
+                                                                          chdir: build_dir.to_s,
+                                                                          timeout: Grader::DEFAULT_COMPILE_TIMEOUT)
               details.write("Compiling #{file}: (exit status #{comp_status})\n")
               details.write(comp_out)
-              if !comp_status.success?
+              if timed_out
+                details.write("Compiling #{file}: Compilation timed out after #{Grader::DEFAULT_COMPILE_TIMEOUT} seconds\n")
+              end
+              if timed_out || !comp_status&.success?
                 details.write("Errors building student code:\n")
                 details.write(comp_err)
                 Audit.log("#{prefix}: #{file} failed with compilation errors; see details.log")
                 any_problems = true
               end
             end
-            
+
             # details.write "Contents of temp directory are:\n"
             # output, status = Open3.capture2("ls", "-R", build_dir.to_s)
             # details.write output
 
-            Audit.log("#{prefix}: Running Checker")
-            test_out, test_err, test_status =
-                                Open3.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000", "-cp", classpath, "tester.Main", "-secmon", "-tap", "-enforceTimeouts", self.test_class)
+            Audit.log("#{prefix}: Running Checker with timeout of #{Grader::DEFAULT_GRADING_TIMEOUT}")
+            test_out, test_err, test_status, timed_out =
+                                             ApplicationHelper.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000",
+                                                                        "-cp", classpath, "tester.Main",
+                                                                        "-secmon", "-tap", "-enforceTimeouts",
+                                                                        self.test_class,
+                                                                        chdir: build_dir.to_s,
+                                                                        timeout: Grader::DEFAULT_GRADING_TIMEOUT)
             details.write("Checker output: (exit status #{test_status})\n")
             details.write(test_out)
-            if !test_status.success?
+            if timed_out
+              details.write("Running tests timed out after #{Grader::DEFAULT_GRADING_TIMEOUT} seconds")
+            end
+            if timed_out || !test_status&.success?
               details.write("Checker errors:\n")
               details.write(test_err)
               Audit.log("#{prefix}: Checker failed with errors; see details.log")
@@ -148,14 +164,14 @@ class CheckerGrader < Grader
               begin
                 checker.write(test_out)
                 g.grading_output = checker.path
-                
+
                 tap = TapParser.new(test_out)
                 g.score = tap.points_earned
                 g.out_of = tap.points_available
                 g.updated_at = DateTime.now
                 g.available = true
                 g.save!
-                
+
                 Audit.log("#{prefix}: Checker gives raw score of #{g.score} / #{g.out_of}")
                 return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
               rescue Exception
@@ -174,5 +190,10 @@ class CheckerGrader < Grader
       end
     end
     return 0
+  end
+
+  def recompute_grades
+    # nothing to do:
+    # we already compute the score here based on the TAP output
   end
 end

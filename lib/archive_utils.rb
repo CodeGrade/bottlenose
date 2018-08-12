@@ -7,8 +7,28 @@ require 'fileutils'
 TAR_LONGLINK = '././@LongLink'
 
 class ArchiveUtils
+  def self.ARCHIVE_EXTENSIONS
+    # Supported file types
+    known = {
+      tar: true,
+      gz: true,
+      tgz: true,
+      zip: true
+    }
+    # Unsupported file types, taken from https://en.wikipedia.org/wiki/List_of_archive_formats
+    [ "rar", "ar", "cpio", "shar", "lbr", "iso", "mar", "sbx", "bz2", "lz", "lzma", "lzo", "sfark", "sz",
+      "xz", "z", "7z", "s7z", "ace", "afa", "alz", "apk", "arc", "arj", "b1", "b6z", "ba", "bh", "cab",
+      "car", "cfs", "cpt", "dar", "dd", "dgc", "dmg", "ear", "gca", "ha", "hki", "ice", "jar", "kgb",
+      "lzh", "lha", "pak", "partimg", "paq6", "paq7", "paq8", "pea", "pim", "pit", "qda", "rk", "sda",
+      "sea", "sen", "sfx", "shk", "sit", "sitx", "sqx", "uc", "uc0", "uc2", "ucn", "ur2", "ue2", "uca",
+      "uha", "war", "wim", "xar", "xp3", "yz1", "zipx", "zoo", "zpaq", "zz", "ecc", "par", "par2", "rev"
+    ].each do |ext|
+      known[ext] = false
+    end
+    known
+  end
   def self.MAX_FILES
-    400
+    125
   end
   def self.MAX_SIZE
     10.megabytes

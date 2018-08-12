@@ -1,7 +1,8 @@
 <table class="table teamset-table" id="<%= id %>">
   <thead>
     <tr>
-      <th style="width: 0px;"></th>
+      <th style="width: 2.1em;"></th>
+      <th style="width: 2.1em;"></th>
       <th>Members</th>
       <th>Start Date</th>
       <th>End Date</th>
@@ -9,11 +10,23 @@
   </thead>
   <tbody>
     <% teams.each do |team| %>
+      <% sections, hazards = @team_info&.dig(team.id)
+         classes = (sections || []).map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
       <% if team.active? %>
-      <tr class="success">
+      <tr class="<%= classes %> success">
+        <td>
+          <% hazards&.each do |hazard, warning| %>
+          <span class="glyphicon glyphicon-alert <%= hazard %>" title="<%= warning %>"></span>
+          <% end %>
+        </td>
         <td><span class="glyphicon glyphicon-chevron-right" title="Active team"></span></td>
       <% else %>
-      <tr class="inactive">
+      <tr class="<%= classes %> inactive">
+        <td>
+          <% hazards&.each do |hazard, warning| %>
+          <span class="glyphicon glyphicon-alert <%= hazard %>" title="<%= warning %>"></span>
+          <% end %>
+        </td>
         <td></td>
       <% end %>
         <td><%= team %><br><%= team.member_emails %></td>

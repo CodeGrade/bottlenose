@@ -1,3 +1,4 @@
-<% @page_title = "Enter grades: #{@assignment.name}" %>
+<% @page_title = @grader.display_type %>
 
+<h1>Enter exam grades: <%= @assignment.name %></h1>
 <%= render "exam_form" %>

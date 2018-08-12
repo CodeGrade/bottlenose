@@ -1,11 +1,14 @@
 class GraderAllocationsController < ApplicationController
   layout 'course'
 
-  prepend_before_action :find_course_assignment, except: [:stats, :abandon, :delete]
-  prepend_before_action :find_course, only: [:stats, :abandon, :delete]
+  before_action :find_course
+  before_action :find_assignment, except: [:stats, :abandon, :delete]
+  before_action :find_grader, except: [:stats, :abandon, :delete, :abandon_all, :delete_all]
   before_action :require_current_user
-  before_action :require_staff_for_course, except: [:patch, :edit, :update, :abandon, :delete]
-  before_action :require_ta_for_course, only: [:patch, :edit, :update, :abandon, :delete]
+  before_action -> { require_admin_or_staff(course_assignment_path(@course, @assignment)) }, only: [:index]
+  before_action -> { require_admin_or_assistant(course_assignment_path(@course, @assignment)) },
+                only: [:patch, :edit, :update, :abandon, :delete, :abandon_all, :delete_all]
+  before_action -> { require_admin_or_prof(course_path(@course)) }, only: [:stats]
 
   def index
     compute_who_grades
@@ -28,13 +31,13 @@ class GraderAllocationsController < ApplicationController
                             "Please abandon or delete it first.")
       return
     end
-    sub = (params[:submission_id] and Submission.find(params[:submission_id]))
-    if sub.nil? or sub.assignment_id != @assignment.id
+    sub = (params[:submission_id] && Submission.find_by(id: params[:submission_id]))
+    if sub.nil? || (sub.assignment_id != @assignment.id)
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
                     alert: "This submission does not belong to this assignment."
       return
     end
-    who_grades = (params[:who_grades_id] and User.find(params[:who_grades_id]))
+    who_grades = (params[:who_grades_id] && User.find_by(id: params[:who_grades_id]))
     if who_grades.nil?
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
                     alert: "The specified grader does not exist"
@@ -104,8 +107,8 @@ class GraderAllocationsController < ApplicationController
   end
 
   def abandon
-    alloc = GraderAllocation.find(params[:id])
-    if alloc.nil? or alloc.course_id != @course.id
+    alloc = GraderAllocation.find_by(id: params[:id])
+    if alloc.nil? || (alloc.course_id != @course.id)
       redirect_back fallback_location: root_path, alert: "No such grader allocation for this course"
       return
     end
@@ -120,8 +123,8 @@ class GraderAllocationsController < ApplicationController
   end
   
   def delete
-    alloc = GraderAllocation.find(params[:id])
-    if alloc.nil? or alloc.course_id != @course.id
+    alloc = GraderAllocation.find_by(id: params[:id])
+    if alloc.nil? || (alloc.course_id != @course.id)
       redirect_back fallback_location: root_path, alert: "No such grader allocation for this course"
       return
     end
@@ -133,12 +136,37 @@ class GraderAllocationsController < ApplicationController
     end
   end
 
+  def abandon_all
+    allocs = @assignment.grader_allocations.where(grading_completed: nil)
+    if params[:staff]
+      allocs = allocs.where(who_grades_id: params[:staff])
+    end
+    allocs.update_all(abandoned: true, grading_completed: DateTime.now)
+    if params[:config]
+      redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, params[:config])
+    else
+      redirect_back fallback_location: course_assignment_path(@course, @assignment)
+    end
+  end
+  def delete_all
+    allocs = @assignment.grader_allocations.where(grading_completed: nil)
+    if params[:staff]
+      allocs = allocs.where(who_grades_id: params[:staff])
+    end
+    allocs.destroy_all
+    if params[:config]
+      redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, params[:config])
+    else
+      redirect_back fallback_location: course_assignment_path(@course, @assignment)
+    end
+  end
+
   def compute_who_grades
     @allocations =
-      GraderAllocation
-      .where(assignment: @assignment)
-      .joins("INNER JOIN users ON users.id = grader_allocations.who_grades_id")
-      .to_a
+      multi_group_by(GraderAllocation
+                      .where(assignment: @assignment)
+                      .joins("INNER JOIN users ON users.id = grader_allocations.who_grades_id"),
+                     [:who_grades_id, :submission_id], true)
     @grades = 
       # only use submissions that are being used for grading, but this may produce duplicates for team submissions
       # only pick submissions from this course
@@ -171,7 +199,7 @@ class GraderAllocationsController < ApplicationController
     #   .group_by(&:who_grades_id)
     subs_and_graders =
       @used_subs
-      .includes(:users)
+      .includes(:user).includes(team: [:users])
       .joins("LEFT OUTER JOIN grader_allocations ga ON used_subs.submission_id = ga.submission_id")
       .select("submissions.*", "ga.who_grades_id", "ga.abandoned")
     @who_grades = subs_and_graders.group_by(&:who_grades_id)
@@ -185,11 +213,25 @@ class GraderAllocationsController < ApplicationController
         @who_grades[nil].push subs.first
       end
     end
+
+    if @grader
+      unknown = @who_grades[nil]
+      @who_grades[nil] = []
+      grading_guesses = @grader.guess_who_graded unknown
+      if grading_guesses.nil?
+        @who_grades[nil] = unknown
+      else
+        unknown.each do |sub|
+          uid = grading_guesses[sub.id]
+          @who_grades[uid].push sub # pushes back onto @who_grades[nil] if unknown
+        end
+      end
+    end
   end
 
   def stats
     @grader_info = GraderAllocation.where(course: @course).group_by(&:who_grades_id).map do |g, gas|
-      notdone, finished = gas.partition{|ga| ga.abandoned? or ga.grading_completed.nil?}
+      notdone, finished = gas.partition{|ga| ga.abandoned? || ga.grading_completed.nil?}
       abandoned, incomplete = notdone.partition{|ga| ga.abandoned?}
       avg_grading_time = finished.map{|ga| (ga.grading_completed - ga.grading_assigned) / 1.day.seconds }.sum
       if finished.count > 0
@@ -199,50 +241,13 @@ class GraderAllocationsController < ApplicationController
     end.to_h
   end
   
-  def require_admin_or_prof
-    unless current_user_site_admin? || current_user_prof_for?(@course)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "Must be an admin or professor."
-      return
-    end
-  end
-
-  def require_staff_for_course
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "Must be an admin or professor."
-      return
-    end
-  end
-
-  def require_ta_for_course
-    return if current_user_site_admin?
-    reg = current_user&.registration_for(@course)
-    unless reg && (reg.professor? || reg.assistant?)
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "Must be an admin or professor."
-      return
-    end
-  end
-  
-  def find_course_assignment
-    @course = Course.find_by(id: params[:course_id])
-    @assignment = Assignment.find_by(id: params[:assignment_id])
+  def find_grader
     @grader = Grader.find_by(id: params[:grader_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
+    if @grader.nil? || (@grader.assignment_id != @assignment.id)
+      redirect_back fallback_location: course_path(@course), alert: "No such grader for this assignment"
       return
-    end
-    if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
-      return
-    end
-  end
-
-  def find_course
-    @course = Course.find_by(id: params[:course_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
+    elsif @grader.autograde?
+      redirect_back fallback_location: course_path(@course), alert: "That grader is automatic; no allocations needed"
       return
     end
   end

@@ -1,11 +1,21 @@
 require 'tap_parser'
+require 'audit'
 
 class GradesController < ApplicationController
-  prepend_before_action :find_grade
-  prepend_before_action :find_submission, except: [:bulk_edit, :bulk_update]
-  prepend_before_action :find_course_assignment
-  before_action :require_admin_or_staff, except: [:show, :update, :details]
+  before_action :find_course
+  before_action :find_assignment
+  before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
+  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
+  before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
   before_action :require_current_user
+  before_action -> {
+    require_admin_or_staff(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                           : course_assignment_path(@course, @assignment))
+  }, except: [:show, :update, :details, :bulk_edit_curve, :bulk_update_curve]
+  before_action -> {
+    require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                               : course_assignment_path(@course, @assignment))
+  }, only: [:bulk_edit_curve, :bulk_update_curve]
   def edit
     if @grade.grader.autograde?
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
@@ -17,7 +27,7 @@ class GradesController < ApplicationController
   end
 
   def show
-    if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grade.available
+    if !(current_user_site_admin? || current_user_staff_for?(@course)) && !@grade.available
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "That grader is not yet available"
       return
@@ -39,12 +49,20 @@ class GradesController < ApplicationController
     self.send("bulk_update_#{@assignment.type.capitalize}")
   end
 
+  def bulk_edit_curve
+    self.send("bulk_edit_curve_#{@assignment.type.capitalize}")
+  end
+
+  def bulk_update_curve
+    self.send("bulk_update_curve_#{@assignment.type.capitalize}")
+  end
+
   def update
     if current_user_site_admin? || current_user_staff_for?(@course)
       self.send("update_#{@assignment.type.capitalize}")
     else
       respond_to do |f|
-        f.json { render :json => {unauthorized: "Must be an admin or staff"} }
+        f.json { render :json => {unauthorized: "Must be an admin or staff"}, status: 400 }
         f.html {
           redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                         alert: "Must be an admin or staff."
@@ -54,7 +72,7 @@ class GradesController < ApplicationController
   end
 
   def details
-    if !(current_user_site_admin? || current_user_staff_for?(@course)) and !@grade.available
+    if !(current_user_site_admin? || current_user_staff_for?(@course)) && !@grade.available
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "That grader is not yet available"
       return
@@ -80,55 +98,25 @@ class GradesController < ApplicationController
 
   def comments_params
     if params[:comments].is_a? String
-      JSON.parse(params[:comments])
+      comms = JSON.parse(params[:comments])
     else
-      params[:comments]
+      comms = params[:comments]
     end
+    comms.each do |c|
+      if c["file"]
+        c["file"] = Upload.full_path_for(c["file"])
+      end
+    end
+    comms
   end
   def questions_params
     params[:grades].to_unsafe_h.map{|k, v| [k, array_from_hash(v)]}.to_h
   end
-
-  def require_admin_or_staff
-    unless current_user_site_admin? || current_user_staff_for?(@course)
-      msg = "Must be an admin or staff."
-      if @course
-        if @assignment
-          if @submission
-            redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
-                          alert: msg
-          else
-            redirect_back fallback_location: course_assignment_path(@course, @assignment), alert: msg
-          end
-        else
-          redirect_back fallback_location: course_path(@course), alert: msg
-        end
-      else
-          redirect_back fallback_location: root_path, alert: msg
-      end
-      return
-    end
-  end
-
-  def find_course_assignment
-    @course = Course.find_by(id: params[:course_id])
-    @assignment = Assignment.find_by(id: params[:assignment_id])
-    if @course.nil?
-      redirect_back fallback_location: root_path, alert: "No such course"
-      return
-    end
-    if @assignment.nil? or @assignment.course_id != @course.id
-      redirect_back fallback_location: course_path(@course), alert: "No such assignment for this course"
-      return
-    end
-  end
-  def find_submission
-    @submission = Submission.find_by(id: params[:submission_id])
-    if @submission.nil? or @submission.assignment_id != @assignment.id
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: "No such submission for this assignment"
-      return
-    end
+  def curve_params
+    params[:grader].permit(:curveType, :gradeUnit,
+                           :flatPoints, :flatMax,
+                           :linearMapMin, :linearMapMax,
+                           :contrastDegree, :contrastWeight)
   end
 
   def find_grade
@@ -139,11 +127,25 @@ class GradesController < ApplicationController
                                                                         params[:submission_id]),
                   alert: "No such grader"
       return
-    elsif @submission and @grade.submission_id != @submission.id
+    elsif @submission && (@grade.submission_id != @submission.id)
       redirect_to fallback_location: course_assignment_submission_path(params[:course_id],
                                                                        params[:assignment_id],
                                                                        params[:submission_id]),
                   alert: "No such grader for that submission"
+    end
+    @grader = @grade.grader
+  end
+
+  def find_grader
+    @grader = Grader.find_by(id: params[:id])
+    if @grader.nil?
+      redirect_to course_assignment_path(params[:course_id], params[:assignment_id]),
+                  alert: "No such grader"
+      return
+    elsif @grader.assignment_id != @assignment.id
+      redirect_to course_assignment_path(params[:course_id], params[:assignment_id]),
+                  alert: "No such grader for that assignment"
+      return
     end
   end
 
@@ -161,7 +163,10 @@ class GradesController < ApplicationController
     comments = InlineComment.transaction do
       commentable.map do |c| self.send(cp_to_comment, c) end
     end
-    newdata = commentable.zip(comments).map do |c, comm| [c["id"], comm.id] end.to_h
+    newdata = commentable.zip(comments).map do |c, comm|
+      [c["id"],
+       if comm.is_a? InlineComment then comm.id else comm end]
+    end.to_h
     newdata.merge(deleted)
   end
 
@@ -176,11 +181,15 @@ class GradesController < ApplicationController
   end
 
   def mark_grading_allocation_completed
-    alloc = GraderAllocation.find_by(
+    allocs = GraderAllocation.where(
       assignment: @assignment,
       course: @course,
-      submission: @submission)
-    if alloc and alloc.grading_completed.nil?
+      submission: @submission).to_a
+    # there should be at most one grading allocation per user per assignment,
+    # and at most one grading allocation should not be abandoned at any given time
+    # but prefer to find the one for the current user, first
+    alloc = (allocs.find{|a| a.who_grades_id == current_user.id} || allocs.find{|a| !a.abandoned && a.grading_completed.nil?})
+    if alloc && alloc.grading_completed.nil?
       if alloc.who_grades_id != current_user.id
         alloc.abandoned = true
         alloc.grading_completed = DateTime.now
@@ -195,6 +204,16 @@ class GradesController < ApplicationController
       alloc.abandoned = false
       alloc.grading_completed = DateTime.now
       alloc.save
+    elsif alloc.nil?
+      GraderAllocation.create!(
+        abandoned: false,
+        who_grades_id: current_user.id,
+        grading_assigned: @assignment.due_date,
+        grading_completed: DateTime.now,
+        course: @course,
+        assignment: @assignment,
+        submission: @submission
+      )        
     end
   end
 
@@ -208,19 +227,23 @@ class GradesController < ApplicationController
     if c["shouldDelete"]
       comment
     else
-      comment.update(submission_id: params[:submission_id],
-                     label: c["label"],
-                     filename: c["file"],
-                     line: c["line"],
-                     grade_id: @grade.id,
-                     user_id: current_user.id,
-                     severity: c["severity"],
-                     comment: c["comment"],
-                     weight: c["deduction"],
-                     suppressed: false,
-                     title: "",
-                     info: nil)
-      comment
+      begin
+        comment.update!(submission_id: params[:submission_id],
+                        label: c["label"],
+                        filename: c["file"],
+                        line: c["line"],
+                        grade_id: @grade.id,
+                        user_id: current_user.id,
+                        severity: c["severity"],
+                        comment: c["comment"],
+                        weight: c["deduction"],
+                        suppressed: false,
+                        title: "",
+                        info: c["info"])
+        comment
+      rescue Exception => e
+        { id: c["id"], error: e }
+      end
     end
   end
 
@@ -244,7 +267,7 @@ class GradesController < ApplicationController
   # Per-assignment-type actions, by action
   # Bulk editing of grades
   def bulk_edit_Exam
-    edit_exam_grades_for(@course.students)
+    edit_exam_grades_for(@course.students_with_drop_info)
     
     render "edit_#{@assignment.type.underscore}_grades"
   end
@@ -256,13 +279,36 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade editing for that assignment type is not supported"
   end
-
+  def bulk_edit_Codereview
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade editing for that assignment type is not supported"
+  end
+  
+  def bulk_edit_curve_Files
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk curved grade editing for that assignment type is not supported"
+  end
+  def bulk_edit_curve_Questions
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk curved grade editing for that assignment type is not supported"
+  end
+  def bulk_edit_curve_Codereview
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk curved grade editing for that assignment type is not supported"
+  end
+  
   # Bulk updates of grades
   def bulk_update_Exam
     respond_to do |f|
       f.json {
-        if params[:grade_action] == "getGrades"
-          sub = @assignment.used_sub_for(User.find(params[:user_id]))
+        case params[:grade_action]
+        when "getGrades"
+          user = User.find_by(id: params[:user_id])
+          if user.nil?
+            render :json => {"no such user": params[:user_id]}, status: 400
+            return
+          end
+          sub = @assignment.used_sub_for(user)
           if sub
             comments = InlineComment.where(submission_id: sub.id)
             render :json => {grades: (comments.to_a.map do |c| [c.line, c.weight] end.to_h),
@@ -270,9 +316,13 @@ class GradesController < ApplicationController
           else
             render :json => {"none found": true}
           end
-        elsif params[:grade_action] == "setGrades"
-          sub = @assignment.used_sub_for(User.find(params[:user_id]))
-          @grader = @assignment.graders.first # and only config
+        when "setGrades"
+          user = User.find_by(id: params[:user_id])
+          if user.nil?
+            render :json => {"no such user": params[:user_id]}, status: 400
+            return
+          end
+          sub = @assignment.used_sub_for(user)
           config = Grade.find_by(grader_id: @grader.id, submission_id: sub.id) if sub
           if (config && (config.updated_at > Time.parse(params[:timestamp])))
             render :json => {existingTimestamp: config.updated_at, yourTimestamp: params[:timestamp]},
@@ -288,6 +338,115 @@ class GradesController < ApplicationController
       }
     end
   end
+
+  def bulk_edit_curve_Exam
+    edit_exam_grades_for(@course.students_with_drop_info)
+    
+    render "edit_#{@assignment.type.underscore}_curved_grades"
+  end
+  def bulk_update_curve_Exam
+    unless ["Points", "Percent"].member?(curve_params[:gradeUnit])
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "Unknown grade unit #{curve_params[:gradeUnit]} for curve"
+      return
+    end
+    unless ["flat", "linear", "contrast", "clear"].member?(curve_params[:curveType])
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "Unknown curve type #{curve_params[:curveType]}"
+      return
+    end
+    puts "Curving assignment #{@assignment.id} (course #{@course.id}): user #{current_user.name} (id #{current_user.id}), params #{curve_params}"
+    total = @assignment.graders.first.avail_score
+    newCurveCount = 0
+    existingCurveCount = 0
+    prompt = "curved"
+    case curve_params[:curveType]
+    when "flat"
+      added = curve_params[:flatPoints].to_f
+      cap = curve_params[:flatMax].to_f
+      case curve_params[:gradeUnit]
+      when "Points"
+        @assignment.submissions.each do |sub|
+          sub.set_curved_grade(current_user) do |num_questions, grades, curved|
+            if curved
+              existingCurveCount += 1
+              false
+            else
+              newCurveCount += 1
+              score = grades.sum{|c| c[:score]}
+              [cap, score + added].min
+            end
+          end
+        end
+      when "Percent"
+        @assignment.submissions.each do |sub|
+          sub.set_curved_grade(current_user) do |num_questions, grades, curved|
+            if curved
+              existingCurveCount += 1
+              false
+            else
+              newCurveCount += 1
+              score = grades.sum{|c| c[:score]}
+              [total * (cap / 100.0), score + (added / 100.0) * total].min
+            end
+          end
+        end
+      end
+    when "linear"
+      minCurved = curve_params[:linearMapMin].to_f
+      maxCurved = curve_params[:linearMapMax].to_f
+      case curve_params[:gradeUnit]
+      when "Points"
+        slope = (maxCurved - minCurved) / total
+        intercept = minCurved
+      when "Percent"
+        slope = (maxCurved - minCurved) / 100.0
+        intercept = minCurved * (total / 100.0)
+      end
+      @assignment.submissions.each do |sub|
+        sub.set_curved_grade(current_user) do |num_questions, grades, curved|
+          if curved
+            existingCurveCount += 1
+            false
+          else
+            newCurveCount += 1
+            score = grades.sum{|c| c[:score]}
+            slope * score + intercept
+          end
+        end
+      end
+    when "contrast"
+      degree = curve_params[:contrastDegree].to_f
+      weight = curve_params[:contrastWeight].to_f / 100.0
+      @assignment.submissions.each do |sub|
+        sub.set_curved_grade(current_user) do |num_questions, grades, curved|
+          if curved
+            existingCurveCount += 1
+            false
+          else
+            newCurveCount += 1
+            score = grades.sum{|c| c[:score]}
+            scorePct = (score / total)
+            contrast = scorePct ** degree
+            curved = (contrast * weight) + ((1 - weight) * scorePct)
+            curved * total
+          end
+        end
+      end
+    when "clear"
+      prompt = "uncurved"
+      @assignment.submissions.each do |sub|
+        newCurveCount += 1
+        sub.set_curved_grade(current_user, nil)
+      end
+    end
+    notice = "#{pluralize(newCurveCount, 'exam grade')} #{prompt}"
+    if existingCurveCount > 0
+      notice += " (#{pluralize(existingCurveCount, 'exam grade')} already curved)"
+    end
+    redirect_to course_assignment_path(@course, @assignment), notice: notice
+  end
+  
   def bulk_update_Files
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade updating for that assignment type is not supported"
@@ -297,6 +456,18 @@ class GradesController < ApplicationController
                   alert: "Bulk grade updating for that assignment type is not supported"
   end
   def bulk_update_Codereview
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
+  end
+  def bulk_update_curve_Files
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
+  end
+  def bulk_update_curve_Questions
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk grade updating for that assignment type is not supported"
+  end
+  def bulk_update_curve_Codereview
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade updating for that assignment type is not supported"
   end
@@ -314,7 +485,7 @@ class GradesController < ApplicationController
     end
   end
   def update_Questions
-    missing, qp = questions_params[@submission.id.to_s].partition{|q| q["score"].nil? or q["score"].empty? }
+    missing, qp = questions_params[@submission.id.to_s].partition{|q| q["score"].nil? || q["score"].empty? }
     missing = missing.map{|q| q["index"].to_i + 1}
 
     save_all_comments(qp, :question_to_inlinecomment)
@@ -324,11 +495,17 @@ class GradesController < ApplicationController
                   notice: "Comments saved; grading completed"
     else
       if missing.count > 1
-        msg = "Questions #{missing.join(', ')} do not have grades"
+        @grade.errors.add(:base, "Questions #{missing.to_sentence} do not have grades")
       else
-        msg = "Question #{missing[0]} does not have a grade"
+        @grade.errors.add(:base, "Question #{missing[0]} does not have a grade")
       end
-      redirect_to :back, alert: msg
+      setup_QuestionsGrader
+      @grades = [["grader", @current_user.name],
+                 [@submission.id.to_s,
+                  questions_params[@submission.id.to_s].map{|q| [q.delete("index").to_i, q]}.to_h]].to_h
+      @show_grades = true
+      render "edit_QuestionsGrader", status: 400
+      return
     end
   end
   def update_Codereview
@@ -341,16 +518,18 @@ class GradesController < ApplicationController
       end
       v
     end.flatten
-    missing, qp = flat_responses.partition{|q| q["score"].nil? or q["score"].empty? }
+    missing, qp = flat_responses.partition{|q| q["score"].nil? || q["score"].empty? }
     missing = missing.map{|q| q["index"].to_i + 1}
 
     if !missing.empty?
       if missing.count > 1
-        msg = "Questions #{missing.join(', ')} do not have grades"
+        @grade.errors.add(:base, "Questions #{missing.to_sentence} do not have grades")
       else
-        msg = "Question #{missing[0]} does not have a grade"
+        @grade.errors.add(:base, "Question #{missing[0]} does not have a grade")
       end
-      redirect_to :back, alert: msg
+      setup_CodereviewGrader
+      @grades = questions_params
+      render "edit_CodereviewGrader", status: 400
       return
     end
 
@@ -391,9 +570,9 @@ class GradesController < ApplicationController
   ###################################
   # Grader responses, by grader type
 
-  def show_inline_comment_grader(type)
-    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, type)
-    @commentType = type
+  def show_inline_comment_grader
+    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, @grade.id)
+    @commentsFrom = @grade.id
     if @grade.grading_output
       begin
         @grading_output = File.read(@grade.grading_output)
@@ -414,7 +593,7 @@ class GradesController < ApplicationController
     @sub_comments = @submission.grade_submission_comments(current_user.site_admin? || cur_reg.staff?)
     if @sub_comments.empty? && (@tests.nil? || @tests.count != num_comments)
       @error_header = <<HEADER.html_safe
-<p>There seems to be a problem displaying the style-checker's feedback on this submission.</p>
+<p>There seems to be a problem displaying the #{@grade.grader.type.humanize}'s feedback on this submission.</p>
 <p>Please email the professor, with the following information:</p>
 <ul>
 <li>Course: #{@course.id}</li>
@@ -422,6 +601,7 @@ class GradesController < ApplicationController
 <li>Submission: #{@submission.id}</li>
 <li>Grader: #{@grade.id}</li>
 <li>User: #{current_user.name} (#{current_user.id})</li>
+<li>Reason: #{if @sub_comments.empty? then "No comments" else "Wrong test count" end}</li>
 </li>
 HEADER
     end
@@ -430,7 +610,7 @@ HEADER
   
   # JavaStyleGrader
   def show_JavaStyleGrader
-    show_inline_comment_grader "JavaStyleGrader"
+    show_inline_comment_grader
   end
   def edit_JavaStyleGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -501,14 +681,14 @@ HEADER
     end
 
     if current_user_site_admin? || current_user_staff_for?(@course)
-      if @grading_output.kind_of?(String)
+      if @grading_output.nil? || @grading_output.kind_of?(String)
         @grading_header = "Errors running tests"
       else
         @grading_header = "All test results"
         @tests = @grading_output.tests
       end
     else
-      if @grading_output.kind_of?(String)
+      if @grading_output.nil? || @grading_output.kind_of?(String)
         @grading_header = "Errors running tests"
       elsif @grading_output.passed_count == @grading_output.test_count
         @grading_header = "All tests passed"
@@ -526,7 +706,7 @@ HEADER
 
   # RacketStyleGrader
   def show_RacketStyleGrader
-    show_inline_comment_grader "RacketStyleGrader"
+    show_inline_comment_grader
   end
   def edit_RacketStyleGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -537,6 +717,11 @@ HEADER
 
   # QuestionsGrader
   def edit_QuestionsGrader
+    setup_QuestionsGrader
+    @show_grades = true
+    render "edit_QuestionsGrader"
+  end
+  def setup_QuestionsGrader
     @questions = @assignment.questions
     @answers = YAML.load(File.open(@submission.upload.submission_path))
     @answers = [[@submission.id.to_s, @answers]].to_h
@@ -561,10 +746,7 @@ HEADER
     @grades = @grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
     @grades = [["grader", (@grades&.first&.user&.name || @current_user.name)],
                [@submission.id.to_s,
-                @grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
-    
-    @show_grades = true
-    render "edit_QuestionsGrader"
+                @grades.map{|g| [g.line, [["score", g.weight], ["comment", g.comment]].to_h]}.to_h]].to_h
   end
   def show_QuestionsGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -575,6 +757,10 @@ HEADER
 
   # CodereviewGrader
   def edit_CodereviewGrader
+    setup_CodereviewGrader
+    render "edit_CodereviewGrader"
+  end
+  def setup_CodereviewGrader
     @questions = @assignment.questions
     @num_questions = @assignment.flattened_questions.count
     @answers = YAML.load(File.open(@submission.upload.submission_path))
@@ -584,7 +770,7 @@ HEADER
     @submission_info = @related_subs.map do |sub, answers|
       d, f = sub.get_submission_files(current_user)
       @answers_are_newer << (sub.created_at < @submission.created_at)
-      [d, f, sub.id]
+      [d, f, sub.id, sub.team&.to_s, sub.user.display_name]
     end
 
     if @grade.grading_output
@@ -594,7 +780,6 @@ HEADER
       @grades = {}
     end
     @show_grades = true
-    render "edit_CodereviewGrader"
   end
   def show_CodereviewGrader
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
@@ -611,21 +796,26 @@ HEADER
     render "edit_ManualGrader"
   end
   def show_ManualGrader
-    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, nil, "ManualGrader")
-    @commentType = "ManualGrader"
+    show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
+    @lineCommentsByFile = @submission.grade_line_comments(current_user, show_hidden)
+    @sub_comments = @submission.grade_submission_comments(show_hidden)
+    @submission_dirs, @submission_files = @submission.get_submission_files(current_user, @lineCommentsByFile, @grade.id)
+    @commentsFrom = @grade.id
     @grading_output = @grade
     render "submissions/details_files"
   end
   def details_ManualGrader
-    GradesController.pretty_print_comments(@grade.inline_comments)
+    show_hidden = (current_user_site_admin? || current_user_staff_for?(@course))
+    if show_hidden || @grade.available?
+      GradesController.pretty_print_comments(@grade.inline_comments)
+    else
+      GradesController.pretty_print_comments([])
+    end
   end
 
   # ExamGrader
   def edit_ExamGrader
-    edit_exam_grades_for(User
-                          .where(id: @submission.user_id)
-                          .joins(:registrations)
-                          .where("registrations.course_id": @course.id))
+    edit_exam_grades_for(@course.users_with_drop_info([@submission.user]))
     render "edit_ExamGrader"
   end
   def show_ExamGrader
@@ -676,7 +866,7 @@ HEADER
 
     render "show_SandboxGrader"
   end
-  def details_SanboxGrader
+  def details_SandboxGrader
     @grade.notes
   end
 
@@ -684,10 +874,11 @@ HEADER
   ##############################
   def edit_exam_grades_for(students)
     # NOTE: students must be joined to the registrations table already, to provide section information
-    @student_info = students.select(:username, :last_name, :first_name, :nickname, :id)
-    @students_by_section = @course.students_with_registrations.select(:id, "registration_sections.section_id AS crn").group_by(&:id)
+    @student_info = students.select(:username, :last_name, :first_name, :nickname, :nuid, :id)
+    @sections_by_student = @course.users_with_registrations(students).select(:id, "sections.crn AS crn").group_by(&:id)
     @used_subs = @assignment.used_submissions
-    @grade_comments = InlineComment.where(submission_id: @used_subs.map(&:id)).group_by(&:submission_id)
+    @grade_comments = multi_group_by(InlineComment.where(submission_id: @used_subs.map(&:id)),
+                                     [:submission_id, :line], true)
   end
 
   def update_exam_grades
@@ -716,24 +907,7 @@ HEADER
       grades = all_grades[student.id]
       flattened = @assignment.flattened_questions
       grades.each_with_index do |g, q_num|
-        comment = InlineComment.find_or_initialize_by(submission_id: @sub.id, grade_id: @grade.id, line: q_num)
-        if g.to_s.empty?
-          if comment.new_record?
-            next # no need to save blanks
-          else
-            comment.delete
-          end
-        else
-          comment.update(label: "Exam question",
-                         filename: @assignment.name,
-                         severity: InlineComment.severities["info"],
-                         user_id: current_user.id,
-                         weight: g,
-                         comment: "",
-                         suppressed: false,
-                         title: "",
-                         info: nil)
-        end
+        @sub.grade_question!(current_user, q_num, g)
       end
       @grader.expect_num_questions(flattened.count)
       @grader.grade(@assignment, @sub)

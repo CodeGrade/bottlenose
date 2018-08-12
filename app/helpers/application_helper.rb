@@ -94,12 +94,14 @@ module ApplicationHelper
     end
   end
 
+  def user_image(user)
+    image_path(Upload.upload_path_for(user.profile || 'silhouette.jpg'))
+  end
   def user_link_data(user)
     {
       toggle: "tooltip",
       delay: {show:0, hide: 250},
-      title: "#{image_tag(Upload.upload_path_for(user.profile || 'silhouette.jpg'), 
-                          alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
+      title: "#{image_tag(user_image(user), alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
     }
   end
   def show_user(user)
@@ -107,7 +109,7 @@ module ApplicationHelper
   end
   def maybe_link_user(show, user)
     if show
-      link_to(user.name, user_path(user), class: "user-link", data: user_link_data(user))
+      link_to(user.display_name, user_path(user), class: "user-link", data: user_link_data(user))
     else
       content_tag :span, user.name, class: "user-link", data: user_link_data(user)
     end
@@ -126,7 +128,7 @@ module ApplicationHelper
                   " - ",
                   team.users.sort_by(&:sort_name).map do |u|
                     maybe_link_user(show_user, u).html_safe
-                  end.join(", ")
+                  end.to_sentence
                 ].flatten.join("\n").html_safe)
   end
   
@@ -156,10 +158,38 @@ module ApplicationHelper
     sanitize(html, options)
   end
 
+  def self.capture3(*cmd, stdin_data: '', binmode: false, timeout: nil, signal: :TERM, **opts)
+    Open3.popen3(*cmd, opts) do |i, o, e, t|
+      if binmode
+        i.binmode
+        o.binmode
+        e.binmode
+      end
+      out_reader = Thread.new { o.read }
+      err_reader = Thread.new { e.read }
+      begin
+        i.write stdin_data
+      rescue Errno::EPIPE
+      end
+      i.close
+      timed_out = false
+      if timeout
+        if !t.join(timeout)
+          timed_out = true
+          Process.kill(signal, t.pid)
+          # t.value below will implicitly .wait on the process
+        end
+      end
+      [out_reader.value, err_reader.value, t.value, timed_out]
+    end
+  end
+
   def self.mime_type(full_path)
     case File.extname(full_path).downcase
     when ".java"
       "text/x-java"
+    when ".class"
+      "application/java-vm"
     when ".js"
       "text/javascript"
     when ".arr"
@@ -168,6 +198,8 @@ module ApplicationHelper
       "scheme"
     when ".ml", ".mli"
       "mllike"
+    when ".md"
+      "text/markdown"
     when ".mly"
       "text/x-ebnf"
     when ".c", ".h"
@@ -176,20 +208,81 @@ module ApplicationHelper
       "text/x-c++src"
     when ".cs"
       "text/x-csharp"
-    when ".jpg", ".jpeg", ".png"
-      "image"
+    when ".gif"
+      "image/gif"
+    when ".jpg", ".jpeg"
+      "image/jpeg"
+    when ".png"
+      "image/png"
+    when ".tiff"
+      "image/tiff"
+    when ".webp"
+      "image/webp"
     when ".jar"
       "jar"
     when ".zip"
       "zip"
-    when ".tap"
+    when ".7z"
+      "application/x-7z-compressed"
+    when ".svg", ".xml"
+      "application/xml"
+    when ".html"
+      "text/html"
+    when ".css"
+      "text/css"
+    when ".tap", ".txt"
       "text/plain"
+    when ".pdf"
+      "application/pdf"
+    when ".rtf"
+      "application/rtf"
+    when ".mp3"
+      "audio/mpeg"
     else
       if File.basename(full_path.to_s) == "Makefile"
         "text/x-makefile"
       else
         "text/unknown"
       end
+    end
+  end
+  def self.binary?(mimetype)
+    # NOTE: The mimetypes here must match the ones produced by mime_type above
+    # NOTE: text/unknown is treated as binary, so that (a) browsers won't try to execute it,
+    # but (b) it won't be forced to UTF-8 in Submission#get_submission_files
+    case mimetype
+    when "text/x-java",
+         "text/javascript",
+         "pyret",
+         "scheme",
+         "mllike",
+         "text/markdown",
+         "text/x-ebnf",
+         "text/x-csrc",
+         "text/x-c++src",
+         "text/x-csharp",
+         "application/xml",
+         "text/html",
+         "text/css",
+         "text/plain",
+         "text/x-makefile"
+      false
+    when "application/java-vm",
+         "image/gif",
+         "image/jpeg",
+         "image/png",
+         "image/tiff",
+         "image/webp",
+         "jar",
+         "zip",
+         "application/x-7z-compressed",
+         "application/pdf",
+         "application/rtf",
+         "audio/mpeg",
+         "text/unknown"
+      true
+    else
+      true
     end
   end
 end

@@ -4,22 +4,35 @@
       <h2><%= pluralize(@term.errors.count, "error") %> prohibited this term from being saved:</h2>
 
       <ul>
-      <% @term.errors.full_messages.each do |msg| %>
-        <li><%= msg %></li>
+      <% @term.errors.messages.each do |attr, msgs| %>
+        <% msgs.each do |msg| %>
+        <li><%= if (attr == :semester) then msg.html_safe else full_message(attr, msg) end %></li>
+        <% end %>
       <% end %>
       </ul>
     </div>
   <% end %>
 
   <div class="form-group">
-    <%= f.label :name %><br />
-    <%= f.text_field :name, class: 'form-control' %>
+    <%= f.label :semester %>
+    <table style="display: inline-block; vertical-align: middle;">
+      <tr>
+        <td><%= f.select :semester, Term.semesters.map{|name, _| [name.humanize, name]},
+                selected: @term.semester %></td>
+        <td><%= f.spinner :year, @term.year, min: Date.today.year - 10, max: Date.today.year + 10 %></td>
+      </tr>
+    </table>
   </div>
   <div class="form-group">
     <%= f.label :archived %>
-    <%= f.check_box :archived %>
+    <%= f.check_box :archived, class: 'form-control', data: {toggle: "toggle", on: "Yes", off: "No"} %>
   </div>
   <div class="form-group">
     <%= f.submit nil, class: 'btn btn-primary' %>
   </div>
 <% end %>
+<script>
+  $(function() {
+    $('.spinner').each(function() { activateSpinner(this) });
+  });
+</script>

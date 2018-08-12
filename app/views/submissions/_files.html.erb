@@ -1,6 +1,32 @@
+<%= javascript_include_tag "pdfjs-dist/build/pdf.min.js" %>
+<%= javascript_include_tag "pdfjs-dist/web/pdf_viewer.js" %>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  extensions: ["tex2jax.js"],
+  jax: ["input/TeX", "output/HTML-CSS"],
+  tex2jax: {
+    inlineMath: [ ["$","$"], ["\\(","\\)"] ],
+    displayMath: [ ["$$","$$"], 
+                   ["\\[","\\]"], 
+                   ["\\begin{equation}","\\end{equation}"], 
+                   ["\\begin{equation*}","\\end{equation*}"] ],
+    processEscapes: false,
+    ignoreClass: "tex2jax_ignore"
+  },
+  "HTML-CSS": {
+    availableFonts: [],
+    webFont: "Asana-Math",
+    preferredFont: "Asana-Math",
+    imageFont: null,
+    mtexFontInherit: true
+  }
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 <style>
 .embed-replaced { vertical-align: baseline; display: inline-block; }
 .embed-image { }
+.embed-empty { vertical-align: middle; border: 2px solid red; }
 .embed-comment { border: 1px solid black; margin: 2px; position: relative; padding-left: 1em; }
 .embed-comment::before { content: "\003B"; font-size: 150%; top: -0.25em; left: 0; position: absolute; color: black; }
 .embed-text { border: 1px solid black; margin: 2px; position: relative; padding-top: 1em;}
@@ -11,22 +37,159 @@
 .embed-splice::after { content: ",@"; font-size: 100%; top: 0; right: 0; position: absolute; color: blue; }
 .embed-xml { border: 1px solid green; margin: 2px; position: relative; padding-top: 1em; }
 .embed-xml::after { content: "\2039\203A"; font-size: 150%; top: -0.25em; right: 0; position: absolute; color: green; }
+
+.flexV, .nested-tabs {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.flexV > .warningContent + *, .nested-tabs > ul + * {
+  flex: 1;
+  overflow-y: scroll;
+}
+
+div.pdfDisplay {
+  width: 100%; height: 100%;
+  background-color: #404040;
+  display: flex; flex-direction: column;
+  background-image: url(<%= asset_path("pdfjs-dist/web/images/texture.png") %>);
+  text-align: center;
+}
+div.pdfPages {
+  overflow: scroll;
+  flex: 1;
+}
+div.pdfPages > div.pageContainer {
+  margin: 1em;
+  display: block;
+  position: relative;
+}
+div.pdfPages > div.pageContainer > div.regionComments,
+div.pdfPages > div.pageContainer > div.pageComments {
+  background: transparent;
+  display: block;
+  position: relative;
+  text-align: center;
+}
+div.pdfPages > div.pageContainer > div.regionComments > div.page {
+  border: 1px solid black;
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+}
 </style>
 <% sub_files.each_with_index do |f, i| %>
 <% index = (i + 1).to_s.rjust(sub_files.count.to_s.length, '0') %>
 <div class="file-pane tab-pane panel-tab-pane <%= if i == 0; 'active' end %>" id="file_<%= index %>_<%= root %>">
-  <% if f[:type] == "image" %>
+  <% if (f[:type].starts_with?("image")) %>
   <div class="nonCMwrapper" style="position: relative; display: inline-block;">
     <%= image_tag f[:link], id: "image_#{index}", alt: f[:name], style: "max-width: 100%; max-height: 100%;",
         skip_pipeline: true %>
-    <a href="<%= f[:link] %>_<%= root %>" target="_blank"
+    <a href="<%= f[:link] %>" target="_blank"
        class="magnify-image btn btn-default" data-target="image_<%= index %>" data-container="file_<%= index %>"
        style="position: absolute; display: block; float: right; right: 0; top: 0; font-size: 300%;">
       <i class="glyphicon glyphicon-zoom-in"></i>
     </a>
   </div>
-  <% elsif f[:type] == "zip" || f[:type] == "jar" || f[:link] =~ /pdf$/i %>
-  <div class="nonCMwrapper"><%= link_to "Download #{f[:name]}", f[:link] %></div>
+  <% elsif (f[:pdf_path] || (f[:type] == "application/pdf" && f[:contents].starts_with?("%PDF"))) %>
+  <div class="nonCMwrapper" style="display: inline-block; width: 100%; overflow: hidden;">
+    <%= render "submissions/pdf_viewer", index: index, url: f[:link], source: f[:pdf_path], alt: File.basename(f[:name]) %>
+  </div>
+  <% elsif (f[:type] == "text/markdown") %>
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#markup_src_<%= i %>_<%= root %>" data-toggle="tab">Markdown source</a></li>
+    <li id="tab_markdown_<%= i %>_<%= root %>"><a href="#markup_markdown_<%= i %>_<%= root %>" data-toggle="tab">Markdown preview<sup>β</sup> (links, scripts disabled)</a></li>
+    <li><%= link_to "Download #{File.basename(f[:name])}", f[:link] %></li>
+  </ul>
+  <div class="tab-content" style="height: 100%;">
+    <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">
+      <div>
+        <textarea class="sourceCode" data-lang="markdown"
+                  data-source="<%= f[:link] %>"
+                  id="contents_<%= i %>_<%= root %>"><%= render html: f[:contents] %></textarea>
+      </div>
+    </div>
+    <div id="markup_markdown_<%= i %>_<%= root %>" class="tab-pane nested" style="position: relative;">
+      <div id="iframe_<%= i %>_<%= root %>" style="border: 0px; width: 100%; height: 100%; overflow: scroll;">
+        <%= content = Kramdown::Document.new(f[:contents], input: 'GFM',
+                                            hard_wrap: false,
+                                            math_engine_opts: {preview: true, preview_as_code: true})
+            sanitize(content.to_html, scrubber: SubmissionsHelper::MarkupScrubber.new) %>
+      </div>
+    </div>
+  </div>
+  <% elsif (f[:type] == "application/xml") || (f[:type] == "text/html") %>
+  <% begin
+     contents = render html: f[:contents]
+     type = if (f[:name].ends_with? ".svg") then "SVG"
+            elsif (f[:name].ends_with? ".html") then "HTML"
+            else "XML" end %>
+  <ul class="nav nav-tabs">
+    <li class="active"><a href="#markup_src_<%= i %>_<%= root %>" data-toggle="tab"><%= type %> source</a></li>
+    <li id="tab_image_<%= i %>_<%= root %>"><a href="#markup_image_<%= i %>_<%= root %>" data-toggle="tab"><%= type %> preview (scripts disabled)</a></li>
+    <li><%= link_to "Download #{File.basename(f[:name])}", f[:link] %></li>
+  </ul>
+  <div class="tab-content" style="height: 100%;">
+    <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">
+      <div>
+        <textarea class="sourceCode" data-lang="<%= f[:type] %>"
+                  data-source="<%= f[:link] %>"
+                  id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
+      </div>
+    </div>
+    <div id="markup_image_<%= i %>_<%= root %>" class="tab-pane nested" style="position: relative;">
+      <div style="position: absolute; z-index: 1; box-sizing: border-box; top: 0; bottom: 0; left: 0; right: 0;">
+      </div>
+      <iframe id="iframe_<%= i %>_<%= root %>"
+              sandbox="allow-same-origin" style="border: 0px; width: 100%; height: 100%;">
+      </iframe>
+      <script>
+        (function() {
+          var iframe = document.getElementById("iframe_<%= i %>_<%= root %>");
+          var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          var purified = purifyMarkup(document.getElementById("contents_<%= i %>_<%= root %>").value);
+          iframeDoc.open();
+          iframeDoc.write(purified.contents);
+          iframeDoc.close();
+          iframe.previousElementSibling.addEventListener("click", function() {
+            alert("Clicking is disabled on active content.\n" +
+                  "Download the file and load it in a different browser for safety.");
+            return;
+          });
+          document.getElementById("tab_image_<%= i %>_<%= root %>").addEventListener('click', function() {
+            var svg = iframe.contentDocument.getElementsByTagName("svg")[0];
+            if (svg && svg.setCurrentTime) { svg.setCurrentTime(0); }
+          }, true);
+        })();
+      </script>
+    </div>
+  </div>
+  <% rescue Exception => err %>
+  <div class="nonCMwrapper flexV">
+    <div class="warningContent">
+    <p>Could not render <%= f[:name] %></p>
+    <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+    <p><%= err %></p>
+    </div>
+  </div>
+  <% end %>
+  <% elsif f[:type] == "audio/mpeg" %>
+  <div class="nonCMwrapper flexV">
+    <audio controls>
+      <source src="<%= f[:link] %>" type="audio/mpeg">
+      <div class="warningContent">
+        <p>Could not render <%= f[:name] %></p>
+        <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+      </div>        
+    </audio>
+    <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+  </div>
+  <% elsif ApplicationHelper::binary?(f[:type]) %>
+  <div class="nonCMwrapper flexV">
+    <div class="warningContent" data-source="<%= f[:link] %>">
+    <%= link_to "Download #{f[:name]}", f[:link] %>
+    </div>
+  </div>
   <% elsif f[:type] == "symlink" %>
   <div class="nonCMwrapper">Symbolic link to
     <% if f[:broken] %>
@@ -35,23 +198,42 @@
     <%= link_to f[:link_to], f[:link_href], class: "symlink-jump", data: {root: root} %>
     <% end %>
   </div>
+  <% elsif f[:contents].lines.length > 10000 %>
+  <div class="nonCMwrapper flexV">
+    <div class="warningContent" data-source="<%= f[:link] %>">
+    <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
+    <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+    </div>
+  </div>  
   <% else %>
   <% begin
+       raise "" if (f[:name].ends_with?(".class") && f[:contents].starts_with?("\xCA\xFE\xBA\xBE"))
        contents = render html: f[:contents] %>
   <div>
     <textarea class="sourceCode" data-lang="<%= f[:type] %>"
               data-source="<%= f[:link] %>"
               id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
   </div>
-  <% rescue Exception %>
-  <div class="nonCMwrapper">
+  <% rescue Exception => err %>
+  <div class="nonCMwrapper flexV">
+    <div class="warningContent" data-source="<%= f[:link] %>">
     <p>Could not render <%= f[:name] %></p>
     <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+    <p><%= err %></p>
+    </div>
   </div>
   <% end %>
   <% end %>
 </div>
 <% end %>
+<div id="selectionWrapperWrapper" class="hidden">
+  <div id="selectionWrapper">
+    <div id="translateWrapper"></div>
+  </div>
+</div>
 <script>
+  <%= render 'submissions/comment_edit_widgets.js.erb' %>
   <%= render 'submissions/render_embedded_images.js' %>
+  <%= render 'submissions/render_pdfs.js' %>
+  $(function() { $("div[id^='pdf_']").pdfViewer(); });
 </script>

@@ -68,7 +68,7 @@ class Course < ApplicationRecord
 
   def registered_by?(user, as: nil)
     return false if user.nil?
-    registration = Registration.find_by_course_id_and_user_id(self.id, user.id)
+    registration = Registration.find_by(course_id: self.id, user_id: user.id)
     return false if registration.nil?
     if as
       as == registration.role
@@ -81,43 +81,56 @@ class Course < ApplicationRecord
     registrations.where(show_in_lists: true).joins(:user).order("users.last_name", "users.first_name")
   end
 
-  def students
-    users.where("registrations.role": RegRequest::roles["student"])
+  def active_teams
+    self.teams.where(Team.active_query, Date.current, Date.current)
   end
 
+  def students
+    users.where("registrations.role": Registration::roles["student"])
+  end
+
+  def users_with_registrations(for_users = users)
+    for_users.joins("JOIN registration_sections ON registrations.id = registration_sections.registration_id")
+      .joins("JOIN sections ON registration_sections.section_id = sections.id")
+  end
+  
   def students_with_registrations
-    students.joins("JOIN registration_sections ON registrations.id = registration_sections.registration_id")
-      .joins("JOIN sections ON registration_sections.section_id = sections.crn")
+    users_with_registrations(students)
   end
 
   def users_with_drop_info(for_users = nil)
     look_for = users
-    if for_users
+    if for_users.is_a? Array
       look_for = look_for.where(id: for_users.map(&:id))
+    elsif for_users.is_a? User
+      look_for = look_for.where(id: for_users.id)
+    elsif for_users
+      look_for = look_for.where(id: for_users.pluck(:id))
     end
-    look_for.select("users.*", "registrations.dropped_date as dropped_date")
+    look_for.select("users.*", "registrations.dropped_date as dropped_date", "registrations.id as reg_id")
   end
 
-  def students_with_drop_info(for_users = nil)
-    look_for = students
-    if for_users
-      look_for = look_for.where(id: for_users.map(&:id))
-    end
-    look_for.select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
+  def students_with_drop_info
+    users_with_drop_info(students)
   end
 
   def professors
-    users.where("registrations.role": RegRequest::roles["professor"])
+    users.where("registrations.role": Registration::roles["professor"])
   end
 
   def graders
-    users.where("registrations.role": RegRequest::roles["grader"])
+    users.where("registrations.role": Registration::roles["grader"])
   end
 
   def staff
     users
-      .where("registrations.role <> #{RegRequest::roles["student"]}")
+      .where("registrations.role <> #{Registration::roles["student"]}")
       .where("registrations.dropped_date is null")
+  end
+
+  def sorted_staff
+    staff.select("users.*", "registrations.role as role")
+      .sort_by{|s| [0 - s.role, s.sort_name]}
   end
 
   def first_professor
@@ -128,53 +141,77 @@ class Course < ApplicationRecord
     self.assignments.to_a.sort_by(&:due_date)
   end
 
+  def all_partners
+    team_users = TeamUser.where(team: teams).group_by(&:team_id)
+    users_teams = teams.map do |t|
+      team_users[t.id].map do |tu|
+        [tu.user_id, t.id]
+      end
+    end.flatten(1).group_by(&:first).map{|k,v| [k,v.map(&:last)]}.to_h
+    users_teams.map do |uid, tids|
+      [uid, tids.map do |tid|
+         team_users[tid].map{|tu| [tu.user_id, tid]}
+       end.flatten(1).group_by(&:first).map{|k,v| [k,v.map(&:last)]}.to_h]
+    end.to_h
+  end
+
   def score_summary(for_students = nil)
     if for_students.nil?
       for_students = self.students
     end
     assns = self.assignments.where("available < ?", DateTime.current)
-    open = assns.where("due_date > ?", DateTime.current)
-    subs = UsedSub.where(user: for_students, assignment: assns)
+    effective_due_dates =
+      multi_group_by(
+        assns.map{|a| a.effective_due_dates(for_students, true).map{|uid, due| [uid, a.id, a, due]}}.flatten(1),
+        [:first, :second], true)
+    subs_by_user = UsedSub.where(user: for_students, assignment: assns)
       .joins(:submission)
-      .select(:user_id, :assignment_id, :score)
-      .to_a
+      .select(:user_id, :assignment_id, :score, :submission_id)
+      .group_by(&:user_id)
     assns = assns.map{|a| [a.id, a]}.to_h
-    avail = assns.reduce(0) do |tot, kv| tot + kv[1].points_available end
-    total_points = self.assignments.reduce(0) do |tot, a| tot + a.points_available end
+    extras, regulars = assns.values.partition(&:extra_credit)
+    avail = regulars.sum(&:points_available)
+    extra_avail = extras.sum(&:points_available)
+    total_points = self.assignments.reject(&:extra_credit).sum(&:points_available)
     # assume a default of 100 points, but there might be extra credit assignments that push the total above 100
-    remaining = [100.0, total_points].max - avail
-    ans = []
-    self.users_with_drop_info(for_students).sort_by(&:sort_name).each do |s|
+    total_points = [100.0, total_points].max
+    remaining = total_points - avail
+    ans = self.users_with_drop_info(for_students).sort_by(&:sort_name).map do |s|
       dropped = s.dropped_date
-      used = subs.select{|r| r.user_id == s.id}
+      used = (subs_by_user[s.id] || []).map{|u| [u.assignment_id, u]}.to_h
       adjust = 0
+      extra_adjust = 0
       pending_names = []
-      min = used.reduce(0.0) do |tot, sub| 
+      min = 0
+      used.values.each do |sub| 
         if (assns[sub.assignment_id].points_available != 0)
           if sub.score.nil?
-            adjust += assns[sub.assignment_id].points_available
+            if assns[sub.assignment_id].extra_credit
+              extra_adjust += assns[sub.assignment_id].points_available
+            else
+              adjust += assns[sub.assignment_id].points_available
+            end
             pending_names.push assns[sub.assignment_id].name
           end
-          tot + ((sub.score || 0) * assns[sub.assignment_id].points_available / 100.0) 
-        else
-          tot
+          min += ((sub.score || 0) * assns[sub.assignment_id].points_available / 100.0) 
         end
       end
       cur = (100.0 * min) / (avail - adjust)
-      max = min + remaining
+      open = effective_due_dates[s.id]&.select{|_, (_, _, a, due)| due > DateTime.current}&.values&.map(&:third) || []
       unsub_names = []
-      unsubs = open.reduce(0.0) do |tot, o|
-        if used.find{|u| u.assignment_id == o.id}.nil?
+      unsubs = 0
+      open.each do |o|
+        if used[o.id].nil?
           unsub_names.push o.name
-          tot + o.points_available
-        else
-          tot
+          unsubs += o.points_available
         end
       end
-      ans.push ({s: s, dropped: dropped, min: min, cur: cur, max: max,
-                 pending: adjust, pending_names: pending_names,
-                 unsub: unsubs, unsub_names: unsub_names,
-                 remaining: remaining})
+      max = min + remaining + extra_adjust + adjust + unsubs
+      {s: s, dropped: dropped,
+       min: min * (100.0 / total_points), cur: cur * (100.0 / total_points), max: max * (100.0 / total_points),
+       pending: adjust + extra_adjust, pending_names: pending_names,
+       unsub: unsubs, unsub_names: unsub_names,
+       remaining: remaining, used: used}
     end
     ans
   end
@@ -198,11 +235,15 @@ class Course < ApplicationRecord
   end
 
   def pending_grading
-    # only use submissions that are being used for grading, but this may produce
-    # duplicates for team submissions only pick submissions from this course
-    # only pick non-staff submissions hang on to the assignment id only keep
-    # unfinished graders sort the assignments
-    Grade
+    # only use submissions that are being used for grading
+    # only pick submissions from this course
+    # only pick non-staff submissions
+    # hang on to the assignment id
+    # only keep unfinished graders
+    # sort the assignments
+    # group by assignment and submission id
+    multi_group_by(
+      Grade
       .joins("INNER JOIN used_subs ON grades.submission_id = used_subs.submission_id")
       .joins("INNER JOIN assignments ON used_subs.assignment_id = assignments.id")
       .joins("INNER JOIN registrations ON used_subs.user_id = registrations.user_id")
@@ -212,8 +253,8 @@ class Course < ApplicationRecord
       .distinct.select("users.name AS user_name")
       .where(score: nil)
       .where("registrations.role": Registration::roles["student"])
-      .order("assignments.due_date", "users.name")
-      .group_by{|r| r.assignment_id}
+      .order("assignments.due_date", "users.name"),
+      [:assignment_id, :submission_id, :id])
   end
 
   def abnormal_subs
@@ -225,10 +266,10 @@ class Course < ApplicationRecord
     assns.each do |a|
       next unless all_subs[a.id]
       a_subs = all_subs[a.id].group_by(&:for_user)
-      used = used_subs[a.id]
+      used = used_subs[a.id]&.map{|u| [u.user_id, u]}&.to_h
       people.each do |p|
         subs = a_subs[p.id]
-        if (subs and subs.count > 0) and (used.nil? or used.find{|us| us.user_id == p.id}.nil?)
+        if (subs&.count.to_i > 0) && (used.nil? || used[p.id].nil?)
           abnormals[a] = [] unless abnormals[a]
           abnormals[a].push p
         end

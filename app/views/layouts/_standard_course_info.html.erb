@@ -1,0 +1,77 @@
+<style>
+  #sections { margin: 0px; }
+  #sections > p:not(:last-child) { margin-bottom: 0px; }
+  .sectionContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between; 
+  }
+  .sectionList {
+    padding: 0; 
+    line-height: normal;
+    max-height: 6.5rem;
+    overflow-y: auto;
+    flex-grow: 1;
+  }
+  .sectionContainer small {
+    display: block;
+    line-height: 1.1;
+    margin-bottom: 0.25em;
+  }
+  .page-header h1 { width: 100%; }
+</style>
+<% cur_reg = current_user.registration_for(@course) %>
+    <div class="page-header">
+        <h1>
+          <%= link_to @course.name, course_path(@course) %>
+        </h1>
+        <h2 style="margin-top: 0px;">
+          <span <% if cur_reg %>class="sectionContainer"<% end %>>
+            <small style="flex-grow: 50; font-size: 85%;"><%= @course.term.name %></small>
+            <span class="sectionList">
+              <% if cur_reg %>
+              <% cur_reg.sections.order(:type).each do |r| %>
+              <small>Section <%= r.to_s %></small>
+              <% end %>
+              <% end %>
+            </span>
+          </span>
+        </h2>
+
+        <% if cur_reg %>
+            <p>
+                You are a
+                <strong><%= cur_reg.role %></strong>
+                of this course.
+            </p>
+        <% else %>
+            <p>
+                You are not registered for this course.
+            </p>
+        <% end %>
+
+        <div>
+            <%= link_to "Teams", course_teamsets_path(@course), class: "btn btn-sm btn-default" %>
+            <%= link_to "Assignments", course_assignments_path(@course), class: "btn btn-sm btn-default" %>
+            <% if current_user.site_admin? || cur_reg&.assistant? %>
+                <%= link_to "Registrations", course_registrations_path(@course), class: "btn btn-sm btn-default" %>
+            <% end %>
+            <% if current_user.site_admin? || cur_reg&.professor? %>
+              <%= link_to "Grader info", stats_course_grades_path(@course), class: "btn btn-sm btn-default" %>
+            <% end %>
+            <% if current_user.site_admin? || cur_reg&.staff? %>
+              <%= link_to "Student Facebook", facebook_course_path(@course), class: "btn btn-sm btn-default" %>
+            <% end %>
+            <% if current_user.site_admin? || cur_reg&.professor? %>
+              <%= link_to "Edit Course Settings", edit_course_path(@course), class: "btn btn-sm btn-default" %>
+              <div class="dropdown btn btn-link pull-right">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Export... <span class="caret"></span></a>
+                <ul class="dropdown-menu">
+                  <li><%= link_to "Gradesheet as Excel", gradesheet_course_path(@course, format: "xlsx") %></li>
+                  <li><%= link_to "Teamsets as Excel", export_course_teamsets_path(@course, format: "xlsx") %></li>
+                </ul>
+              </div>
+            <% end %>
+        </div>
+    </div>

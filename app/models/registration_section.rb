@@ -1,6 +1,6 @@
 class RegistrationSection < ApplicationRecord
   belongs_to :registration
-  belongs_to :section, :foreign_key => "section_id", :primary_key => "crn"
+  belongs_to :section
 
   validate do
     if self.section.course_id != self.registration.course_id

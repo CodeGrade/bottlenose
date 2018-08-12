@@ -1,202 +1,417 @@
 $(function() {
-  var styles = document.getElementById("comment-styles").sheet;
-  var showOurComments = styles.insertRule("div.CodeMirror-linewidget > div.ManualGrader { display: block; }",
-                                          styles.cssRules.length);
-  var hideOtherComments;
-  function hideOthers() {
-    hideOtherComments = styles.insertRule("div.CodeMirror-linewidget > div { display: none; }",
-                                          styles.cssRules.length);
-  }
-  function showOthers() {
-    styles.deleteRule(hideOtherComments);
-  }
-
-  $("#toggle-comments").change(function() {
-    if ($(this).prop("checked"))
-      showOthers();
-    else
-      hideOthers();
-  });
-  hideOthers();
-
-  var maxScore = <%= @grade.out_of %>;
-  function updateScore() {
-    var deductions = 0;
-    for (var i = 0; i < commentObjs.length; i++) {
-      if (commentObjs[i].shouldDelete) continue;
-      deductions += commentObjs[i].deduction;
+  function activateCommentEditing(extraCredit, gradeId, maxScore, username, profOverride, ajaxCommentUrl, disableSubmit) {
+    ////////////////////////////////////////
+    //////////////////// Score administration
+    ////////////////////////////////////////
+    function updateScore() {
+      var deductions = 0;
+      for (var i = 0; i < commentObjs.length; i++) {
+        if (commentObjs[i].shouldDelete) continue;
+        if (commentObjs[i].severity === "bonus")
+          deductions -= commentObjs[i].deduction;
+        else
+          deductions += commentObjs[i].deduction;
+      }
+      for (var i = 0; i < inertComments.length; i++) {
+        if (inertComments[i].severity === "bonus")
+          deductions -= inertComments[i].deduction;
+        else
+          deductions += inertComments[i].deduction;
+      }
+      if (Number.isNaN(deductions)) {
+        $("#score").text("??");
+        $("input#finalScore").val("");
+      } else {
+        if (extraCredit) {
+          var ans = Math.max(0 - deductions, 0).toFixed(2);
+        } else {
+          var ans = Math.max(maxScore - deductions, 0).toFixed(2);
+        }
+        $("#score").text(ans);
+        $("input#finalScore").val(ans);
+      }
     }
-    var ans = Math.max(maxScore - deductions, 0).toFixed(2);
-    $("#score").text(ans);
-    $("input#finalScore").val(ans);
-  }
-  window.updateScore = updateScore;
+    window.updateScore = updateScore;
 
-  $("form").submit(function() {
-    $("#comments").val(JSON.stringify(commentObjs));
-  });
+    $("form").submit(function(e) {
+      if (autosavePromise) {
+        e.preventDefault();
+        alert("Please wait for autosave to complete");
+        return false;
+      } else {
+        $("#comments").val(JSON.stringify(commentObjs));
+      }
+    });
 
 
-  var autosaveHandle = undefined;
-  var commentObjs = [];
-  var commentsById = {};
-  function autosave() {
-    if (autosaveHandle === undefined) {
-      autosaveHandle = window.setTimeout(function() {
-        console.log("Sending:");
-        console.log(commentObjs);
-        $.ajax({
-          type: "PUT",
-          url: "<%= course_assignment_submission_grade_path(@course, @assignment, @submission, @grade) %>",
-          contentType: 'application/json; charset=UTF-8',
-          data: JSON.stringify({comments: commentObjs}, function(k, v) {
-            if (k === "saved") return undefined;
-            return v;
-          }),
-          success: function(data) {
-            console.log("Success: " + data);
-            for (var id in data) {
-              var c = commentsById[id];
-              delete commentsById[id];
-              if (data[id] === "deleted") continue;
-              c.id = data[id];
-              commentsById[c.id] = c;
+    var autosavePromise = undefined;
+    var commentObjs = [];
+    var inertComments = [];
+    var commentsById = {};
+    var widgetsById = {};
+    function autosave() {
+      if (autosavePromise === undefined) {
+        if (disableSubmit) disableSubmit(undefined, "autosaving")
+        autosavePromise = new Promise((resolve, reject) => {
+          console.log("Sending:");
+          console.log(commentObjs);
+          $.ajax({
+            type: "PUT",
+            url: ajaxCommentUrl,
+            contentType: 'application/json; charset=UTF-8',
+            data: JSON.stringify({comments: commentObjs}, function(k, v) {
+              if (k === "saved") return undefined;
+              return v;
+            }),
+            success: function(data) {
+              console.log("Success: ", data);
+              for (var id in data) {
+                var c = commentsById[id];
+                var w = widgetsById[id];
+                var $commentInstance = $(w).commentEditor("instance") || $(w).areaComment("instance");
+                delete commentsById[id];
+                delete widgetsById[id];
+                if (data[id] === "deleted") {
+                  continue;
+                } else if (data[id]["error"]) {
+                  $commentInstance.markError("Error saving comment: " + data[id].error);
+                  c.id = data[id].id;
+                  commentsById[c.id] = c;
+                  widgetsById[c.id] = w;
+                } else {
+                  $commentInstance.markClean();
+                  c.id = data[id];
+                  commentsById[c.id] = c;
+                  widgetsById[c.id] = w;
+                }
+              }
+              if (disableSubmit) disableSubmit(data, "autosaveComplete");
+              resolve(data);
+              autosavePromise = undefined;
+            },
+            error: function(xhr, status, error) {
+              console.error("XHR failed: " + status + ": " + error);
+              console.error(xhr.responseText);
+              if (disableSubmit) disableSubmit({xhr: xhr, status: status, error: error}, "autosaveFailed");
+              reject(status);
+              autosavePromise = Promise.resolve(false); // don't trigger more XHRs
             }
-            autosaveHandle = undefined;
+          });
+        });
+      }
+      return autosavePromise;
+    }
+
+    ////////////////////////////////////////
+    //////////////////// Comment management
+    ////////////////////////////////////////
+    function registerComment(cm, line, comment, editable) {
+      if (comment === undefined) {
+        comment = {severity: "error", deduction: 0, comment: "", id: Date.now()};
+
+        comment.line = line + 1;
+        if (comment.file === undefined) {
+          if (cm.getTextArea)
+            comment.file = $(cm.getTextArea()).data("source");
+          else
+            comment.file = $(cm).data("source");
+        }
+        comment.label = username;
+      }
+      if (!editable) {
+        inertComments.push(comment);
+      } else {
+        commentObjs.push(comment);
+        commentsById[comment.id] = comment;
+      }
+      return comment;
+    }
+    window.registerComment = registerComment;
+
+    ////////////////////////////////////////
+    //////////////////// Line comments
+    ////////////////////////////////////////  
+    function insertLineComment(cm, line, comment) {
+      var commentEditor = $("<div>").commentEditor({
+        gradeId: "" + gradeId,
+        label: comment.label,
+        comment: comment.comment,
+        id: comment.id,
+        deduction: comment.deduction,
+        severity: comment.severity,
+        label: comment.label,
+        author: comment.author,
+        title: comment.title,
+        comment: comment.comment,
+        suppressed: comment.suppressed,
+        focusout: function(e, details) {
+          if (e.relatedTarget && e.relatedTarget.type === "submit") {
+            return;
+          }
+          autosave();
+        },
+        close: function(e, details) {
+          comment.shouldDelete = true
+          autosave().finally(() => {
+            ret.cmWidget.clear();
+            updateScore();
+          });
+        },
+        change: function(e, details) {
+          if (details.hasOwnProperty("newDeduction")) {
+            comment.deduction = details.newDeduction;
+          } else if (details.hasOwnProperty("newComment")) {
+            comment.comment = details.newComment;
+          } else if (details.hasOwnProperty("newSeverity")) {
+            comment.severity = details.newSeverity.toLowerCase();
+          }
+          comment.saved = false;
+          updateScore();
+        }
+      });
+      widgetsById[commentEditor.commentEditor("instance").id()] = commentEditor;
+      
+      var ret = {cmWidget: cm.addLineWidget(line, commentEditor[0], {coverGutter: false, noHScroll: true}),
+                 dom: commentEditor,
+                 comment: comment};
+      return ret;
+    }
+    window.insertLineComment = insertLineComment;
+
+
+
+    ////////////////////////////////////////
+    //////////////////// Whole-page comments
+    ////////////////////////////////////////
+    function insertPageComment(parent, pageNum, comment) {
+      // Page numbers are 1-based
+      var commentEditor = $("<div>").commentEditor({
+        gradeId: "" + gradeId,
+        label: comment.label,
+        comment: comment.comment,
+        id: comment.id,
+        deduction: comment.deduction,
+        severity: comment.severity,
+        label: comment.label,
+        author: comment.author,
+        title: comment.title,
+        comment: comment.comment,
+        suppressed: comment.suppressed,
+        focusout: function(e, details) {
+          if (e.relatedTarget && e.relatedTarget.type === "submit") {
+            return;
+          }
+          autosave();
+        },
+        close: function(e, details) {
+          comment.shouldDelete = true;
+          autosave().finally(() => {
+            commentEditor.remove();
+            updateScore();
+          });
+        },
+        change: function(e, details) {
+          if (details.hasOwnProperty("newDeduction")) {
+            comment.deduction = details.newDeduction;
+          } else if (details.hasOwnProperty("newComment")) {
+            comment.comment = details.newComment;
+          } else if (details.hasOwnProperty("newSeverity")) {
+            comment.severity = details.newSeverity.toLowerCase();
+          }
+          comment.saved = false;
+          updateScore();
+        }
+      });
+      widgetsById[commentEditor.commentEditor("instance").id()] = commentEditor;
+      parent.append(commentEditor[0]);
+      var ret = {dom: commentEditor,
+                 comment: comment};
+      return ret;
+    }
+    window.insertPageComment = insertPageComment;
+    function insertRegionComment(pdfViewer, page, options, comment) {
+      comment.info = JSON.stringify({
+        type: "area",
+        left: options.left,
+        top: options.top,
+        width: options.width,
+        height: options.height,
+        dimensions: options.dimensions
+      });
+      var areaComment = pdfViewer.createAreaComment(page, true, {
+        gradeId: options.gradeId,
+        left: options.left,
+        top: options.top,
+        width: options.width,
+        height: options.height,
+        dimensions: options.dimensions,
+        label: comment.label,
+        comment: comment.comment,
+        id: comment.id,
+        deduction: comment.deduction,
+        severity: comment.severity,
+        label: comment.label,
+        author: comment.author,
+        title: comment.title,
+        comment: comment.comment,
+        suppressed: comment.suppressed,
+        focusout: function(e, details) {
+          if (e.relatedTarget && e.relatedTarget.type === "submit") {
+            return;
+          }
+          autosave();
+        },
+        close: function(e, details) {
+          comment.shouldDelete = true;
+          autosave().finally(() => {
+            areaCommentWidget.destroy();
+            areaComment.remove();
+            updateScore();
+          });
+        },
+        change: function(e, details) {
+          if (details.hasOwnProperty("newDeduction")) {
+            comment.deduction = details.newDeduction;
+          } else if (details.hasOwnProperty("newComment")) {
+            comment.comment = details.newComment;
+          } else if (details.hasOwnProperty("newSeverity")) {
+            comment.severity = details.newSeverity.toLowerCase();
+          } else if (details.hasOwnProperty("newSizes")) {
+            comment.info = JSON.stringify({
+              type: "area",
+              left: details.newSizes.left,
+              top: details.newSizes.top,
+              width: details.newSizes.width,
+              height: details.newSizes.height,
+              dimensions: details.newSizes.dimensions
+            });
+          }
+          details.widget.markDirty();
+          comment.saved = false;
+          updateScore();
+        }
+      });
+      var areaCommentWidget = areaComment.areaComment("instance");
+      var dim = areaCommentWidget.option("dimensions");
+      widgetsById[areaCommentWidget.id()] = areaComment;
+      return {dom: areaComment, comment: comment};
+    }
+    window.insertRegionComment = insertRegionComment;
+
+    ////////////////////////////////////////
+    //////////////////// Page initialization
+    ////////////////////////////////////////
+    var manualComments = [];
+    for (var i = 0; i < lineComments.length; i++) {
+      manualComments[i] = lineComments[i][gradeId] || {};
+      delete lineComments[i][gradeId];
+    }
+    renderComments(lineComments);
+    function loadPageComments(pdfViewer, index, pageNum, pageComments, page) {
+      // Page numbers are 1-based
+      var theseComments = manualComments[index] || {};
+      var type = theseComments.type;
+      var commentsForPage = theseComments[pageNum] || [];
+      commentsForPage.forEach(function(comment, _) {
+        var isEditable = comment.editable || profOverride;
+        var infoJson;
+        if (comment.info) {
+          try {
+            infoJson = JSON.parse(comment.info);
+          } catch(e) {
+            infoJson = undefined;
+          }
+        }
+        if (infoJson && infoJson.type === "area") {
+          comment = registerComment(page, pageNum, comment, isEditable);
+          if (isEditable) {
+            insertRegionComment(pdfViewer, page, {
+              left: infoJson.left,
+              top: infoJson.top,
+              width: infoJson.width,
+              height: infoJson.height,
+              dimensions: infoJson.dimensions,
+              gradeId: gradeId,
+              label: comment.label
+            }, comment);
+          } else {
+            renderRegionComment(pdfViewer, page, gradeId, type, pageNum, comment);
+          }
+        } else {
+          comment = registerComment(pageComments, pageNum, comment, isEditable);
+          if (isEditable) {
+            insertPageComment(pageComments, pageNum, comment);
+          } else {
+            renderPageComment(pageComments, gradeId, type, pageNum, comment);
+          }
+        }
+      });
+    }
+    $(".file-pane").each(function(index, filePane) {
+      $(filePane).find(".CodeMirror").each(function(_, cm) {
+        cm = cm.CodeMirror;
+        cm.operation(function() {
+          var theseComments = manualComments[index];
+          var type = theseComments.type;
+          Object.keys(theseComments).forEach(function(line, _) {
+            if (line === "type") return;
+            var commentsOnLine = theseComments[line];
+            commentsOnLine.forEach(function(comment, _) {
+              // lines are off-by-one so they appear beneath the code they comment on
+              var isEditable = comment.editable || profOverride;
+              comment = registerComment(cm, Number.parseInt(line) - 1, comment, isEditable);
+              if (isEditable)
+                insertLineComment(cm, Number.parseInt(line) - 1, comment);
+              else
+                renderLineComment(cm, gradeId, type, line, comment);
+            });
+          });
+        });
+        cm.on("gutterClick", function(cm, line, gutter, e) {
+          return insertLineComment(cm, line, registerComment(cm, line, undefined, true));
+        });
+      });
+      $(filePane).find(".pageContainer").each(function(pageNum, pageContainer) {
+        // Page numbers are 1-based, but each() is 0-based
+        // console.log("Loading comments in pageContainer for index " + index);
+        var pageComments = $(pageContainer).find(".pageComments")
+        var page = $(pageContainer).find(".page");
+        loadPageComments(undefined, index, pageNum + 1, pageComments, page);
+        var warning = $(pageContainer).prev();        
+        $(warning).find(".btn.addComment").css({"margin-bottom": "1em"}).on("click", function(e) {
+          var pageComment = $(this).closest(".warningContent").next().find(".pageComments")[0];
+          return insertPageComment(pageComment, pageNum,
+                                   registerComment(pageComment, pageNum, undefined, true));
+        });
+      });
+      $(filePane).find("div[id^='pdf_']").each(function(_, pdfDiv) {
+        // Page numbers are 1-based
+        $(pdfDiv).pdfViewer({
+          editable: true,
+          pageContainerReady: function(_, details) {
+            // console.log("Loading comments in pdf for index " + index + " at page " + details.pageNum);
+            loadPageComments($(pdfDiv).pdfViewer("instance"),
+                             index, details.pageNum, details.pageComments, details.regionComments);
           },
-          error: function(xhr, status, error) {
-            console.error("XHR failed: " + status + ": " + error);
-            console.error(xhr.responseText);
-            autosaveHandle = false; // don't trigger more XHRs
+          pageClicked: function(e, details) {
+            return insertPageComment(details.pageComments, details.pageNum,
+                                     registerComment(this, details.pageNum - 1, undefined, true));
+          },
+          pageAreaSelected: function(e, details) {
+            return insertRegionComment(details.pdfViewer, details.page, {
+              left: details.left * 100.0,
+              top: details.top * 100.0,
+              width: details.width * 100.0,
+              height: details.height * 100.0,
+              dimensions: "%",
+              gradeId: gradeId,
+              label: username
+            }, registerComment(this, details.pageNum - 1, undefined, true));
           }
         });
-      }, 1000);
-    }
-  }
-
-  var commentID = 0;
-  function insertComment(cm, line, comment) {
-    if (comment === undefined) {
-      comment = {severity: "Error", deduction: 0, comment: "", id: Date.now()};
-
-      comment.line = line + 1;
-      comment.file = $(cm.getTextArea()).data("source");
-      comment.label = "<%= current_user.name %>";
-    }
-    commentObjs.push(comment);
-    commentsById[comment.id] = comment;
-    
-    var i = commentID++;
-    var widget = $("<div>").attr("id", "comment_" + i).addClass("ManualGrader Error form-group");
-    var table = $("<table>").addClass("container-fluid");
-    widget.append(table);
-    widget.on("focusout", autosave);
-    var row = $("<tr>");
-    table.append(row);
-    var td = $("<td>").addClass("nowrap col-sm-2");
-    row.append(td);
-    var categoryInput =
-        $("<select>").attr("id", "severity_" + i)
-        <% InlineComment.severities.each do |s_name, s_val| %>
-        .append($("<option>")
-                .text("<%= s_name.humanize %>").attr({value: "<%= s_name %>", name: "<%= s_name.humanize %>"}))
-        <% end %>;
-    var deductionInput = makeSpinner({val: comment.deduction, klass: "deduction", min: 0, delta: 0.1, precision: 2})
-        .attr("id", "deduction_" + i)
-    categoryInput.on("change", function() {
-      widget.removeClass(widget.data("severity"))
-        .data("severity", $(this).find(":selected").first().attr("name"))
-        .addClass($(this).find(":selected").first().attr("name"));
-      if ($(this).find(":selected").first().attr("name") == "Info") {
-        $(deductionInput).find("input").removeData("min").change();
-      } else {
-        $(deductionInput).find("input").data("min", 0).change();
-      }
-      comment.severity = $(this).val();
-      comment.saved = false;
+      });
     });
-    categoryInput.find("option[name='" + comment.severity + "']").first().prop("selected", true);
-    categoryInput.trigger("change");
-    if (comment.severity)
-      categoryInput.val(comment.severity).change();
-
-    td.append(
-      $("<p>").append($("<label>").attr("for", "severity_" + i)
-                      .text("Severity:")).append(categoryInput));
-    // deductionInput: 
-    td.append(
-      $("<p>").append($("<label>").attr("for", "deduction_" + i).text("Deduction:"))
-        .append($("<span>").css({"display": "inline-block", "vertical-align": "bottom"})
-                .append(deductionInput)));
-    deductionInput.find("input").on("change", function() {
-      comment.deduction = parseFloat($(this).val());
-      comment.saved = false;
-      updateScore();
-    });
-    if (comment.deduction)
-      deductionInput.val(comment.deduction).change();
-    td = $("<td>").addClass("col-sm-10");
-    row.append(td);
-    var delComment = $("<span>").addClass("btn btn-alert pull-right")
-        .append($("<span>").addClass("glyphicon glyphicon-remove"));
-    var commentText = $("<textarea>").attr("id", "message_" + i).addClass("form-control").val(comment.comment);
-    td.append(
-      $("<div>")
-        .append(delComment)
-        .append($("<label>").text("Comment:").attr("for", "message_" + i))
-        .append($("<span>").text(" (by " + comment.label + ")"))
-        .append(commentText));
-    commentText.on("change", function() {
-      comment.comment = $(this).val();
-      comment.saved = false;
-    });
-    if (comment.comment)
-      commentText.val(comment.comment).change();
-    
-    var ret = {cmWidget: cm.addLineWidget(line, widget[0], {coverGutter: false, noHScroll: true}),
-               dom: widget,
-               comment: comment};
-    delComment.on("click", function() { deleteComment(ret); });
-    return ret;
-  }
-  window.insertComment = insertComment;
-  function deleteComment(commData) {
-    commData.cmWidget.clear();
-    commData.comment.shouldDelete = true
-    autosave();
     updateScore();
   }
-  updateScore();
-
-  $(".CodeMirror").each(function(i) {
-    this.CodeMirror.on("gutterClick", function(cm, line, gutter, e) { return insertComment(cm, line); });
-  });
-
-  var filesTree = $("#<%= root %> .files");
-  filesTree.on("nodeChecked", function(e, data) {
-    if (data.href !== undefined && data.href !== "#") {
-      var cm = $(data.href).find(".CodeMirror");
-      if (cm.length > 0)
-        $(data.$el).addClass("unvisited");
-    } else
-      filesTree.treeview("uncheckNode", data);
-  });
-  filesTree.on("nodeUnchecked", function(e, data) {
-    $(data.$el).removeClass("unvisited");
-    if ($(".unvisited").length === 0) {
-      $("#completed").removeClass("disabled").text("Mark grading as complete");
-    }      
-  })
-  filesTree.treeview("getCollapsed").map(function(item) {
-    filesTree.treeview("checkNode", item);
-  });
-
-  filesTree.on("nodeSelected", function(e, data) {
-    e.preventDefault();
-    e.stopPropagation();
-    filesTree.treeview("uncheckNode", data);
-  });
-  filesTree.treeview("uncheckNode", filesTree.treeview("getCollapsed")[0]);
-  selectTreeviewFileByIndex("<%= root %>", 0);
-  
+  window.activateCommentEditing = activateCommentEditing;
 });

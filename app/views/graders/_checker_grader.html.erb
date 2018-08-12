@@ -3,28 +3,32 @@
 
 <table class="table no-first-row" style="margin-bottom: 0px;">
   <tr class="form-group">
-    <td><%= f.label "avail_score", "Points available:" %></td>
-    <td><%= f.spinner "avail_score", f.object.avail_score || 50, min: 0, delta: 5 %></td>
+    <td class="col-sm-2"><%= f.label "avail_score", "Points available:" %></td>
+    <td class="col-sm-3"><%= f.spinner "avail_score", f.object.avail_score || 50, min: 0, delta: 5 %></td>
+    <td><%= f.check_box :extra_credit, data: {toggle: "toggle", on: "Extra credit", off: "Regular"} %></td>
   </tr>
   <tr class="form-group">
-    <td><%= f.label "upload_file", "Reference tests:" %></td>
-    <td><%= f.file_field "upload_file" %>
+    <td class="col-sm-2"><%= f.label "upload_file", "Reference tests:" %></td>
+    <td class="col-sm-3"><%= f.file_field "upload_file" %>
       <% if f.object.upload_file %>
         <br>Current file: <%= link_to f.object.upload_file, f.object.upload.path %>
       <% end %>
     </td>
+    <td></td>
   </tr>
   <tr class="form-group">
-    <td><%= f.label "test_class", "Test class:" %></td>
-    <td><%= f.text_field "test_class" %></td>
+    <td class="col-sm-2"><%= f.label "test_class", "Test class:" %></td>
+    <td class="col-sm-3"><%= f.text_field "test_class" %></td>
+    <td></td>
   </tr>
   <tr class="form-group">
-    <td><%= f.label "errors_to_show", "Number of errors to show:" %></td>
+    <td class="col-sm-2"><%= f.label "errors_to_show", "Number of errors to show:" %></td>
     <% errs = begin
        f.object.errors_to_show || 3
        rescue Exception
        3
        end %>
-    <td><%= f.spinner "errors_to_show", errs, min: 0, delta: 1 %></td>
+    <td class="col-sm-3"><%= f.spinner "errors_to_show", errs, min: 0, delta: 1 %></td>
+    <td></td>
   </tr>
 </table>

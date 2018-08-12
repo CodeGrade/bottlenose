@@ -7,7 +7,7 @@ class MainController < ApplicationController
   # GET /
   def home
     if current_user
-      if (current_user.sign_in_count == 1 and (current_user.profile.to_s.empty? or current_user.nickname.to_s.empty?))
+      if (current_user.sign_in_count == 1 && (current_user.profile.to_s.empty? || current_user.nickname.to_s.empty?))
         redirect_to edit_user_path(current_user), notice: profile_notice
       else
         @teams = multi_group_by(current_user.teams.includes(:users).order(end_date: :desc, id: :asc),
@@ -48,7 +48,6 @@ class MainController < ApplicationController
   end
 
   def clear_queue
-    require_site_admin
     cleared = Grader::GradingJob.clear_all!
     if cleared.is_a? String
       redirect_to server_status_path, alert: cleared

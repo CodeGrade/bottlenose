@@ -1,0 +1,414 @@
+$(function() {
+  var commentID = 0;
+  ////////////////////////////////////////
+  //////////////////// Read-only line-comments
+  ////////////////////////////////////////
+  $.widget("bn.lineCommentView", {
+    _create: function() {
+      var thiz = this;
+      if (!this.options.hasOwnProperty("gradeId"))      throw "No gradeId specified for comment";
+      if (!this.options.hasOwnProperty("type"))         throw "No type specified for comment";
+      if (!this.options.hasOwnProperty("severity"))     throw "No severity specified for comment";
+      if (!(this.options.label || this.options.author)) throw "No label or author specified for comment";
+      if (!this.options.hasOwnProperty("deduction"))    throw "No deduction specified for comment";
+      if (!this.options.hasOwnProperty("title"))        throw "No title specified for comment";
+      this.element.addClass("comment")
+        .addClass(this.options.severity)
+        .addClass(this.options.type)
+        .addClass("grade_" + this.options.gradeId);
+      var table = $("<table>");
+      this.element.append(table);
+      var row = $("<tr>");
+      table.append(row);
+      var td = $("<td>").addClass("nowrap");
+      row.append(td);
+      var label = $("<span>").text(this.options.label || this.options.author).addClass("label label-default");
+      td.append(label);
+      if (this.options.suppressed) {
+        var icon = $("<span>").addClass("glyphicon glyphicon-flag")
+            .data("toggle", "toolip").data("placement", "top")
+            .attr("title", "Too many errors of this type were found; no further points were deducted");
+        td.append(icon);
+        var deduction = $("<span>").addClass("label label-default")
+            .data("toggle", "tooltip").data("placement", "top")
+            .attr("title", "This problem would normally deduct " + this.options.deduction + " points");
+        if (this.options.severity === "Bonus")
+          deduction.text("[+" + Math.abs(this.options.deduction) + "]");
+        else {
+          deduction.text("[-" + this.options.deduction + "]");
+        }
+        td.append(deduction);
+      } else {
+        var icon = $("<span>").addClass("glyphicon")
+            .data("toggle", "tooltip").data("placement", "top");
+        if (this.options.severity === "Error")
+          icon.addClass("glyphicon-ban-circle").attr("title", "Error");
+        else if (this.options.severity === "Warning")
+          icon.addClass("glyphicon-warning-sign").attr("title", "Warning");
+        else if (this.options.severity === "Info")
+          icon.addClass("glyphicon-info-sign").attr("title", "Suggestion");
+        else if (this.options.severity === "Bonus")
+          icon.addClass("glyphicon-thumbs-up").attr("title", "Bonus");
+        else
+          icon.addClass("glyphicon-question-sign").attr("title", "Unknown");
+        td.append(icon);
+        var deduction = $("<span>").addClass("label");
+        if (this.options.severity === "Bonus")
+          deduction.text("+" + Math.abs(this.options.deduction)).addClass("label-default");
+        else {
+          deduction.text("-" + this.options.deduction);
+          if (this.options.severity === 0)
+            deduction.addClass("label-default");
+          else
+            deduction.addClass("label-danger");
+        }
+        td.append(deduction);
+      }
+      td = $("<td>");
+      row.append(td);
+      if (this.options.title !== "" && this.options.title !== undefined) {
+        td.append($("<span>").addClass("description").text(this.options.title + ": " + this.options.comment));
+      } else {
+        td.append($("<span>").addClass("description").text(this.options.comment));
+      }
+    }
+  });
+  ////////////////////////////////////////
+  //////////////////// Editable inline comments
+  ////////////////////////////////////////
+  $.widget("bn.commentEditor", {
+    options: {
+      severities: <%= InlineComment.severities.map do |s_name, _|
+        {value: s_name, name: s_name.humanize}
+      end.to_json.html_safe %>,
+      deduction: 0,
+      minValue: 0,
+      maxValue: undefined,
+      graderType: "ManualGrader",
+      severity: "Error"
+    },
+    /*
+      Events:
+      "focusout" ==> when the widget loses focus
+      "change"   ==> when the severity, deduction or comment are changed 
+                     (ui details contain old and new values of the changed attribute, if applicable)
+      "remove"   ==> when the removal button is clicked
+     */
+    _create: function() {
+      var thiz = this;
+      if (this.options.id === undefined)
+        this.options.id = commentID++;
+      // console.log("creating comment " + this.options.id);
+      if (!this.options.hasOwnProperty("gradeId")) throw "No gradeId specified to commentEditor";
+      this.element
+        .attr("id", "comment_" + this.options.id)
+        .addClass(this.options.graderType).addClass(this.options.severity).addClass("form-group comment commentEditor")
+        .addClass("grade_" + this.options.gradeId);
+      this.element.on("focusout", (e) => {
+        if (!e.relatedTarget || !$.contains(this.element[0], e.relatedTarget)) {
+          this._trigger("focusout", e, {widget: this});
+          e.stopImmediatePropagation();
+          return false;
+        }
+      });
+
+      var table = $("<table>").addClass("container-fluid");
+      this.element.append(table);
+
+
+      var row = $("<tr>");
+      table.append(row);
+      var td = $("<td>").addClass("nowrap col-sm-2");
+      row.append(td);
+      var categoryInput = $("<select>").attr("id", "severity_" + this.options.id);
+      this.options.severities.forEach(function(s) {
+        categoryInput.append($("<option>").text(s.name).attr(s))
+      });
+      var spinnerInfo = {val: this.options.deduction, klass: "deduction",
+                         min: this.minValue, max: this.maxValue, delta: 0.1, precision: 2};
+      var deductionInput = makeSpinner(spinnerInfo).attr("id", "deduction_" + this.options.id)
+      categoryInput.on("change", function(e) {
+        var update = {oldSeverity: thiz.options.severity, newSeverity: $(this).find(":selected").first().attr("name"),
+                      widget: thiz};
+        thiz.element.removeClass(thiz.options.severity).addClass(update.newSeverity)
+          .data("severity", update.newSeverity);
+        $(deductionInput).find("input").data("min", 0).change();
+        thiz.options.severity = update.newSeverity;
+        thiz.markDirty();
+        thiz._trigger("change", e, update);
+        e.stopImmediatePropagation();
+        return false;
+      });
+      categoryInput.find("option[name='" + this.options.severity + "']").first().prop("selected", true);
+      categoryInput.change();
+
+      td.append(
+        $("<p>").append($("<label>").attr("for", "severity_" + this.options.id)
+                        .text("Comment type:")).append(categoryInput));
+      // deductionInput: 
+      td.append(
+        $("<p>").append($("<label>").attr("for", "deduction_" + this.options.id).text("Points:"))
+          .append($("<span>").css({"display": "inline-block", "vertical-align": "bottom"})
+                  .append(deductionInput)));
+      deductionInput.find("input").on("change", function(e) {
+        var update = {oldDeduction: thiz.options.deduction, newDeduction: parseFloat($(this).val()), widget: thiz};
+        thiz.options.deduction = update.newDeduction;
+        thiz.markDirty();
+        thiz._trigger("change", e, update);
+        e.stopImmediatePropagation();
+        return false;
+      }).one("input", (e) => this._trigger("change", e, {widget: this}));
+      if (this.options.deduction)
+        deductionInput.val(this.options.deduction).change();
+      td = $("<td>").addClass("col-sm-10");
+      row.append(td);
+      var delComment = $("<span>").addClass("btn btn-alert pull-right")
+          .attr("style", "padding: 3px; margin-bottom: 3px;")
+          .append($("<span>").addClass("glyphicon glyphicon-remove"));
+      var savedComment = $("<span>").addClass("pull-right save-status")
+          .append($("<span>")
+                  .addClass("glyphicon glyphicon-floppy-saved save-clean btn-success hidden")
+                  .attr("title", "Comment saved"))
+          .append($("<span>")
+                  .addClass("glyphicon glyphicon-floppy-save save-dirty btn-warning hidden")
+                  .attr("title", "Comment not saved"))
+          .append($("<span>")
+                  .addClass("glyphicon glyphicon-floppy-remove save-error btn-danger hidden")
+                  .attr("title", "Error saving comment"))
+      var commentText = $("<textarea>").attr("id", "message_" + this.options.id)
+          .addClass("form-control").val(this.options.comment);
+      td.append(
+        $("<div>")
+          .append(delComment).append(savedComment)
+          .append($("<label>").text("Comment:").attr("for", "message_" + this.options.id))
+          .append($("<span>").text(" (by " + this.options.label + ")"))
+          .append(commentText));
+      commentText.on("change", function(e) {
+        var update = {oldComment: thiz.options.comment, newComment: $(this).val(), widget: thiz}
+        thiz.options.comment = update.newComment;
+        thiz.markDirty();
+        thiz._trigger("change", e, update);
+        e.stopImmediatePropagation();
+        return false;
+      }).one("input", (e) => this._trigger("change", e, {widget: this}));
+      if (this.options.comment)
+        commentText.val(this.options.comment);
+      delComment.on("click", (e) => {
+        thiz._trigger("close", e, {widget: thiz});
+        e.stopImmediatePropagation();
+        return false;
+      });
+    },
+    markDirty: function() {
+      this.element.find(".save-status > .glyphicon").addClass("hidden");
+      this.element.find(".save-dirty").removeClass("hidden");
+    },
+    markClean: function() {
+      this.element.find(".save-status > .glyphicon").addClass("hidden");
+      this.element.find(".save-clean").removeClass("hidden");
+      this.element.find("select").one("change", () => this.markDirty());
+      this.element.find("input").one("change", () => this.markDirty());
+      this.element.find("textarea").one("input", () => this.markDirty());
+    },
+    markError: function(msg) {
+      this.element.find(".save-status > .glyphicon").addClass("hidden");
+      this.element.find(".save-error").removeClass("hidden").attr("title", msg);
+    },
+    id: function() { return this.options.id; }
+  });
+  ////////////////////////////////////////
+  //////////////////// Area selection comments
+  ////////////////////////////////////////
+  $.widget("bn.areaComment", {
+    options: {
+      editable: true,
+      dimensions: "fraction" // valid: "px", "%", "em", "fraction"
+    },
+    _create: function() {
+      if (!this.options.container)                      throw "No container specified for area comment";
+      if (!this.options.hasOwnProperty("gradeId"))      throw "No gradeId specified for area comment";
+      if (this.options.container === "parent" && this.element.parent().length === 0)
+        throw "No parent element for the area comment current exists";
+      if (this.options.container === "parent")
+        this.container = this.element.parent();
+      else
+        this.container = $(this.element.container);
+      if (this.options.dimensions === "fraction") {
+        this.options.left *= 100;
+        this.options.top *= 100;
+        this.options.width *= 100;
+        this.options.height *= 100;
+        this.options.dimensions = "%";
+      }
+      this.element.addClass("Region comment commentEditor")
+        .addClass(this.options.severity)
+        .addClass(this.options.type)
+        .addClass("grade_" + this.options.gradeId);
+      this.element.css({
+          position: "absolute",
+          left: this.options.left + this.options.dimensions,
+          top: this.options.top + this.options.dimensions,
+          width: this.options.width + this.options.dimensions,
+          height: this.options.height + this.options.dimensions
+        });
+      if (this.options.dimensions !== "%") {
+        var offset = this.element.offset();
+        var page = this.container[0];
+        this.options.left = 100 * (offset.left / page.offsetWidth);
+        this.options.top = 100 * (offset.top / page.offsetHeight);
+        this.options.width = 100 * (offset.width / page.offsetWidth);
+        this.options.height = 100 * (offset.height / page.offsetWidth);
+      }
+      this.enableEditing();
+      if (this.options.editable)
+        this.areaComment = $("<div>").commentEditor(this.options.commentEditor);
+      else
+        this.areaComment = $("<div>").lineCommentView(this.options.commentEditor);
+      var $expand = $("<span>").addClass("btn btn-alert pull-right").css({padding: "3px"})
+          .append($("<span>").addClass("glyphicon glyphicon-edit"))
+          .click((e) => {
+            page = $expand.closest(".page")[0];
+            this.element.toggleClass("expanded");
+            this.positionEditWidget();
+            e.stopImmediatePropagation();
+            return false;
+          });
+      this.element.append($expand)
+        .click((e) => e.stopPropagation())
+        .mousedown((e) => e.stopPropagation());
+    },
+    _stopResizing: function(e, ui) {
+      var page = this.container[0];
+      var pageWidth = page.offsetWidth;
+      var pageHeight = page.offsetHeight;
+      var oldSizes = {
+        top: this.options.top,
+        left: this.options.left,
+        width: this.options.width,
+        height: this.options.height,
+        dimensions: this.options.dimensions,
+      };
+      this.options.top = 100 * (ui.position.top / pageHeight);
+      this.options.left = 100 * (ui.position.left / pageWidth);
+      this.options.width = 100 * (ui.size.width / pageWidth);
+      this.options.height = 100 * (ui.size.height / pageHeight);
+      var newSizes = {
+        left: this.options.left,
+        top: this.options.top,
+        width: this.options.width,
+        height: this.options.height,
+        dimensions: this.options.dimensions
+      };
+      this.element.css({
+        left: this.options.left + this.options.dimensions,
+        top: this.options.top + this.options.dimensions,
+        width: this.options.width + this.options.dimensions,
+        height: this.options.height + this.options.dimensions
+      });
+      var areaComment = this.areaComment.commentEditor("instance");
+      areaComment._trigger("change", e, {widget: areaComment, oldSizes, newSizes});
+    },
+    _startDragging: function(e, ui) {
+      this.element.css({cursor: "grab"});
+    },
+    _stopDragging: function(e, ui) {
+      var page = this.container[0];
+      var pageWidth = page.offsetWidth;
+      var pageHeight = page.offsetHeight;
+      var oldSizes = {
+        top: this.options.top,
+        left: this.options.left,
+        width: this.options.width,
+        height: this.options.height,
+        dimensions: this.options.dimensions,
+      };
+      this.options.top = 100 * (ui.position.top / pageHeight);
+      this.options.left = 100 * (ui.position.left / pageWidth);
+      this.element.css({
+        cursor: "initial",
+        left: this.options.left + this.options.dimensions,
+        top: this.options.top + this.options.dimensions,
+      });
+      var newSizes = {
+        left: this.options.left,
+        top: this.options.top,
+        width: this.options.width,
+        height: this.options.height,
+        dimensions: this.options.dimensions
+      };
+      var areaComment = this.areaComment.commentEditor("instance");
+      areaComment._trigger("change", e, {widget: areaComment, oldSizes, newSizes});
+    },
+    _duringDragging: function(e, ui) {
+      this.positionEditWidget();
+    },
+    enableEditing: function() {
+      if (this.options.editable) {
+        this.element.resizable({
+          containment: "parent",
+          autoHide: true,
+          minHeight: 20,
+          minWidth: 20,
+          stop: (e, ui) => this._stopResizing(e, ui)
+        }).draggable({
+          containment: "parent",
+          start: (e, ui) => this._startDragging(e, ui),
+          drag: (e, ui) => this._duringDragging(e, ui),
+          stop: (e, ui) => this._stopDragging(e, ui)
+        });
+      }
+    },
+    reinit: function() {
+      if (this.options.container === "parent") {
+        this.container = this.element.parent();
+        this.enableEditing();
+        this.positionEditWidget();
+      }
+    },
+    positionEditWidget: function() {
+      var $page = this.container;
+      var $regionComments = $page.parent();
+      var topPx = this.element.offset().top - $page.offset().top;
+      var pageWidth = $page[0].offsetWidth;
+      var pageHeight = $page[0].offsetHeight;
+      this.options.top = 100 * (topPx / pageHeight);
+      if (this.element.hasClass("expanded")) {
+        this.areaComment.css({
+          position: "absolute",
+          left: 0,
+          width: "100%"
+        });
+        $regionComments.append(this.areaComment);
+        var widgetHeight = this.areaComment.height();
+        if (topPx - widgetHeight < 20) {
+          this.areaComment.css({
+            top: (this.options.top + this.options.height) + "%",
+            bottom: ""
+          });
+        } else {
+          this.areaComment.css({
+            top: "",
+            bottom: (100 - this.options.top) + "%"
+          });
+        }
+      } else {
+        this.areaComment.detach();
+      }
+    },
+    destroy: function() {
+      this.areaComment.commentEditor("instance").destroy();
+      this.areaComment.remove();
+      this.areaComment = undefined;
+    },
+    markDirty: function() {
+      this.areaComment.commentEditor("instance").markDirty();
+    },
+    markClean: function() {
+      this.areaComment.commentEditor("instance").markClean();
+    },
+    markError: function(msg) {
+      this.areaComment.commentEditor("instance").markError(msg);
+    },
+    id: function() { return this.areaComment.commentEditor("instance").id(); }
+  });
+});

@@ -7,14 +7,14 @@
     </thead>
     <tbody>
         <% courses.each do |course| %>
-            <% registration = current_user.registration_for(course) %>
+            <% info = reg_info[course] %>
             <tr>
                 <td><%= link_to course.name, course_path(course) %></td>
-                <% if registration %>
-                  <% if registration.dropped_date %>
+                <% if info %>
+                  <% if info[4] %>
                     <td><span class="label label-default pull-right">Withdrawn</span></td>
                   <% else %>
-                    <td><span class="label label-default pull-right"><%= registration.role.titleize %></span></td>
+                    <td><span class="label label-default pull-right"><%= info[3].titleize %></span></td>
                   <% end %>
                 <% elsif current_user.reg_requests.map { |r| r.course }.include?(course) %>
                     <td><span class="btn btn-success btn-xs disabled pull-right">Registration Pending...</span></td>

@@ -1,6 +1,7 @@
 # coding: utf-8
 require 'securerandom'
 require 'audit'
+require 'addressable/uri'
 
 class Submission < ApplicationRecord
   belongs_to :assignment
@@ -29,7 +30,7 @@ class Submission < ApplicationRecord
   after_save :add_user_submissions!
 
   def to_s
-    "#{self.type} #{self.id} by #{if self.team then '(team ' + self.team_id.to_s + ') ' else '' end}" + self.users.map(&:name).join(', ')
+    "#{self.type} #{self.id} by #{if self.team then '(team ' + self.team_id.to_s + ') ' else '' end}" + self.users.map(&:name).to_sentence
   end
 
   def add_user_submissions!
@@ -65,7 +66,7 @@ class Submission < ApplicationRecord
             alloc.save
           end
         end
-        used.submission_id = self.id
+        used.submission = self
         used.save!
       end
     else
@@ -79,7 +80,7 @@ class Submission < ApplicationRecord
           alloc.save
         end
       end
-      used.submission_id = self.id
+      used.submission = self
       used.save!
     end
   end
@@ -112,10 +113,6 @@ class Submission < ApplicationRecord
     self.assignment.sub_days_late(self, raw)
   end
 
-  def hours_late(raw = false)
-    self.assignment.sub_hours_late(self, raw)
-  end
-
   def late_penalty
     self.assignment.sub_late_penalty(self)
   end
@@ -131,7 +128,7 @@ class Submission < ApplicationRecord
     @upload_data = data
   end
 
-  def save_upload
+  def save_upload(prof_override = nil)
     if @upload_data.nil?
       errors.add(:base, "You need to submit a file.")
       return false
@@ -140,6 +137,7 @@ class Submission < ApplicationRecord
     data = @upload_data
 
     if data.size > course.sub_max_size.megabytes
+      errors.add(:base, "Submitted file is too large (maximum size is #{course.sub_max_size}MB)")
       return false
     end
 
@@ -152,7 +150,8 @@ class Submission < ApplicationRecord
         course:     "#{course.name} (#{course.id})",
         assignment: "#{assignment.name} (#{assignment.id})",
         date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-        mimetype:   data.content_type
+        mimetype:   data.content_type,
+        prof_override: prof_override
       })
     rescue Exception => e
       errors.add(:base, e.message)
@@ -178,9 +177,9 @@ class Submission < ApplicationRecord
     end
     comments.group_by(&:filename).map do |filename, byfile|
       [Upload.upload_path_for(filename), byfile.group_by(&:grade_id).map do |grade, bygrade|
-         [config_types[grade], bygrade.group_by(&:line).map do |line, byline|
+         [grade, ([["type", config_types[grade]]] + bygrade.group_by(&:line).map do |line, byline|
             [line, byline.map{|c| c.to_editable_json(comment_author_user)}]
-          end.to_h]
+          end).to_h]
        end.to_h]
     end.to_h
     # self.gradrs.map(&:line_comments).reduce({}, &:merge)
@@ -225,7 +224,7 @@ class Submission < ApplicationRecord
     if upload_id.nil?
       ""
     else
-      upload.path
+      Addressable::URI.encode_component(upload.path, Addressable::URI::CharacterClasses::PATH)
     end
   end
 
@@ -241,11 +240,15 @@ class Submission < ApplicationRecord
     if config.grade_exists_for(self)
       false
     else
-      # Students will have their delayed jobs de-prioritized based on how many submissions
-      # they've spammed the system with in the past hour
-      num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
-      config.autograde!(assignment, self, num_recent_attempts)
-      true
+      if config.autograde?
+        # Students will have their delayed jobs de-prioritized based on how many submissions
+        # they've spammed the system with in the past hour
+        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
+        config.autograde!(assignment, self, num_recent_attempts)
+        true
+      else
+        config.ensure_grade_exists_for!(self)
+      end
     end
   end
 
@@ -266,8 +269,8 @@ class Submission < ApplicationRecord
   def autograde!
     complete = true
     assignment.graders.each do |gr|
+      complete = complete && gr.autograde?
       begin
-        complete = complete and gr.autograde?
         gr.autograde!(assignment, self) # make sure we create all needed grades
       rescue Exception => e
         Audit.log "Assignment #{assignment.id}, submission #{self.id} failed autograding:"
@@ -279,34 +282,47 @@ class Submission < ApplicationRecord
     self.compute_grade! if complete
   end
 
+  def plagiarism_status
+    InlineComment.where(submission: self, label: "Plagiarism")
+  end
+  def self.plagiarism_status(subs)
+    InlineComment.where(submission: subs, label: "Plagiarism").group_by(&:submission_id)
+  end
+  
   def compute_grade!
     ### A Submission's score is recorded as a percentage
     score = 0.0
     max_score = 0.0
+    max_score_with_ec = 0.0
     log = ""
-    self.grades.each do |g|
+    self.grades.includes(:grader).each do |g|
       return if g.score.nil?
       component_weight = g.grader.avail_score.to_f
-      grade_component = component_weight * (g.score.to_f / g.out_of.to_f)
-      log += "#{g.grader.type} => #{grade_component} / #{component_weight}, "
+      if (g.out_of.to_f == 0.0)
+        grade_component = 0.0
+      else
+        grade_component = component_weight * (g.score.to_f / g.out_of.to_f)
+      end
+      log += "#{g.grader.type}#{if g.grader.extra_credit then ' (E.C.)' end} => #{grade_component} / #{component_weight}, "
       score += grade_component
-      max_score += component_weight
+      max_score += component_weight unless g.grader.extra_credit
+      max_score_with_ec += component_weight
+    end
+    plagiarism = self.plagiarism_status
+    if plagiarism.count > 0
+      penalty = plagiarism.pluck(:weight).sum
+      log += "Plagiarism penalty => #{penalty}"
+      score -= penalty
     end
     self.score = (100.0 * score.to_f) / max_score.to_f
     if self.ignore_late_penalty
       log += "Ignoring late penalty, "
     else
-      self.score = assignment.lateness_config.penalize(self.score, assignment, self)
+      max_pct = 100.0 * (max_score_with_ec.to_f / max_score.to_f)
+      self.score = assignment.lateness_config.penalize(self.score, assignment, self, 100.0, max_pct)
     end
     log += "Final score: #{self.score}%"
 
-    plagiarism = InlineComment.where(submission: self, label: "Plagiarism")
-    if plagiarism.count > 0
-      penalty = plagiarism.pluck(:weight).sum
-      log += "Plagiarism penalty => #{penalty}"
-      self.score -= penalty
-    end
- 
     Audit.log("Grading submission at #{DateTime.current}, grades are #{log}")
     self.save!
 
@@ -333,16 +349,37 @@ class Submission < ApplicationRecord
     @lineCommentsByFile = line_comments || self.grade_line_comments(nil, show_hidden)
     @submission_files = []
     @show_deductions = show_deductions
+    def ensure_utf8(str, mimetype)
+      if ApplicationHelper.binary?(mimetype)
+        str
+      else
+        if str.is_utf8?
+          str
+        else
+          begin
+            if str.dup.force_encoding(Encoding::CP1252).valid_encoding?
+              str.encode(Encoding::UTF_8, Encoding::CP1252)
+            else
+              str.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: '?')
+            end
+          rescue Exception => e
+            str
+          end
+        end
+      end
+    end
     def with_extracted(item)
       return nil if item.nil?
       if item[:public_link]
         return nil if File.basename(item[:full_path].to_s) == ".DS_Store"
         comments = @lineCommentsByFile[item[:public_link].to_s] || {noCommentsFor: item[:public_link].to_s}
+        mimetype = ApplicationHelper.mime_type(item[:full_path])
         @submission_files.push({
           link: item[:public_link],
           name: item[:public_link].sub(/^.*extracted\//, ""),
-          contents: File.read(item[:full_path].to_s),
-          type: ApplicationHelper.mime_type(item[:full_path]),
+          pdf_path: item[:converted_path],
+          contents: ensure_utf8(File.read(item[:full_path].to_s), mimetype),
+          type: mimetype,
           href: @submission_files.count + 1,
           lineComments: comments
           })
@@ -350,22 +387,32 @@ class Submission < ApplicationRecord
           if comments[:noCommentsFor]
             nil
           elsif @show_deductions
-            comments.reduce(nil) do |sum, (type, commentsByType)|
-              if commentsByType.is_a? String
+            comments.reduce(nil) do |sum, (gradeId, commentsByGradeId)|
+              if commentsByGradeId.is_a? String
                 sum
-              elsif @show_deductions.is_a? String and @show_deductions != type
+              elsif @show_deductions.is_a? Integer and @show_deductions != gradeId
                 sum
               else
-                commentsByType.reduce(sum) do |sum, (line, comments)|
-                  comments.reduce(sum) do |sum, comment|
-                    (sum || 0) - comment[:deduction]
+                commentsByGradeId.reduce(sum) do |sum, (line, comments)|
+                  if line == "type"
+                    sum
+                  else
+                    comments.reduce(sum) do |sum, comment|
+                      if comment[:severity] == "Bonus"
+                        sum.to_f + comment[:deduction]
+                      else
+                        sum.to_f - comment[:deduction]
+                      end
+                    end
                   end
                 end
               end
             end
           end
         { text:
-            if deductions
+            if deductions.to_f > 0
+              "#{item[:path]} (+#{deductions})"
+            elsif deductions
               "#{item[:path]} (#{deductions})"
             else
               item[:path]
@@ -430,6 +477,7 @@ class Submission < ApplicationRecord
   protected
 
   def user_is_registered_for_course
+    return unless self.new_record? || self.user_id_changed?
     if user && !user.courses.any?{|cc| cc.id == course.id }
       errors.add(:base, "Not registered for this course :" + user.name)
     end
@@ -439,12 +487,14 @@ class Submission < ApplicationRecord
   end
 
   def submitted_file_or_manual_grade
+    return unless self.new_record? || self.upload_id_changed?
     if upload_id.nil? and self.assignment.type != "Exam"
       errors.add(:base, "You need to submit a file.")
     end
   end
 
   def file_below_max_size
+    return unless self.new_record? || self.upload_size_changed?
     msz = course.sub_max_size
     if upload_size > msz.megabytes
       errors.add(:base, "Upload exceeds max size (#{upload_size} > #{msz} MB).")
@@ -452,6 +502,7 @@ class Submission < ApplicationRecord
   end
 
   def has_team_or_user
+    return unless self.new_record? || self.team_id_changed? || self.user_id_changed?
     if assignment.team_subs?
       if team.nil?
         errors.add(:base, "Assignment requires team subs. No team set.")

@@ -27,21 +27,25 @@
   </li>
   <% end %>
 </ul>
-
+<% sorted_staff = @course.sorted_staff %>
+<% sorted_staff_by_id = sorted_staff.map{|s| [s.id, s]}.to_h %>
+<% sorted_staff.group_by(&:role).to_a.reverse.to_h.each do |role, by_role| %>
+<div class="row"><h4 class="col-sm-12"><%= Registration::roles.invert[role].humanize.pluralize(3) %></h4></div>
+<% grader_rows =
+   @who_grades.slice(*by_role.map(&:id)).to_a.in_groups_of(3).map{|a| a.compact.to_h} %>
+<% grader_rows.each do |row| %>
 <div class="row">
-<% @who_grades.each do |g, subs| %>
-<% next if g.nil? %>
-<% grader = @course.staff.find_by(id: g) %>
-<% next if grader.nil? %>
+<% row.each do |g, subs| %>
+<% grader = sorted_staff_by_id[g] %>  
 <div class="col-md-4">
-<h4><%= grader.name %></h4>
+<h5><%= grader.name %></h5>
 <ul>
   <% subs.each do |sub| %>
-  <% usernames =  %>
+  <% usernames = sub.submission_user_names %>
   <% grade = @grades[sub.id] %>
-  <% alloc = @allocations.detect{|a| a.submission_id == sub.id && a.who_grades_id == g} %>
+  <% alloc = @allocations.dig(g, sub.id) %>
   <li>
-    <%= link_to sub.submission_user_names,
+    <%= link_to usernames,
         edit_course_assignment_submission_grade_path(@course, @assignment, sub, grade) %>
     <% if grade.score.nil? %>
       <% if alloc.abandoned? %>
@@ -57,10 +61,11 @@
          end
          %>
       <span class="<%= textclass %>">
-        <br>assigned <span class="local-time"><%= alloc.grading_assigned.iso8601 %>
-      </span></span>
+        <br>assigned <span class="local-time"><%= alloc.grading_assigned.iso8601 %></span>
+      </span>
       <% end %>
     <% else %>
+      <% if alloc.nil? %><span class="text-success">(volunteered)</span><% end %>
       <span class="text-muted"><br>completed <span class="local-time"><%= grade.updated_at.iso8601 %></span></span>
     <% end %>
   </li>
@@ -69,3 +74,5 @@
 </div>
 <% end %>
 </div>
+<% end %>
+<% end %>

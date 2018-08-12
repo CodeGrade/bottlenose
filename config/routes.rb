@@ -43,11 +43,16 @@ Bottlenose::Application.routes.draw do
         post :bulk_enter
       end
     end
-    resources :reg_requests, only: [:new, :create]
-    delete 'reg_requests/:id/accept', to: 'reg_requests#accept', as: 'reg_request_accept'
-    delete 'reg_requests/:id/reject', to: 'reg_requests#reject', as: 'reg_request_reject'
-    delete 'reg_requests/:course_id/accept_all', to: 'reg_requests#accept_all', as: 'reg_request_accept_all'
-    delete 'reg_requests/:course_id/reject_all', to: 'reg_requests#reject_all', as: 'reg_request_reject_all'
+    resources :reg_requests, only: [:new, :create] do
+      member do
+        delete :accept
+        delete :reject
+      end
+      collection do
+        delete :accept_all
+        delete :reject_all
+      end
+    end
     resources :assignments do
       collection do
         get 'weights' => 'assignments#edit_weights'
@@ -62,12 +67,16 @@ Bottlenose::Application.routes.draw do
           get ':grader_id/edit' => 'grader_allocations#edit', as: 'edit'
           patch ':grader_id/edit' => 'grader_allocations#patch', as: 'patch'
           patch ':grader_id/update' => 'grader_allocations#update', as: 'update'
+          delete :abandon_all
+          delete :delete_all
         end
       end
       resources :graders, only: [] do
         member do
           get 'bulk' => 'grades#bulk_edit'
           post 'bulk' => 'grades#bulk_update'
+          get 'bulk_curve' => 'grades#bulk_edit_curve'
+          patch 'bulk_curve' => 'grades#bulk_update_curve'
         end
       end
       resources :matchings, only: [] do
@@ -75,9 +84,20 @@ Bottlenose::Application.routes.draw do
           get 'edit' => 'matching_allocations#edit', as: 'edit'
           patch 'edit' => 'matching_allocations#patch', as: 'patch'
           patch 'update' => 'matching_allocations#update', as: 'update'
+          patch 'bulk_enter' => 'matching_allocations#bulk_enter', as: 'bulk_enter'
+          delete 'delete_all' => 'matching_allocations#delete_all', as: 'delete_all'
         end
         member do
           delete 'delete' => 'matching_allocations#delete', as: 'delete'
+        end
+      end
+      resources :extensions, only: [] do
+        collection do
+          get 'edit' => 'individual_extensions#edit', as: 'edit'
+          patch 'edit' => 'individual_extensions#patch', as: 'patch'
+          patch 'update' => 'individual_extensions#update', as: 'update'
+          delete 'delete' => 'individual_extensions#delete', as: 'delete'
+          delete 'delete_all' => 'individual_extensions#delete_all', as: 'delete_all'
         end
       end
       resources :submissions, except: [:edit, :update, :destroy] do
@@ -104,10 +124,20 @@ Bottlenose::Application.routes.draw do
       end
     end
     resources :teamsets, only: [:index, :edit, :update] do
+      collection do
+        get :investigate
+        get :export
+      end
+      resources :team_requests, only: [:index, :create, :update, :destroy]
       member do
         patch :clone
         patch :randomize
+        patch :bulk_enter
         patch :dissolve_all
+        delete :accept_all_requests
+        delete :reject_all_requests
+        delete :accept_request
+        delete :reject_request
       end
       resources :teams, only: [:show] do
         member do

@@ -1,0 +1,68 @@
+<% @page_title = "Manage individual extensions for #{@assignment.name}" %>
+
+<h3>Manage individual extensions for
+  <%= link_to @assignment.name, course_assignment_path(@course, @assignment) %></h3>
+
+<h4>Original due date: <span class="local-time"><%= @assignment.due_date.iso8601 %></span></h4>
+<h3>
+  Existing extensions
+  <%= link_to "Revoke all extensions",
+      delete_all_course_assignment_extensions_path(@course, @assignment),
+      method: :delete, class: "btn btn-danger pull-right hidden",
+      id: "revoke_all", data: {confirm: "Are you sure you want to revoke all existing extensions?"} %>
+</h3>
+<div class="row">
+  <table class="table">
+    <thead>
+      <tr>
+        <th style="width: 2.1em;"></th>
+        <th><%= if @assignment.team_subs? then "Team" else "Student" end %></th>
+        <th>Extend until</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @all_potential.each do |tu| %>
+      <tr>
+        <td>
+          <% if @assignment.team_subs && tu.end_date %>
+          <span class="glyphicon glyphicon-alert" title="Inactive team"></span>
+          <% end %>
+        </td>
+        <td class="col-sm-6">
+          <%= form_tag patch_course_assignment_extensions_path(@course, @assignment),
+              id: "ext_#{tu.id}", method: :patch do %>
+            <% if @assignment.team_subs? %>
+            <input type="hidden" name="team_id" value="<%= tu.id %>" />
+            <% else %>
+            <input type="hidden" name="user_id" value="<%= tu.id %>" />
+            <% end %>
+          <% end %>
+          <%= if @assignment.team_subs? then show_team(tu) else show_user(tu) end %>
+        </td>
+        <td class="col-sm-4">
+          <%= text_field_tag "due_date",
+              @existing_extensions[tu.id]&.due_date,
+              form: "ext_#{tu.id}", class: "form-control datetime-picker" %>
+        </td>
+        <td class="col-sm-2 text-right">
+          <span style="padding: 6px;">
+          <i id="success_ext_<%= tu.id %>" style="font-size: 150%; top: 6px;"
+             class="hidden text-success glyphicon glyphicon-ok"
+             data-toggle="tooltip" title="Extension saved"
+          ></i><i id="failure_ext_<%= tu.id %>" style="font-size: 150%; top: 6px;"
+             class="hidden text-danger glyphicon glyphicon-remove"
+             data-toggle="tooltip" title="Extension not saved"
+          ></i></span>
+          <button id="revoke_<%= tu.id %>" type="button" class="btn btn-danger revoke hidden">Revoke</button>
+          <button id="submit_<%= tu.id %>" type="button" class="btn btn-success submit hidden">Save</button>
+          <%#= submit_tag "Submit", class: "btn btn-success", form: "ext_#{tu.id}" %>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
+<script>
+  <%= render "individual_extensions/edit.js" %>
+</script>

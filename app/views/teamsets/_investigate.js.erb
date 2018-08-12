@@ -1,0 +1,186 @@
+var assnToTeamsets = <%= raw json_escape(JSON.generate(@assignments_to_teamsets).gsub("],", "],\n")) %>;
+var allUsers = {};
+var allTeams = <%= raw json_escape(JSON.generate(@all_teams).gsub("},", "},\n")) %>;
+var userPath = "<%= user_path(id: '(uid)') %>";
+var teamPath = "<%= course_teamset_team_path(course_id: @course.id, teamset_id: '(tsid)', id: '(tid)') %>";
+function showUser(uid, u) {
+  return $("<a>").attr("href", userPath.replace("(uid)", uid)).text(u.name).addClass("user-link")
+                 .attr("title", $("<img>").attr("src", u.profile).attr("alt", u.name)
+                                          .attr("style", 'max-height: 300px; max-width: 300px;')[0].outerHTML)
+                 .data("toggle", "tooltip").data("delay", {show: 0, hide: 250})
+                 .data('html', true).tooltip('fixTitle');
+}
+function linkTeam(tid, terse) {
+  if (tid && allTeams[tid]) {
+    return $("<a>").attr("href", teamPath.replace('(tsid)', allTeams[tid].ts_id).replace('(tid)', tid))
+                   .text(terse ? "Team " + tid : allTeams[tid].desc);
+  } else {
+    return $("<span>").text("<none>");
+  }
+}  
+$(function() {
+  // Setup
+  $("#student1 option").each(function(i, opt) {
+    allUsers[opt.value] = {profile: opt.dataset.profile, name: opt.dataset.displayname};
+  });
+  $("#student2").html($("#student1").html());
+  $("#teamset2").html($("#teamset1").html());
+
+  // Common partners
+  $("#student-sort").change(function() {
+    var sortKey = $(this).val();
+    $("#student-selection select").map(function() {
+      var sel = $(this);
+      var opts = sel.find("option").get();
+      var selected = sel.val();
+      opts.sort(function(o1, o2) { 
+        var key1 = $(o1).data(sortKey);
+        var key2 = $(o2).data(sortKey);
+        return key1 < key2 ? -1 : (key1 > key2 ? 1 : 0);
+      });
+      opts.forEach(function(e) { $(e).text($(e).data(sortKey)); });
+      sel.html('').append(opts);
+      sel.val(selected);
+    });
+  });
+  $("#student-sort").change();
+  var allPartners = <%= raw json_escape(JSON.generate(@all_partners).gsub("},", "},\n")) %>;
+
+  function teamTD(team) {
+    var t = allTeams[team];
+    var ret = $("<td>");
+    var teamLink = linkTeam(team, true);
+    teamLink.attr("title",
+                  "<span class='local-time'>" + makeFriendlyDate(t.from, false) + "</span>" +
+                  " &mdash; " + 
+                  (t.to ? "<span class='local-time'>" + makeFriendlyDate(t.to, false) + "</span>" : "present"))
+            .data("html", true)
+            .tooltip('fixTitle');
+    ret.append($("<p>").append(teamLink));
+    var span = $("<span>").text(t.assns.map(function(n) { return assnToTeamsets[n][0]; }).join(", "));
+    ret.append($("<p>").append(span));
+    return ret;
+  }  
+  
+  $("#student-selection select").change(function() {
+    $("#results1 > tbody > tr").remove();
+    $("#results2 > tbody > tr").remove();
+    $("#results3 > tbody > tr").remove();
+    var student1 = $("#student1").val();
+    var student2 = $("#student2").val();
+    if (student1 == student2) return;
+    if (allPartners[student1] && allPartners[student1][student2]) {
+      allPartners[student1][student2].forEach(function(team) {
+        $("#results1 > tbody").append(
+          $("<tr>").append($("<td>").append(showUser(student1, allUsers[student1])))
+                   .append(teamTD(team))
+                   .append($("<td>").append(showUser(student1, allUsers[student2])))
+        );
+      });
+    }
+    var s1partners = allPartners[student1] || {};
+    var s2partners = allPartners[student2] || {};
+    for (var s1partner in s1partners) {
+      for (var s2partner in s2partners) {
+        if (s1partner == s2partner && s1partner != student1 && s2partner != student2) {
+          allPartners[student1][s1partner].forEach(function(s1team) {
+            allPartners[student2][s2partner].forEach(function(s2team) {
+              if (s1team === s2team) { return; }
+              var older = (allTeams[s1team].from < allTeams[s2team].from);
+              $("#results2 > tbody").append(
+                $("<tr>").append($("<td>").append(showUser(student1, allUsers[student1])))
+                         .append(teamTD(s1team))
+                         .append($("<td>").append(showUser(s1partner, allUsers[s1partner]))
+                                          .addClass(older ? "older-team" : "newer-team"))
+                         .append(teamTD(s2team))
+                         .append($("<td>").append(showUser(student2, allUsers[student2])))
+              );
+            });
+          });
+        }
+      }
+    }
+    for (var s1partner in s1partners) {
+      if (s1partner == student1 || s1partner == student2) { continue; }
+      for (var sa_partner in (allPartners[s1partner] || {})) {
+        if (sa_partner == student1 || sa_partner == s1partner || sa_partner == student2) { continue; }
+        for (var sb_partner in (allPartners[sa_partner] || {})) {
+          if (sb_partner == student2) {
+            allPartners[student1][s1partner].forEach(function(s1team) {
+              allPartners[s1partner][sa_partner].forEach(function(sab_team) {
+                if (s1team === sab_team) { return; }
+                var older_1a = (allTeams[s1team].from < allTeams[sab_team].from);
+                allPartners[sa_partner][student2].forEach(function(s2team) {
+                  if (sab_team === s2team) { return; }
+                  var older_ab = (allTeams[sab_team].from < allTeams[s2team].from);
+                  $("#results3 > tbody").append(
+                    $("<tr>").append($("<td>").append(showUser(student1, allUsers[student1])))
+                             .append(teamTD(s1team))
+                             .append($("<td>").append(showUser(s1partner, allUsers[s1partner]))
+                                              .addClass(older_1a ? "older-team" : "newer-team"))
+                             .append(teamTD(sab_team))
+                             .append($("<td>").append(showUser(sa_partner, allUsers[sa_partner]))
+                                              .addClass(older_ab ? "older-team" : "newer-team"))
+                             .append(teamTD(s2team))
+                             .append($("<td>").append(showUser(student2, allUsers[student2])))
+                  );
+                });
+              });
+            });
+          }
+        }
+      }
+    }
+  });
+
+  // Diff teamsets
+  var activeTeams = {
+      <% @active_teams.each do |tsid, teams| %>
+      <%= tsid %>: {
+        <% teams.to_a.in_groups_of(10).each do |teams| %>
+          <% teams.compact.each do |uid, tid| %><%= uid %>: <%= tid %>, <% end %>
+        <% end %>
+        },
+      <% end %>
+  };
+  $("#diff-teamsets select").change(function() {
+    $("#diff-table > tbody > tr").remove();
+    var ts1 = $("#teamset1").val();
+    var ts2 = $("#teamset2").val();
+    if (ts1 == ts2) return;
+    for (var uid in allUsers) {
+      var t1 = activeTeams[ts1][uid];
+      var t2 = activeTeams[ts2][uid];
+      var userChanged = false;
+      if (t1 === undefined && t2 === undefined) {
+        // skip
+      } else if (t1 === undefined || t2 === undefined) {
+        userChanged = true;
+      } else {
+        var u1 = allTeams[t1].users.join(",");
+        var u2 = allTeams[t2].users.join(",");
+        userChanged = (u1 != u2);
+      }
+      if (userChanged) {
+        $("#diff-table > tbody").append(
+          $("<tr>").append($("<td>").append(linkTeam(t1, false)))
+                   .append($("<td>").append(showUser(uid, allUsers[uid])))
+                   .append($("<td>").append(linkTeam(t2, false)))
+        );
+      }
+    }
+  });
+
+  // Pre-load page to specific teamsets or students
+  var hash = window.location.hash.replace(/#/g, '').split(":");
+  if (hash.length == 3) {
+    $("li a[href='#" + hash[0] + "']").click();
+    for (var i = 1; i < 3; i++) {
+      hash[i] = (hash[i] || "").split("=");
+      if (hash[i].length == 2) {
+        $("#" + hash[i][0]).val(hash[i][1]);
+        $("#" + hash[i][0]).change();
+      }
+    }
+  }
+});

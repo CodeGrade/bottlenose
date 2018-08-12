@@ -1,7 +1,11 @@
 <% @page_title = "Edit course registrations" %>
 <h2>Edit registrations</h2>
 
-<% roles = Registration.roles.to_a.map{|r| [r[0].humanize, r[0]] }
+<% if @cur_role == "professor"
+     roles = Registration.roles.to_a.map{|r| [r[0].humanize, r[0]] }
+   else
+     roles = [["Student", Registration.roles["student"]]]
+   end
    grouped_sections = @course.sections_by_type
    first_section_type = @course.section_types[0][0]
    Section.types.each do |type, _|
@@ -12,7 +16,7 @@
 <table class="table">
   <thead>
     <tr>
-      <th class="col-sm-5">Name</th>
+      <th class="col-sm-4">Name</th>
       <th class="col-sm-1">Role</th>
       <th class="col-sm-4">Section</th>
       <th class="col-sm-2"><% if type == first_section_type %>Re-enroll?<% end %></th>
@@ -22,7 +26,7 @@
   </thead>
   <tbody>
     <% @registrations.each do |r| %>
-    <% section = r.sections.where(type: type)&.first %>
+    <% section = @reg_sections[r.id].select{|s| s.type == type}&.first %>
     <% next unless section %>
     <tr>
       <td>
@@ -44,11 +48,17 @@
               data: {toggle: "toggle", on: "Reenroll", off: noopAction}} %>
         <% end %>
       </td>
-      <td><i id="success_<%= type %>_<%= r.id %>" style="font-size: 150%;"
+      <td style="white-space: nowrap;">
+        <span style="padding: 6px;">
+          <i id="success_<%= type %>_<%= r.id %>" style="font-size: 150%; top: 6px;"
              class="hidden text-success glyphicon glyphicon-ok"
              data-toggle="tooltip" title="Registration information saved"
-             ></i></td>
-      <!-- <td><%= submit_tag "Save", {form: "reg_#{type}_#{r.id}", class: "btn btn-default"} %></td> -->
+             ></i><i id="failure_<%= type %>_<%= r.id %>" style="font-size: 150%; top: 6px;"
+             class="hidden text-danger glyphicon glyphicon-remove"
+             data-toggle="tooltip" title="Registration information saved"
+           ></i></span><%= submit_tag "Save",
+            {form: "reg_#{type}_#{r.id}", id: "submit_#{type}_#{r.id}",
+             class: "btn btn-default hidden"} %></td>
     </tr>
     <% end %>
   </tbody>
@@ -57,7 +67,9 @@
 <script>
   $("form").submit(function() {
     var $form = $(this);
-    var $check = $("#success_" + $form.attr("id").split("_")[1] + $form.find("input[name='id']").val());
+    var $success = $("#" + $form.attr("id").replace('reg', 'success'));
+    var $failure = $("#" + $form.attr("id").replace('reg', 'failure'));
+    var $submit = $("#" + $form.attr("id").replace('reg', 'submit'));
     var valuesToSubmit = $form.serialize();
     $.ajax({
         type: "POST",
@@ -65,11 +77,13 @@
         data: valuesToSubmit,
         dataType: "JSON"
     }).done(function(json){
-      if (json.reg.dropped_date === null) {
-        $form.find("input[type='checkbox']").attr("disabled", true);
-        $form.find(".toggle-off").text("Already enrolled");
-      }
-      if (json.changes) {
+      if (json["no-change"] === true) {
+        // nothing
+      } else {
+        if (json.reg.dropped_date === null) {
+          $form.find("input[type='checkbox']").attr("disabled", true);
+          $form.find(".toggle-off").text("Already enrolled");
+        }
         for (var i = 0; i < json.changes.length; i++) {
           var old_section = $form.find("input[name='orig_sections[]']");
           if (old_section.val() == json.changes[i].old) {
@@ -77,7 +91,13 @@
           }
         }
       }
-      $check.removeClass("hidden");
+      $success.removeClass("hidden");
+      $failure.addClass("hidden");
+      $submit.addClass("hidden");
+    }).fail(function(_, msg, errorText) {
+      $success.addClass("hidden");
+      $failure.removeClass("hidden").attr('title', errorText).tooltip('fixTitle');
+      $submit.removeClass("hidden");
     });
     return false; // prevents normal behaviour
   }).map(function() {
@@ -86,9 +106,9 @@
       $("#success_" + $form.find("input[name='id']").val()).addClass("hidden");
     });
   });
-  $("tr").on("focusout", function(e) {
-    if (e.relatedTarget !== null && $(e.target).parents("tr")[0] !== $(e.relatedTarget).parents("tr")[0]) {
-      $(e.target).parents("tr").find("form").submit();
-    }
+  $("select, input[type!='submit']").change(function(e) {
+     $(e.target).parents("tr").find("input[type='submit']").attr("disabled", false).removeClass("hidden");
+     $(e.target).parents("tr").find("i.text-success").addClass("hidden");
+     $(e.target).parents("tr").find("i.text-danger").addClass("hidden");
   });
 </script>

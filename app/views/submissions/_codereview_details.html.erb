@@ -1,6 +1,12 @@
 <% content_for :wide_content do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
+<%# Styles injected here by script to turn comment visibility on and off %>
+<style id="comment-styles">
+</style>
 
-<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id), index|
+<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id, sub_team, sub_user), index|
    @submission_dirs = sub_dirs
    @submission_files = sub_files %>
 <% if @submission_info.length != 1 %>
@@ -39,16 +45,35 @@
       </div>
     </div>
     <script>
-      <%= render "submissions/render_comments.js", sub_dirs: sub_dirs, vertical: true, root: "sub_#{sub_id}" %>
+      <%= render "submissions/comment_edit_widgets.js" %>
+      <%= render "submissions/render_filepicker.js" %>
+      $(function() {
+        var dirInfo = <%= raw json_escape(JSON.pretty_generate(sub_dirs)) %>;
+        activateFileView("sub_<%= sub_id %>", "<%= @grade&.id || sub_id %>", dirInfo, false, true);
+      });
     </script>
   </div>
 
   <div class="responses form-group col-sm-6">
+    <% if cur_reg&.staff? %>
+    <% if @assignment.related_assignment %>
+    <span class="well well-sm well-info col-sm-12 text-center">This review is for the
+    <%= link_to "submission from #{sub_team || sub_user}",
+        course_assignment_submission_path(@course, @assignment.related_assignment, sub_id) %>
+    </span>
+    <% elsif @review_assignment %>
+    <span class="well well-sm well-info col-sm-12 text-center">This review is 
+    <%= link_to "from #{sub_team || sub_user}",
+        course_assignment_submission_path(@course, @review_assignment, @review_submission) %>
+    </span>
+    <% end %>
+    <% end %>
     <%= render "submissions/render_questions", root: "sub_#{sub_id}", sub_id: sub_id %>
     <div class="spacer">&nbsp;</div>
   </div>
   <script>
-    <%= render "submissions/render_questions.js", root: "sub_#{sub_id}" %>
+    <%= render "submissions/render_questions.js" %>
+    $(function() { activateQuestions("sub_<%= sub_id %>"); });
   </script>    
 </div>
 <% end %><%# @submission_info.each %>

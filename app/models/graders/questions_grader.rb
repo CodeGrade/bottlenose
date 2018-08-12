@@ -21,6 +21,13 @@ class QuestionsGrader < Grader
   end
 
 
+  def guess_who_graded(subs)
+    grades = Grade.where(grader_id: self, submission: subs).where.not(grading_output: nil).group_by(&:submission_id)
+    return grades.map do |sub_id, g|
+      [sub_id, YAML.load(File.open(g.first.grading_output))["grader"].to_i]
+    end.to_h
+  end
+
   protected
 
   def do_grading(assignment, sub)
@@ -39,5 +46,11 @@ class QuestionsGrader < Grader
     g.save!
 
     return g.score
+  end
+
+  def recompute_grades
+    self.grades.each do |g|
+      self.do_grading(self.assignment, g.submission) if g.score
+    end
   end
 end

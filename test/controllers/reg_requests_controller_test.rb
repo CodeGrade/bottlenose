@@ -48,13 +48,13 @@ class RegRequestsControllerTest < ActionController::TestCase
       post :create, params: {
         course_id: @cs301.id,
         reg_request: {
-          new_sections: [@section.crn],
+          new_sections: [@section],
           notes: "Let me in"
         }
       }
     end
 
-    assert_response :success
+    assert_response 400
   end
 
   test "should show reg_request" do

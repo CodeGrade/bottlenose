@@ -43,7 +43,12 @@
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>
       <p>This is the percentage of the final grade that this exam is worth.</p>
-      <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+      <span class="col-sm-9" style="padding-left: 0;">
+        <%= f.text_field :points_available, size: 10, class: 'form-control numeric' %>
+      </span>
+      <span class="pull-right">
+        <%= f.check_box :extra_credit, data: {toggle: "toggle", on: "Extra credit", off: "Regular"} %>
+      </span>
     </div>
   </div>
 
@@ -60,7 +65,13 @@
     </div>
   </div>
 
-  <%= f.hidden_field :lateness_config_id %>
+  <%= f.fields_for :lateness_config do |l| %>
+  <%= l.hidden_field :id %>
+  <% end %>
+  <%= f.fields_for :graders, asgn.graders do |gr| %>
+  <%= gr.hidden_field :type, value: "ExamGrader" %>
+  <%= gr.hidden_field :order, value: gr.object.order %>
+  <% end %>
   <div class="form-group">
   <%= f.submit nil, class: 'btn btn-primary' %>
   </div>

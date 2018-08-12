@@ -3,6 +3,8 @@ require 'tap_parser'
 require 'audit'
 
 class Grader < ApplicationRecord
+  DEFAULT_COMPILE_TIMEOUT = 60
+  DEFAULT_GRADING_TIMEOUT = 300
   class GradingJob
     # This job class helps keeps track of all jobs that go into the beanstalk system
     # It keeps track of starting times for them, and the arguments passed in.
@@ -10,6 +12,9 @@ class Grader < ApplicationRecord
     # the status page is visited.
     # Change this one job class to change the integration with beanstalk.
     include Backburner::Queue
+    # With a Postgres connection limit of 100, and a pool size of 5,
+    # this needs to stay low enough to leave some headroom, and 5 * 15 == 75 < 100
+    queue_jobs_limit 15
     def self.enqueue(grader, assn, sub, opts = {})
       job = Backburner::Worker.enqueue GradingJob, [grader.id, assn.id, sub.id], opts
 
@@ -24,7 +29,7 @@ class Grader < ApplicationRecord
       job[:id]
     end
     def self.perform(grader_id, assn_id, sub_id)
-      Grader.find(grader_id).grade_sync!(assn_id, sub_id)
+      Grader.find(grader_id).grade_sync!(Assignment.find(assn_id), Submission.find(sub_id))
     end
 
     def self.prune(threshold = 250)
@@ -43,6 +48,8 @@ class Grader < ApplicationRecord
         end
       rescue
         # nothing to do
+      ensure
+        bean.close if bean
       end
     end
     def self.clear_all!
@@ -61,6 +68,8 @@ class Grader < ApplicationRecord
         return count
       rescue Exception => e
         return "Error clearing queue: #{e}"
+      ensure
+        bean.close if bean
       end
     end
   end
@@ -73,14 +82,15 @@ class Grader < ApplicationRecord
   has_many :grades
   validates_presence_of :assignment
   validates :order, presence: true, uniqueness: {scope: :assignment_id}
-
+  before_save :recompute_grades, if: :avail_score_changed?
+  
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
   end
   @delayed_grades = {}
   @delayed_count = 0
-
+  
   def self.delayed_grades
     @delayed_grades
   end
@@ -90,8 +100,31 @@ class Grader < ApplicationRecord
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
   # subtype they are, yet
-  attr_accessor :test_class
-  attr_accessor :errors_to_show
+  def test_class
+    @test_class
+  end
+  def test_class=(value)
+    params_will_change! if test_class != value
+    @test_class = value
+  end
+  def errors_to_show
+    @errors_to_show
+  end
+  def errors_to_show=(value)
+    params_will_change! if errors_to_show != value
+    @errors_to_show = value
+  end
+  def self.default_line_length
+    102
+  end
+  def line_length
+    (@line_length || Grader.default_line_length).to_i
+  end
+  def line_length=(value)
+    params_will_change! if line_length != value
+    @line_length = value
+  end
+
   # Needed to make the upload not be anonymous
   attr_accessor :upload_by_user_id
 
@@ -99,10 +132,7 @@ class Grader < ApplicationRecord
     select(column_names - ["id"]).distinct
   end
 
-  def grade_sync!(asn_id, sub_id)
-    assignment = Assignment.find(asn_id)
-    submission = Submission.find(sub_id)
-
+  def grade_sync!(assignment, submission)
     ans = do_grading(assignment, submission)
     submission.compute_grade! if submission.grade_complete?
     ans
@@ -110,10 +140,9 @@ class Grader < ApplicationRecord
 
   def grade(assignment, submission, prio = 0)
     if autograde?
-      GradingJob.enqueue(self, assignment, submission,
-                         prio: 1000 + prio, ttr: 1200)
+      GradingJob.enqueue self, assignment, submission, prio: 1000 + prio, ttr: 1200
     else
-      do_grading(assignment, submission)
+      grade_sync!(assignment, submission)
     end
   end
 
@@ -132,13 +161,17 @@ class Grader < ApplicationRecord
   end
 
   def ensure_grade_exists_for!(sub)
-    g = grade_for(sub)
+    g = grade_for(sub, true)
     if g.new_record?
       g.save
       true
     else
       false
     end
+  end
+
+  def guess_who_graded(sub)
+    nil
   end
 
   def upload_file
@@ -203,20 +236,24 @@ class Grader < ApplicationRecord
 
   protected
 
+  def recompute_grades
+    # nothing to do by default
+  end
+
   def do_grading(assignment, submission)
     fail NotImplementedError, "Each grader should implement this"
   end
 
-  def grade_for(sub)
+  def grade_for(sub, nosave = false)
     g = Grade.find_or_initialize_by(grader_id: self.id, submission_id: sub.id)
     if g.new_record?
       g.out_of = self.avail_score
-      g.save
+      g.save unless nosave
     end
     g
   end
 
-  def run_command_produce_tap(assignment, sub)
+  def run_command_produce_tap(assignment, sub, timeout: nil)
     g = self.grade_for sub
     u = sub.upload
     grader_dir = u.grader_path(g)
@@ -225,17 +262,20 @@ class Grader < ApplicationRecord
 
     prefix = "Assignment #{assignment.id}, submission #{sub.id}"
 
-    tap_out, env, args = get_command_arguments(assignment, sub)
+    tap_out, env, args, replacements = get_command_arguments(assignment, sub)
 
-    Audit.log("#{prefix}: Running #{self.type}.  Command line: #{args.join(' ')}\n")
-    print("#{prefix}: Running #{self.type}.  Command line: #{args.join(' ')}\n")
-    output, err, status = Open3.capture3(env, *args)
+    Audit.log("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Timeout: #{timeout || 'unlimited'}.  Command line: #{args.join(' ')}")
+    print("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Timeout: #{timeout || 'unlimited'}.  Command line: #{args.join(' ')}\n")
+    output, err, status, timed_out = ApplicationHelper.capture3(env, *args, timeout: timeout)
     File.open(grader_dir.join(tap_out), "w") do |style|
+      replacements&.each do |rep, with|
+        output = output.gsub(rep, with)
+      end
       style.write(Upload.upload_path_for(output))
       g.grading_output = style.path
     end
-    if !status.success?
-      Audit.log "#{prefix}: #{self.type} checker failed: status #{status}, error: #{err}\n"
+    if timed_out || !status&.success?
+      Audit.log "#{prefix}: #{self.type} checker failed: timed out #{timed_out}, status #{status}, error: #{err}"
       InlineComment.where(submission: sub, grade: g).destroy_all
 
       g.score = 0
@@ -260,7 +300,7 @@ class Grader < ApplicationRecord
       return 0
     else
       tap = TapParser.new(output)
-      Audit.log "#{prefix}: #{self.type} checker results: Tap: #{tap.points_earned}\n"
+      Audit.log "#{prefix}: #{self.type} checker results: Tap: #{tap.points_earned}"
 
       g.score = tap.points_earned
       g.out_of = tap.points_available

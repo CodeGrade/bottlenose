@@ -24,10 +24,19 @@ class TermsControllerTest < ActionController::TestCase
   test "should create term" do
     sign_in @ken
     assert_difference('Term.count') do
-      post :create, params: {term: { name: @term.name }}
+      post :create, params: {term: { year: @term.year + 1000, semester: @term.semester }}
     end
 
     assert_redirected_to term_path(assigns(:term))
+  end
+
+  test "should not create term" do
+    sign_in @ken
+    assert_no_difference('Term.count') do
+      post :create, params: {term: { year: @term.year, semester: @term.semester }}
+    end
+
+    assert_response 400
   end
 
   test "should show term" do
@@ -44,7 +53,7 @@ class TermsControllerTest < ActionController::TestCase
 
   test "should update term" do
     sign_in @ken
-    put :update, params: {id: @term, term: { name: @term.name }}
+    put :update, params: {id: @term, term: { semester: @term.semester, year: @term.year }}
     assert_redirected_to term_path(assigns(:term))
   end
 

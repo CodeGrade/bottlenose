@@ -1,4 +1,25 @@
 <% @page_title = "New Response: #{@assignment.name}" %>
+<% content_for :wide_content_before do %>
+<script>
+  <%= render 'submissions/purify.js' %>
+</script>
+<%# Styles injected here by script to turn comment visibility on and off %>
+<style id="comment-styles"></style>
+<%= render "layouts/standard_course_info" %>
+<% if @submission.errors.any? %>
+<div id="error_explanation" class="alert alert-danger">
+  <h2><%= pluralize(@submission.errors.count, "error") %> prohibited
+  this codereview from being saved:</h2>
+
+  <ul>
+    <% @submission.errors.full_messages.each do |msg| %>
+    <li><%= msg %></li>
+    <% end %>
+  </ul>
+</div>
+<% end %>
+
+<% end %>
 <% content_for :wide_content do %>
 
 <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)] do |f| %>
@@ -9,17 +30,24 @@
      staff_override = true_user.course_staff?(@course)
      %>
   <%= f.hidden_field :type, value: "CodereviewSub" %>
-<div class="container">
   <%= render "new_common", f: f, type: {noun: "response", verb: "respond", gerund: "responding" },
-      not_following: not_following, allowed: allowed, rate_limit: rate_limit, staff_override: staff_override %>
-</div>
+      not_following: not_following, allowed: allowed,
+      rate_limit: rate_limit, staff_override: staff_override,
+      container_style: "container" do %>
 
 <% if (allowed && not_following && !rate_limit) || staff_override %>
 <% if @submission_info.count < @assignment.review_count %>
 <div class="container">
   <h1>No assignments to review</h1>
+  <% if @assignment.review_target == "self" %>
+  <p>You have not submitted to
+    <%= link_to @assignment.related_assignment.name,
+        course_assignment_path(@course, @assignment.related_assignment) %>,
+    so there is nothing for you to review.</p>
+  <% else %>
   <p>There is nothing available at this time to review.  If this is
     not true, please contact your professor.</p>
+  <% end %>
 </div>
 <% else %>
 <% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id), index|
@@ -59,7 +87,12 @@
       </div>
     </div>
     <script>
-      <%= render "render_comments.js", sub_dirs: sub_dirs, vertical: true, root: "sub_#{sub_id}" %>
+      <%= render "submissions/comment_edit_widgets.js" %>
+      <%= render "submissions/render_filepicker.js" %>
+      $(function() {
+        var dirInfo = <%= raw json_escape(JSON.pretty_generate(sub_dirs)) %>;
+        activateFileView("sub_<%= sub_id %>", "new-submission", dirInfo, false, true);
+      });
     </script>
   </div>
 
@@ -88,7 +121,7 @@
                         locals: {i: i, sub_id: sub_id, count: @count, part_ans: part_ans, part_i: part_i, sub_files: sub_files} %>
                     <% elsif part["text"] %>
                     <p><%= sanitize_question(part["text"], allow_code: true) %></p>
-                    <textarea class="form-control" rows="5"
+                    <textarea class="form-control optional" rows="5"
                               name="answers[<%= sub_id %>][<%= i + @count %>][parts][<%= part_i %>][info]"><%= part_ans&.dig("info") %></textarea>
                     <% elsif part["requiredText"] %>
                     <p><%= sanitize_question(part["requiredText"], allow_code: true) %></p>
@@ -134,16 +167,17 @@
     
 
 <% end %><%# if not blank %>
-<% end %><%# if allowed or staff-override %>
+<% end %><%# if allowed || staff-override %>
+<% end %><%# _new_common %>
 <% end %><%# form-for %>
 <script>
-  <%= render partial: "new_questions.js", locals: {count: (@count.to_i - 1)} %>
+  <%= render partial: "new_questions.js", locals: {count: @count.to_i} %>
   $(".navbar-header a").click(function(e) { 
     window.scrollTo(0, $($(this).attr("href"))[0].offsetTop); 
     e.stopPropagation();
     e.preventDefault();
   });
-  var deadline = moment(Date.parse("<%= @assignment.due_date.strftime("%Y/%m/%d %H:%M") %>")).valueOf();
+  var deadline = moment(Date.parse("<%= @assignment.effective_due_date(current_user, @team).strftime("%Y/%m/%d %H:%M") %>")).valueOf();
   var now = moment().valueOf();
   setTimeout(function() {
     var warning = $("#late-warning");

@@ -7,17 +7,14 @@ class Section < ApplicationRecord
   belongs_to :course
   belongs_to :instructor, :class_name => "User", :foreign_key => "instructor_id", :primary_key => "id"
   delegate :term, to: :course
+  has_many :registration_sections
+  has_many :registrations, through: :registration_sections
+  has_many :users, through: :registrations
 
-  validates :crn, presence: true, uniqueness: true # TODO: scope it per term?
+
+  validates :crn, presence: true
   validates :instructor, presence: true
   validates :meeting_time, length: { minimum: 3 }
-
-  after_save do
-    if self.saved_change_to_crn?
-      RegistrationSection.where(section_id: self.crn_before_last_save).update(section_id: self.crn)
-      RegRequestSection.where(section_id: self.crn_before_last_save).update(section_id: self.crn)
-    end
-  end
 
   def to_s
     if self.meeting_time.to_s != ""
@@ -32,6 +29,41 @@ class Section < ApplicationRecord
   end
 
   def prof_name=(username)
-    self.instructor = User.find_by_username(username)
+    self.instructor = User.find_by(username: username)
+  end
+
+  def students
+    users.where("registrations.role": Registration::roles["student"])
+  end
+
+  def students_with_registrations
+    students.joins("JOIN registration_sections ON registrations.id = registration_sections.registration_id")
+      .joins("JOIN sections ON registration_sections.section_id = sections.id")
+  end
+
+  def users_with_drop_info
+    self.course.users_with_drop_info(self.users)
+  end
+
+  def students_with_drop_info
+    self.course.users_with_drop_info(self.students)
+  end
+
+  def active_students
+    self.students_with_drop_info.where("registrations.dropped_date": nil)
+  end
+
+  def professors
+    users.where("registrations.role": Registration::roles["professor"])
+  end
+
+  def graders
+    users.where("registrations.role": Registration::roles["grader"])
+  end
+
+  def staff
+    users
+      .where("registrations.role <> #{Registration::roles["student"]}")
+      .where("registrations.dropped_date is null")
   end
 end

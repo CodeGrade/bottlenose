@@ -12,11 +12,12 @@
 
 <div class="row">
   <div class="col-md-12">
+    <% course_regs = current_user.course_regs_by_term %>
     <% @courses_by_term.each do |term, courses| %>
       <% next if term.archived? %>
       <h2><%= term.name %></h2>
 
-      <%= render 'table', courses: courses %>
+      <%= render 'table', courses: courses, reg_info: (course_regs[term] || {}) %>
     <% end %>
   </div>
 </div>

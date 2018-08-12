@@ -1,7 +1,36 @@
+<style>
+  .btn-blank { background-image: none; border: none; background: transparent; padding: initial; }
+  <% Section.types.each do |t, _| %>
+  table#teams .multi_<%= t %> { display: none; }
+  table#team-requests .multi_<%= t %> { display: none; }
+  <% end %>
+  <% Section.types.each do |t, _| %>
+  table#teams.show_<%= t %> .multi_<%= t %> { display: inline; }
+  table#team-requests.show_<%= t %> .multi_<%= t %> { display: inline; }
+  <% end %>
+  <% @course.sections.each do |s| %>
+  table#team-requests.show_one .sec_<%= s.crn %> { display: none; }
+  table#team-requests.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  table#users.show_one .sec_<%= s.crn %> { display: none; }
+  table#users.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  table#teams.show_one .sec_<%= s.crn %> { display: none; }
+  table#teams.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  <% end %>
+  h3.user-headers.show_one .show_all { display: none; }
+  table#team-requests.show_one .show_all { display: none; }
+  <% @course.sections.each do |s| %>
+  h3.user-headers .sec_<%= s.crn %> { display: none; }
+  h3.user-headers.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: inline-block; }
+  table#team-requests div.sec_<%= s.crn %> { display: none; }
+  table#team-requests.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: inline-block; }
+  table#team-requests.show_one tr.sec_<%= s.crn %> { display: none; }
+  table#team-requests.show_one.sec_<%= s.crn %> tr.sec_<%= s.crn %> { display: table-row; }
+  <% end %>
+</style>
 <div class="row">
   <% if @teamset.errors.any? %>
   <div id="error_explanation" class="alert alert-danger">
-    <h3><%= pluralize(@teamset.errors.count, "error") %> prohibited this team from being saved:</h3>
+    <h2><%= pluralize(@teamset.errors.count, "error") %> prevented changes to this teamset from being saved:</h2>
     <ul>
       <% @teamset.errors.full_messages.each do |message| %>
       <li><%= message %></li>
@@ -52,12 +81,16 @@
         var end = $("#end_date").parent();
         start.on("dp.change", function(e) {
           var v = $("#start_date").val();
+          $("input[id='custom_start_date']").val(v);
           $("#random_start_date").val(v);
+          $("#bulk_start_date").val(v);
           $("#single_start_date").val(v);
         });
         end.on("dp.change", function(e) {
           var v = $("#end_date").val()
+          $("input[id='custom_end_date']").val(v);
           $("#random_end_date").val(v);
+          $("#bulk_end_date").val(v);
           $("#single_end_date").val(v);
         });
         start.trigger("dp.change");
@@ -73,6 +106,134 @@
 </div>
 
 <div class="well">
+  <% if @team_requests.length > 0 %>
+  <h3>Existing team requests</h3>
+  <div class="col-md-12">
+    <h4>Filter team requests by section: <select class="sections" data-target="table#team-requests">
+        <option value="show_all">Show all sections</option>
+        <% @course.sections.each do |s| %>
+        <option value="show_one show_<%= s.type %> sec_<%= s.crn %>">Section <%= s.to_s %></option>
+        <% end %>
+      </select>
+    </h4>
+  </div>
+  <div style="max-height: 15em; overflow-y: scroll; border: 1px solid #ccc; border-radius: 4px;">
+    <table class="table table-striped" id="team-requests" style="margin-bottom: 0;">
+      <tr>
+        <th style="vertical-align: middle;">Students</th>
+        <th>
+          <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
+            <div class="btn btn-success btn-sm show_all">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_all_requests }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <%= custom.button type: "submit", method: :delete,
+                  style: "float: unset;", class: "btn-blank" do %>
+                <span class="glyphicon glyphicon-ok"></span>
+                <span style="padding-left: 1em;">Accept All</span>
+              <% end %><% end %><% end %>
+            </div><% # commenting out the whitespace, so there's no gap...
+          %><div class="btn btn-danger btn-sm show_all">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_all_requests }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <%= custom.button type: "submit", method: :delete,
+                  style: "float: unset;", class: "btn-blank",
+                  data: { confirm: "Are you sure you want to reject ALL teammate requests?" } do %>
+                <span class="glyphicon glyphicon-remove"></span>
+                <span style="padding-left: 1em;">Reject All</span>
+              <% end %><% end %><% end %>
+            </div>
+            <% @course.sections.each do |s| %>
+            <div class="btn btn-success btn-sm show_one sec_<%= s.crn %>">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_all_requests }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <%= hidden_field_tag "section_id", s.id %>
+              <%= custom.button type: "submit", method: :delete,
+                  style: "float: unset;", class: "btn-blank" do %>
+                <span class="glyphicon glyphicon-ok"></span>
+                <span style="padding-left: 1em;">Accept all in section</span>
+              <% end %><% end %><% end %>
+            </div><% # commenting out the whitespace, so there's no gap...
+          %><div class="btn btn-danger btn-sm show_one sec_<%= s.crn %>">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_all_requests }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <%= hidden_field_tag "section_id", s.id %>
+              <%= custom.button type: "submit", method: :delete,
+                  style: "float: unset;", class: "btn-blank",
+                  data: { confirm: "Are you sure you want to reject ALL teammate requests in this section?" } do %>
+                <span class="glyphicon glyphicon-remove"></span>
+                <span style="padding-left: 1em;">Reject all in section</span>
+              <% end %><% end %><% end %>
+            </div>
+            <% end %>
+          </div>
+        </th>
+      </tr>
+      <% @team_requests.each do |tr, sections, hazards, history| %>
+      <% classes = sections.map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
+      <tr class="<%= classes %>">
+        <td>
+          <% hazards.each do |hazard, warning| %>
+          <span class="glyphicon glyphicon-alert <%= hazard %>" title="<%= warning %>"></span>
+          <% end %>
+          <%= tr.map{|u| maybe_link_user(true, u).html_safe}.to_sentence.html_safe %>
+        </td>
+        <td>
+          <div class="btn-group pull-right" style="white-space: nowrap;" role="group">
+            <% if !history.empty? %>
+            <div class="btn btn-info btn-sm dropdown">
+              <div class="dropdown-toggle" data-toggle="dropdown"
+                   title="Some of these team members have been partners before">
+                <i class="glyphicon glyphicon-question-sign"></i>
+                <span class="caret"></span>
+              </div>
+              <ul class="dropdown-menu dropdown-menu-right">
+                <% history.each do |info, link| %>
+                <li><%= link_to info, link, target: "_blank" %></li>
+                <% end %>
+              </ul>
+            </div>
+            <% end # commenting out the whitespace, so there's no gap...
+          %><div class="btn btn-success btn-sm">
+            <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :accept_request }) do |f| %>
+            <%= fields_for "custom" do |custom| %>
+            <%= custom.hidden_field "start_date" %>
+            <%= custom.hidden_field "end_date" %>
+            <% tr.each do |t| %>
+              <%= custom.hidden_field :users, multiple: true, value: t.id %>
+            <% end %>
+            <%= custom.submit "Accept request", style: "float: unset;", class: "btn-blank" %>
+            <% end %><% end %>
+            </div><% # commenting out the whitespace, so there's no gap...
+          %><div class="btn btn-danger btn-sm">
+              <%= form_for([@course, @teamset], html: {method: :delete}, url: { action: :reject_request }) do |f| %>
+              <%= fields_for "custom" do |custom| %>
+              <%= custom.hidden_field "start_date" %>
+              <%= custom.hidden_field "end_date" %>
+              <% tr.each do |t| %>
+                <%= custom.hidden_field :users, multiple: true, value: t.id %>
+              <% end %>
+              <%= custom.submit "Reject request", style: "float: unset;",
+                  data: { confirm: "Are you sure you want to reject this team request?" }, class: "btn-blank" %>
+              <% end %><% end %>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <% end %>
+    </table>
+  </div>
+    
+  <h3 class="middle-separator">OR</h3>
+  <% end %>
+  
   <%= form_for([@course, @teamset], :url => { action: :randomize, method: :patch }) do |f| %>
   <h3>Randomize all teams</h3>
   <%= fields_for "random" do |rand| %>
@@ -81,11 +242,15 @@
       <%= rand.hidden_field "start_date" %>
       <%= rand.hidden_field "end_date" %>
       <span class="col-sm-4">Generate random teams of size <%= rand.spinner "size", 2, :min => 2, :max => 10 %></span>
-      <span class="col-sm-4">
+      <span class="col-sm-8">
         Match team members:
         <%= rand.select "teams_within",
-            options_for_select([["Within whole course", "course"]] +
-            @course.section_types.map{|t, v| ["Within #{t.pluralize(2)}", t]}) %>
+            grouped_options_for_select([
+            ["Create teams for the whole course",
+              [["From anywhere in the course", "course"]] +
+               @course.section_types.map{|t, v| ["From within the same #{t} section", t]}],
+            ["Create teams for an individual section",
+              @course.sections.map{|s| ["Section #{s}", s.crn.to_s]}]]) %>
       </span>
     </div>
     <p class="col-sm-12">
@@ -101,7 +266,6 @@
   <% other_teamsets = @course.teamsets.reject{|ts| ts.id == @teamset.id} %>
   <% if other_teamsets.count > 0 %>
   <%= form_for([@course, @teamset], :url => { action: :clone, method: :post }) do |f| %>
-  <%= f.hidden_field :course_id %>
   <h3>Copy existing teamset</h3>
   <div class="form-group">
     <%= select_tag(:teamset,
@@ -128,10 +292,40 @@
   
   <h3 class="middle-separator">OR</h3>
 
+  <%= form_for([@course, @teamset], :url => {action: :bulk_enter, method: :post }) do |f| %>
+  <h3>Enter bulk team members</h3>
+  <%= fields_for "bulk" do |bulk| %>
+  <%= bulk.hidden_field "start_date" %>
+  <%= bulk.hidden_field "end_date" %>
+  <div class="row">
+    <div class="form-group">
+    <%= label_tag :bulk_teams, "Teams", class: "col-sm-12" %>
+    <div class="col-sm-8">
+      <%= text_area_tag :bulk_teams, @teamset.bulk_teams, class: "form-control", rows: 10 %>
+    </div>
+    <p class="help-block col-sm-4">
+      Enter one team per line, by supplying the comma-separated
+      usernames of the relevant students.  Teams will only be created if
+      all the relevant students are <i>not</i> currently in a team, so
+      be sure to dissolve any teams before proceeding.
+      <code style="white-space: pre-line; display: block;">username1, username2, username3
+        ...
+      </code>
+    </p>
+    <span class="clearfix"></span>
+    </div>
+    <div class="form-group col-sm-12">
+    <%= f.submit "Create teams", id: "submit-bulk",
+        class: "btn btn-primary col-sm-3", style: "float: none;" %>
+    </div>
+  </div>
+  <% end %>
+  <% end %>
+  
+  <h3 class="middle-separator">OR</h3>
+
   <%= form_for([@course, @teamset]) do |f| %>
   <%= fields_for "single" do |single| %>
-  <%= single.hidden_field :course_id %>
-  <%= single.hidden_field :teamset_id %>
   <%= single.hidden_field "start_date" %>
   <%= single.hidden_field "end_date" %>
   <h3>Select team members</h3>
@@ -152,12 +346,28 @@
 </div>
 
 <div class="row">
+  <div class="col-md-12">
+    <h4>Filter teams and students by section:
+      <select class="sections" data-target=".user-headers, table#users, table#teams">
+        <option value="show_all">Show all sections</option>
+        <% @course.sections.each do |s| %>
+        <option value="show_one show_<%= s.type %> sec_<%= s.crn %>">Section <%= s.to_s %></option>
+        <% end %>
+      </select>
+    </h4>
+  </div>
   <div class="col-md-6">
-    <h3>Active Teams
+    <h3 class="user-headers">Active Teams
       <%= link_to "Dissolve all",
           dissolve_all_course_teamset_path(@course, @teamset),
-          class: "btn btn-danger pull-right", 
+          class: "btn btn-danger pull-right show_all", 
           method: :patch, data: { confirm: "Are you sure you want to dissolve all teams?" } %>
+      <% @course.sections.each do |s| %>
+      <%= link_to "Dissolve all in section",
+          dissolve_all_course_teamset_path(@course, @teamset, section_id: s.id),
+          class: "btn btn-danger pull-right show_one sec_#{s.crn}", 
+          method: :patch, data: { confirm: "Are you sure you want to dissolve all teams in this section?" } %>
+      <% end %>
     </h3>
 
     <div class="long-table">
@@ -170,8 +380,14 @@
       </thead>
       <tbody>
         <% @teams.each do |team| %>
-        <tr>
-          <td><%= show_team team %></td>
+        <% sections, hazards = @team_info[team.id]
+           classes = sections.map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
+        <tr class="<%= classes %>">
+          <td>
+            <% hazards.each do |hazard, warning| %>
+            <span class="glyphicon glyphicon-alert <%= hazard %>" title="<%= warning %>"></span>
+            <% end %>
+            <%= show_team team %></td>
           <td>
             <%= link_to "Dissolve",
                 dissolve_course_teamset_team_path(@course, @teamset, team),
@@ -186,11 +402,21 @@
   </div>
 
   <div class="col-md-6">
-    <h3>
+    <h3 class="user-headers">
       <% all_emails = @others.sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>"} %>
+      <span class="show_all">
       <%= mail_to "#{current_user.name} <#{current_user.email}>", "@",
                   bcc: all_emails.join(","), title: "Email all unpartnered students (bcc)" %>
       Students Without Teams (<%= @others.length %> remaining)
+      </span>
+      <% @others_by_section_ids.each do |sec_id, others|
+         emails = others.sort_by{|u| u.name.downcase}.map {|u| "#{u.name} <#{u.email}>"} %>
+      <span class="show_one sec_<%= @section_crns[sec_id] %>">
+      <%= mail_to "#{current_user.name} <#{current_user.email}>", "@",
+                  bcc: emails.join(","), title: "Email all unpartnered students in section (bcc)" %>
+      Students without teams in section (<%= others.length %> remaining)
+      </span>
+      <% end %>
     </h3>
     
     <div class="long-table">
@@ -203,7 +429,9 @@
       </thead>
       <tbody>
 	<% @others.sort_by(&:sort_name).each do |user| %>
-	<%= content_tag("tr", class: "user", data: { id: user.id, name: user.name }) do %>
+        <% classes = (@sections_by_user[@users[user.id]&.reg_id] || [])
+                        .map{|sec| "sec_#{@section_crns[sec.section_id]}"}.join(" ") %>
+	<%= content_tag("tr", class: "user #{classes}", data: { id: user.id, name: user.name }) do %>
 	<td><%= show_user user %></td>
         <td><div class="add-user-btn btn btn-success btn-xs pull-right">Add</div></td>
 	<% end %>
@@ -216,5 +444,15 @@
 <script>
   $(function() {
     $('.spinner').each(function() { activateSpinner(this) });
+  });
+  $(function() {
+    $(".sections").each(function() {
+      $(this).data("prevSection", "show_all");
+    });
+    $(".sections").change(function(e) {
+      var thisSelect = $(this);
+      $(thisSelect.data("target")).removeClass(thisSelect.data("prevSection")).addClass(thisSelect.val());
+      thisSelect.data("prevSection", thisSelect.val());
+    });
   });
 </script>

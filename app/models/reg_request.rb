@@ -22,7 +22,7 @@ class RegRequest < ActiveRecord::Base
     reg.role = self.role
     reg.show_in_lists = (role == 'student')
     reg.dropped_date = nil # implicitly un-drop user
-    reg.new_sections = self.sections.map(&:crn)
+    reg.new_sections = self.sections
     reg
   end
 
@@ -43,7 +43,7 @@ class RegRequest < ActiveRecord::Base
       self.errors.add(:base, "A new registration must include at least one section")
       return false
     end
-    @sections = Section.where(crn: @requested_sections)
+    @sections = Section.where(course: self.course, crn: @requested_sections)
     if @sections.length != @requested_sections.count
       self.errors.add(:base, "Could not find all requested sections")
       return false
@@ -60,7 +60,7 @@ class RegRequest < ActiveRecord::Base
   def create_new_sections
     @sections.each do |s|
       begin
-        RegRequestSection.create!(reg_request_id: self.id, section_id: s.crn)
+        RegRequestSection.create!(reg_request_id: self.id, section_id: s.id)
       rescue Exception => e
         self.errors.add(:base, "Could not register for section #{s.crn}: #{e}")
         raise ActiveRecord::Rollback

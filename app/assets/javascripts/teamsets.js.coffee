@@ -27,3 +27,4 @@ setup_form = () ->
 run_on_page "teamsets/create", setup_form
 run_on_page "teamsets/new", setup_form
 run_on_page "teamsets/edit", setup_form
+run_on_page "teamsets/bulk_enter", setup_form

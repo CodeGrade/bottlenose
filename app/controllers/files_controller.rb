@@ -9,6 +9,8 @@ class FilesController < ApplicationController
       case File.extname(params[:path]).downcase
       when ".jpg", ".jpeg", ".png", ".gif", ".tap"
         disp = "inline"
+      when ".pdf"
+        disp = nil
       else
         disp = "attachment"
       end

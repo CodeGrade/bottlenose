@@ -1,21 +1,9 @@
 <%= f.hidden_field :assignment_id %>
 <%= f.hidden_field :user_id %>
 
-<% if @submission.errors.any? %>
-<div id="error_explanation" class="alert alert-danger">
-  <h2><%= pluralize(@submission.errors.count, "error") %> prohibited
-  this <%= type[:noun] %> from being saved:</h2>
-
-  <ul>
-    <% @submission.errors.full_messages.each do |msg| %>
-    <li><%= msg %></li>
-    <% end %>
-  </ul>
-</div>
-<% end %>
-
-<% unless @assignment.assignment.nil? or @assignment.assignment.empty? %>
-<div class="col-md-12">
+<% @accept_inputs = false %>
+<% unless @assignment.assignment.nil? || @assignment.assignment.empty? %>
+<div class="<%= container_style %>">
   <div class="panel panel-default">
     <div class="panel-heading">
       <h3 class="panel-title">Assignment description</h3>
@@ -29,16 +17,18 @@
 </div>
 <% end %>
 
-<div class="col-md-12">
+<div class="<%= container_style %>">
   <% if @team.nil? && @assignment.team_subs? %>
   <div class="alert alert-danger">
     <p>This assignment requires team <%= type[:noun].pluralize(2) %>,
       and you are not currently in a team.</p>
     <% if staff_override %>
     <p>You need to 
-      <%= link_to "enroll the student in a team",
-          new_course_teamset_team_path(@course, @assignment.teamset) %>
-      before submitting.</p>
+      <%= link_to "stop impersonating the student and enroll the student in a team",
+          edit_course_teamset_path(@course, @assignment.teamset) %>
+      before submitting. (Stopping the impersonation will happen
+      automatically; you will need to re-impersonate the student before
+      actually submitting.)</p>
     <% else %>
     <p>Contact a professor to join a team.</p>
     <% end %>
@@ -65,48 +55,61 @@
       too many times in the past hour.  Please wait a while before
       trying again.</p>
   </div> 
-  <% elsif DateTime.current > @assignment.due_date && staff_override %>
-  <div class="alert alert-info">
-    <p>You are <%= type[:gerund] %> on behalf of a student.  Should
-      this <%= type[:noun] %>
-      be exempt from lateness penalties?
-      <%= f.check_box :ignore_late_penalty, :checked => "checked",
-      data: {toggle: "toggle", on: "Yes", off: "No"} %>
-    </p>
-    <p>If lateness is not ignored, this <%= type[:noun] %> should claim to
-      have been submitted at:</p>
-    <div class="row">
-      <div class="col-sm-6">
-        <%= f.text_field :created_at, class: 'form-control', disabled: "disabled" %>
+  <% else %>
+    <% @accept_inputs = true %>
+    <% if DateTime.current > @assignment.effective_due_date(current_user, @team) && staff_override %>
+    <div class="alert alert-info">
+      <p>You are <%= type[:gerund] %> on behalf of a student.  Should
+        this <%= type[:noun] %>
+        be exempt from lateness penalties?
+        <%= f.check_box :ignore_late_penalty, :checked => "checked",
+        data: {toggle: "toggle", on: "Yes", off: "No"} %>
+      </p>
+      <div class="row">
+        <div class="col-sm-6">
+          <p>If lateness is not ignored, this <%= type[:noun] %> should claim to
+            have been submitted at:</p>
+          <%= f.text_field :created_at, class: 'form-control', disabled: "disabled" %>
+        </div>
+        <div class="col-sm-6" style="padding-top: 1em;">
+          <div class="col-md-6">Waive file-size limits?
+            <%= check_box_tag "override_size", true, false, data: {toggle: "toggle", on: "Yes", off: "No" } %></div>
+          <div class="col-md-6"> Waive file-count limits?
+            <%= check_box_tag "override_count", true, false, data: {toggle: "toggle", on: "Yes", off: "No" } %></div>
+        </div>
+        <script type="text/javascript">
+          $(function () {
+            $('#submission_created_at').datetimepicker({
+              sideBySide: true,
+              format: "YYYY/MM/DD h:mm A",
+              minDate: "<%= @course.created_at.beginning_of_day.iso8601 %>",
+              <% if @course.created_at < DateTime.current %>
+              defaultDate: "<%= DateTime.current.iso8601 %>"
+              <% else %>
+              defaultDate: undefined
+              <% end %>
+            });
+            $('#submission_ignore_late_penalty').on("change", function() {
+              if ($(this).prop("checked"))
+                $('#submission_created_at').prop("disabled", true);
+              else
+                $('#submission_created_at').prop("disabled", false);
+            });
+          });
+        </script>
       </div>
-      <script type="text/javascript">
-        $(function () {
-          $('#submission_created_at').datetimepicker({
-            sideBySide: true,
-            format: "YYYY/MM/DD h:mm A",
-            minDate: "<%= @course.created_at.beginning_of_day.iso8601 %>",
-            <% if @course.created_at < DateTime.current %>
-            defaultDate: "<%= DateTime.current.iso8601 %>"
-            <% else %>
-            defaultDate: undefined
-            <% end %>
-          });
-          $('#submission_ignore_late_penalty').on("change", function() {
-            if ($(this).prop("checked"))
-              $('#submission_created_at').prop("disabled", true);
-            else
-              $('#submission_created_at').prop("disabled", false);
-          });
-        });
-      </script>
-    </div>      
-  </div>
+    </div>
+    <% end %>
+  <% end %>
+  <% if @accept_inputs %>
+  <% if @team.nil? %>
+  <p>This will be an individual <%= type[:noun] %>.</p>
+  <% else %>
+  <p>This will be a team <%= type[:noun] %> for <strong><%= @team %></strong>.</p>
+  <% end %>
   <% end %>
 </div>
 
-<% if @team.nil? %>
-<p>This will be an individual <%= type[:noun] %>.</p>
-<% else %>
-<p>This will be a team <%= type[:noun] %> for <strong><%= @team %></strong>.</p>
+<% if @accept_inputs %>
+<%= yield %>
 <% end %>
-

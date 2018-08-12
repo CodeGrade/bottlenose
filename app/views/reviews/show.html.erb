@@ -16,4 +16,4 @@
 
 <% end %>
 
-<%= render "submissions/codereview_details" %>
+<%= render "submissions/codereview_details", cur_reg: current_user.registration_for(@course) %>

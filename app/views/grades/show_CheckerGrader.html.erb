@@ -1,4 +1,4 @@
-<% @page_title = "Checker Grader" %>
+<% @page_title = @grader.display_type %>
 <% cur_reg = current_user.registration_for(@course)
    cur_reg_staff = cur_reg&.staff? %>
 
@@ -30,7 +30,11 @@
 <pre><%= @grading_output %></pre>
 <% else %>
 <div id="tests">
-  <% @tests.each do |t| %>
+  <% if @grading_header == "Selected test results" && @tests.empty? %>
+  <h4>There is at least one failed test, but this assignment is not
+    going to show you any hints.</h4>
+  <% end %>
+  <% @tests&.each do |t| %>
     <% if t[:passed] %>
       <div class="alert alert-success">
         <p>
@@ -39,7 +43,10 @@
           <% end %>
           <b>Passed:</b> <%= t[:info]['message'] %>
           <% if t[:info]["actual"] %>
-          <% unless t[:comment].strip.empty? %>(using <code><%= t[:comment].strip %></code>)<% end %>
+          <% unless t[:comment].strip.empty? %>
+          (using <code><%= t[:comment].strip %></code><% if t[:info]["tolerance"] %>
+          with tolerance <code><%= t[:info]["tolerance"] %></code><% end %>)
+          <% end %>
           <% end %>
         </p>
         <% if t[:info]["timeout"] || t[:info]["stack"] %>
@@ -54,7 +61,10 @@
           <% end %>
           <b>Failed:</b> <%= t[:info]['message'] %>
           <% if t[:info]["actual"] %>
-          <% unless t[:comment].strip.empty? %>(using <code><%= t[:comment].strip %></code>)<% end %>
+          <% unless t[:comment].strip.empty? %>
+          (using <code><%= t[:comment].strip %></code><% if t[:info]["tolerance"] %>
+          with tolerance <code><%= t[:info]["tolerance"] %></code><% end %>)
+          <% end %>
           <% end %>
         </p>
         <% if t[:info]["timeout"] || t[:info]["stack"] %>
@@ -62,7 +72,7 @@
         <% end %>
         <% if t[:info]["methodName"] %>
         <p>Method signature:
-          <code class="text-muted"><%= t[:info]["methodName"] %>(<%= t[:info]["paramNames"].join(", ") %>)</code>
+          <code class="text-muted"><%= t[:info]["methodName"] %>(<%= t[:info]["paramNames"].to_sentence %>)</code>
         </p>
         <p style="display: inline-block;">Given arguments:
           <dl class="dl-horizontal">
@@ -78,6 +88,12 @@
         <pre><%= t[:info]["stack"].join("\n") %></pre>
         <% elsif t[:info]["targetClassName"] %>
         <p>Target: <code class="text-muted"><%= t[:info]["targetClassName"] %></code></p>
+        <% if t[:info]["arguments"] %>
+        <div class="col-sm-12">
+        <p style="display: inline-block;">Arguments:</p>
+        <pre><%= t[:info]["arguments"].join(",\n") %></pre>
+        </div>
+        <% end %>
         <p></p>
         <div class="row">
           <div class="col-sm-6">
@@ -87,9 +103,19 @@
           </div>
           <div class="col-sm-6">
             <p><b>Expected:</b></p>
+            <% if t[:info]["expectedExnName"] %>
             <p>Exception name: <code class="text-muted"><%= t[:info]["expectedExnName"] %></code></p>
             <p>Exception message: <code class="text-muted"><%= t[:info]["expectedExnMessage"] %></code></p>
+            <% else %>
+            <p>No exception</p>
+            <% end %>
           </div>
+          <% if t[:info]["stack"] %>
+          <div class="col-sm-12">
+          <p style="display: inline-block;">Stack:</p>
+          <pre><%= t[:info]["stack"].join("\n") %></pre>
+          </div>
+          <% end %>
         </div>
         <% elsif t[:info]["stack"] %>
         <p>
@@ -97,7 +123,7 @@
         <pre><%= t[:info]["stack"].join("\n") %></pre>        
         <% else %>
         <div class="row">
-          <% if t[:info]["actual"][0] == "" and t[:info]["expected"][0] == ""
+          <% if (t[:info]["actual"][0] == "") && (t[:info]["expected"][0] == "")
              t[:info]["actual"].shift
              t[:info]["expected"].shift
              end %>

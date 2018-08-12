@@ -3,78 +3,139 @@
     $(".file-pane").each(function(index) {
       var theseComments = lineComments[index] || {};
       if (theseComments["noCommentsFor"]) return;
-      var cm = $(this).find(".CodeMirror")[0].CodeMirror;
-      cm.operation(function() {
-        Object.keys(theseComments).forEach(function(type, _) {
-          var commentsByType = theseComments[type] || {};
-          Object.keys(commentsByType).forEach(function(line, _) {
-            var commentsOnLine = commentsByType[line] || {};
-            commentsOnLine.forEach(function(comment, _) {
-              renderComment(cm, type, line, comment);
-            });
-          });
+      // Standard text-files get line comments
+      $(this).find(".CodeMirror").each(function(_, cm) {
+        renderLineComments(cm.CodeMirror, theseComments);
+      });
+      // Nonstandard files (jars, overly-large files) get page comments
+      $(this).find(".pageContainer").each(function(pageNum, pageContainer) {
+        renderPageComments(pageNum + 1, pageContainer, theseComments);
+      });
+      // Pdfs get page and region comments
+      $(this).find("div[id^='pdf_']").each(function(_, pdfDiv) {
+        var pageRendered = [];
+        $(pdfDiv).pdfViewer({
+          pageContainerReady: function(_, details) {
+            renderPageComments(details.pageNum, details.pageContainer, theseComments);
+          },
+          pageReady: function(_, details) {
+            if (pageRendered[details.pageNum]) return;
+            pageRendered[details.pageNum] = true;
+            renderRegionComments(details.pageNum, details.container.regionComments, theseComments);
+          }
         });
       });
     });
   }
   window.renderComments = renderComments;
+  function renderLineComments(cm, theseComments) {
+    cm.operation(function() {
+      Object.keys(theseComments).forEach(function(gradeId, _) {
+        var commentsByGrade = theseComments[gradeId] || {};
+        var type = commentsByGrade.type;
+        Object.keys(commentsByGrade).forEach(function(line, _) {
+          if (line === "type") return;
+          var commentsOnLine = commentsByGrade[line] || {};
+          commentsOnLine.forEach(function(comment, _) {
+            renderLineComment(cm, gradeId, type, line, comment);
+          });
+        });
+      });
+    });
+  }
+  function renderPageComments(pageNum, pageContainer, theseComments) {
+    var pageComments = $(pageContainer).find(".pageComments");
+    Object.keys(theseComments).forEach(function(gradeId, _) {
+      var commentsByGrade = theseComments[gradeId] || {};
+      var type = commentsByGrade.type;
+      var commentsForPage = commentsByGrade[pageNum] || [];
+      commentsForPage.forEach(function(comment, _) {
+        if (!comment.info) {
+          renderPageComment(pageComments[0], gradeId, type, pageNum, comment);
+        }
+      });
+    });
+  }
+  function renderRegionComments(pageNum, regionComments, theseComments) {
+    Object.keys(theseComments).forEach(function(gradeId, _) {
+      var commentsByGrade = theseComments[gradeId] || {};
+      var type = commentsByGrade.type;
+      var commentsForPage = commentsByGrade[pageNum] || [];
+      commentsForPage.forEach(function(comment, _) {
+        if (comment.info) {
+          renderRegionComment(regionComments[0], gradeId, type, pageNum, comment);
+        }
+      });
+    });
+  }
 
-  function renderComment(cm, type, line, comment) {
-    var widget = $("<div>").addClass(comment.severity).addClass(type);
-    var table = $("<table>");
-    widget.append(table);
-    var row = $("<tr>");
-    table.append(row);
-    var td = $("<td>").addClass("nowrap");
-    row.append(td);
-    var label = $("<span>").text(comment.label || comment.author).addClass("label label-default");
-    td.append(label);
-    if (comment.suppressed) {
-      var icon = $("<span>").addClass("glyphicon glyphicon-flag")
-          .data("toggle", "toolip").data("placement", "top")
-          .attr("title", "Too many errors of this type were found; no further points were deducted");
-      td.append(icon);
-      var deduction = $("<span>").addClass("label label-default")
-          .data("toggle", "tooltip").data("placement", "top")
-          .attr("title", "This problem would normally deduct " + comment.deduction + " points");
-      if (comment.deduction < 0)
-        deduction.text("[+" + Math.abs(comment.deduction) + "]");
-      else {
-        deduction.text("[-" + comment.deduction + "]");
+  function renderPageComment(pc, gradeId, type, line, comment) {
+    var widget = $("<div>").lineCommentView({
+      gradeId,
+      type,
+      line,
+      severity: comment.severity,
+      label: comment.label,
+      author: comment.author,
+      deduction: comment.deduction,
+      title: comment.title,
+      comment: comment.comment,
+      suppressed: comment.suppressed
+    });
+    $(pc).append(widget);
+  }
+  window.renderPageComment = renderPageComment;
+  function renderRegionComment(rc, gradeId, type, line, comment) {
+    var pdfViewer = $(rc).closest(".pdfDisplay").pdfViewer("instance");
+    var $page = $(rc).find(".page");
+    var infoJson;
+    if (comment.info) {
+      try {
+        infoJson = JSON.parse(comment.info);
+      } catch(e) {
+        infoJson = undefined;
       }
-      td.append(deduction);
-    } else {
-      var icon = $("<span>").addClass("glyphicon")
-          .data("toggle", "tooltip").data("placement", "top");
-      if (comment.severity === "Error")
-        icon.addClass("glyphicon-ban-circle").attr("title", "Error");
-      else if (comment.severity === "Warning")
-        icon.addClass("glyphicon-warning-sign").attr("title", "Warning");
-      else
-        icon.addClass("glyphicon-info-sign").attr("title", "Suggestion");
-      td.append(icon);
-      var deduction = $("<span>").addClass("label label-danger");
-      if (comment.deduction < 0)
-        deduction.text("[+" + Math.abs(comment.deduction) + "]");
-      else {
-        deduction.text("[-" + comment.deduction + "]");
-      }
-      if (comment.deduction < 0)
-        deduction.text("+" + Math.abs(comment.deduction));
-      else {
-        deduction.text("-" + comment.deduction);
-      }    
-      td.append(deduction);
     }
-    td = $("<td>");
-    row.append(td);
-    if (comment.title !== "" && comment.title !== undefined) {
-      td.append($("<span>").addClass("description").text(comment.title + ": " + comment.comment));
-    } else {
-      td.append($("<span>").addClass("description").text(comment.comment));
+    if (infoJson && infoJson.type === "area") {
+      pdfViewer.createAreaComment($page, false, {
+        gradeId,
+        left: infoJson.left,
+        top: infoJson.top,
+        width: infoJson.width,
+        height: infoJson.height,
+        dimensions: infoJson.dimensions,
+        type,
+        line,
+        label: comment.label,
+        id: comment.id,
+        severity: comment.severity,
+        label: comment.label,
+        author: comment.author,
+        deduction: comment.deduction,
+        title: comment.title,
+        comment: comment.comment,
+        suppressed: comment.suppressed
+      });
     }
+  }
+  window.renderRegionComment = renderRegionComment;
+
+  function renderLineComment(cm, gradeId, type, line, comment) {
+    var widget = $("<div>").lineCommentView({
+      gradeId,
+      type,
+      line,
+      severity: comment.severity,
+      label: comment.label,
+      author: comment.author,
+      deduction: comment.deduction,
+      title: comment.title,
+      comment: comment.comment,
+      suppressed: comment.suppressed
+    });
     cm.addLineWidget(parseInt(line) - 1, widget[0], {coverGutter: false, noHScroll: true});
   }
+  window.renderLineComment = renderLineComment;
 
   function init_datetime() {
     $('.datetime-picker').datetimepicker({
@@ -85,13 +146,26 @@
   }
 
   var max_grader_order;
+  const extraCreditWarning = "This assignment is already marked as extra-credit.  Only mark this grader as extra credit if you truly mean to have extra credit on top of extra credit.";
   function on_add_grader(evt, el) {
     el.find(".spinner").each(function(_ii, div) {
       activateSpinner(div);
     });
+    var newToggles = el.find("input[data-toggle='toggle']");
+    newToggles.bootstrapToggle();
+    newToggles = newToggles.parent("div[data-toggle='toggle']");
+    newToggles.attr('title', extraCreditWarning);
+    newToggles.tooltip();
+    if ($("input[data-toggle='toggle'][name='assignment[extra_credit]']").prop('checked')) {
+      newToggles.tooltip('enable');
+    } else {
+      newToggles.tooltip('disable');
+    }
     el.find("input[name$='[order]']").val(++max_grader_order);
     form_tabs_init_all(el);
   }
+
+  
 
   function form_init() {
     init_datetime();
@@ -116,6 +190,19 @@
         orders.each(function(index, item) {
           $(item).val(++max_grader_order);
         });
+      }
+    });
+
+    $("input[name='assignment[extra_credit]']").change(function() {
+      var newToggles = $(".graders-list .tab-pane").map(function(_, e) { return $(e).data("bn.detached-tab"); });
+      newToggles = $.map(newToggles, function(kids) { return $.map(kids, function(k) { return k; }); });
+      newToggles = $(newToggles).find("div[data-toggle='toggle']");
+      debugger
+      if ($(this).prop('checked')) {
+        newToggles.tooltip('enable');
+        newToggles.find("input[data-toggle='toggle']").bootstrapToggle('off');
+      } else {
+        newToggles.tooltip('disable');
       }
     });
 
@@ -149,14 +236,14 @@
         var label = $(this).val().replace(/\\/g, '/').replace(/.*\//, '');
         $e.find(".current_file").text("New file: " + label);
         $e.find(".remove-assignment-file").prop('disabled', false).removeClass("btn-default").addClass("btn-warning");
-        $e.find("input.assignment_removefile").val('');
+        $e.find("input#assignment_removefile").val('');
       });
       $e.find(".remove-assignment-file").click(function() {
         $e.find("input[name='assignment_file']").replaceWith(
           $e.find("input[name='assignment_file']").val("<nothing>").clone(true));
         $(this).prop('disabled', true).addClass("btn-default").removeClass("btn-warning");
         $e.find(".current_file").text("New file: <nothing>");
-        $e.find("input.assignment_removefile").val('remove');
+        $e.find("input#assignment_removefile").val('remove');
       });
     });
   }

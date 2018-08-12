@@ -1,0 +1,108 @@
+// Button to create new assignments shouldn't hide table
+$("#assignments a.btn").on("click", function(e) { e.stopPropagation(); });
+
+// Show/hide dropped students
+$("#toggle-dropped").on("click", function(e) {
+  $("#students-table").toggleClass("hide-dropped");
+  if ($("#students-table").hasClass("hide-dropped")) {
+    $(this).text("Show dropped students");
+    $("#all-students-count").hide();
+    $("#current-students-count").show();
+  } else {
+    $(this).text("Hide dropped students");
+    $("#all-students-count").show();
+    $("#current-students-count").hide();
+  }
+  e.stopPropagation();
+  e.preventDefault();
+});
+
+// Student data table: show table styles, and show/hide student trendlines
+$(function() {
+  $.tablesorter.themes.bootstrap = {
+    caption      : 'caption',
+    sortNone     : '',
+    sortAsc      : '',
+    sortDesc     : '',
+    active       : '', // applied when column is sorted
+    hover        : '', // custom css required - a defined bootstrap style may not override other classes
+    // icon class names
+    icons        : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+    iconSortAsc  : 'glyphicon glyphicon-chevron-up', // class name added to icon when column has ascending sort
+    iconSortDesc : 'glyphicon glyphicon-chevron-down', // class name added to icon when column has descending sort
+    filterRow    : '', // filter row class; use widgetOptions.filter_cssFilter for the input/select element
+    footerRow    : '',
+    footerCells  : '',
+    even         : '', // even row zebra striping
+    odd          : ''  // odd row zebra striping
+  };
+  $("#students-table > table").tablesorter({
+    headerTemplate: "{content} {icon}",
+    theme: "bootstrap",
+    widgets: ['uitheme']
+  });
+  var avgGrades = <%= raw json_escape(JSON.generate(@ordered_assignments.map{|a| [@stats[a.id]&.avg, a.type]})) %>;
+  var assnIds = <%= raw json_escape(JSON.generate(@ordered_assignments.map{|a| a.id})) %>;
+  var assnNames = $("#assignments-table tbody td:first-child").map(function() { return $(this).text(); }).get();
+  var routeToSub = "<%= course_assignment_submission_path(course_id: @course.id, assignment_id: '(aid)', id: '(sid)') %>";
+  GoogleCharts.load('corechart', function() {
+    $("#students-table tbody tr").click(function(e) {
+      var $p = $(this).find("p");
+      if ($(e.target).closest("p")[0] != $p[0]) { $p.toggleClass("hidden"); }
+      var grades = $p.data("grades");
+      var subs = $p.data("subs");
+      if (grades === "") return;
+      $p.attr("data-grades", ""); $p.data("grades", "");
+      var data = new GoogleCharts.api.visualization.DataTable();
+      data.addColumn("string", "Assignment");
+      data.addColumn("number", "Class average");
+      data.addColumn({type: "string", role: "style"});
+      data.addColumn("number", $(this).find("td:nth-child(2) a").text());
+      data.addColumn({type: "string", role: "style"});
+      data.addColumn({type: "boolean", role: "certainty"});
+      data.addColumn({type: "string", role: "annotationText"});
+      var table = [];
+      // since assignments are reversed in table above, load in reversed order
+      for (var i = assnNames.length - 1; i >= 0; i--) {
+        var style = null;
+        var certainty = true;
+        if (avgGrades[i][1] == "Exam") {
+          style = "point { size: 18, shape-type: star; fill-color: gold; opacity: 1; }";
+        }
+        if (grades[i] === false) { certainty = false; grades[i] = 0; }
+        table.push([assnNames[i], avgGrades[i][0], style, grades[i], style, certainty, String(subs[i])]);
+      }
+      data.addRows(table);
+      var chart = new GoogleCharts.api.visualization.LineChart($p[0]);
+      var options = {
+        legend: { position: 'top' },
+        interpolateNulls: false,
+        chartArea: {left: 30, bottom: 60, top: 20, width: '100%'},
+        focusTarget: 'category',
+        tooltip: { trigger: "selection" },
+        //        backgroundColor: 'transparent',
+        hAxis: { slantedText: true },
+        vAxis: { minValue: 0, maxValue: 100 }
+      };
+      chart.setAction({
+        id: "goToSubmission",
+        text: "Open submission in new tab",
+        action: function() {
+          var sel = chart.getSelection()[0];
+          var subId = data.getValue(sel.row, 6);
+          var assnId = assnIds[assnIds.length - sel.row - 1];
+          var sUrl = routeToSub.replace("(aid)", assnId).replace("(sid)", subId);
+          window.open(sUrl, "_blank");
+        },
+        enabled: function() {
+          var sel = chart.getSelection()[0];
+          if (sel) {
+            return !!(data.getValue(sel.row, 6));
+          }
+          return false;
+        }
+      });
+      chart.draw(data, options);
+    });
+  });
+});
