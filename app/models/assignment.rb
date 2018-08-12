@@ -240,7 +240,7 @@ class Assignment < ApplicationRecord
       self.individual_extensions.find_by(user_id: sub.user_id)&.due_date || self.due_date
     end
   end
-  
+
   def effective_due_date(user, team)
     if @cached
       return @cached[:all][user.id] || self.due_date
@@ -292,9 +292,10 @@ class Assignment < ApplicationRecord
       all: effective_due_dates(users, false)
     }
   end
-  
+
   def sub_late?(sub)
-    self.lateness_config.late?(self, sub)
+    self.lateness_config.late?(self, sub) and
+      self.effective_sub_due_date(sub) < sub.created_at
   end
 
   def sub_days_late(sub, raw = false)
@@ -338,7 +339,7 @@ class Assignment < ApplicationRecord
     self.assignment_upload_id = nil;
     super
   end
-  
+
   def assignment_upload
     Upload.find_by(id: assignment_upload_id)
   end

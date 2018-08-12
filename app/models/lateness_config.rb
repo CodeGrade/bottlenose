@@ -11,7 +11,7 @@ class LatenessConfig < ApplicationRecord
 
   def late?(assignment, submission)
     (!submission.ignore_late_penalty) and
-      ((submission.created_at || DateTime.current) > assignment.due_date)
+      (self.hours_late(assignment, submission) > 0)
   end
 
   def allow_submission?(assignment, submission)
@@ -24,21 +24,21 @@ class LatenessConfig < ApplicationRecord
 
   def days_late(assignment, submission, raw = false)
     return 0 unless raw or late?(assignment, submission)
-    due_on = assignment.due_date
+    due_on = assignment.effective_due_date(submission.user, submission.team)
     sub_on = submission.created_at || DateTime.current
     late_days = ((sub_on.to_f - due_on.to_f) / 1.day.seconds)
     late_days.ceil
   end
 
   def hours_late(assignment, submission, raw = false)
-    return 0 unless raw or late?(assignment, submission)
-    due_on = assignment.due_date
+    due_on = assignment.effective_due_date(submission.user, submission.team)
     sub_on = submission.created_at || DateTime.current
     late_hours = ((sub_on.to_f - due_on.to_f) / 1.hour.seconds)
-    late_hours.ceil
+    [0, late_hours.ceil].max
   end
 
-  def penalize(score, assignment, submission)
+  def penalize(score, assignment, submission, max_pct = 100.0,
+               max_pct_with_ec = 100.0)
     # score is [0, 100]
     penalty = late_penalty(assignment, submission) # compute penalty in [0, 100]
     #print "Penalty is #{penalty}\n"
@@ -47,7 +47,7 @@ class LatenessConfig < ApplicationRecord
     end
     #print "Penalty is now #{penalty}\n"
     #print "Score is #{score}\n"
-    ans = (score - penalty).clamp(0, 150)
+    ans = (score - penalty).clamp(0, max_pct_with_ec)
     #print "Penalized score is #{ans}\n"
     ans
   end
