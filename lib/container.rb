@@ -61,7 +61,7 @@ class Container
 
       data = {
         cookie: secret,
-        timeout: 60, # Timeout is per step, e.g. unpack, build, test
+        timeout: 300, # Timeout is per step, e.g. unpack, build, test
         sub_url: sub_up.url,
         sub_name: sub_up.file_name,
         gra_url: gra_up.url,

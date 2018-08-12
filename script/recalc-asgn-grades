@@ -1,0 +1,33 @@
+#!/usr/bin/env ruby
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+assign = Assignment.find(ARGV[0])
+
+if assign.nil?
+  puts "Usage: script/regrade-whole-assignment submission-id"
+  exit(0)
+end
+
+puts
+puts "Regrading assignment: #{assign.name}"
+puts
+
+assign.submissions.each do |sub|
+  if sub.score.nil?
+    #puts sub.inspect
+    #exit(0)
+    next
+  end
+
+  old_score = sub.score.round(2)
+  sub.compute_grade!
+
+  if sub.score.round(2) != old_score
+    say "sub #{sub.id} updated from #{old_score} to #{sub.score}"
+  end
+end
+

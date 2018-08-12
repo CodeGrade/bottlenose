@@ -16,7 +16,8 @@
 
 <h3>
   <%= @grading_header %>
-  <% if cur_reg_staff && @grading_output.kind_of?(TapParser) %>
+  <!-- FIXME: Ben only showed full outputs to staff -->
+  <% if @grading_output.kind_of?(TapParser) %>
   <%= link_to Upload.upload_path_for(@grade.grading_output), class: "btn btn-default" do %>
     <i class="glyphicon glyphicon-download-alt"></i> Download raw test output
   <% end %>

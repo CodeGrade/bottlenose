@@ -18,6 +18,10 @@ class Team < ApplicationRecord
     "Team #{self.id} - #{self.member_names}"
   end
 
+  def member_emails
+    users.sort_by(&:sort_name).map(&:email).join(", ")
+  end
+
   def member_names
     users.sort_by(&:sort_name).map(&:display_name).to_sentence
   end

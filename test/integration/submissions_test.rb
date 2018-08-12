@@ -47,6 +47,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @ext1 = IndividualExtension.create!(assignment: @as1, team: @team1, due_date: @as1.due_date + 1.days)
     @as1.reload
     @as1.cache_effective_due_dates!(@sub1.users)
+
     assert_equal(@as1.sub_late?(@sub1), false, "Submitting late, with an extension, should be marked on time")
     assert_equal(@as1.effective_due_date(@john, @team1), @ext1.due_date,
                  "With an extension, effective due date is extended due date")

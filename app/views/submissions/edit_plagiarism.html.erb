@@ -33,7 +33,7 @@
                    />
         </td>
         <td><%= f.spinner "penalty[#{u.id}]", @max_points,
-                class: "penalty", min: 0, max: @max_points %></td>
+                class: "penalty", min: 0, max: 10000.0 %></td>
       </tr>
       <% end %>
     </tbody>
