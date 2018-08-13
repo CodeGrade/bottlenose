@@ -49,7 +49,7 @@ class RacketStyleGrader < Grader
        "--max-points", self.avail_score.to_s,
        "--line-width", self.line_length.to_s,
        @tmpdir],
-      [[@tmpdir, sub.upload.extracted_path.to_s]].to_h
+      [[@tmpdir, Upload.upload_path_for(sub.upload.extracted_path.to_s)]].to_h
     ]
   end
 

@@ -24,7 +24,7 @@ class QuestionsGrader < Grader
   def guess_who_graded(subs)
     grades = Grade.where(grader_id: self, submission: subs).where.not(grading_output: nil).group_by(&:submission_id)
     return grades.map do |sub_id, g|
-      [sub_id, YAML.load(File.open(g.first.grading_output))["grader"].to_i]
+      [sub_id, YAML.load(File.open(g.first.grading_output_path))["grader"].to_i]
     end.to_h
   end
 

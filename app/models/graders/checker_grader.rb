@@ -150,7 +150,7 @@ class CheckerGrader < Grader
             end
 
             if any_problems
-              g.grading_output = details.path
+              g.grading_output_path = details.path
               g.score = 0
               g.out_of = self.avail_score
 
@@ -163,7 +163,7 @@ class CheckerGrader < Grader
             else
               begin
                 checker.write(test_out)
-                g.grading_output = checker.path
+                g.grading_output_path = checker.path
 
                 tap = TapParser.new(test_out)
                 g.score = tap.points_earned
@@ -175,7 +175,7 @@ class CheckerGrader < Grader
                 Audit.log("#{prefix}: Checker gives raw score of #{g.score} / #{g.out_of}")
                 return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
               rescue Exception
-                g.grading_output = details.path
+                g.grading_output_path = details.path
                 g.score = 0
                 g.out_of = self.avail_score
                 g.updated_at = DateTime.now

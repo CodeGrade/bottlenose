@@ -53,7 +53,7 @@ class CodereviewGrader < Grader
 
   def partial_grade_for_sub(assignment, g, sub_id)
     if g&.grading_output
-      @responses ||= YAML.load(File.read(g.grading_output))
+      @responses ||= YAML.load(File.read(g.grading_output_path))
       questions = assignment.flattened_questions
       score = @responses[sub_id.to_s].zip(questions).reduce(0) do |sum, (a, q)|
         sum + (q["weight"].to_f.clamp(0, 1) * a["score"].to_f)
@@ -68,7 +68,7 @@ class CodereviewGrader < Grader
   def guess_who_graded(subs)
     grades = Grade.where(grader_id: self, submission: subs).where.not(grading_output: nil).group_by(&:submission_id)
     return grades.map do |sub_id, g|
-      [sub_id, YAML.load(File.open(g.first.grading_output))["grader"].to_i]
+      [sub_id, YAML.load(File.open(g.first.grading_output_path))["grader"].to_i]
     end.to_h
   end
   
@@ -76,7 +76,7 @@ class CodereviewGrader < Grader
 
   def do_grading(assignment, sub)
     g = self.grade_for sub
-    responses = YAML.load(File.read(g.grading_output))
+    responses = YAML.load(File.read(g.grading_output_path))
     responses.delete("grader")
     questions = assignment.flattened_questions
     score = responses.values.flatten.zip(questions * assignment.review_count).reduce(0) do |sum, (r, q)|

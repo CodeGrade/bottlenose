@@ -230,7 +230,7 @@ class GradesController < ApplicationController
       begin
         comment.update!(submission_id: params[:submission_id],
                         label: c["label"],
-                        filename: c["file"],
+                        filename: Upload.upload_path_for(c["file"]),
                         line: c["line"],
                         grade_id: @grade.id,
                         user_id: current_user.id,
@@ -252,7 +252,7 @@ class GradesController < ApplicationController
                                                   grade_id: @grade.id,
                                                   line: c["index"])
     comment.update(label: "Graded question",
-                   filename: @submission.upload.submission_path,
+                   filename: Upload.upload_path_for(@submission.upload.submission_path),
                    severity: InlineComment.severities["info"],
                    user_id: current_user.id,
                    weight: c["score"],
@@ -551,7 +551,7 @@ class GradesController < ApplicationController
       to_write = questions_params
       to_write["grader"] = current_user.id
       grades.write(YAML.dump(to_write))
-      @grade.grading_output = grades.path
+      @grade.grading_output_path = grades.path
       @grade.save
     end
 
@@ -575,7 +575,7 @@ class GradesController < ApplicationController
     @commentsFrom = @grade.id
     if @grade.grading_output
       begin
-        @grading_output = File.read(@grade.grading_output)
+        @grading_output = File.read(@grade.grading_output_path)
         begin
           tap = TapParser.new(@grading_output)
           @grading_output = tap
@@ -623,7 +623,7 @@ HEADER
   def show_JunitGrader
     if @grade.grading_output
       begin
-        @grading_output = File.read(@grade.grading_output)
+        @grading_output = File.read(@grade.grading_output_path)
         begin
           tap = TapParser.new(@grading_output)
           @grading_output = tap
@@ -666,7 +666,7 @@ HEADER
   def show_CheckerGrader
     if @grade.grading_output
       begin
-        @grading_output = File.read(@grade.grading_output)
+        @grading_output = File.read(@grade.grading_output_path)
         begin
           tap = TapParser.new(@grading_output)
           @grading_output = tap
@@ -774,7 +774,7 @@ HEADER
     end
 
     if @grade.grading_output
-      @grades = YAML.load(File.open(@grade.grading_output))
+      @grades = YAML.load(File.open(@grade.grading_output_path))
       @grades["grader"] = User.find(@grades["grader"]).name
     else
       @grades = {}
@@ -831,7 +831,7 @@ HEADER
   def show_SandboxGrader
     if @grade.grading_output
       begin
-        @grading_output = File.read(@grade.grading_output)
+        @grading_output = File.read(@grade.grading_output_path)
         begin
           tap = TapParser.new(@grading_output)
           @grading_output = tap

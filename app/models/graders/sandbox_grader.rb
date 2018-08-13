@@ -97,20 +97,20 @@ class SandboxGrader < Grader
 
         g.score = tap.points_earned
         g.out_of = tap.points_available
-        g.grading_output = makefile_tap.to_s
+        g.grading_output_path = makefile_tap.to_s
       rescue Exception => e
         Audit.log "#{prefix}: Could not parse Tap results; see #{details_log}"
         puts "TAP parse error, see audit log"
         g.score = 0
         g.out_of = self.avail_score
-        g.grading_output = details_log.to_s
+        g.grading_output_path = details_log.to_s
       end
     else
       Audit.log "#{prefix}: Sandbox grader failed: did not find at least three parts of output (expected secret #{secret}); see #{details_log}"
       puts "Bad output no cookie, see audit log"
       g.score = 0
       g.out_of = self.avail_score
-      g.grading_output = details_log.to_s
+      g.grading_output_path = details_log.to_s
     end
 
     g.updated_at = DateTime.now

@@ -206,7 +206,7 @@ class SubmissionsController < ApplicationController
         submission: sub,
         label: "Plagiarism",
         line: 0,
-        filename: sub.upload.extracted_path,
+        filename: Upload.upload_path_for(sub.upload.extracted_path),
         grade_id: 0,
         severity: "error",
         comment: comment,
@@ -221,7 +221,7 @@ class SubmissionsController < ApplicationController
       submission: @submission,
       label: "Plagiarized submission",
       line: 0,
-      filename: @submission.upload.extracted_path,
+      filename: Upload.upload_path_for(@submission.upload.extracted_path),
       grade_id: 0,
       severity: "info",
       comment: "This submission has been reviewed for plagiarism and regraded accordingly.",
@@ -254,7 +254,7 @@ class SubmissionsController < ApplicationController
         submission: sub,
         label: "Split submission",
         line: 0,
-        filename: sub.upload.extracted_path,
+        filename: Upload.upload_path_for(sub.upload.extracted_path),
         grade_id: 0,
         severity: "info",
         comment: "This is copied from a previous team submission, for individual grading",
@@ -272,7 +272,7 @@ class SubmissionsController < ApplicationController
       submission: @submission,
       label: "Split submission",
       line: 0,
-      filename: @submission.upload.extracted_path,
+      filename: Upload.upload_path_for(@submission.upload.extracted_path),
       grade_id: 0,
       severity: "info",
       comment: "This submission was split, to allow for individual grading",
@@ -602,7 +602,7 @@ class SubmissionsController < ApplicationController
     @answers = YAML.load(File.open(@submission.upload.submission_path))
     if current_user_site_admin? || current_user_staff_for?(@course) || @submission.grades.first.available?
       if @submission.grades.first.grading_output
-        @grades = YAML.load(File.open(@submission.grades.first.grading_output))
+        @grades = YAML.load(File.open(@submission.grades.first.grading_output_path))
         @grades["grader"] = User.find(@grades["grader"]).name
       else
         @grades = {}

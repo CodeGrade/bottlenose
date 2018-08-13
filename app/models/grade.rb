@@ -15,7 +15,7 @@ class Grade < ApplicationRecord
     else
       ans = {}
       begin
-        tap = TapParser.new(File.read(self.grading_output))
+        tap = TapParser.new(File.read(self.grading_output_path))
       rescue Exception
         return ans
       end
@@ -33,6 +33,17 @@ class Grade < ApplicationRecord
   end
 
   def full_log
-    self.grading_output.sub(/makefile\.tap$/, "details.log")
+    self.grading_output&.sub(/makefile\.tap$/, "details.log")
+  end
+
+  def grading_output_path
+    if self.grading_output
+      Upload.full_path_for(self.grading_output)
+    else
+      nil
+    end
+  end
+  def grading_output_path=(val)
+    self.grading_output = Upload.upload_path_for(val)
   end
 end

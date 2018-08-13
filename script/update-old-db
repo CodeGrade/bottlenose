@@ -1,0 +1,393 @@
+#!/usr/bin/env ruby
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+require 'tap_parser'
+require 'fileutils'
+require 'tempfile'
+require 'archive_utils'
+require 'find'
+Rails.application.require_environment!
+
+def replace_in_file(grade_id, filename, transformations)
+  return unless filename
+  file_contents = File.read(filename)
+  new_content = file_contents
+  transformations.each do |old_text, new_text|
+    new_content = new_content.gsub(old_text, new_text)
+  end
+  if file_contents != new_content
+    tempdir = File.dirname(filename)
+    tempprefix = File.basename(filename)
+    tempprefix.prepend('.')
+    tempfile =
+      begin
+        Tempfile.new(tempprefix, tempdir)
+      rescue
+        Tempfile.new(tempprefix)
+      end
+    tempfile.puts new_content
+    tempfile.fdatasync
+    tempfile.close
+    stat = File.stat(filename)
+    FileUtils.chown stat.uid, stat.gid, tempfile.path
+    FileUtils.chmod stat.mode, tempfile.path
+    FileUtils.mv tempfile.path, filename
+    puts "Processed (#{grade_id}) #{filename} (changed)"
+  else
+    puts "Processed (#{grade_id}) #{filename}"
+  end
+end
+
+Upload.first # need this to load the class first, so that the next line extends it
+class Upload
+  def move_to_upload_dir!
+    new_prefix = Upload.base_upload_dir.join(course&.id.to_i.to_s, assignment&.id.to_i.to_s)
+    pre = secret_key.slice(0, 2)
+    out_path = "/files/#{course&.id.to_i}/#{assignment&.id.to_i}/#{pre}/#{secret_key}/"
+    replacements = # These replacements are ordered
+      [[%r{/home/bottlenose/src/(private|public)/uploads/(development|production|test)}, "/files"],
+       [%r{/home/bottlenose/src/(private|public)/files}, "/files"],
+       [%r{/uploads/(development|production|test)/#{pre}/#{secret_key}/}, out_path],
+       [%r{/uploads/(development|production|test)/#{course&.id.to_i}/#{assignment&.id.to_i}/#{pre}/#{secret_key}/}, out_path],
+       [%r{/files/#{pre}/#{secret_key}/}, out_path]]
+    begin
+      if Dir.exists?(old_upload_dir)
+        puts "Moving #{old_upload_dir} to #{upload_dir}"
+        FileUtils.mkdir_p upload_dir.dirname
+        File.rename old_upload_dir, upload_dir
+        if Dir.empty?(old_upload_dir.dirname)
+          Dir.rmdir old_upload_dir.dirname
+        end
+        cleanup_extracted!
+        extract_contents!(nil)
+      end
+      subs = Submission.where(upload: self)
+      Grade.transaction do
+        subs.each do |s|
+          s.grades.each do |g|
+            unless g.grading_output.nil? || g.grading_output.starts_with?(new_prefix.to_s)
+              g.grading_output = g.grading_output.gsub Upload.base_upload_dir.to_s, new_prefix.to_s
+              g.save
+            end
+            replace_in_file(g.id, g.grading_output, replacements)
+            if g.grading_output &&
+               !g.grading_output.ends_with?("details.log") &&
+               File.exists?(Pathname.new(g.grading_output).dirname.join("details.log"))
+              replace_in_file(g.id, Pathname.new(g.grading_output).dirname.join("details.log"), replacements)
+            end
+          end
+        end
+      end
+      # comments = InlineComment.where(submission: subs)
+      # InlineComment.transaction do
+      #   comments.each do |c|
+      #     unless c.filename.starts_with?(new_prefix.to_s)
+      #       c.filename = c.filename.gsub Upload.base_upload_dir.to_s, new_prefix.to_s
+      #       c.save
+      #     end
+      #   end
+      # end
+    rescue Exception => e
+      puts e
+    end
+  end
+  
+  def old_upload_dir
+    pre = secret_key.slice(0, 2)
+    Upload.base_upload_dir.join(pre, secret_key)
+  end
+end
+
+def fix_grader_abandoned_assns
+  assn_ids = Assignment.all.find_all{|a| a.graders.empty?}.map(&:id)
+  grader_ids = assn_ids.map do |aid|
+    [aid, Grade.where(submission_id: Submission.where(assignment_id: aid)).map(&:grader_id).uniq]
+  end.to_h
+  overfull = grader_ids.find_all{|aid, gids| gids.count > 1}.to_h
+  if overfull.empty?
+    Grader.transaction do
+      grader_ids.each do |aid, gids|
+        g = Grader.find(gids[0])
+        new_g = g.dup
+        new_g.assignment_id = aid
+        new_g.save
+        Grade.where(submission_id: Assignment.find(aid).submissions.map(&:id)).update_all(grader_id: new_g.id)
+        puts "Fixed grader for assignment #{aid}\n"
+      end
+    end
+  else
+    puts "Could not handle some assignments:"
+    puts overfull
+  end
+end
+  
+
+def migrate_to_files
+  sqls = [
+    "update users set profile=replace(profile, '#{Upload.base_upload_dir}', '/files')",
+    "update grades set grading_output=replace(grading_output, '#{Upload.base_upload_dir}', '/files')",
+    "update inline_comments set filename=replace(filename, '#{Upload.base_upload_dir}', '/files')"
+  ]
+  User.transaction do
+    sqls.each do |sql|
+      puts sql
+      ActiveRecord::Base.connection.execute(sql)
+      puts "...done"
+    end
+  end
+end
+
+
+def migrate_to_private
+  sqls = [
+    "update users set profile=replace(profile, 'public', 'private')",
+    "update grades set grading_output=replace(grading_output, 'public', 'private')",
+    "update inline_comments set filename=replace(filename, 'public', 'private')"
+  ]
+  User.transaction do
+    sqls.each do |sql|
+      ActiveRecord::Base.connection.execute(sql)
+    end
+  end
+end
+def migrate_to_development
+  sqls = [
+    "update users set profile=replace(profile, 'production', 'development')",
+    "update grades set grading_output=replace(grading_output, 'production', 'development')",
+    "update inline_comments set filename=replace(filename, 'production', 'development')"
+  ]
+  User.transaction do
+    sqls.each do |sql|
+      ActiveRecord::Base.connection.execute(sql)
+    end
+  end
+end
+def migrate_to_production
+  sqls = [
+    "update users set profile=replace(profile, 'development', 'production')",
+    "update grades set grading_output=replace(grading_output, 'development', 'production')",
+    "update inline_comments set filename=replace(filename, 'development', 'production')"
+  ]
+  User.transaction do
+    sqls.each do |sql|
+      ActiveRecord::Base.connection.execute(sql)
+    end
+  end
+end
+def make_profile_thumbs
+  User.all.each do |u|
+    next if u.profile.nil?
+    old_size = File.size(u.profile)
+    u.make_profile_thumbnail(true)
+    new_size = File.size(u.profile)
+    puts "Old size #{old_size} ==> new size #{new_size}"
+  end
+end
+def regrade_big_grades
+  big_files = `find private/uploads/#{Rails.env} -size +100k | grep "/graders/" | cut -d'/' -f7`.lines.map(&:to_i)
+  to_regrade = Grade.where(id: big_files).to_a
+  print "#{to_regrade.count} regrades\n"
+  return
+  to_regrade.each_with_index do |g, i|
+    print "================== #{i.to_f / to_regrade.count.to_f}% done ===============\n" if (i.modulo(10) == 0)
+    next if g.grader.type == "JavaStyleGrader"
+    old_score = g.score
+    old_outof = g.out_of
+    begin
+      start_t = Time.now
+      g.submission.upload.extract_contents!("")
+      g.grader.grade(g.submission.assignment, g.submission)
+      end_t = Time.now
+      g.reload
+      puts "#{g.id} succeeded (#{end_t - start_t} sec): old_score: #{old_score} / #{old_outof} ==> new score #{g.score} / #{g.out_of}"
+    rescue Exception => e
+      puts "#{g.id} failed: #{e}"
+    end
+  end
+end
+def style_times_histogram
+  graders = CheckerGrader.all.map(&:id)
+  grades = Grade.where(grader_id: graders)
+  answers = grades.map do |g|
+    if g.grading_output.nil?
+      print "Grade with nil grading_output: #{g.id}\n"
+      next
+    end
+    next if g.grading_output.ends_with?("details.log")
+    begin
+      info = TapParser.new(File.read(g.grading_output), g.grading_output)
+      [info.test_count, info.time_taken]
+    rescue Exception => e
+      print "Could not parse #{g.grading_output}\n"
+      nil
+    end
+  end.compact.sort_by{|i| i[0]}
+  answers.each do |k, v| print "[#{k}, #{v}]\n" end
+end
+
+def convert_old_questions_to_codereview
+  Assignment.transaction do
+    Assignment.where(type: "Codereview").where.not(related_assignment_id: nil).each do |a|
+      print "Working on assignment #{a.id}: #{a.name}\n"
+      submissions = a.submissions.to_a
+      grader = a.graders.first
+      a.type = "Codereview"
+      a.save!
+      grader.type = "CodereviewGrader"
+      grader.params = "self;1;0"
+      grader.save!
+      grader = Grader.find(grader.id)
+      print "\tGrader #{grader.id} now has review_target #{grader.review_target}, count #{grader.review_count}, and threshold #{grader.review_threshold}\n"
+      submissions.each do |s|
+        related_sub = a.related_assignment.used_sub_for(s.user)
+        print "\tWorking on submission #{s.id} by #{s.user.display_name}\n"
+        s.type = "CodereviewSub"
+        s.save
+        g = s.grades.first
+        puts "\t\tWorking on grade #{g.id}\n"
+        if g.grading_output.nil?
+          grades = s.inline_comments
+          if !grades.empty?
+            grades = grades.select(:line, :name, :weight, :comment, :user_id).joins(:user).sort_by(&:line).to_a
+            grades = [["grader", grades.first.user_id],
+                      [related_sub.id.to_s,
+                       grades.map{|g| [["index", g.line], ["score", g.weight], ["comment", g.comment]].to_h}]].to_h
+            grader_dir = s.upload.grader_path(g)
+            grader_dir.mkpath
+            File.open(grader_dir.join("grades.yaml"), "w") do |gf|
+              gf.write(YAML.dump(grades))
+              g.grading_output = gf.path
+              g.save
+            end
+          end
+        end
+        print "\tExtracting contents for #{related_sub.id} (upload #{related_sub.upload&.id})\n"
+        related_sub.upload&.extract_contents!("")
+        r = ReviewFeedback.find_or_initialize_by(grade: s.grades.first,
+                                                 submission_id: related_sub.id,
+                                                 review_submission_id: s.id)
+        r.upload_id = s.upload_id
+        r.score = s.score
+        r.out_of = grader.avail_score
+        r.save
+        print "\t\tLeaving feedback #{r}\n"
+        if File.exists?(s.upload.submission_path.to_s + ".bak")
+          # ans = YAML.load(File.read(s.upload.submission_path.to_s + ".bak"))
+          # ans.each do |answer|
+          #   answer["parts"]&.each do |p|
+          #     p["file"] = p["file"].gsub("uploads/production", "files") if p["file"]
+          #   end
+          # end
+          # ans = {related_sub.id.to_s => ans}
+          # File.open(s.upload.submission_path, "w") do |f|
+          #   f.write(YAML.dump(ans))
+          # end
+          # FileUtils.rm_rf s.upload.extracted_path
+          # s.upload.extract_contents!("")
+          print "\t\Fixed updated responses for submission #{s.id}\n"
+        else
+          ans = YAML.load(File.read(s.upload.submission_path))
+          ans.each do |answer|
+            answer["parts"]&.each do |p|
+              p["file"] = p["file"].gsub("uploads/production", "files") if p["file"]
+            end
+          end
+          ans = {related_sub.id.to_s => ans}
+          FileUtils.mv(s.upload.submission_path.to_s, s.upload.submission_path.to_s + ".bak")
+          File.open(s.upload.submission_path, "w") do |f|
+            f.write(YAML.dump(ans))
+          end
+          FileUtils.rm_rf s.upload.extracted_path
+          s.upload.extract_contents!("")
+          print "\t\tDone updating responses for submission #{s.id}\n"
+        end
+      end
+    end
+  end
+end
+
+#migrate_to_private()
+#migrate_to_development()
+#make_profile_thumbs()
+#regrade_big_grades()
+#fix_grader_abandoned_assns()
+#style_times_histogram
+#convert_old_questions_to_codereview()
+
+def move_all_uploads
+  if (Integer(ARGV[0]) rescue false)
+    uploads = [Upload.find(ARGV[0].to_i)]
+  else
+    uploads = Upload.all.order(:id)
+  end
+  puts "Processing #{uploads.count} uploads"
+  # @count = 0 # Can't use each_n, because Upload.all doesn't have it
+  uploads.each do |upload|
+    # @count += 1
+    upload.move_to_upload_dir!
+    # if @counts % 1000 == 0
+    #   print @counts
+    # elsif @counts % 100 == 0
+    #   print "."
+    # end
+  end
+  puts "Done."
+end
+
+def cleanup_dead_dirs
+  orphan_path = Upload.base_upload_dir.join("orphans")
+  FileUtils.mkdir_p orphan_path
+  kids = Dir[Upload.base_upload_dir.join("*/").to_s]
+  kids.reject!{|k| Pathname.new(k).basename.to_s == "orphans"}
+  kids.each do |k|
+    grandkids = Dir[Pathname.new(k).join("*/").to_s]
+    empty = grandkids.select do |g|
+      noFiles = true
+      Find.find(g) do |f|
+        if File.file? f
+          noFiles = false
+          Find.prune
+        end
+      end
+      noFiles
+    end
+    puts "Empty directories:"
+    puts empty
+    #    empty.each do |e| FileUtils.rm_rf e end
+    grandkids.reject! do |g| empty.member? g end
+    orphans = grandkids.reject do |g|
+      p = Pathname.new(g)
+      key = p.basename.to_s
+      parent = p.dirname.basename.to_s
+      if (Integer(key) && Integer(parent) rescue false)
+        true
+      else
+        Upload.find_by(secret_key: Pathname.new(g).basename.to_s)
+      end
+    end
+    orphans.each do |o|
+      o = Pathname.new(o)
+      orphan_parent = orphan_path.join(o.dirname.basename, o.basename)
+      FileUtils.mkdir_p orphan_parent.dirname
+      File.rename o, orphan_parent
+      puts "Moving #{o} to #{orphan_parent}"
+    end
+    grandkids = Dir[Pathname.new(k).join("*/").to_s]
+    if grandkids.empty?
+      Dir.rmdir k
+      puts "Removing #{k}"
+    end
+  end
+end
+migrate_to_files()
+move_all_uploads()
+cleanup_dead_dirs()
+
+def find_bogus
+  c = InlineComment.all
+  Assignment.all.each do |a|
+    c = c.where.not('filename like ?', "/home/bottlenose/src/private/uploads/production/#{a.course_id}/#{a.id}/%")
+  end
+  c
+end

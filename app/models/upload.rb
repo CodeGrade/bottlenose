@@ -202,7 +202,7 @@ class Upload < ApplicationRecord
   def self.upload_path_for(p)
     p = p.to_s
     if p.starts_with?(Rails.root.to_s)
-      p.gsub(Rails.root.join("private", "uploads", Rails.env).to_s, "/files")
+      p.gsub(Upload.base_upload_dir.to_s, "/files")
     else
       p
     end
@@ -211,7 +211,7 @@ class Upload < ApplicationRecord
   def self.full_path_for(p)
     p = p.to_s
     if p.starts_with?("/files")
-      p.gsub("/files", Rails.root.join("private", "uploads", Rails.env).to_s)
+      p.gsub("/files", Upload.base_upload_dir.to_s)
     else
       p
     end

@@ -35,7 +35,8 @@ class JavaStyleGrader < Grader
          "+config", self.upload.submission_path.to_s,
          "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
          "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
-         "-maxPoints", self.avail_score.to_s]
+         "-maxPoints", self.avail_score.to_s],
+        [[files_dir.to_s, Upload.upload_path_for(files_dir.to_s)]].to_h
       ]
     else
       [
@@ -45,7 +46,8 @@ class JavaStyleGrader < Grader
          files_dir.to_s,
          "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
          "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
-         "-maxPoints", self.avail_score.to_s]
+         "-maxPoints", self.avail_score.to_s],
+        [[files_dir.to_s, Upload.upload_path_for(files_dir.to_s)]].to_h
       ]
     end
   end

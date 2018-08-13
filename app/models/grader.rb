@@ -289,7 +289,7 @@ class Grader < ApplicationRecord
       InlineComment.create!(
         submission: sub,
         title: "Compilation errors",
-        filename: sub.upload.extracted_path.to_s,
+        filename: Upload.upload_path_for(sub.upload.extracted_path.to_s),
         line: 0,
         grade: g,
         user: nil,
@@ -327,7 +327,7 @@ class Grader < ApplicationRecord
       InlineComment.new(
         submission: sub,
         title: t[:comment],
-        filename: t[:info]["filename"],
+        filename: Upload.upload_path_for(t[:info]["filename"]),
         line: t[:info]["line"],
         grade: g,
         user: nil,

@@ -63,8 +63,14 @@ class User < ApplicationRecord
     end
   end
 
+  def profile_path
+    Upload.full_path_for(self.profile)
+  end
+  def profile_path=(val)
+    self.profile = Upload.upload_path_for(val)
+  end
   def profile_image_type
-    start = IO.read(self.profile, 8)
+    start = IO.read(self.profile_path, 8)
     MAGIC.each do |type, magics|
       magics.each do |m|
         if start.bytes[0..(m.length - 1)] == m.bytes
@@ -75,7 +81,7 @@ class User < ApplicationRecord
     return false
   end
   def profile_is_image
-    if self.profile && File.file?(self.profile)
+    if self.profile_path && File.file?(self.profile_path)
       if !profile_image_type
         self.errors.add(:base, "Profile file matches no known image file type")
         return false
@@ -88,8 +94,8 @@ class User < ApplicationRecord
   end
   
   def make_profile_thumbnail(force=false)
-    if (force || self.profile_changed?) && self.profile && File.file?(self.profile)
-      old_file = self.profile
+    if (force || self.profile_changed?) && self.profile_path && File.file?(self.profile_path)
+      old_file = self.profile_path
       secret = SecureRandom.urlsafe_base64
       new_file = Upload.base_upload_dir.join("#{secret}_#{self.username}_profile_thumb.jpg")
       type = profile_image_type
@@ -101,7 +107,7 @@ class User < ApplicationRecord
                                            "-define", "jpeg:extent=50KB",
                                            "jpg:#{new_file}")
       if status.success?
-        self.profile = new_file
+        self.profile_path = new_file
         self.save! if force
         FileUtils.rm(old_file)
         return true

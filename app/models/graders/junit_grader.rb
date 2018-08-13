@@ -154,7 +154,7 @@ class JunitGrader < Grader
           end
 
           if any_problems
-            g.grading_output = details.path
+            g.grading_output_path = details.path
             g.score = 0
             g.out_of = self.avail_score
 
@@ -166,7 +166,7 @@ class JunitGrader < Grader
             return 0
           else
             junit.write(test_out)
-            g.grading_output = junit.path
+            g.grading_output_path = junit.path
 
             tap = TapParser.new(test_out)
             g.score = tap.points_earned
