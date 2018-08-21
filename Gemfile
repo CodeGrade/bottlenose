@@ -7,7 +7,7 @@ gem 'i18n'
 
 gem 'devise'
 gem 'erubis'
-gem 'devise_ldap_authenticatable', github: 'cschiewek/devise_ldap_authenticatable' # needed to use LDAP instead of email auth
+gem 'devise_ldap_authenticatable' #, github: 'cschiewek/devise_ldap_authenticatable' # needed to use LDAP instead of email auth
 
 gem 'pg'
 gem "passenger", ">= 5.0.25", require: "phusion_passenger/rack_handler"
