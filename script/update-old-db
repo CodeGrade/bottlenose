@@ -36,7 +36,12 @@ def fix_codereview_sub(s)
   end
 end
 def fix_codereview_subs
-  CodereviewSub.all.each do |s|
+  if (Integer(ARGV[0]) rescue false)
+    subs = [Submission.find(ARGV[0].to_i)]
+  else
+    subs = CodereviewSub.all.order(:id)
+  end
+  subs.each do |s|
     fix_codereview_sub(s)
   end
 end
@@ -414,7 +419,7 @@ end
 #cleanup_dead_dirs()
 #migrate_to_files()
 
-fix_subs()
+fix_codereview_subs()
 
 
 def find_bogus
