@@ -79,15 +79,15 @@ class Upload
           end
         end
       end
-      # comments = InlineComment.where(submission: subs)
-      # InlineComment.transaction do
-      #   comments.each do |c|
-      #     unless c.filename.starts_with?(new_prefix.to_s)
-      #       c.filename = c.filename.gsub Upload.base_upload_dir.to_s, new_prefix.to_s
-      #       c.save
-      #     end
-      #   end
-      # end
+      comments = InlineComment.where(submission: subs)
+      InlineComment.transaction do
+        comments.each do |c|
+          unless c.filename.starts_with?(new_prefix.to_s)
+            c.filename = c.filename.gsub Upload.base_upload_dir.to_s, new_prefix.to_s
+            c.save
+          end
+        end
+      end
     rescue Exception => e
       puts e
     end
@@ -125,9 +125,9 @@ end
 
 def migrate_to_files
   sqls = [
-    "update users set profile=replace(profile, '#{Upload.base_upload_dir}', '/files')",
-    "update grades set grading_output=replace(grading_output, '#{Upload.base_upload_dir}', '/files')",
-    "update inline_comments set filename=replace(filename, '#{Upload.base_upload_dir}', '/files')"
+    "update users set profile=replace(profile, '#{Upload.base_upload_dir}/', '/files/')",
+    "update grades set grading_output=replace(grading_output, '#{Upload.base_upload_dir}/', '/files/')",
+    "update inline_comments set filename=replace(filename, '#{Upload.base_upload_dir}/', '/files/')"
   ]
   User.transaction do
     sqls.each do |sql|
@@ -141,9 +141,9 @@ end
 
 def migrate_to_private
   sqls = [
-    "update users set profile=replace(profile, 'public', 'private')",
-    "update grades set grading_output=replace(grading_output, 'public', 'private')",
-    "update inline_comments set filename=replace(filename, 'public', 'private')"
+    "update users set profile=replace(profile, '/public/', '/private/')",
+    "update grades set grading_output=replace(grading_output, '/public/', '/private/')",
+    "update inline_comments set filename=replace(filename, '/public/', '/private/')"
   ]
   User.transaction do
     sqls.each do |sql|
@@ -153,9 +153,9 @@ def migrate_to_private
 end
 def migrate_to_development
   sqls = [
-    "update users set profile=replace(profile, 'production', 'development')",
-    "update grades set grading_output=replace(grading_output, 'production', 'development')",
-    "update inline_comments set filename=replace(filename, 'production', 'development')"
+    "update users set profile=replace(profile, '/production/', '/development/')",
+    "update grades set grading_output=replace(grading_output, '/production/', '/development/')",
+    "update inline_comments set filename=replace(filename, '/production/', '/development/')"
   ]
   User.transaction do
     sqls.each do |sql|
@@ -165,9 +165,9 @@ def migrate_to_development
 end
 def migrate_to_production
   sqls = [
-    "update users set profile=replace(profile, 'development', 'production')",
-    "update grades set grading_output=replace(grading_output, 'development', 'production')",
-    "update inline_comments set filename=replace(filename, 'development', 'production')"
+    "update users set profile=replace(profile, '/development/', '/production/')",
+    "update grades set grading_output=replace(grading_output, '/development/', '/production/')",
+    "update inline_comments set filename=replace(filename, '/development/', '/production/')"
   ]
   User.transaction do
     sqls.each do |sql|
@@ -335,6 +335,12 @@ def move_all_uploads
   puts "Done."
 end
 
+def any_files(base)
+  Dir[Pathname.new(base).join("*").to_s].any? do |k|
+    (File.file? k) || (File.directory?(k) && any_files(k))
+  end
+end
+
 def cleanup_dead_dirs
   orphan_path = Upload.base_upload_dir.join("orphans")
   FileUtils.mkdir_p orphan_path
@@ -342,19 +348,10 @@ def cleanup_dead_dirs
   kids.reject!{|k| Pathname.new(k).basename.to_s == "orphans"}
   kids.each do |k|
     grandkids = Dir[Pathname.new(k).join("*/").to_s]
-    empty = grandkids.select do |g|
-      noFiles = true
-      Find.find(g) do |f|
-        if File.file? f
-          noFiles = false
-          Find.prune
-        end
-      end
-      noFiles
-    end
+    empty = grandkids.select{|g| !any_files(g)}
     puts "Empty directories:"
     puts empty
-    #    empty.each do |e| FileUtils.rm_rf e end
+    empty.each do |e| FileUtils.rm_rf e end
     grandkids.reject! do |g| empty.member? g end
     orphans = grandkids.reject do |g|
       p = Pathname.new(g)
@@ -380,9 +377,9 @@ def cleanup_dead_dirs
     end
   end
 end
-migrate_to_files()
-move_all_uploads()
+#move_all_uploads()
 cleanup_dead_dirs()
+#migrate_to_files()
 
 def find_bogus
   c = InlineComment.all
