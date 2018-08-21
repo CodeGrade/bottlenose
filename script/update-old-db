@@ -9,6 +9,39 @@ require 'archive_utils'
 require 'find'
 Rails.application.require_environment!
 
+def fix_codereview_sub(s)
+  print "Fixing #{s.id}"
+  path = s.upload.submission_path
+  atime = File.atime(path)
+  mtime = File.mtime(path)
+  answers = File.read(path)
+  changes = 0
+  new_answers = answers.gsub(%r{/files/([-_A-Za-z0-9=]{2})/([-_A-Za-z0-9=]{6,})}) do |match|
+    changes += 1
+    upload = Upload.find_by(secret_key: $2)
+    "/files/#{upload.course&.id}/#{upload.assignment&.id}/#{$1}/#{$2}"
+  end
+  if answers != new_answers
+    Tempfile.open('answers.yaml2', path.dirname) do |f|
+      f.write(new_answers)
+      f.flush
+      f.rewind
+      FileUtils.mv(f.path, path)
+      FileUtils.cp(path, s.upload.extracted_path)
+      File.utime(atime, mtime, path, s.upload.extracted_path.join(path.basename))
+      print "...done (#{changes} lines changed)\n"
+    end
+  else
+    print "...skipped\n"
+  end
+end
+def fix_codereview_subs
+  CodereviewSub.all.each do |s|
+    fix_codereview_sub(s)
+  end
+end
+
+
 def replace_in_file(grade_id, filename, transformations)
   return unless filename
   file_contents = File.read(filename)
@@ -378,8 +411,11 @@ def cleanup_dead_dirs
   end
 end
 #move_all_uploads()
-cleanup_dead_dirs()
+#cleanup_dead_dirs()
 #migrate_to_files()
+
+fix_subs()
+
 
 def find_bogus
   c = InlineComment.all
