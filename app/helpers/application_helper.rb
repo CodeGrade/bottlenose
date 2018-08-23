@@ -218,6 +218,8 @@ module ApplicationHelper
       "image/tiff"
     when ".webp"
       "image/webp"
+    when ".yaml"
+      "text/x-yaml"
     when ".jar"
       "jar"
     when ".zip"
@@ -262,6 +264,7 @@ module ApplicationHelper
          "text/x-c++src",
          "text/x-csharp",
          "application/xml",
+         "text/x-yaml",
          "text/html",
          "text/css",
          "text/plain",
