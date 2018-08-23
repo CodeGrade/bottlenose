@@ -50,7 +50,8 @@ class TeamsetsController < ApplicationController
 
   def export
     respond_to do |format|
-      format.xlsx { send_data TeamsetSpreadsheet.new(@course).to_xlsx, type: "application/xlsx" }
+      format.xlsx { send_data TeamsetSpreadsheet.new(@course).to_xlsx,
+                              type: "application/xlsx", filename: "teamsets.xlsx" }
     end
   end
   

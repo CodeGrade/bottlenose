@@ -142,7 +142,8 @@ class CoursesController < ApplicationController
     @all_course_info = all_course_info
     respond_to do |format|
       #      format.csv { send_data @all_course_info.to_csv(col_sep: "\t") }
-      format.xlsx { send_data @all_course_info.to_xlsx, type: "application/xlsx" }
+      format.xlsx { send_data @all_course_info.to_xlsx,
+                    type: "application/xlsx", filename: "gradesheet.xlsx" }
     end
   end
 
