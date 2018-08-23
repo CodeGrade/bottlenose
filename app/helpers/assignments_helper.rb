@@ -29,23 +29,23 @@ module AssignmentsHelper
 
   def check_questions_schema
     upload = @assignment_file_data
-    if upload.nil?
-      if self.assignment_upload.nil?
-        self.errors.add(:base, "Assignment questions file is missing")
-        return false
-      else
-        # continue
-      end
-    end
     begin
-      if !upload.nil?
+      case [upload.nil?, self.assignment_upload.nil?]
+      when [false, true] # New assignment
+        @old_weights = nil
+        @questions = YAML.load(File.read(upload.tempfile))
+        upload.rewind
+      when [false, false] # Updated assignment
         old_questions = YAML.load(File.read(self.assignment_upload.submission_path))
         @old_weights = old_questions.map{|section| section.map{|_, qs| qs.map{|q| Float(q.first[1]["weight"])}}}
         @questions = YAML.load(File.read(upload.tempfile))
         upload.rewind
-      else
+      when [true, false] # Existing assignment being re-checked
         @old_weights = nil
         @questions = YAML.load(File.read(self.assignment_upload.submission_path))
+      when [true, true] # Impossible
+        self.errors.add(:base, "Assignment questions file is missing")
+        return false
       end
     rescue Psych::SyntaxError => e
       self.errors.add(:base, "Could not parse the supplied file: #{e}")

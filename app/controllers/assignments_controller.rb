@@ -154,7 +154,7 @@ class AssignmentsController < ApplicationController
     end
     @assignment = Assignment.new(ap)
 
-    if @assignment.save_upload && @assignment.save
+    if @assignment.save
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully created.'
     else
       new_assn = @assignment.dup
