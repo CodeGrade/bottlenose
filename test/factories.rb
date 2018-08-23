@@ -9,26 +9,26 @@ FactoryBot.define do
 
   factory :user do
     name  { generate(:user_name) }
-    password "password"
+    password { "password" }
     username { name.downcase.gsub(/\W/, '_') }
     email { username + "@example.com" }
-    site_admin false
+    site_admin { false }
 
     factory :admin_user do
-      site_admin true
+      site_admin { true }
     end
   end
 
   factory :term do
-    semester Term.semesters[:fall]
+    semester { Term.semesters[:fall] }
     sequence(:year) {|n| Date.today.year + n}
-    archived false
+    archived { false }
   end
 
   factory :course do
     term
     sequence(:name) {|n| "Computing #{n}" }
-    footer "Link to Piazza: *Link*"
+    footer { "Link to Piazza: *Link*" }
     lateness_config
 
     after(:build) do |course|
@@ -38,11 +38,11 @@ FactoryBot.define do
   end
 
   factory :lateness_config do
-    type "LatePerDayConfig"
-    days_per_assignment 365
-    percent_off 50
-    frequency 1
-    max_penalty 100
+    type { "LatePerDayConfig" }
+    days_per_assignment { 365 }
+    percent_off { 50 }
+    frequency { 1 }
+    max_penalty { 100 }
   end
 
   factory :section do
@@ -53,10 +53,10 @@ FactoryBot.define do
   end
 
   factory :grader do
-    type "ManualGrader"
+    type { "ManualGrader" }
     sequence(:order)
-    avail_score 100.0
-    params ""
+    avail_score { 100.0 }
+    params { "" }
     assignment
   end
 
@@ -66,16 +66,16 @@ FactoryBot.define do
   end
   
   factory :assignment do
-    type "Files"
+    type { "Files" }
     teamset
     association :blame, factory: :user
     
     lateness_config
-    available (Time.now - 10.days)
-    points_available 100
+    available { (Time.now - 10.days) }
+    points_available { 100 }
 
     sequence(:name) {|n| "Homework #{n}" }
-    due_date (Time.now + 7.days)
+    due_date { (Time.now + 7.days) }
     after(:build) do |assn|
       assn.course = assn.teamset.course
       assn.graders << build(:grader, assignment: assn)
@@ -85,7 +85,7 @@ FactoryBot.define do
   factory :upload do
     user
 
-    file_name "none"
+    file_name { "none" }
     secret_key { SecureRandom.hex }
   end
 
@@ -93,7 +93,7 @@ FactoryBot.define do
     assignment
     user
     upload
-    type "FilesSub"
+    type { "FilesSub" }
 
     after(:build) do |sub|
       unless sub.user.registration_for(sub.course)
@@ -111,8 +111,8 @@ FactoryBot.define do
     user
     course
 
-    role 0
-    show_in_lists true
+    role { Registration.roles[:student] }
+    show_in_lists { true }
     after(:create) do |reg|
       reg.new_sections = [reg.course.sections.first]
       reg.save_sections
@@ -123,7 +123,7 @@ FactoryBot.define do
     user
     course
 
-    notes "Let me in!"
+    notes { "Let me in!" }
     after(:build) do |reg|
       sections = {"#{reg.course.sections.first.type}_sections": "#{reg.course.sections.first.crn}"}
       reg.assign_attributes(sections)
