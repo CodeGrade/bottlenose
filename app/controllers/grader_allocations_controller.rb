@@ -7,7 +7,7 @@ class GraderAllocationsController < ApplicationController
   before_action :find_grader, except: [:stats, :abandon, :delete, :abandon_all, :delete_all]
   before_action :require_current_user
   before_action -> { require_admin_or_staff(course_assignment_path(@course, @assignment)) }, only: [:index]
-  before_action -> { require_admin_or_assistant(course_assignment_path(@course, @assignment || @grader.assignment)) },
+  before_action -> { require_admin_or_assistant(course_assignment_path(@course, @assignment)) },
                 only: [:patch, :edit, :update, :abandon, :delete, :abandon_all, :delete_all]
   before_action -> { require_admin_or_prof(course_path(@course)) }, only: [:stats]
 
