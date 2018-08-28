@@ -489,4 +489,10 @@ class Assignment < ApplicationRecord
     self.lateness_config.assign_attributes(attrs)
   end
 
+  def assign_attributes(attrs)
+    attrs[:graders_attributes]&.each do |k, v|
+      v[:assignment] = self
+    end
+    super(attrs)
+  end
 end

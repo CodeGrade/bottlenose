@@ -202,12 +202,8 @@ class Grader < ApplicationRecord
                        date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
                        mimetype: data.content_type
                      })
-
-    unless up.save
-      self.errors.add(:upload_file, "could not save upload")
-      return
-    end
-    self.upload_id = up.id
+    self.upload = up
+    upload_id_will_change!
   end
 
   def extra_upload_file=(data)
@@ -223,16 +219,13 @@ class Grader < ApplicationRecord
                        date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
                        mimetype: data.content_type
                      })
-
-    unless up.save
-      self.errors.add(:upload_file, "could not save upload")
-      return
-    end
-    self.extra_upload_id = up.id
+    self.extra_upload = up
+    extra_upload_id_will_change!
   end
 
   def assign_attributes(attrs)
     self.upload_by_user_id = attrs[:upload_by_user_id]
+    self.assignment = attrs[:assignment] if self.assignment.nil? && attrs[:assignment]
     super(attrs)
   end
 
