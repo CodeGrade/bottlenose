@@ -208,6 +208,8 @@ module ApplicationHelper
       "text/x-c++src"
     when ".cs"
       "text/x-csharp"
+    when ".py"
+      "text/x-python"
     when ".gif"
       "image/gif"
     when ".jpg", ".jpeg"
@@ -263,6 +265,7 @@ module ApplicationHelper
          "text/x-csrc",
          "text/x-c++src",
          "text/x-csharp",
+         "text/x-python",
          "application/xml",
          "text/x-yaml",
          "text/html",
