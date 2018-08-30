@@ -323,6 +323,7 @@ class Grader < ApplicationRecord
     g = self.grade_for sub
     InlineComment.where(submission: sub, grade: g).destroy_all
     ics = tap.tests.map do |t|
+      puts "Severity is #{t[:info]}"
       InlineComment.new(
         submission: sub,
         title: t[:comment],

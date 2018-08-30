@@ -18,6 +18,7 @@
     <li><%= tab_if_type("CheckerGrader", "Checker tests") %></li>
     <li><%= tab_if_type("JunitGrader", "JUnit tests") %></li>
     <li><%= tab_if_type("RacketStyleGrader", "Racket style") %></li>
+    <li><%= tab_if_type("PythonStyleGrader", "Python style") %></li>
     <li><%= tab_if_type("ManualGrader", "Manual grading") %></li>
     <li><%= tab_if_type("SandboxGrader", "Sandboxed tests") %></li>
     <li><%= tab_if_type("reuse", "Copy existing settings") %></li>
@@ -97,12 +98,22 @@
       </table>
     </div>
     <% end %>
-    <%= f_grader.fields_for "RacketStyleGrader" do |jsg| %>
+    <%= f_grader.fields_for "RacketStyleGrader" do |rsg| %>
     <div id="<%= new_grader %>_RacketStyleGrader" class="tab-pane equal-height-group form-group">
       <table class="table" style="margin-bottom: 0px;">
         <tr>
-          <td><%= jsg.label "avail_score", "Points available:" %></td>
-          <td><%= jsg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %></td>
+          <td><%= rsg.label "avail_score", "Points available:" %></td>
+          <td><%= rsg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %></td>
+        </tr>
+      </table>
+    </div>
+    <% end %>
+    <%= f_grader.fields_for "PythonStyleGrader" do |psg| %>
+    <div id="<%= new_grader %>_PythonStyleGrader" class="tab-pane equal-height-group form-group">
+      <table class="table" style="margin-bottom: 0px;">
+        <tr>
+          <td><%= psg.label "avail_score", "Points available:" %></td>
+          <td><%= psg.spinner "avail_score", target.avail_score || 50, :min => 0, :delta => 5 %></td>
         </tr>
       </table>
     </div>
