@@ -126,6 +126,7 @@ class Submission < ApplicationRecord
 
     self.upload_size = data.size
     @upload_data = data
+    upload_id_will_change!
   end
 
   def save_upload(prof_override = nil)
@@ -144,27 +145,24 @@ class Submission < ApplicationRecord
     up = Upload.new
     up.user_id = user.id
     up.assignment = assignment
+    up.upload_data = data
+    up.metadata = {
+      type:       "Submission",
+      user:       "#{user.name} (#{user.id})",
+      course:     "#{course.name} (#{course.id})",
+      assignment: "#{assignment.name} (#{assignment.id})",
+      date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      mimetype:   data.content_type,
+      prof_override: prof_override
+    }
     begin
-      up.store_upload!(data, {
-        type:       "Submission",
-        user:       "#{user.name} (#{user.id})",
-        course:     "#{course.name} (#{course.id})",
-        assignment: "#{assignment.name} (#{assignment.id})",
-        date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-        mimetype:   data.content_type,
-        prof_override: prof_override
-      })
-    rescue Exception => e
-      errors.add(:base, e.message)
-      return false
-    end
-    if up.save
+      up.save!
       self.upload_id = up.id
-
       Audit.log("Sub #{self.id}: New submission upload by #{user.name} " +
                 "(#{user.id}) with key #{up.secret_key}")
       return true
-    else
+    rescue Exception => e
+      errors.add(:base, e.message)
       return false
     end
   end
@@ -208,14 +206,15 @@ class Submission < ApplicationRecord
     up = Upload.new
     up.user_id = user.id
     up.assignment = assignment
-    up.store_upload!(data, {
+    up.upload_data = data
+    up.metadata = {
       type:       "Submission Comments",
       user:       "Some teacher for #{user.name} (#{user.id})",
       course:     "#{course.name} (#{course.id})",
       assignment: "#{assignment.name} (#{assignment.id})",
       date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
       mimetype:   data.content_type
-    })
+    }
     up.save!
 
     self.comments_upload_id = up.id
@@ -490,7 +489,7 @@ class Submission < ApplicationRecord
 
   def submitted_file_or_manual_grade
     return unless self.new_record? || self.upload_id_changed?
-    if upload_id.nil? and self.assignment.type != "Exam"
+    if upload_id.nil? && @upload_data.nil? && self.assignment.type != "Exam"
       errors.add(:base, "You need to submit a file.")
     end
   end

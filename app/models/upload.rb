@@ -14,31 +14,18 @@ class Upload < ApplicationRecord
   end
 
   include UploadsHelper
-  validates :file_name,  :presence => true
+  validates :assignment, :presence => true
   validates :user_id,    :presence => true
   validates :secret_key, :presence => true
-
-  validate :data_and_metadata_stored
 
   belongs_to :user
   belongs_to :assignment
   has_one :course, through: :assignment
 
   after_initialize :generate_secret_key!
+  before_create :store_upload!
   before_destroy :cleanup!
-
-  def data_and_metadata_stored
-    unless File.exist?(submission_path)
-      Audit.log("Uploaded file missing for upload in #{upload_dir}, aborting save.")
-      return false
-    end
-
-    unless File.exist?(metadata_path)
-      Audit.log("Metadata missing for upload in #{upload_dir}, aborting save.")
-      return false
-    end
-    true
-  end
+  after_rollback :purge!
 
   def create_submission_structure(upload, metadata)
     # upload_dir/
@@ -105,45 +92,14 @@ class Upload < ApplicationRecord
     "#{Settings['site_url']}#{path}"
   end
 
-  def store_upload!(upload, metadata)
-    self.file_name = upload.original_filename
-
-    # Can't set user id in grader upload.
-    # Graders don't know *anything*, so it's hard to fake.
-    #if user_id.nil?
-    #  raise Exception.new("Must set user before storing uploaded file.")
-    #end
-
-    if Dir.exist?(upload_dir)
-      raise Exception.new("Duplicate secret key (1). That's unpossible!")
-    end
-
-    Audit.log("User #{user&.name} (#{user_id}) creating upload #{secret_key}")
-
-    create_submission_structure(upload, metadata)
-
-    if upload.is_a? ActionDispatch::Http::UploadedFile
-      upload_path = upload.path
-    elsif upload.is_a? String
-      upload_path = upload
-    else
-      upload_path = submission_path.to_s
-    end
-    effective_mime = metadata[:mimetype] || upload.content_type
-
-    unless (metadata.dig(:prof_override, :file_count) rescue false)
-      ArchiveUtils.too_many_files?(upload_path, effective_mime, Upload.MAX_FILES) 
-    end
-    unless (metadata.dig(:prof_override, :file_size) rescue false)
-      ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
-    end
-    ArchiveUtils.invalid_paths?(upload_path, effective_mime)
-
-    extract_contents!(effective_mime)
-
-    Audit.log("Uploaded file #{file_name} for #{user&.name} (#{user_id}) at #{secret_key}")
+  def upload_data=(upload)
+    @upload = upload
   end
 
+  def metadata=(metadata)
+    @metadata = metadata
+  end
+  
   def read_metadata
     begin
       YAML.load(File.open(metadata_path))
@@ -221,6 +177,10 @@ class Upload < ApplicationRecord
     Audit.log("Skip cleanup: #{file_name} for #{user.name} (#{user_id}) at #{secret_key}")
   end
 
+  def purge!
+    FileUtils.rm_rf (upload_dir.to_s)
+  end
+
   def self.base_upload_dir
     Rails.root.join("private", "uploads", Rails.env)
   end
@@ -232,6 +192,46 @@ class Upload < ApplicationRecord
     end
   end
 
+  private
+  def store_upload!
+    self.file_name = @upload.original_filename
+
+    # Can't set user id in grader upload.
+    # Graders don't know *anything*, so it's hard to fake.
+    #if user_id.nil?
+    #  raise Exception.new("Must set user before storing uploaded file.")
+    #end
+
+    if Dir.exist?(upload_dir)
+      raise Exception.new("Duplicate secret key (1). That's unpossible!")
+    end
+
+    Audit.log("User #{user&.name} (#{user_id}) creating upload #{secret_key}")
+
+    create_submission_structure(@upload, @metadata)
+
+    if @upload.is_a? ActionDispatch::Http::UploadedFile
+      upload_path = @upload.path
+    elsif @upload.is_a? String
+      upload_path = @upload
+    else
+      upload_path = submission_path.to_s
+    end
+    effective_mime = @metadata[:mimetype] || @upload.content_type
+
+    unless (metadata.dig(:prof_override, :file_count) rescue false)
+      ArchiveUtils.too_many_files?(upload_path, effective_mime, Upload.MAX_FILES) 
+    end
+    unless (metadata.dig(:prof_override, :file_size) rescue false)
+      ArchiveUtils.total_size_too_large?(upload_path, effective_mime, Upload.MAX_SIZE)
+    end
+    ArchiveUtils.invalid_paths?(upload_path, effective_mime)
+
+    extract_contents!(effective_mime)
+
+    Audit.log("Uploaded file #{file_name} for #{user&.name} (#{user_id}) at #{secret_key}")
+  end
+  
   def store_meta!(meta)
     if File.exist?(metadata_path)
       raise Exception.new("Attempt to reset metadata on upload.")

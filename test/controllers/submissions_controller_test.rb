@@ -5,7 +5,9 @@ class SubmissionsControllerTest < ActionController::TestCase
     make_standard_course
 
     @hello = create(:assignment, course: @cs101, teamset: @ts1)
-    @john_hello = create(:submission, user: @john, assignment: @hello)
+    @john_hello = build(:submission, user: @john, assignment: @hello)
+    @john_hello.save_upload
+    @john_hello.save
   end
 
   teardown do

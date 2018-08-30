@@ -11,6 +11,8 @@ class Assignment < ApplicationRecord
   attr_accessor :teamset_source_copy
   attr_accessor :current_user
 
+  before_create :stifle_graders
+  after_create :restore_graders
   after_save :save_upload
   
   before_validation :establish_teamsets
@@ -368,8 +370,23 @@ class Assignment < ApplicationRecord
     @assignment_file_data = data
   end
 
+  def stifle_graders
+    @_graders = self.graders.to_a
+    self.graders = []
+  end
+
+  def restore_graders
+    @_graders.each do |g|
+      g.assignment = self
+      g.assignment_id = self.id
+      g.save!
+      self.graders << g
+    end
+    return true
+  end
+
   def save_upload
-    return if @inSave
+    return true if @inSave
     user = User.find(blame_id)
 
     if @assignment_file_data.nil?
@@ -384,36 +401,34 @@ class Assignment < ApplicationRecord
       up.user_id = user.id
       up.assignment = self
       begin
-        up.store_upload!(@assignment_file_data, {
+        up.upload_data = @assignment_file_data
+        up.metadata = {
           type:       "Assignment File",
           user:       "#{user.name} (#{user.id})",
           course:     "#{course.name} (#{course.id})",
           date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
           mimetype:   @assignment_file_data.content_type
-        })
+        }
+        up.save!
       rescue Exception => e
         errors.add(:base, e.message)
         raise ActiveRecord::RecordInvalid.new(self)
       end
 
-      if up.save
-        # This is pretty gunky.  We need the assignment id in Upload in order to know
-        # what directory to put the files in.  But we don't have the id until *after*
-        # initially saving ourself.  Of course, once we do that, we need to save
-        # ourselves again, with the updated assignment_upload field...but that would be
-        # infinitely recursive.  So prevent the regress by disabling this after_save callback
-        self.assignment_upload_id = up.id
-        oldSave = @inSave
-        @inSave = true
-        self.save
-        @inSave = oldSave
-
-        Audit.log("Assn #{id}: New assignment file upload by #{user.name} " +
-                  "(#{user.id}) with key #{up.secret_key}")
-        return true
-      else
-        raise ActiveRecord::RecordInvalid.new(self)
-      end
+      # This is pretty gunky.  We need the assignment id in Upload in order to know
+      # what directory to put the files in.  But we don't have the id until *after*
+      # initially saving ourself.  Of course, once we do that, we need to save
+      # ourselves again, with the updated assignment_upload field...but that would be
+      # infinitely recursive.  So prevent the regress by disabling this after_save callback
+      self.assignment_upload_id = up.id
+      oldSave = @inSave
+      @inSave = true
+      self.save
+      @inSave = oldSave
+      
+      Audit.log("Assn #{id}: New assignment file upload by #{user.name} " +
+                "(#{user.id}) with key #{up.secret_key}")
+      return true
     end
   end
 
