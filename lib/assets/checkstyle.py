@@ -42,6 +42,7 @@ class TapErrorReport(BaseReport):
             self.merge(self.config, json_load_byteified(open(conf_file)))
         self.preprocess_config()
         self.deductions = {}
+        self.max_points = options.max_points
         super(TapErrorReport, self).__init__(options)
 
     def merge(self, a, b):
@@ -108,7 +109,7 @@ class TapErrorReport(BaseReport):
         print("TAP version 13")
         print("1..%d" % self.total_errors)
         print("# Time: %d" % self.elapsed)
-        print("# TOTAL POINTS: %d" % 42)
+        print("# TOTAL POINTS: %d" % self.max_points)
         print("# Tests run: %d" % len(self._errors))
         for i, err in enumerate(self._errors, start=1):
             print("not ok %d %s" % (i, err[4]))
