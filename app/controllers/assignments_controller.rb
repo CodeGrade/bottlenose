@@ -112,6 +112,7 @@ class AssignmentsController < ApplicationController
 
   def update_weights
     no_problems = true
+    params[:weight] = params[:weight] || {}
     assignments = Assignment.where(id: params[:weight].keys).map{|a| [a.id.to_s, a]}.to_h
     if assignments.count != params[:weight].keys.count
       missing = (params[:weight].keys.to_set - assignments.keys.to_set).to_a

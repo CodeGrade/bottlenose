@@ -516,4 +516,16 @@ class AssignmentsControllerTest < ActionController::TestCase
 
     assert_redirected_to @cs101
   end
+
+  ##################################################
+  # Editing weights
+  ##################################################
+  test "should not break on editing no weights" do
+    sign_in @fred
+      post :update_weights, params: {
+             course_id: @cs101.id,
+            }
+    assert_redirected_to [@cs101, "assignments"]
+  end
+
 end
