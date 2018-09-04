@@ -4,7 +4,7 @@
   <h1>Courses</h1>
 
   <div class="actions">
-    <% if current_user.site_admin? %>
+    <% if current_user.site_admin? || current_user.prof_ever? %>
       <%= link_to "New Course", new_course_path, class: "btn btn-success" %>
     <% end %>
   </div>
