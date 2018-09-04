@@ -593,7 +593,7 @@ class GradesController < ApplicationController
     @sub_comments = @submission.grade_submission_comments(current_user.site_admin? || cur_reg.staff?)
     if @sub_comments.empty? && (@tests.nil? || @tests.count != num_comments)
       @error_header = <<HEADER.html_safe
-<p>There seems to be a problem displaying the #{@grade.grader.type.humanize}'s feedback on this submission.</p>
+<p>There seems to be a problem displaying the #{@grade.grader.display_type}'s feedback on this submission.</p>
 <p>Please email the professor, with the following information:</p>
 <ul>
 <li>Course: #{@course.id}</li>
@@ -712,6 +712,17 @@ HEADER
     redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
   end
   def details_RacketStyleGrader
+    GradesController.pretty_print_comments(@grade.inline_comments)
+  end
+
+  # PythonStyleGrader
+  def show_PythonStyleGrader
+    show_inline_comment_grader
+  end
+  def edit_PythonStyleGrader
+    redirect_to details_course_assignment_submission_path(@course, @assignment, @submission)
+  end
+  def details_PythonStyleGrader
     GradesController.pretty_print_comments(@grade.inline_comments)
   end
 

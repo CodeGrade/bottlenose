@@ -1,3 +1,4 @@
+require 'fake_upload'
 
 FactoryBot.define do
   sequence :user_name do |n|
@@ -84,15 +85,19 @@ FactoryBot.define do
 
   factory :upload do
     user
+    assignment
 
     file_name { "none" }
     secret_key { SecureRandom.hex }
+    after(:build) do |u|
+      u.upload_data = FakeUpload.new("none", "no content provided")
+      u.metadata = {note: "Factory upload creation"}
+    end
   end
 
   factory :submission do
     assignment
     user
-    upload
     type { "FilesSub" }
 
     after(:build) do |sub|
@@ -101,9 +106,7 @@ FactoryBot.define do
                new_sections: [sub.course.sections.first])
       end
 
-      if sub.upload
-        sub.upload.user_id = sub.user_id
-      end
+      sub.upload_file = FakeUpload.new("none", "no content provided")
     end
   end
 

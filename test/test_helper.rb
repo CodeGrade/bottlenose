@@ -58,7 +58,8 @@ class ActiveSupport::TestCase
 
   def simulated_upload(user, file)
     upload = build(:upload, user: user)
-    upload.store_upload!(FakeUpload.new(file), {note: "Test: Simulated Upload"})
+    upload.upload_data = FakeUpload.new(file)
+    upload.metadata = {note: "Test: Simulated Upload"}
     upload
   end
 
@@ -88,21 +89,11 @@ class ActiveSupport::TestCase
   end
 
   def make_submission(uu, aa, file)
-    upl = build(:upload)
-    upl.store_upload!(assign_upload_obj(aa.name, file),
-                      {
-                        type:       "Submission",
-                        user:       "Test (0)",
-                        date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z")
-                      })
-    upl.save!
-
     sub = create(
       :submission,
       assignment: aa,
       type: "FilesSub",
       user: uu,
-      upload_id: upl.id,
       team:
         if aa.team_subs?
           uu.active_team_for(aa.course, aa)
@@ -110,6 +101,7 @@ class ActiveSupport::TestCase
           nil
         end
     )
+    sub.upload_file = assign_upload_obj(aa.name, file)
     sub.save_upload
     sub.save!
 

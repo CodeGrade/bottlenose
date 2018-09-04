@@ -1,0 +1,50 @@
+{
+  "initial points": 50,
+  "maximum deductions per file": 50,
+  "E": {
+    "description": "Coding",
+    "deduction": 1,
+    "severity": "Error",
+    "maximumDeductions": 1000
+  },
+  "E1": {
+    "description": "Formatting (Indentation)"
+  },
+  "E2": {
+    "description": "Formatting (Whitespace)"
+  },
+  "E3": {
+    "description": "Formatting (Blank line)"
+  },
+  "E4": {
+    "description": "Coding (Imports)"
+  },
+  "E5": {
+    "description": "Formatting (Line length)"
+  },
+  "E7": {
+    "description": "Coding (Statements)"
+  },
+  "E9": {},
+  "W": {
+    "description": "Coding",
+    "deduction": 1,
+    "severity": "Warning",
+    "maximumDeductions": 1000
+  },
+  "W1": {
+    "description": "Formatting (Indentation)"
+  },
+  "W2": {
+    "description": "Formatting (Whitespace)"
+  },
+  "W3": {
+    "description": "Formatting (Blank line)"
+  },
+  "W5": {
+    "description": "Formatting (Line break)"
+  },
+  "W6": {
+    "description": "Deprecation"
+  }
+}

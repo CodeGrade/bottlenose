@@ -26,30 +26,21 @@ class JavaStyleGrader < Grader
   end
   def get_command_arguments(assignment, sub)
     files_dir = sub.upload.extracted_path
-    if self.upload && self.upload.submission_path && File.file?(self.upload.submission_path)
-      [
-        "style.tap",
-        {},
-        ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
-         files_dir.to_s,
-         "+config", self.upload.submission_path.to_s,
-         "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
-         "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
-         "-maxPoints", self.avail_score.to_s],
-        [[files_dir.to_s, Upload.upload_path_for(files_dir.to_s)]].to_h
-      ]
-    else
-      [
-        "style.tap",
-        {},
-        ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
-         files_dir.to_s,
-         "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
-         "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
-         "-maxPoints", self.avail_score.to_s],
-        [[files_dir.to_s, Upload.upload_path_for(files_dir.to_s)]].to_h
-      ]
+    ans = [
+      "style.tap",
+      {},
+      ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
+       files_dir.to_s,
+       "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
+       "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
+       "-maxPoints", self.avail_score.to_s],
+      [[files_dir.to_s, Upload.upload_path_for(files_dir.to_s)]].to_h
+    ]
+    if self.upload&.submission_path && File.file?(self.upload.submission_path)
+      ans[2].insert(4, 
+         "+config", self.upload.submission_path.to_s)
     end
+    ans
   end
 
   def recompute_grades

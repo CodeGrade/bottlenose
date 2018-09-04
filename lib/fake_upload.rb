@@ -1,12 +1,16 @@
 
 class FakeUpload
-  def initialize(path)
+  def initialize(path, content = nil)
     @path = path
     @name = File.basename(path)
+    if content
+      @content = content
+      @size = content.length
+    end
   end
 
   def read
-    File.read(@path)
+    @content || File.read(@path)
   end 
 
   def original_filename
@@ -18,6 +22,6 @@ class FakeUpload
   end
 
   def size
-    File.size(@path)
+    @size || File.size(@path)
   end
 end

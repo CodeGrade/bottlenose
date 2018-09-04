@@ -517,6 +517,49 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert_redirected_to @cs101
   end
 
+  test "should allow for graders with files" do
+    sign_in @fred
+    upload_file = fixture_file_upload(
+      "files/HelloSingle/hello.c",'application/octet-stream')
+    assert_difference('Assignment.count') do
+      post :create, params: {
+             course_id: @cs101.id,
+             assignment: {
+               teamset_plan: "none",
+               assignment: "Dance a jig.",
+               points_available: 100,
+               name: "Useful Work",
+               due_date: '2019-05-22',
+               available: '2011-05-22',
+               type: "Files",
+               lateness_config_attributes: {
+                 "type"=>"LatePerHourConfig",
+                 "frequency"=>"1",
+                 "percent_off"=>"25",
+                 "max_penalty"=>"100",
+                 "days_per_assignment"=>"22"
+               },
+               graders_attributes: {
+                 "1477181088065"=> {
+                   "type"=>"JavaStyleGrader",
+                   "avail_score"=>"50",
+                   "order"=>"1",
+                   "_destroy"=>"false",
+                   "upload_file" => upload_file
+                 }
+               }
+             }
+           }
+    end
+
+    @assn = assigns(:assignment)
+    upload = @assn.graders.first.upload
+    assert_equal @assn, upload.assignment
+    assert upload.upload_dir.to_s.starts_with?(Upload.base_upload_dir.join(@cs101.id.to_s, @assn.id.to_s).to_s)
+    assert File.exists?(upload.submission_path)
+    assert_redirected_to [@cs101, @assn.becomes(Assignment)]
+  end
+  
   ##################################################
   # Editing weights
   ##################################################

@@ -80,9 +80,10 @@ class Grader < ApplicationRecord
   belongs_to :extra_upload, class_name: 'Upload'
 
   has_many :grades
-  validates_presence_of :assignment
+  validates :assignment, presence: true
   validates :order, presence: true, uniqueness: {scope: :assignment_id}
   before_save :recompute_grades, if: :avail_score_changed?
+  before_save :save_uploads
   
   class << self
     attr_accessor :delayed_grades
@@ -185,7 +186,7 @@ class Grader < ApplicationRecord
   end
 
   def extra_upload_file
-      self.extra_upload&.file_name
+    self.extra_upload&.file_name
   end
 
   def upload_file=(data)
@@ -197,13 +198,13 @@ class Grader < ApplicationRecord
     up = Upload.new
     up.user = User.find_by(id: self.upload_by_user_id)
     up.assignment = assignment
-    up.store_upload!(data, {
-                       type: "#{type} Configuration",
-                       date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-                       mimetype: data.content_type
-                     })
+    up.upload_data = data
+    up.metadata = {
+      type: "#{type} Configuration",
+      date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      mimetype: data.content_type
+    }
     self.upload = up
-    upload_id_will_change!
   end
 
   def extra_upload_file=(data)
@@ -214,13 +215,13 @@ class Grader < ApplicationRecord
     up = Upload.new
     up.user = User.find_by(id: self.upload_by_user_id)
     up.assignment = assignment
-    up.store_upload!(data, {
-                       type: "#{type} Extra Configuration",
-                       date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-                       mimetype: data.content_type
-                     })
+    up.upload_data = data
+    up.metadata = {
+      type: "#{type} Extra Configuration",
+      date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      mimetype: data.content_type
+    }
     self.extra_upload = up
-    extra_upload_id_will_change!
   end
 
   def assign_attributes(attrs)
@@ -231,6 +232,11 @@ class Grader < ApplicationRecord
 
   protected
 
+  def save_uploads
+    self.upload&.save!
+    self.extra_upload&.save!
+  end
+  
   def recompute_grades
     # nothing to do by default
   end
@@ -317,6 +323,7 @@ class Grader < ApplicationRecord
     g = self.grade_for sub
     InlineComment.where(submission: sub, grade: g).destroy_all
     ics = tap.tests.map do |t|
+      puts "Severity is #{t[:info]}"
       InlineComment.new(
         submission: sub,
         title: t[:comment],

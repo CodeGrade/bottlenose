@@ -5,10 +5,23 @@ require 'spreadsheet'
 class CourseSpreadsheet < Spreadsheet
   def initialize(course)
     @sheets = []
+    @course = course
+    @users = @course.students.order(:last_name, :first_name).to_a
+    @users_by_id = @users.map {|u| [u.id, u]}.to_h
+    @sections = @course.sections
+    @sections_by_type = @sections.group_by(&:type)
+    @sections_by_crn = @sections.map{|s| [s.crn, s]}.to_h
 
-    exams, exam_cols = create_exams(course, Sheet.new("Exams"))
-    hws, hw_cols = create_hws(course, Sheet.new("Homework"), exams)
-    summary = create_summary(course, Sheet.new("Summary"), exams, exam_cols, hws, hw_cols)
+    @regs = @course.registrations.joins(:sections)
+           .select(:user_id, :crn, :type, :dropped_date, :created_at)
+           .group_by(&:user_id)
+           .map do |uid, sections|
+      [uid, sections.map{|s| [s.type, {section: @sections_by_crn[s.crn], joined_date: s.created_at, dropped_date: s.dropped_date}]}.to_h]
+    end.to_h
+
+    exams, exam_cols = create_exams(Sheet.new("Exams"))
+    hws, hw_cols = create_hws(Sheet.new("Homework"), exams)
+    summary = create_summary(Sheet.new("Summary"), exams, exam_cols, hws, hw_cols)
     @sheets.push(summary, exams, hws)
     @sheets.each do |s|
       s.assign_coords
@@ -21,12 +34,12 @@ class CourseSpreadsheet < Spreadsheet
     end
   end
 
-  def create_exams(course, sheet)
-    labels, weight, users = create_name_columns(course, sheet)
+  def create_exams(sheet)
+    labels, weight = create_name_columns(sheet)
 
     exam_cols = []
 
-    course.assignments.where(type: ["Exam", "Questions"]).order(:due_date).each do |exam|
+    @course.assignments.where(type: ["Exam", "Questions"]).order(:due_date).each do |exam|
       used_subs = exam.all_used_subs.to_a
       grades = Gradesheet.new(exam, used_subs)
       subs_for_grading = UsedSub.where(assignment: exam).to_a
@@ -60,7 +73,7 @@ class CourseSpreadsheet < Spreadsheet
                            .group_by(&:submission_id)
       subs_by_user = subs_for_grading.map{|sfg| [sfg.user_id, sfg]}.to_h
 
-      users.each_with_index do |u, i|
+      @users.each_with_index do |u, i|
         sub_id = subs_by_user[u.id]
         begin
           sub = grades.grades[:grades][sub_id.submission_id] unless sub_id.nil?
@@ -122,14 +135,11 @@ class CourseSpreadsheet < Spreadsheet
     return sheet, exam_cols
   end
 
-  def create_name_columns(course, sheet)
+  def create_name_columns(sheet)
     sheet.columns.push(
       Col.new("LastName", "String"), Col.new("FirstName", "String"), Col.new("Instructor", "String"),
       Col.new("NUID", "String"), Col.new("Username", "String"), Col.new("Email", "String"))
-    sections = course.sections
-    sections_by_type = sections.group_by(&:type)
-    sections_by_crn = sections.map{|s| [s.crn, s]}.to_h
-    course_section_types = sections_by_type.keys
+    course_section_types = @sections_by_type.keys
     course_section_types.each do |type|
       sheet.columns.push(Col.new("#{type.humanize} section", "Number"))
     end
@@ -137,16 +147,8 @@ class CourseSpreadsheet < Spreadsheet
     labels = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
     weight = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
 
-    users = course.students.order(:last_name, :first_name).to_a
-
-    regs = course.registrations.joins(:sections)
-           .select(:user_id, :crn, :type, :dropped_date)
-           .group_by(&:user_id)
-           .map do |uid, sections|
-      [uid, sections.map{|s| [s.type, {section: sections_by_crn[s.crn], dropped_date: s.dropped_date}]}.to_h]
-    end.to_h
-    users.each do |u|
-      reg = regs[u.id]
+    @users.each do |u|
+      reg = @regs[u.id]
       lecture = reg[Section::types["lecture"]]
       row = [ sanitize(u.last_name || u.name),
               sanitize(u.first_name || ""),
@@ -162,19 +164,19 @@ class CourseSpreadsheet < Spreadsheet
       sheet.push_row(nil, row)
     end
 
-    return labels, weight, users
+    return labels, weight
   end
   
-  def create_hws(course, sheet, exams)
-    labels, weight, users = create_name_columns(course, sheet)
+  def create_hws(sheet, exams)
+    labels, weight  = create_name_columns(sheet)
 
     hw_cols = []
 
-    course.assignments.where.not(type: ["Exam", "Questions"]).order(:due_date).each do |assn|
+    @course.assignments.where.not(type: ["Exam", "Questions"]).order(:due_date).each do |assn|
       used_subs = assn.all_used_subs.includes(:user, :team).references(:user, :team).to_a
       grades = Gradesheet.new(assn, used_subs)
       subs_for_grading = UsedSub.where(assignment: assn).to_a
-      assn.cache_effective_due_dates!(users)
+      assn.cache_effective_due_dates!(@users)
       
       sheet.columns.push(Col.new((assn.extra_credit ? "(E.C.) " : "") + sanitize(assn.name), "Number"))
       @graders_count = grades.graders.count
@@ -196,12 +198,21 @@ class CourseSpreadsheet < Spreadsheet
 
       subs_by_user = subs_for_grading.map{|sfg| [sfg.user_id, sfg]}.to_h
 
-      users.each_with_index do |u, i|
+      @users.each_with_index do |u, i|
         sub_id = subs_by_user[u.id]
         sub = grades.grades[:grades][sub_id.submission_id] unless sub_id.nil?
         if sub.nil?
           grades.graders.each do |g| sheet.push_row(i, "") end
-          sheet.push_row(i, [0, "No submission", 0, 0])
+          user_regs = @regs[u.id]
+          joined_date = user_regs.values.map{|r| r[:joined_date]}.min
+          dropped_date = user_regs.values.map{|r| r[:dropped_date]}.min
+          if joined_date && assn.due_date <= joined_date
+            sheet.push_row(i, [0, "Late registration", "Late registration", "Late registration"])
+          elsif dropped_date && assn.due_date >= dropped_date
+            sheet.push_row(i, [0, "Dropped", "Dropped", "Dropped"])
+          else
+            sheet.push_row(i, [0, "No submission", 0, 0])
+          end
         else
           plagiarism_status = grades.plagiarism_status[sub_id.submission_id]
           sub[:staff_scores][:scores].each do |ss|
@@ -268,8 +279,8 @@ class CourseSpreadsheet < Spreadsheet
     return sheet, hw_cols
   end
 
-  def create_summary(course, sheet, exams, exam_cols, hws, hw_cols)
-    labels, weight, users = create_name_columns(course, sheet)
+  def create_summary(sheet, exams, exam_cols, hws, hw_cols)
+    labels, weight = create_name_columns(sheet)
 
     hw_headers = hws.header_rows.count + 1 + 1 # 1 for the header labels, and one because 1-indexed
 
@@ -280,7 +291,7 @@ class CourseSpreadsheet < Spreadsheet
       labels.push(Cell.new(assn.points_available / 100.0))
       weight.push(Cell.new(""))
 
-      users.each_with_index do |u, i|
+      @users.each_with_index do |u, i|
         sheet.push_row(i, Cell.new(nil, CellRef.new(hws.name, Spreadsheet.col_name(col), true, i + hw_headers, false,
                                                     "Please Recalculate")))
       end
@@ -291,7 +302,7 @@ class CourseSpreadsheet < Spreadsheet
       labels.push(Cell.new(exam.points_available / 100.0))
       weight.push(Cell.new(""))
 
-      users.each_with_index do |u, i|
+      @users.each_with_index do |u, i|
         sheet.push_row(i, Cell.new(nil, CellRef.new(exams.name, Spreadsheet.col_name(col), true, i + hw_headers, false,
                                                     "Please Recalculate")))
       end
@@ -303,7 +314,7 @@ class CourseSpreadsheet < Spreadsheet
     labels.push(Cell.new(""))
     weight.push(Cell.new(""))
 
-    users.each_with_index do |u, i|
+    @users.each_with_index do |u, i|
       sheet.push_row(i, Cell.new(nil, Formula.new("Please recalculate", "SUMPRODUCT",
                                                   Range.new(Spreadsheet.col_name(start_col), true, 2, true,
                                                             Spreadsheet.col_name(end_col), true, 2, true),
