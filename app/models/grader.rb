@@ -205,6 +205,7 @@ class Grader < ApplicationRecord
       mimetype: data.content_type
     }
     self.upload = up
+    self.upload_id_will_change!
   end
 
   def extra_upload_file=(data)
@@ -222,6 +223,7 @@ class Grader < ApplicationRecord
       mimetype: data.content_type
     }
     self.extra_upload = up
+    self.extra_upload_id_will_change!
   end
 
   def assign_attributes(attrs)
