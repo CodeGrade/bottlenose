@@ -46,10 +46,7 @@ class UsersController < ApplicationController
 
     up = user_params
 
-    if @user.profile && File.exists?(@user.profile) && up[:profile]
-      FileUtils.rm(@user.profile)
-      @user.profile = nil
-    end
+    old_user_profile = @user.profile
     if up[:profile]
       image = up[:profile]
       secret = SecureRandom.urlsafe_base64
@@ -59,6 +56,9 @@ class UsersController < ApplicationController
     end
     
     if @user.update_attributes(up)
+      if old_user_profile && File.exists?(Upload.full_path_for(old_user_profile))
+        FileUtils.rm(Upload.full_path_for(old_user_profile))
+      end
       if current_user_site_admin?
         redirect_to user_path(@user), notice: 'User was successfully updated.'
       else
@@ -66,6 +66,7 @@ class UsersController < ApplicationController
       end
     else
       FileUtils.rm(up[:profile]) if up[:profile] # cleanup orphaned file
+      @user.profile = old_user_profile
       render action: "edit", 
              alert: "Error updating user: #{@user.errors.full_messages.join('; ')}", status: 400
     end

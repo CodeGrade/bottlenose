@@ -4,7 +4,8 @@ require 'open3'
 
 class User < ApplicationRecord
   MAGIC = {png: ["\x89PNG\x0d\x0a\x1a\x0a"],
-           jpg: ["\xff\xd8\xff\xdb", "\xff\xd8\xff\xe0", "\xff\xd8\xff\xe1"],
+           jpg: ["\xff\xd8\xff\xdb", "\xff\xd8\xff\xe0", "\xff\xd8\xff\xe1",
+                 "\xff\xd8\xff\xe2", "\xff\xd8\xff\xe3", "\xff\xd8\xff\xe8", "\xff\xd8\xff\xed"],
            gif: ["GIF87a", "GIF89a"],
            bmp: ["BM"]}
   # Include default devise modules. Others available are:
