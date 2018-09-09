@@ -116,7 +116,7 @@
 </h4>
 <div id="number-submissions" class="show_all">
   <h3 class="all">
-    <%= type[:noun].pluralize(2).capitalize %> for all sections (<%= @gradesheet.submissions.count %> / <%= @gradesheet.submissions.count %>)
+    <%= type[:noun].pluralize(2).capitalize %> for all sections (<%= @gradesheet.submissions.count %>)
   </h3>
   <% @course.sections.each do |s| %>
   <h3 class="sec_<%= s.crn %>">
