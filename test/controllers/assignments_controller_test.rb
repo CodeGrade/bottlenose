@@ -559,5 +559,16 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert File.exists?(upload.submission_path)
     assert_redirected_to [@cs101, @assn.becomes(Assignment)]
   end
+  
+  ##################################################
+  # Editing weights
+  ##################################################
+  test "should not break on editing no weights" do
+    sign_in @fred
+      post :update_weights, params: {
+             course_id: @cs101.id,
+            }
+    assert_redirected_to [@cs101, "assignments"]
+  end
 
 end
