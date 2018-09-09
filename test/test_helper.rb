@@ -7,6 +7,7 @@ require 'simplecov'
 require 'backburner'
 require 'beaneater'
 require 'minitest/reporters'
+require 'fileutils'
 
 SimpleCov.start
 Minitest::Reporters.use! [

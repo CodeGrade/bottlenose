@@ -51,6 +51,7 @@ class UsersController < ApplicationController
       image = up[:profile]
       secret = SecureRandom.urlsafe_base64
       filename = Upload.base_upload_dir.join("#{secret}_#{@user.username}_profile#{File.extname(image.original_filename)}")
+      FileUtils.mkdir_p Upload.base_upload_dir # Ensure that the directory does exist!
       File.open(filename, "wb") do |f| f.write(image.read) end
       up[:profile] = filename.to_s
     end
