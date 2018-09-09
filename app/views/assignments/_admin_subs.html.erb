@@ -16,6 +16,7 @@
 <div style="display: flex; flex-direction: row; align-items: baseline; justify-content: space-between;">
 <div style="padding-bottom: 0.5em; display: inline-block; flex-grow: 1;">
   <% if @gradesheet.assignment.due_date <= DateTime.now %>
+    <strong>Assignment actions:</strong>
      <div class="btn-group" style="white-space: nowrap;">
        <%= link_to "Download all", 
            course_assignment_tarball_path(@course, @gradesheet.assignment),
