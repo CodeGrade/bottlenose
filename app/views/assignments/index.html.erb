@@ -23,7 +23,7 @@
          style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
       <span style="flex: 1;">Assignments</span>
       <% if @course&.registered_by?(current_user) %>
-      <div><%= link_to "Edit Assignment Weights", weights_course_assignments_path, class: 'btn btn-sm btn-default' %></div>
+      <div><%= link_to "Edit Assignment Weights", weights_course_assignments_path(@course), class: 'btn btn-sm btn-default' %></div>
       <div><%= link_to "New", new_course_assignment_path(@course), class: 'btn btn-sm btn-success' %></div>
       <% end %>
     </div>
