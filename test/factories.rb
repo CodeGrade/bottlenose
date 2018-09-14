@@ -28,7 +28,7 @@ FactoryBot.define do
 
   factory :course do
     term
-    sequence(:name) {|n| "Computing #{n}" }
+    sequence(:name) {|n| "Computing #{n + 100}" }
     footer { "Link to Piazza: *Link*" }
     lateness_config
 
