@@ -79,7 +79,8 @@ class RegistrationsController < ApplicationController
           render :json => {failure: "Unknown registration"}, status: 400
           return
         else
-          if (current_user.registration_for(@course).role != "professor")
+          # might be nil if admin instead of prof
+          if (current_user.registration_for(@course)&.role != "professor" && !current_user_site_admin?)
             params.delete(:role) # Only professors may edit roles
           end
           changed = false
