@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'audit'
 require 'open3'
+require 'headless'
 
 module UploadsHelper
   class Postprocessor
@@ -130,22 +131,25 @@ ERROR
       # in case multiple racket files coexist in the same directory
       output_path = f.to_s.gsub(extracted_path.to_s, embeds_path.to_s)
       Pathname.new(output_path).mkpath
-      output, err, status = Open3.capture3("xvfb-run", "-a", "--server-num", "1",
-                                           "racket", Rails.root.join("lib/assets/render-racket.rkt").to_s,
-                                           "-e", output_path,
-                                           "-o", f + "ext",
-                                           f)
-      if status.success?
-        contents = File.read(f + "ext")
-        File.open(f, "w") do |f|
-          f.write contents.gsub(Upload.base_upload_dir.to_s, "/files")
-        end
-        FileUtils.rm(f + "ext")
-        Audit.log "Successfully processed #{f} to #{output_path}"
-        return true
-      else
-        FileUtils.rm (f + "ext"), force: true
-        Audit.log <<ERROR
+      Headless.ly(display: output_path.hash % Headless::MAX_DISPLAY_NUMBER) do
+        output, err, status, timed_out = ApplicationHelper.capture3(
+                               {"XDG_RUNTIME_DIR" => nil},
+                               "racket", Rails.root.join("lib/assets/render-racket.rkt").to_s,
+                               "-e", output_path,
+                               "-o", f + "ext",
+                               f,
+                               timeout: 30)
+        if status.success? && !timed_out
+          contents = File.read(f + "ext")
+          File.open(f, "w") do |f|
+            f.write contents.gsub(Upload.base_upload_dir.to_s, "/files")
+          end
+          FileUtils.rm(f + "ext")
+          Audit.log "Successfully processed #{f} to #{output_path}"
+          return true
+        else
+          FileUtils.rm (f + "ext"), force: true
+          Audit.log <<ERROR
 ================================
 Problem processing #{f}:
 Status: #{status}
@@ -153,7 +157,8 @@ Error: #{err}
 Output: #{output}
 ================================
 ERROR
-        return false
+          return false
+        end
       end
     end
     alias_handler :ss, :rkt
