@@ -1,3 +1,4 @@
+require 'audit'
 # coding: utf-8
 class ApplicationController < ActionController::Base
   impersonates :user
@@ -6,6 +7,19 @@ class ApplicationController < ActionController::Base
     render :text => exception, :status => 500
   end
   protect_from_forgery
+
+  if Rails.env.production?
+    rescue_from ActionView::MissingTemplate do |exception|
+      puts <<ERROR
+Missing template requested: #{exception}
+Original request:           #{request.original_url}
+Unknown format:             #{params[:format]}
+Current user:               #{current_user&.id} #{current_user&.display_name}
+Remote address:             #{request.remote_ip}  
+ERROR
+      render "errors/not_found", status: 422, content_type: "html", formats: :html, layout: "errors"
+    end
+  end
 
   before_action :set_mailer_host
   before_action :configure_permitted_parameters, if: :devise_controller?
