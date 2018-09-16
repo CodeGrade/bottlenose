@@ -11,7 +11,7 @@
     <tr>
       <th>Status</th>
       <th>Submitter</th>
-      <th>Team</th>
+      <% if gradesheet.assignment.team_subs? %><th>Team</th><% end %>
       <th>Date</th>
       <th>Status</th>
       <% gradesheet.grades[:graders].each do |c| %>
@@ -50,7 +50,7 @@
         <% end %>
       </td>
       <td><%= maybe_link_user(cur_reg_staff, sub.user) %></td>
-      <td><%= sub.team %></td>
+      <% if gradesheet.assignment.team_subs? %><td><%= sub.team %></td><% end %>
       <td><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
       <% scores = if cur_reg_staff then grade[:staff_scores] else grade[:blind_scores] end %>
       <% if scores[:raw_score]
@@ -73,7 +73,7 @@
       <% scores[:scores].each do |s| %>
       <td class="text-right">
         <% if s.kind_of?(Array) %>
-        <%= to_fixed(s[0]) %>&nbsp;/&nbsp;<%= to_fixed(s[1]) %>
+        <%= show_score(s[0]) %>&nbsp;/&nbsp;<%= to_fixed(s[1]) %>
         <% else %>
         <%= s %>
         <% end %>
@@ -83,7 +83,8 @@
       <td class="text-right"><%= to_fixed(scores[:raw_score]) %>&nbsp;/&nbsp;<%= to_fixed(gradesheet.max_score) %></td>
       <td>(<%= to_fixed(sub.score) %>%)</td>
       <% else %>
-      <td><%= image_tag("question-mark.png", height: 32) %></td><td></td>
+      <td class="text-right"><%= image_tag("question-mark.png", height: 32) %></td>
+      <td>NONE</td>
       <% end %>
       <% if cur_reg_staff %>
       <td class="text-right">
