@@ -74,6 +74,8 @@ group :test do
   gem 'database_cleaner'
   gem 'capybara'
   gem 'capybara-webkit' # Needs qt5-default qt5-qmake libqt5webkit5-dev
+  gem 'selenium-webdriver'
+  gem 'chromedriver-helper'
   gem 'launchy'
   gem 'factory_bot_rails'
   gem 'rails-controller-testing'
