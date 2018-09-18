@@ -376,7 +376,7 @@ class Screenshots
     @assignments = []
     ts = Teamset.create(course: @course, name: "Teamset 1")
     assn = Files.new(name: "Assignment 1", blame: @fred, teamset: ts, lateness_config: @late_per_day,
-                     course: @course, available: Time.now - 10.days, due_date: Time.now + 7.days,
+                     course: @course, available: Time.now - 10.days, due_date: Time.now - 1.days,
                      points_available: 2.5)
     assn.graders << RacketStyleGrader.new(assignment: assn, params: "80", avail_score: 30, order: 1)
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 2)
@@ -410,7 +410,7 @@ class Screenshots
   def create_submission(course, students, assignment, file)
     user = students.sample
     sub = create(:submission, assignment: assignment, type: "FilesSub", user: user,
-                 team: user.active_team_for(course, assignment))
+                 team: user.active_team_for(course, assignment), created_at: Time.now - 1.5.days)
     sub.upload_file = fixture_file_upload(Rails.root.join("test", "fixtures", "files/#{assignment.name}/#{file}"),
                                           "application/octet-stream")
     sub.save_upload
@@ -418,6 +418,15 @@ class Screenshots
     sub.set_used_sub!
     sub
   end
+
+  def grade_sub(sub, graders)
+    graders.each do |g| g.ensure_grade_exists_for! sub end
+    sub.grades.each do |g|
+      g.score = Random.rand(g.out_of)
+      g.save
+    end
+  end
+  
   def set_default_size
     set_window_size(@width, @height + @chrome_height)
   end
@@ -455,22 +464,33 @@ class Screenshots
     end
     def course_page
       sign_in(@fred)
+      students = @course.students.to_a
+      # These take a while, because they each launch DrRacket to render the file...
+      subs = (1..15).to_a.map do create_submission(@course, students, @assignments[0], "sample.rkt") end
+      subs = (1..15).to_a.map do create_submission(@course, students, @assignments[1], "Mobiles.java") end
+
+      graders = @assignments[0].graders.to_a
+      @assignments[0].submissions.each do |s| grade_sub(s, graders) end
+      subs[0].team.dissolve(Time.now)
+
       visit(course_path(@course))
       yield
       box = bbox(page.find_all("a.btn").to_a[2])
       scale_box box, 0.1, 0.1
       highlight_area("assignments", box)
       yield
-      students = @course.students.to_a
-      # These take a while, because they each launch DrRacket to render the file...
-      subs = (1..15).to_a.map do create_submission(@course, students, @assignments[0], "sample.rkt") end
-      subs = (1..15).to_a.map do create_submission(@course, students, @assignments[1], "Mobiles.java") end
-      subs[0].team.dissolve(Time.now)
+
+      visit(course_assignment_path(@course, @assignments[0]))
+      accept_alert do
+        page.find("a[data-confirm]").click
+      end
+      yield
       visit(course_path(@course))
       assignments, abnormal, unpublished, current_teams, pending = page.find_all("div.panel").to_a
       set_full_page
       yield options: bbox(abnormal)
       yield options: bbox(unpublished)
+      yield options: bbox(pending)
     end
     def assignments_page
       sign_in(@fred)
@@ -491,7 +511,28 @@ class Screenshots
 
     def assignment_page
       sign_in(@fred)
+      visit course_assignment_path(@course, @assignments[0])
+      yield # Fully graded assignment
+      subs = @assignments[1].submissions
+      graders = @assignments[1].graders.to_a
+      last_grader = graders.pop
+      subs.each do |s|
+        graders.each do |g|
+          g.ensure_grade_exists_for! s
+        end
+        s.grades.each do |g|
+          g.score = Random.rand(g.out_of)
+          g.save
+        end
+      end
       visit course_assignment_path(@course, @assignments[1])
+      create_missing = page.find("a.btn-warning")
+      highlight_area("assignments", scale_box(bbox(create_missing), 0.1, 0.1), "rgba(240, 0, 0, 0.5)")
+      yield # Mostly graded assignment
+      remove_highlight("assignments")
+      accept_alert do
+        create_missing.click
+      end
       yield
     end
 
