@@ -71,7 +71,7 @@
     <% by_term = as_role[term.name] %>
     <% by_term.sort_by{|info| info[:course]}.each do |info| %>
   <li>
-    <p><%= term.name %> &mdash; <%= info[:course].name %> (<%= link_to "View", info[:course] %>)</p>
+    <p><%= term.name %> &mdash; <%= info[:course].name %> (<%= link_to "View", course_path(info[:course]) %>)</p>
     <% if role_name == 'student' %>
     <p>Registered for
       <%= info[:sections].map do |sec_type, sections| 

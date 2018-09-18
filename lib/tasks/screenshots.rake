@@ -1,4 +1,5 @@
 Rails.env = ENV["RAILS_ENV"] = "test"
+Rails.logger = ActiveSupport::Logger.new("/dev/null") # Don't need logging for this
 require File.expand_path('../../../config/environment', __FILE__)
 require 'capybara'
 require 'capybara/rails'
@@ -13,6 +14,7 @@ require 'open3'
 
 module Utilities
   include Warden::Test::Helpers
+
   def set_window_size(width = nil, height = nil)
     window = Capybara.current_session.current_window
     if width.nil? || height.nil?
@@ -22,16 +24,71 @@ module Utilities
     end
     window.resize_to(width, height)
   end
+  def set_full_page
+    height = page.evaluate_script("$(document.body).outerHeight(true)")
+    set_window_size nil, height + @chrome_height
+  end
   def sign_in(who)
     Warden.test_mode!
     Warden.test_reset!
-    login_as(who, scope: warden_scope(who))
+    login_as(who, scope: :user)
   end
   def warden_scope(*resource)
     resource.class.name.underscore.to_sym
   end
 
+  def highlight_area(id, box, strokeColor = "rgba(244, 208, 63, 0.5)", fillColor = "rgba(247, 220, 111, 0.5)")
+    width = box["right"] - box["left"]
+    height = box["bot"] - box["top"]
+    page.execute_script(<<-JAVASCRIPT, id, box["left"], box["top"], width, height, fillColor, strokeColor)
+(function(id, left, top, width, height, fillColor, strokeColor) {
+  var canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  canvas.id = "hilite_" + id;
+  var $canvas = $(canvas);
+  var ctx = canvas.getContext("2d");
+  var n = 15;
 
+  ctx.save();
+    ctx.translate(width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 0);
+    var angle = Math.PI / n;
+    for (var i = 0; i < n; i++) {
+      var inX = Math.cos(angle * (2 * i + 1)) * (width / 2) * 0.9;
+      var inY = Math.sin(angle * (2 * i + 1)) * (height / 2) * 0.9;
+      var outX = Math.cos(angle * (2 * i + 2)) * (width / 2);
+      var outY = Math.sin(angle * (2 * i + 2)) * (height / 2);
+      ctx.lineTo(inX, inY);
+      ctx.lineTo(outX, outY);
+    }
+    ctx.closePath(); 
+    ctx.save();
+      ctx.scale(width / 2, height / 2);
+      var gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1, 1);
+      gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+      gradient.addColorStop(1, fillColor);
+
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  ctx.restore();
+
+  $(document.body).append($canvas);
+  $canvas.offset({left: left, top: top});
+}).apply(this, arguments)
+JAVASCRIPT
+  end
+  def remove_highlight(id)
+    page.execute_script("$('#hilite_" + id + "').remove()")
+  end
+
+  
   def bbox(*elems)
     elems = elems.map do |e|
       if e.is_a? Capybara::Result
@@ -58,20 +115,149 @@ module Utilities
 }).apply(this, arguments)
 JAVASCRIPT
   end
+
+  def clip(box, width, height)
+    if width
+      if width > 0
+        box["right"] = [box["left"] + width, box["right"]].min
+      else
+        box["left"] = [box["right"] - width, box["left"]].max
+      end
+    end
+    if height
+      if height > 0
+        box["bot"] = [box["top"] + height, box["bot"]].min
+      else
+        box["top"] = [box["bot"] - height, box["top"]].max
+      end
+    end
+    box
+  end
+
+  def scale_box(box, scaleX, scaleY)
+    width = box["width"] || (box["right"] - box["left"])
+    height = box["height"] || (box["bot"] - box["top"])
+    dx = width * scaleX
+    dy = height * scaleY
+    box["left"] -= dx;
+    box["top"] -= dy
+    box["right"] += dx if box["right"]
+    box["bot"] += dy if box["bot"]
+    box["width"] += 2 * dx if box["width"]
+    box["height"] += 2 * dy if box["height"]
+    box
+  end
+
+  MALE_FIRST_NAMES = [
+    "Santiago", "Daniel", "Miguel", "Noah",
+    "William", "Agustin", "Jayden", "Luis",
+    "Mohammed", "Ori", "Marc", "Stefan",
+    "Jakub", "Peter", "Bo", "Wei", "Peng"
+  ]
+  FEMALE_FIRST_NAMES = [
+    "Sofia", "Alice", "Olivia", "Emma",
+    "Chloe", "Tamar", "Eden", "Emily",
+    "Ma'ayan", "Sara", "Jessica", "Sophia",
+    "Fatima", "Mariam", "Ting", "Qian", "Jing"
+  ]
+  LAST_NAMES = [
+    "Baek", "Brown", "Chen", "Davis",
+    "Diaz", "Edwards", "Evans", "Gagnon",
+    "Garcia", "Gonzalez", "Hernandez", "Johnson",
+    "Jones", "Li", "Liu", "Magoro",
+    "Martinez", "Miller", "Munoz", "Murphy",
+    "Nguyen", "Okafor", "Parker", "Robinson",
+    "Rodriguez", "Silva", "Smith", "Suzuki",
+    "Taylor", "Wang", "Williams", "Wilson", "Zhang"
+  ]
+  MALE_PROFILES = Dir[File.expand_path("demo-images/man_*", File.dirname(__FILE__))]
+  FEMALE_PROFILES = Dir[File.expand_path("demo-images/woman_*", File.dirname(__FILE__))]
+
+  RANDOM_PEOPLE = []
+  FileUtils.mkdir_p Upload.base_upload_dir unless Dir.exists? Upload.base_upload_dir
+  [MALE_PROFILES, FEMALE_PROFILES].each do |profs|
+    profs.each do |prof|
+      FileUtils.cp(prof, Upload.base_upload_dir)
+      prof.gsub!(File.dirname(prof).to_s, Upload.base_upload_dir.to_s)
+    end
+  end
+    
+  LAST_NAMES.each do |ln|
+    [[MALE_FIRST_NAMES, MALE_PROFILES], [FEMALE_FIRST_NAMES, FEMALE_PROFILES]].each do |fns, profs|
+      fns.each do |fn|
+        prof = profs.sample
+        RANDOM_PEOPLE << [fn, ln, prof]
+      end
+    end
+  end
+  def self.profile(male)
+    if male
+      prof = MALE_PROFILES.sample
+    else
+      prof = FEMALE_PROFILES.sample
+    end
+  end
+  def profile(male)
+    Utilities.profile(male)
+  end
+  def self.redefine_factories
+    FactoryBot.define do
+      sequence :first_name do |n|
+        RANDOM_PEOPLE[n % RANDOM_PEOPLE.count][0]
+      end
+      sequence :last_name do |n|
+        RANDOM_PEOPLE[n % RANDOM_PEOPLE.count][1]
+      end
+      sequence :profile do |n|
+        RANDOM_PEOPLE[n % RANDOM_PEOPLE.count][2]
+      end
+    end
+    FactoryBot.modify do
+      factory :user do
+        first_name { generate(:first_name) }
+        last_name { generate(:last_name) }
+        profile { generate(:profile) }
+        name { "#{first_name} #{last_name}" }
+        email { username + "@school.edu" }
+        sequence :nuid {|n| n.hash % 1e9.to_i }
+      end
+      factory :section do
+        sequence :crn {|n| n.hash % 90000 + 10000}
+        meeting_time {
+          num_days = [1,2,3].sample
+          days = [0, 1, 2, 3, 4].sample(num_days).sort
+          day = "MTWRF".chars.values_at(*days).join("")
+
+          times = ["9:15--10:20am", "9:50--11:30am", "10:35--11:40am", "1:35--3:15pm"].sample
+          "#{day} #{times}"
+        }
+      end
+    end
+  end
 end
 
 class Screenshots
   include Capybara::DSL
   include FactoryBot::Syntax::Methods
+  include ActionDispatch::TestProcess
   include Utilities
 
   BROWSER_WIDTH  = 1280
   BROWSER_HEIGHT = 768
 
-  def self.setup(*methods)
-    methods.each do |m|
-      send(self, m)
-    end
+  HOOKS = {before_all: [], before_each: [], after_all: [], after_each: []}
+
+  def self.before_all(method)
+    HOOKS[:before_all] << method
+  end
+  def self.before_each(method)
+    HOOKS[:before_each] << method
+  end
+  def self.after_all(method)
+    HOOKS[:after_all] << method
+  end
+  def self.after_each(method)
+    HOOKS[:after_each] << method
   end
 
   def self.generate(path, width: BROWSER_WIDTH, height: BROWSER_HEIGHT)
@@ -80,18 +266,38 @@ class Screenshots
       DatabaseCleaner.clean_with :truncation
       
       ss = Screenshots.new
-      ss.set_window_size(width, height)
-      Screenshots.instance_methods(false).each do |method|
-        ss.send(method) do |file = method, options: {}|
-          filename = "#{file}.png"
+      ss.extend(ScreenshotScripts)
+      # Set desired dimensions
+      ss.width = width
+      ss.height = height
+      # And add the fudge factor of the window chrome
+      ss.chrome_height =
+        Capybara.current_session.current_window.size()[1] - ss.page.evaluate_script("window.innerHeight")
+
+      
+      HOOKS[:before_all].each do |m| ss.send(m) end
+      ScreenshotScripts.instance_methods(false).each do |method|
+        HOOKS[:before_each].each do |m| ss.send(m) end
+        @count = 0
+        @default_filename = method.to_s.gsub("_", "-")
+        print "Running script #{method}..."
+        ss.send(method) do |file = @default_filename, options: {}|
+          if file == @default_filename
+            filename = "#{file}_#{@count}.png"
+            @count += 1
+          else
+            filename = "#{file}.png"
+          end
           ss.page.save_screenshot(filename)
           if options["left"] && options["top"]
+            options["left"] = options["left"].floor
+            options["top"] = options["top"].floor
             if options["right"] && options["bot"]
-              options["width"] = options["right"] - options["left"]
-              options["height"] = options["bot"] - options["top"]
+              options["width"] = options["right"].ceil - options["left"]
+              options["height"] = options["bot"].ceil - options["top"]
             end
             if options["width"] && options["height"]
-              geometry = "#{options["width"]}x#{options["height"]}+#{options["left"]}+#{options["top"]}"
+              geometry = "#{options["width"].ceil}x#{options["height"].ceil}+#{options["left"]}+#{options["top"]}"
               output, err, status =
                            Open3.capture3("convert",
                                           path.join(filename).to_s,
@@ -106,11 +312,13 @@ class Screenshots
             end
           end
         end
-        DatabaseCleaner.clean
+        puts "Done."
+        HOOKS[:after_each].each do |m| ss.send(m) end
       end
+      HOOKS[:after_all].each do |m| ss.send(m) end
       
       dir = Upload.base_upload_dir.to_s
-      if Rails.env === "manual" && dir =~ /manual/
+      if Rails.env.test? && dir =~ /test/
         FileUtils.rm_rf(dir)
       end
     end
@@ -118,7 +326,7 @@ class Screenshots
 
   def self.optimize(path)
     Headless.ly do
-      Dir["#{path}/**"].each do |filename|
+      Dir["#{path}/**"].sort.each do |filename|
         puts "Optimizing #{filename}"
         `pngquant --force --output #{filename} #{filename}`
       end
@@ -126,40 +334,183 @@ class Screenshots
   end
 
   #######################################################
-  
-  def homepage
-    visit("/")
-    yield
-    yield "excerpt", options: bbox(page.find_all("input.form-control"), page.find_all("label"))
-  end
 
-  def first_run
-    @course = create(:course, footer: nil)
-    @fred = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher")
-    @section = create(:section, course: @course, instructor: @fred, crn: 31415)
-    @assignments = (1..5).map do |i|
-      ts = create(:teamset, course: @course, name: "Teamset #{i}")
-      create(:assignment, name: "Assignment #{i}", course: @course, teamset: ts)
+  def reset_db
+    DatabaseCleaner.clean
+  end
+  
+  def create_students
+    print "Creating #{RANDOM_PEOPLE.count} students..."
+    User.transaction do
+      @students = RANDOM_PEOPLE.map do |fn, ln, profile|
+        User.create(first_name: fn, last_name: ln, name: "#{fn} #{ln}", profile: profile)
+      end
+    end
+    puts "Done."
+  end
+  
+  def create_course
+    print "Creating default course..."
+    @fred = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher",
+                   nickname: "Fred", profile: profile(true))
+    @term = Term.create(semester: Term.semesters[:fall], year: Date.today.year, archived: false)
+    @late_per_day = LatePerDayConfig.create(days_per_assignment: 1, percent_off: 50,
+                                            frequency: 1, max_penalty: 100)
+    @course = Course.new(name: "Computing 101", term: @term, lateness_config: @late_per_day)
+    @sections = (1..3).map do |_|
+      build(:section, course: @course, instructor: @fred)
+    end
+    @course.sections = @sections
+    @course.save
+    @fred_reg = Registration.create(course: @course, user: @fred, role: Registration::roles[:professor],
+                                    show_in_lists: false, new_sections: @sections)
+    @fred_reg.save_sections
+
+    @students.sample(30).each do |student|
+      reg = Registration.create(course: @course, user: student,
+                                role: Registration::roles[:student], show_in_lists: true,
+                                new_sections: [@sections.sample])
+      reg.save_sections
+    end
+
+    @assignments = []
+    ts = Teamset.create(course: @course, name: "Teamset 1")
+    assn = Files.new(name: "Assignment 1", blame: @fred, teamset: ts, lateness_config: @late_per_day,
+                     course: @course, available: Time.now - 10.days, due_date: Time.now + 7.days,
+                     points_available: 2.5)
+    assn.graders << RacketStyleGrader.new(assignment: assn, params: "80", avail_score: 30, order: 1)
+    assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 2)
+    @assignments << assn
+
+    ts = Teamset.create(course: @course, name: "Teamset 2")
+    ts.randomize(2, "course", Time.now - 10.days)
+    assn = Files.new(name: "Assignment 2", blame: @fred, teamset: ts, lateness_config: @late_per_day,
+                     course: @course, available: Time.now - 10.days, due_date: Time.now + 7.days,
+                     points_available: 2.5, team_subs: true)
+    assn.graders << JavaStyleGrader.new(assignment: assn, avail_score: 30, order: 1)
+    g = CheckerGrader.new(assignment: assn, upload: build(:upload, user: @fred, assignment: assn),
+                          avail_score: 50, order: 2)
+    g.test_class = "ExampleTestClass"
+    g.errors_to_show = 3
+    assn.graders << g
+    assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
+    @assignments << assn
+    
+    
+    (3..5).each do |i|
+      ts = Teamset.create(course: @course, name: "Teamset #{i}")
+      assn = create(:assignment, name: "Assignment #{i}", course: @course, teamset: ts,
+                    blame: @fred, points_available: 2.5)
+      @assignments << assn
     end
     @assignments.map(&:save!)
-    @fred_reg = create(:registration, course: @course, user: @fred,
-                       role: Registration::roles[:professor], show_in_lists: false, new_sections: [@section.crn])
-    @fred_reg.save_sections
-    login_as(@fred, scope: :user)
-    visit("/")
-    yield "initial-profile"
-    visit(course_path(@course))
-    yield "course-home"
-    page.click_link("Assignments")
-    yield "assignments-home"
+    puts "Done."
   end
 
+  def create_submission(course, students, assignment, file)
+    user = students.sample
+    sub = create(:submission, assignment: assignment, type: "FilesSub", user: user,
+                 team: user.active_team_for(course, assignment))
+    sub.upload_file = fixture_file_upload(Rails.root.join("test", "fixtures", "files/#{assignment.name}/#{file}"),
+                                          "application/octet-stream")
+    sub.save_upload
+    sub.save!
+    sub.set_used_sub!
+    sub
+  end
+  def set_default_size
+    set_window_size(@width, @height + @chrome_height)
+  end
+
+  attr_accessor :chrome_height
+  attr_accessor :width
+  attr_accessor :height
+
+  before_all :reset_db
+  before_all :create_students
+  before_all :create_course
+  before_each :set_default_size
+
+  module ScreenshotScripts
+    def login
+      logout(:user)
+      visit("/")
+      yield
+      yield options: bbox(page.find_all("input.form-control"), page.find_all("label"))
+    end
+    def homepage
+      sign_in(@fred)
+      visit("/")
+      yield
+    end
+
+    def initial_profile
+      sign_in(@fred)
+      visit(user_path(@fred))
+      yield
+      visit(edit_user_path(@fred))
+      yield
+      find("input.btn[name='commit']").click
+      yield
+    end
+    def course_page
+      sign_in(@fred)
+      visit(course_path(@course))
+      yield
+      box = bbox(page.find_all("a.btn").to_a[2])
+      scale_box box, 0.1, 0.1
+      highlight_area("assignments", box)
+      yield
+      students = @course.students.to_a
+      # These take a while, because they each launch DrRacket to render the file...
+      subs = (1..15).to_a.map do create_submission(@course, students, @assignments[0], "sample.rkt") end
+      subs = (1..15).to_a.map do create_submission(@course, students, @assignments[1], "Mobiles.java") end
+      subs[0].team.dissolve(Time.now)
+      visit(course_path(@course))
+      assignments, abnormal, unpublished, current_teams, pending = page.find_all("div.panel").to_a
+      set_full_page
+      yield options: bbox(abnormal)
+      yield options: bbox(unpublished)
+    end
+    def assignments_page
+      sign_in(@fred)
+      visit(course_assignments_path(@course))
+      #page.click_link("Assignments") # was used when we were on course_path(@course)
+      yield
+      set_full_page
+      page.find_all(".panel").each do |panel|
+        yield options: clip(bbox(panel), nil, 350)
+      end
+    end
+
+    def facebook_page
+      sign_in(@fred)
+      visit facebook_course_path(@course)
+      yield
+    end
+
+    def assignment_page
+      sign_in(@fred)
+      visit course_assignment_path(@course, @assignments[1])
+      yield
+    end
+
+    def assignment_weights_page
+      sign_in(@fred)
+      visit weights_course_assignments_path(@course)
+      yield
+      find(:css, "input#weight_#{@assignments[2].id}").set("97").send_keys(:tab, [:shift, :tab])
+      page.execute_script("window.scrollBy(0, 10000)"); # scroll to bottom
+      yield
+    end
+  end
 end
 
 desc "Generates screenshots for the manual"
 namespace :manual do
   task :screenshots => :environment do
     FactoryBot.find_definitions
+    Utilities.redefine_factories
     include Rails.application.routes.url_helpers
     Capybara.default_driver = :selenium_chrome
     DatabaseCleaner.strategy = :deletion

@@ -28,7 +28,7 @@ FactoryBot.define do
 
   factory :course do
     term
-    sequence(:name) {|n| "Computing #{n + 100}" }
+    sequence(:name, 101) {|n| "Computing #{n}" }
     footer { "Link to Piazza: *Link*" }
     lateness_config
 
@@ -48,7 +48,7 @@ FactoryBot.define do
 
   factory :section do
     course
-    sequence(:crn) {|n| 1000 + n }
+    sequence(:crn, 1001)
     sequence(:meeting_time) {|n| "Tuesday #{n}:00" }
     association :instructor, factory: :user
   end
