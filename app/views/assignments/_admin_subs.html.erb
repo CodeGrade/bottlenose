@@ -11,6 +11,8 @@
   #number-submissions.show_all .sec_<%= s.crn %> { display: none; }
   <% end %>
   #number-submissions.show_one .all { display: none; }
+  #number-submissions { display: inline-block; margin-left: 2em; }
+  #select-sections select { font-size: 80%; }
 </style>
 <% end %>
 <div style="display: flex; flex-direction: row; align-items: baseline; justify-content: space-between;">
@@ -107,24 +109,24 @@
 <%= render "grade_distribution" %>
 <% end %>
 <% if cur_user_prof_ever || cur_reg&.staff? %>
-<h4>Select a section: <select id="sections">
-    <option value="show_all">Show all sections</option>
+<h3 id="select-sections">Show submissions for <select id="sections">
+    <option value="show_all">All sections</option>
     <% @course.sections.each do |s| %>
     <option value="show_one sec_<%= s.crn %>">Section <%= s.to_s %></option>
     <% end %>
   </select>
-</h4>
-<div id="number-submissions" class="show_all">
-  <h3 class="all">
-    <%= type[:noun].pluralize(2).capitalize %> for all sections (<%= @gradesheet.submissions.count %>)
-  </h3>
-  <% @course.sections.each do |s| %>
-  <h3 class="sec_<%= s.crn %>">
-    <% sec_students_submitted = @gradesheet.submissions.select{|sub| s.users.include?(sub.user)}.length %>
-    <%= type[:noun].pluralize(2).capitalize %> for <%= s.to_s(show_type: false) %> (<%= sec_students_submitted %> / <%= @gradesheet.submissions.count %>)
-  </h3>
-  <% end %>
-</div>
+  <small><span id="number-submissions" class="show_all">
+    <span class="all">
+      (<%= @gradesheet.submissions.count %> <%= type[:noun].pluralize(@gradesheet.submissions.count) %>)
+    </span>
+    <% @course.sections.each do |s| %>
+    <span class="sec_<%= s.crn %>">
+      <% sec_students_submitted = @gradesheet.submissions.select{|sub| s.users.include?(sub.user)}.length %>
+      (<%= sec_students_submitted %> / <%= @gradesheet.submissions.count %> <%= type[:noun].pluralize(@gradesheet.submissions.count) %>)
+    </span>
+    <% end %>
+  </span></small>
+</h3>
 <% end %>
   <table id="submissions" class="table table-striped row-vcenter">
     <thead>
