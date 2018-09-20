@@ -131,7 +131,7 @@ ERROR
       # in case multiple racket files coexist in the same directory
       output_path = f.to_s.gsub(extracted_path.to_s, embeds_path.to_s)
       Pathname.new(output_path).mkpath
-      Headless.ly(display: output_path.hash % Headless::MAX_DISPLAY_NUMBER) do
+      Headless.ly(display: output_path.hash % Headless::MAX_DISPLAY_NUMBER, autopick: true) do
         output, err, status, timed_out = ApplicationHelper.capture3(
                                {"XDG_RUNTIME_DIR" => nil},
                                "racket", Rails.root.join("lib/assets/render-racket.rkt").to_s,

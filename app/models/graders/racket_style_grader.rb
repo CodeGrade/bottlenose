@@ -35,7 +35,7 @@ class RacketStyleGrader < Grader
     Dir.mktmpdir("grade-#{sub.id}-#{g.id}_") do |tmpdir|
       @tmpdir = tmpdir
       sub.upload.extract_contents_to!(nil, Pathname.new(tmpdir), false)
-      Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER) do
+      Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER, autopick: true) do
         run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT
       end
     end

@@ -80,7 +80,7 @@ class CheckerGrader < Grader
     File.open(grader_dir.join("checker.tap"), "w") do |checker|
       File.open(grader_dir.join("details.log"), "w") do |details|
         Dir.mktmpdir("grade-#{sub.id}-#{g.id}") do |build_dir|
-          Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER) do
+          Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER, autopick: true) do
           # build_dir = grader_dir.join("build")
           # build_dir.mkpath
             Audit.log("#{prefix}: Grading in #{build_dir}")

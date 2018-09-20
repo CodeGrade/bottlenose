@@ -1,6 +1,32 @@
 require 'open3'
 require 'tap_parser'
 require 'audit'
+require 'headless'
+
+# NOTE: This is an utter hack, designed to work around an infelicity in
+# the Headless implementation: if Xvfb claims it's running on some port but
+# is refusing connections, then Headless::ensure_xvfb_launched will abort with
+# an exception, even if other displays are potentially available.
+# This monkey-patch implements https://github.com/leonid-shevtsov/headless/issues/100
+# and hopefully can be removed one day...
+class Headless
+  private
+  def pick_available_display(display_set, can_reuse)
+    @error = nil
+    display_set.each do |display_number|
+      @display = display_number
+
+      return true if xvfb_running? && can_reuse && (xvfb_mine? || !@autopick_display)
+      begin
+        return true if !xvfb_running? && launch_xvfb
+      rescue Headless::Exception => e
+        @error = e
+      end
+    end
+    raise @error || Headless::Exception.new("Could not find an available display")
+  end
+end
+
 
 class Grader < ApplicationRecord
   DEFAULT_COMPILE_TIMEOUT = 60
