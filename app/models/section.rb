@@ -16,12 +16,12 @@ class Section < ApplicationRecord
   validates :instructor, presence: true
   validates :meeting_time, length: { minimum: 3 }
 
-  def to_s
-    if self.meeting_time.to_s != ""
-      "#{self.crn} : #{self.instructor.last_name} at #{self.meeting_time} (#{self.type.humanize})"
-    else
-      "#{self.crn} : #{self.instructor.last_name} (#{self.type.humanize})"
-    end
+  def to_s(show_instructor: true, show_time: true, show_type: true)
+    ans = "#{self.crn}"
+    ans = "#{ans} : #{self.instructor.last_name}" if show_instructor
+    ans = "#{ans} at #{self.meeting_time}" if (show_time && self.meeting_time.to_s != "")
+    ans = "#{ans} (#{self.type.humanize})" if show_type
+    ans
   end
 
   def prof_name
