@@ -71,7 +71,9 @@
         <td><%= maybe_link_user(link_to_students, user) %></td>
         <td><%= staff.detect{|u| u.user_id == user.id}.role.humanize %></td>
         <td><%= if user.id != current_user.id
-                link_to 'Impersonate', impersonate_user_path(user), method: 'post'
+                  if link_to_students
+                    link_to 'Impersonate', impersonate_user_path(user), method: 'post'
+                  end
                 else
                 "(you)"
                 end %></td>
