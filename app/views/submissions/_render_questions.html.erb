@@ -81,7 +81,7 @@
               </div>
             </div>
             <script>
-              $("input[name^='grades[<%= sub_id %>][<%= index %>][score-preset]'").on("change", function() { 
+              $("input[name^='grades[<%= sub_id %>][<%= index %>][score-preset]']").on("change", function() { 
                 $("input#grades_<%= sub_id %>_<%= index %>_score").val($(this).val()).change(); 
                 var feedback = $(this).data("feedback");
                 if (feedback === undefined) { feedback = $(this).next("span").find("span").text(); }

@@ -173,7 +173,7 @@
     max_grader_order =
       Math.max(0,
                Math.max.apply(null,
-                              $("input[name$='[order]'").map(function() { return $(this).val() }).toArray()));
+                              $("input[name$='[order]']").map(function() { return $(this).val() }).toArray()));
 
     $('.graders-list').on('cocoon:after-insert', on_add_grader);
     $('.spinner').each(function (_ii, div) {

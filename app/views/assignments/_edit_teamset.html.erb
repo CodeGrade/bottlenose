@@ -95,7 +95,7 @@
 <% end %>
 <script>
   $(function() {
-    $("select[name^='assignment[teamset_source']").on("focus",
+    $("select[name^='assignment[teamset_source]']").on("focus",
       function() { $(this).parents(".radio").find("input[type='radio']").prop('checked', true).change(); });
   });
 </script>
