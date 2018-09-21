@@ -219,10 +219,10 @@ JAVASCRIPT
         profile { generate(:profile) }
         name { "#{first_name} #{last_name}" }
         email { username + "@school.edu" }
-        sequence :nuid {|n| n.hash % 1e9.to_i }
+        sequence :nuid do |n| n.hash % 1e9.to_i end
       end
       factory :section do
-        sequence :crn {|n| n.hash % 90000 + 10000}
+        sequence :crn do |n| n.hash % 90000 + 10000 end
         meeting_time {
           num_days = [1,2,3].sample
           days = [0, 1, 2, 3, 4].sample(num_days).sort
