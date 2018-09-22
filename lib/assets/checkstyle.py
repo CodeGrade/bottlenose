@@ -65,7 +65,7 @@ class TapErrorReport(BaseReport):
         cur_config["code"] = code
         cur_config["description"] = cur_config.get("description", parent.get("description"))
         cur_config["deduction"] = cur_config.get("deduction", parent.get("deduction"))
-        cur_config["severity"] = cur_config.get("severity", parent.get("severity"))
+        cur_config["severity"] = cur_config.get("severity", parent.get("severity")).lower()
         cur_config["maximumDeductions"] = cur_config.get("maximumDeductions", parent.get("maximumDeductions"))
         return cur_config
         
@@ -94,15 +94,19 @@ class TapErrorReport(BaseReport):
         if self.deductions[filename][code] > self.lookup(code).get("maximumDeductions"):
             return True
         return False
+
+    def ignored(self, filename, code):
+        self.lookup(code).get("severity") == "ignore"
                 
     def error(self, line_number, offset, text, check):
         code = text[:4]
-        text = "%s.  Problem occurs at column %d" % (text[5:], offset)
-        file_deductions = self.deductions[self.filename] = self.deductions.get(self.filename, {})
-        file_deductions["total"] = file_deductions.get("total", 0) + 1
-        file_deductions[code] = file_deductions.get(code, 0) + 1
-        self._errors.append([text, self.filename, line_number, offset, code,
-                             self.deduction(self.filename, code), self.suppressed(self.filename, code)])
+        if not self.ignored(self.filename, code)
+            text = "%s.  Problem occurs at column %d" % (text[5:], offset)
+            file_deductions = self.deductions[self.filename] = self.deductions.get(self.filename, {})
+            file_deductions["total"] = file_deductions.get("total", 0) + 1
+            file_deductions[code] = file_deductions.get(code, 0) + 1
+            self._errors.append([text, self.filename, line_number, offset, code,
+                                 self.deduction(self.filename, code), self.suppressed(self.filename, code)])
         return super(TapErrorReport, self).error(line_number, offset, text, check)
 
     def print_results(self):
@@ -119,7 +123,7 @@ class TapErrorReport(BaseReport):
             print("  filename: \"%s\"" % err[1])
             print("  line: %d" % err[2])
             print("  category: \"%s\"" % self.lookup(err[4])["description"])
-            print("  severity: %s" % ("Error" if err[4][0] == "E" else "Warning"))
+            print("  severity: %s" % self.lookup(err[4])["severity"].title())
             print("  weight: %d" % err[5])
             print("  suppressed: %s" % ("true" if err[6] else "false"))
             print("  ...")
