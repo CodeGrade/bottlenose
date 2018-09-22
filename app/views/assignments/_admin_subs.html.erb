@@ -119,7 +119,7 @@
     <span class="all">
       (<%= @gradesheet.submissions.count %> <%= type[:noun].pluralize(@gradesheet.submissions.count) %>)
     </span>
-    <% @course.sections.each do |s| %>
+    <% @course.sections.includes(:users).each do |s| %>
     <span class="sec_<%= s.crn %>">
       <% sec_students_submitted = @gradesheet.submissions.select{|sub| s.users.include?(sub.user)}.length %>
       (<%= sec_students_submitted %> / <%= @gradesheet.submissions.count %> <%= type[:noun].pluralize(@gradesheet.submissions.count) %>)
