@@ -3,11 +3,9 @@ require 'tap_parser'
 require 'audit'
 
 class JunitGrader < Grader
-  validates :upload, presence: true
-  validates :params, length: {minimum: 3}
-  
   after_initialize :load_junit_params
   before_validation :set_junit_params
+  validate :proper_configuration
 
   def autograde?
     true
@@ -191,5 +189,53 @@ class JunitGrader < Grader
   def recompute_grades
     # nothing to do:
     # we already compute the score here based on the TAP output
+  end
+
+  def proper_configuration
+    if self.upload.nil?
+      add_error("Upload cannot be nil")
+    else
+      if self.test_class.blank?
+        add_error("Test class cannot be blank")
+      end
+      if self.errors_to_show.blank?
+        add_error("Errors to show cannot be blank")
+      end
+    end
+    return if self.upload.nil? || self.test_class.blank?
+    begin
+      entries = self.upload.upload_entries
+      if entries["#{testClass}.java"]
+        # ok, nothing to do
+      elsif entries["starter"] && entries["testing"]
+        ok = true
+        if entries["starter"].size > 0 && !(entries["starter"]["src"] && entries["starter"]["test"])
+          add_error("The starter/ directory does not contain src/ and test/ subdirectories")
+          ok = false
+        end
+        if !(entries["testing"]["src"] && entries["testing"]["test"])
+          add_error("The testing/ directory does not contain src/ and test/ subdirectories")
+          ok = false
+        end
+        if ok
+          if !entries["testing"]["test"]["#{self.test_class}.java"]
+            add_error("There is no #{self.test_class}.java file to match the specified test class")
+          end
+        end
+      else
+        ok = true
+        if !(entries["src"] && entries["test"])
+          add_error("The archive does not contain src/ and test/ subdirectories")
+          ok = false
+        end
+        if ok
+          if !entries["test"]["#{self.test_class}.java"]
+            add_error("There is no #{self.test_class}.java file to match the specified test class")
+          end
+        end
+      end
+    rescue Exception => e
+      add_error("Could not read upload: #{e}")
+    end
   end
 end

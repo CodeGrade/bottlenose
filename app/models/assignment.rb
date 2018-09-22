@@ -355,10 +355,6 @@ class Assignment < ApplicationRecord
     assignment_file
   end
 
-  def assignment_full_path
-    assignment_upload.submission_path
-  end
-
   def assignment_file_path
     if assignment_upload_id.nil?
       ""
@@ -505,6 +501,11 @@ class Assignment < ApplicationRecord
   end
 
   def assign_attributes(attrs)
+    if attrs[:removefile] == "remove"
+      attrs[:assignment_file] = nil
+      self.assignment_upload_id = nil
+    end
+    attrs.delete :removefile
     attrs[:graders_attributes]&.each do |k, v|
       v[:assignment] = self
     end

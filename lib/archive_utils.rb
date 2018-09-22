@@ -3,6 +3,7 @@ require 'rubygems/package'
 require 'zlib'
 require 'zip'
 require 'fileutils'
+require 'stringio'
 
 TAR_LONGLINK = '././@LongLink'
 
@@ -252,7 +253,20 @@ class ArchiveUtils
     end
   end
 
-
+  def self.entries(file, mime, from_stream: nil)
+    if is_zip?(file, mime)
+      zip_entries(file, from_stream)
+    elsif is_tar?(file, mime)
+      tar_entries(file, from_stream)
+    elsif is_tar_gz?(file, mime)
+      tar_gz_entries(file, from_stream)
+    elsif is_gz?(file, mime)
+      [[File.basename(file, ".gz"), true]].to_h
+    else
+      [[file, true]].to_h
+    end
+  end
+  
   private
 
   ##############################
@@ -312,6 +326,64 @@ class ArchiveUtils
       end
     end
     return false
+  rescue FileReadError => e
+    raise e
+  rescue Exception => e
+    raise FileReadError.new(file, type, e)
+  end
+  
+  ##############################
+  # Entries
+  ##############################
+  def self.zip_entries(file, stream)
+    if stream
+      Zip::File.open_buffer(stream) do |zip| return helper_entries(file, 'zip', zip) end
+    else
+      Zip::File.open(file) do |zip| return helper_entries(file, 'zip', zip) end
+    end
+  end
+  def self.tar_entries(file, stream)
+    stream =
+      if stream then
+        StringIO.new(stream)
+      else
+        File.open(file)
+      end
+    Gem::Package::TarReader.new(stream) do |tar| return helper_entries(file, 'tar', tar) end
+  end
+  def self.tar_gz_entries(file, stream)
+    stream =
+      if stream then
+        Zlib::GzipReader.new(StringIO.new(stream))
+      else
+        Zlib::GzipReader.open(file)
+      end
+    Gem::Package::TarReader.new(stream) do |tar| return helper_entries(file, 'tgz', tar) end
+  end
+
+  def self.helper_entries(file, type, stream)
+    output = {}
+    stream.safe_each do |entry|
+      out = encode_or_escape(File.join("/", entry.name.gsub("\\", "/").sub(/\/$/, "")))
+      if out.to_s.match?("__MACOSX") || out.to_s.match?(".DS_Store")
+        next
+      end
+      out = out.squeeze("/") # eliminate consecutive slashes
+      out = out.sub(/\/$/, "") # eliminate trailing slash
+      if (out.starts_with?(File::SEPARATOR) rescue false)
+        temp = output
+        File.dirname(out).to_s.split(File::SEPARATOR).each do |dir|
+          next if dir.blank?
+          temp[dir] = {} if temp[dir].nil?
+          temp = temp[dir]
+        end
+        temp[File.basename(out)] = true unless entry.directory?
+      else
+        puts "Problem with #{entry.name}"
+        #raise SafeExtractionError.new(file, "./", entry.name)
+      end
+    end
+    return output
   rescue FileReadError => e
     raise e
   rescue Exception => e
@@ -403,6 +475,7 @@ class ArchiveUtils
       if path =~ /(^|\/)\.\.$/
         return nil # Doesn't contain any prefix
       else
+        old_path = path
         path = path.sub(/(^|\/)[^\/]+$/, "")
       end
     end

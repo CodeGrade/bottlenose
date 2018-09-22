@@ -4,12 +4,12 @@
 <table class="table no-first-row" style="margin-bottom: 0px;">
   <tr>
     <td class="col-sm-2"><%= f.label "avail_score", "Points available:" %></td>
-    <td class="col-sm-3"><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>
+    <td class="col-sm-4"><%= f.spinner "avail_score", f.object.avail_score || 50, :min => 0, :delta => 5 %></td>
     <td><%= f.check_box :extra_credit, data: {toggle: "toggle", on: "Extra credit", off: "Regular"} %></td>
   </tr>
   <tr>
     <td class="col-sm-2"><%= f.label "line_length", "Maximum line length:" %></td>
-    <td class="col-sm-3"><%= f.spinner "line_length", f.object.line_length || f.object.default_line_length, :min => 0 %></td>
+    <td class="col-sm-4"><%= f.spinner "line_length", f.object.line_length || f.object.default_line_length, :min => 0 %></td>
     <td></td>
   </tr>
 </table>

@@ -22,6 +22,7 @@ class PythonStyleGrader < Grader
 
   after_initialize :load_style_params
   before_validation :set_style_params
+  validate :proper_configuration
 
   def assign_attributes(attrs)
     super
@@ -71,5 +72,57 @@ class PythonStyleGrader < Grader
   def recompute_grades
     # nothing to do:
     # we already compute the score here based on the TAP output
+  end
+
+  def proper_configuration
+    return if self.upload.nil?
+    begin
+      contents = self.upload.upload_data
+      json = JSON.parse(contents)
+      if !json.is_a? Hash
+        add_error("configuration file is not a valid dictionary")
+      else
+        json.each do |k, v|
+          case k
+          when "maximum deductions per file"
+            if !(Integer(v) rescue false)
+              add_error("maximum deductions per file is not an integer")
+            end
+          when /E\d*/, /W\d*/
+            if !v.is_a? Hash
+              add_error("configuration for #{k} is not a valid dictionary")
+            else
+              v.each do |prop, val|
+                case prop
+                when "severity"
+                  if !["error", "warning", "info", "ignore"].member?(val.downcase)
+                    add_error("configuration for #{k} has unknown severity #{val}")
+                  end
+                when "description"
+                  if !val.is_a? String
+                    add_error("configuration for #{k} has a non-string description #{val}")
+                  end
+                when "maximumDeductions"
+                  if !(Integer(val) rescue false)
+                    add_error("configuration for #{k} has non-integer maximum number of deductions #{val}")
+                  end
+                when "deduction"
+                  if !(Float(val) rescue false)
+                    add_error("configuration for #{k} has non-numeric deduction #{val}")
+                  end
+                else
+                  add_error("configuration for #{k} has unknown property #{prop}")
+                end
+              end
+            end
+          else
+            add_error("configuration file has an unknown key: #{k}")
+          end
+        end
+      end
+    rescue Exception => e
+      add_error("configuration file is invalid JSON: #{e}")
+      return false
+    end
   end
 end

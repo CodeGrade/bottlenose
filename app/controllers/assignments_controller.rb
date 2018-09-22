@@ -177,11 +177,6 @@ class AssignmentsController < ApplicationController
 
   def update
     ap = assignment_params
-    if params[:assignment][:removefile] == "remove"
-      ap[:assignment_file] = nil
-      @assignment.assignment_upload_id = nil
-    end
-
     # Assign the current user to all file uploads for grader configs
     ap[:graders_attributes]&.each do |k, v|
       v[:upload_by_user_id] = current_user.id
@@ -316,7 +311,8 @@ class AssignmentsController < ApplicationController
                                  :avail_score, :upload_file, :extra_upload_file, :params,
                                  :type, :id, :_destroy, :errors_to_show, :test_class,
                                  :review_target, :review_count, :review_threshold,
-                                 :upload_by_user_id, :order, :line_length, :extra_credit
+                                 :upload_by_user_id, :order, :line_length, :extra_credit,
+                                 :removefile
                                ]
                               )
   end

@@ -96,6 +96,18 @@ class Upload < ApplicationRecord
     @upload = upload
   end
 
+  def upload_data
+    # Needed by the python_style_grader to validate the file contents,
+    # during validation and *before* this upload has been saved to disk
+    if @upload
+      ans = File.read(@upload.tempfile)
+      @upload.rewind
+      ans
+    else
+      File.read(submission_path)
+    end
+  end
+
   def metadata=(metadata)
     @metadata = metadata
   end
@@ -138,7 +150,16 @@ class Upload < ApplicationRecord
     rec_path(extracted_path)
   end
 
-
+  def upload_entries
+    # This is similar to extracted_files, but operates on the raw submission file
+    if @upload
+      effective_mime = @metadata[:mimetype] || @upload.content_type
+      ArchiveUtils.entries(@upload.original_filename, effective_mime, from_stream: upload_data)
+    else
+      ArchiveUtils.entries(submission_path.to_s, nil)
+    end
+  end
+  
   def extracted_path
     upload_dir.join("extracted")
   end

@@ -253,6 +253,10 @@ class Grader < ApplicationRecord
   end
 
   def assign_attributes(attrs)
+    if attrs[:removefile] == "remove"
+      self.upload = nil
+    end
+    attrs.delete :removefile
     self.upload_by_user_id = attrs[:upload_by_user_id]
     self.assignment = attrs[:assignment] if self.assignment.nil? && attrs[:assignment]
     super(attrs)
@@ -366,6 +370,17 @@ class Grader < ApplicationRecord
         suppressed: t[:info]["suppressed"])
     end
     InlineComment.import ics
+  end
+
+
+  def is_int(v)
+    Integer(v) rescue false
+  end
+  def is_float(v)
+    Float(v) rescue false
+  end
+  def add_error(msg)
+    self.errors.add("##{self.order + 1}", msg)
   end
 
 end
