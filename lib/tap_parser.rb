@@ -129,7 +129,7 @@ class TapParser
 
     # Find the total points
     @commentary.each do |comm|
-      mm = comm.match(/TOTAL POINTS: (\d+)/)
+      mm = comm.match(/TOTAL POINTS: (\d+(\.\d+)?)/)
       if mm
         total_points = mm[1].to_f
       end
@@ -149,7 +149,7 @@ class TapParser
     total_points = false
     # Find the total points
     @commentary.each do |comm|
-      mm = comm.match(/TOTAL POINTS: (\d+)/)
+      mm = comm.match(/TOTAL POINTS: (\d+(\.\d+)?)/)
       if mm
         total_points = mm[1].to_f
       end
