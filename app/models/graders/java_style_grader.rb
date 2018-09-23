@@ -111,7 +111,9 @@ class JavaStyleGrader < Grader
         end
       end
     rescue Exception => e
-      add_error("configuration file is invalid JSON: #{e}")
+      e_msg = e.to_s
+      e_msg = e_msg.dump[1...-1] unless e_msg.is_utf8?
+      add_error("configuration file is invalid JSON: #{e_msg}")
     end
     return self.errors.empty?
   end
