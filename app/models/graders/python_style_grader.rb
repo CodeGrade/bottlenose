@@ -85,7 +85,11 @@ class PythonStyleGrader < Grader
         json.each do |k, v|
           case k
           when "maximum deductions per file"
-            if !(Integer(v) rescue false)
+            if !is_int(v)
+              add_error("maximum deductions per file is not an integer")
+            end
+          when "initial points"
+            if !is_float(v)
               add_error("maximum deductions per file is not an integer")
             end
           when /E\d*/, /W\d*/
@@ -122,7 +126,7 @@ class PythonStyleGrader < Grader
       end
     rescue Exception => e
       add_error("configuration file is invalid JSON: #{e}")
-      return false
     end
+    return self.errors.empty?
   end
 end
