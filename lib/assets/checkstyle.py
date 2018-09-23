@@ -112,8 +112,8 @@ class TapErrorReport(BaseReport):
     def print_results(self):
         print("TAP version 13")
         print("1..%d" % self.total_errors)
-        print("# Time: %d" % self.elapsed)
-        print("# TOTAL POINTS: %d" % self.max_points)
+        print("# Time: %f" % self.elapsed)
+        print("# TOTAL POINTS: %f" % self.max_points)
         print("# Tests run: %d" % len(self._errors))
         for i, err in enumerate(self._errors, start=1):
             print("not ok %d %s" % (i, err[4]))
