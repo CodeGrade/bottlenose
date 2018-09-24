@@ -47,7 +47,8 @@ task :restore_sql do
   puts
   puts "Ctrl+C to cancel, enter to continue."
   puts
-
+  $stdin.readline
+  
   unless File.exists?("db/dump.sql.gz")
     puts "No db dump found, aborting."
     exit(0)
