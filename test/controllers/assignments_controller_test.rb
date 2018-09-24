@@ -520,7 +520,7 @@ class AssignmentsControllerTest < ActionController::TestCase
   test "should allow for graders with files" do
     sign_in @fred
     upload_file = fixture_file_upload(
-      "files/HelloSingle/hello.c",'application/octet-stream')
+      "files/fundies-config.json",'application/octet-stream')
     assert_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,

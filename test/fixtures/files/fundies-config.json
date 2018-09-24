@@ -1,0 +1,9 @@
+{
+  "OneTopLevelClass": {"category": "ignore"},
+  "OuterTypeFilename": {"category": "ignore"},
+  "AvoidStarImport": {"category": "ignore"},
+  "SummaryJavadoc": {"category": "ignore"}
+}
+
+
+
