@@ -21,7 +21,7 @@ class Exam < Assignment
       end
     else
       begin
-        questions = YAML.load(File.read(upload.tempfile))
+        questions = YAML.load(upload.read)
         upload.rewind
       rescue Psych::SyntaxError => e
         self.errors.add(:base, "Could not parse the supplied file")

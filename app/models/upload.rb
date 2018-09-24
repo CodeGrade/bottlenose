@@ -100,7 +100,7 @@ class Upload < ApplicationRecord
     # Needed by the python_style_grader to validate the file contents,
     # during validation and *before* this upload has been saved to disk
     if @upload
-      ans = File.read(@upload.tempfile)
+      ans = @upload.read
       @upload.rewind
       ans
     else

@@ -376,8 +376,8 @@ class Assignment < ApplicationRecord
       g.assignment = self
       g.assignment_id = self.id
       g.save!
-      self.graders << g
     end
+    self.graders.reload
     return true
   end
 

@@ -33,12 +33,12 @@ module AssignmentsHelper
       case [upload.nil?, self.assignment_upload.nil?]
       when [false, true] # New assignment
         @old_weights = nil
-        @questions = YAML.load(File.read(upload.tempfile))
+        @questions = YAML.load(upload.read)
         upload.rewind
       when [false, false] # Updated assignment
         old_questions = YAML.load(File.read(self.assignment_upload.submission_path))
         @old_weights = old_questions.map{|section| section.map{|_, qs| qs.map{|q| Float(q.first[1]["weight"])}}}
-        @questions = YAML.load(File.read(upload.tempfile))
+        @questions = YAML.load(upload.read)
         upload.rewind
       when [true, false] # Existing assignment being re-checked
         @old_weights = nil

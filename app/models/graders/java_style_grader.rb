@@ -91,7 +91,6 @@ class JavaStyleGrader < Grader
                 case vk.downcase
                 when "category"
                   if json[vv].nil? && !KNOWN_CATEGORIES.member?(vv.downcase)
-                    puts KNOWN_CATEGORIES
                     add_error("Key #{k} maps to category #{vv}, which doesn't exist")
                   end
                 when "description"
