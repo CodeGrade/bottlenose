@@ -1,0 +1,76 @@
+<div class="row">
+  <div class="col-sm-12">
+    <div id="java-style-schema" class="fade modal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header alert alert-info">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Java Style Grader Schema</h4>
+          </div>
+          <div class="modal-body">
+            <p>The Java style grader accepts a config file written in
+              JSON, with the following keys:</p>
+            <ul>
+              <li><code>"maximum deductions per file": <number></code>
+                &mdash; <em>optional</em>, default 50, specifies how many
+                points can be deducted per file before a "mercy rule"
+                kicks in and stops deducting for further violations in
+                that file.  (Further mistakes are still reported,
+                though.)</li>
+
+              <li>The remaining fields of the object are the names of
+                individual style rules, and whose associated values
+                are objects with the following fields:
+                <ul>
+                  <li><code>"category": &lt;string&gt;</code> &mdash;
+                    <strong>required</strong>, one of <code>"default"</code>, <code>"naming"</code>,
+                    <code>"namingWarning"</code>, <code>"formatting"</code>, <code>"formattingWarning"</code>,
+                    <code>"coding"</code>, <code>"codingMinor"</code>, <code>"codingWarning"</code>,
+                    <code>"documentation"</code>, <code>"testing"</code>, <code>"testingMinor"</code>,
+                    <code>"suggestion"</code>, or <code>"ignore"</code>.  The last category, <code>"ignore"</code>,
+                    means that any violations of this rule should be ignored completely.  The
+                    others help provide defaults for related types of errors.</li>
+
+                  <li><code>"description": &lt;string&gt;</code>
+                    &mdash; <em>optional</em>, string value giving a
+                    human-readable description of this error.
+                    Typically, this is inherited from the description
+                    of the category.</li>
+
+                  <li><code>"severity": &lt;string&gt;</code> &mdash;
+                    <em>optional</em>, one of <code>"Error"</code>, <code>"Warning"</code>, or
+                    <code>"Info"</code>, corresponding to the type of feedback comment to produce.
+                    Typically inherited from the severity of the category, though this may be
+                    reasonable to override.</li>
+
+                  <li><code>"deduction": &lt;integer&gt;</code>
+                    &mdash; <em>optional</em> value for how many points to
+                    deduct for each infraction of this rule.
+                    Typically inherited from the deduction for the
+                    category (for example,
+                    all <code>"documentation"</code> errors are each
+                    worth 2 points), though this is reasonable to
+                    override for an individual rule.</li>
+
+                  <li><code>"maximumDeductions":
+                    &lt;integer&gt;</code> &mdash; <em>optional</em> value for
+                    how many times this particular error can be
+                    deducted before a "mercy rule" kicks in.</li>
+                </ul>
+              </li>
+            </ul>
+            <p>Here is a short example Java Style Grader config file:</p>
+            <pre>
+{
+  "OneTopLevelClass": {"category": "ignore"},
+  "OuterTypeFilename": {"category": "ignore"},
+  "AvoidStarImport": {"category": "ignore"},
+  "SummaryJavadoc": {"category": "ignore"}
+}
+            </pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

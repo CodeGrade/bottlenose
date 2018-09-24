@@ -1,0 +1,58 @@
+<div class="row">
+  <div class="col-sm-12">
+    <div id="junit-schema" class="fade modal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header alert alert-info">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">JUnit Grader Schema</h4>
+          </div>
+          <div class="modal-body">
+            <ul>
+              <li>The JUnit grader accepts archive files (tar, zip, or
+                tar.gz)</li>
+              <li>The archive must contain the following four
+                directories, which must each be non-empty:
+                <ul>
+                  <li><code>starter/src</code></li>
+                  <li><code>starter/test</code></li>
+                  <li><code>testing/src</code></li>
+                  <li><code>testing/test</code></li>
+                </ul>
+              </li>
+              <li>The grader will copy the <code>starter</code> files
+                into the compilation directory, then the students'
+                files, and finally copy the <code>testing</code>
+                files.  This ensures that student code cannot
+                overwrite instructor tests.</li>
+              <li>There must be a Java file with the same name, and
+                containing a public class of the same name, as specified
+                in the grader.  This grader <emph>must</emph>
+                subclss <code>GradingSandbox</code>, for resource
+                safety on the server.</li>
+            </ul>
+            <p>Here is a example JUnit grader test file layout:</p>
+            <pre>
+Grading.zip
+├── starter/
+│   ├── src/
+│   │   └── cs3500/
+│   │       └── marblesolitaire/
+│   │           └── model/
+│   │               └── hw02/
+│   │                   └── MarbleSolitaireModel.java
+│   └── test/
+│       └── Hw02TypeChecks.java
+└── testing/
+    ├── src/
+    │   └── .ignore
+    └── test/
+        ├── Grade02.java
+        └── GradingSandbox.java
+            </pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

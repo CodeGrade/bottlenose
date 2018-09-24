@@ -1,7 +1,13 @@
 <div class="row">
   <div class="col-sm-12">
-    <div id="exam-schema" class="well-sm collapse">
-      <h5>YAML Exam schema:</h5>
+    <div id="exam-schema" class="fade modal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header alert alert-info">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">YAML Exam Schema</h4>
+          </div>
+          <div class="modal-body">
       <ul>
         <li>An exam file has a list of questions.</li>
         <li>A question has a <code>weight</code>, an
@@ -29,6 +35,9 @@
   extra: true
 ...
       </pre>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

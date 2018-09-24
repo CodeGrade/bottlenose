@@ -171,7 +171,7 @@ module AssignmentsHelper
                             self.errors.add(:base, "#{question_desc} part ##{part_i + 1} has too many keys")
                           elsif !["codeTag", "codeTags", "requiredText", "text"].member?(part.keys[0])
                             self.errors.add(:base, "#{question_desc} part ##{part_i + 1} has an invalid type #{part.keys[0]}")
-                          elsif (self.is_a? Questions) && ["codeTag", "codeTags"].member?(part.keys[0])
+                          elsif [Questions].member? self.class && ["codeTag", "codeTags"].member?(part.keys[0])
                             self.errors.add(:base, "#{question_desc} part ##{part_i + 1} asks for #{part.keys[0]}, but there is no related assignment in a Questions assignment")
                           end
                         end
