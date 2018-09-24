@@ -2,7 +2,8 @@ class Interlock < ApplicationRecord
   belongs_to :assignment
   belongs_to :related_assignment, class_name: "Assignment"
   enum constraint: [:no_submission_unless_submitted,
-                    :no_submission_after_viewing]
+                    :no_submission_after_viewing,
+                    :check_section_toggles]
 
   def to_s
     "#{Interlock.constraint_to_s(self.constraint)} #{self.related_assignment.name}"
@@ -10,6 +11,7 @@ class Interlock < ApplicationRecord
   
   def self.constraint_to_s(con)
     {no_submission_unless_submitted: "Prohibit submission unless submitted to",
-     no_submission_after_viewing: "Submissions are prohibited after viewing"}[con.to_sym]
+     no_submission_after_viewing: "Submissions are prohibited after viewing",
+     check_section_toggles: "Prohibit submission by section to"}[con.to_sym]
   end
 end
