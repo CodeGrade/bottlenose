@@ -10,7 +10,7 @@ class FilesSub < Submission
       self.errors.add(:base, "Please specify a valid number for how long you have worked on this assignment")
     end
     if self.upload.nil? || self.upload.new_record?
-      if self.upload_data.nil?
+      if @upload_data.nil?
         self.errors.add(:base, "You need to submit a file.")
       end
     end

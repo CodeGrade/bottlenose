@@ -1,3 +1,21 @@
+<% if !@missing_grading.blank? %>
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h3 class="panel-title">Missing grades summary</h3>
+  </div>
+  <div class="panel-body">
+    <% @missing_grading.each do |a, subs| %>
+    <h4><%= link_to a.name, course_assignment_path(@course, a.id) %></h4>
+    <ul>
+      <% subs.each do |sub| %>
+      <li><%= link_to sub.submission_user_names,
+              course_assignment_submission_path(@course, a.id, sub.id) %></li>
+      <% end %>
+    </ul>
+    <% end %>
+  </div>
+</div>
+<% end %>
 <div class="panel panel-default">
   <div class="panel-heading">
     <h3 class="panel-title">Abnormal submissions summary</h3>
@@ -24,7 +42,6 @@
     <h3 class="panel-title">Unpublished submissions summary</h3>
   </div>
   <div class="panel-body">
-    <% @unpublished = @unpublished.group_by(&:assignment_id) %>
     <% if @unpublished.count == 0 %>
       None
     <% else %>

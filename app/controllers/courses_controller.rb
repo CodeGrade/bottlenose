@@ -34,6 +34,7 @@ class CoursesController < ApplicationController
       @abnormals = @course.abnormal_subs
       @assns = @course.assignments_sorted
       @unpublished = @course.unpublished_grades
+      @missing_grading = @course.missing_grading.group_by(&:assignment)
     end
     @teams = multi_group_by(current_user.teams.includes(:users).order(end_date: :desc, id: :asc),
                             [:course_id, :teamset_id])

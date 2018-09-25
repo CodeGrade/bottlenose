@@ -15,7 +15,10 @@ class AssignmentsController < ApplicationController
     admin_view = current_user_site_admin? || current_user_staff_for?(@course)
     if admin_view
       submissions = @assignment.used_submissions.includes(:user).order(created_at: :desc).to_a
-      @all_complete = (Grade.where(submission: submissions, score: nil).count == 0)
+      no_missing_grades =
+        (Grade.where(submission: submissions, grader: @assignment.graders).count ==
+         submissions.count * @assignment.graders.count)
+      @all_complete = no_missing_grades && (Grade.where(submission: submissions, score: nil).count == 0)
     elsif @assignment.nil? or @assignment.available > DateTime.now
       redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
       return

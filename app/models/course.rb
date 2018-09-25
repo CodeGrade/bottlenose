@@ -235,6 +235,9 @@ class Course < ApplicationRecord
   end
 
   def pending_grading
+    multi_group_by(pending_grading_query, [:assignment_id, :submission_id, :id])
+  end
+  def pending_grading_query
     # only use submissions that are being used for grading
     # only pick submissions from this course
     # only pick non-staff submissions
@@ -242,8 +245,7 @@ class Course < ApplicationRecord
     # only keep unfinished graders
     # sort the assignments
     # group by assignment and submission id
-    multi_group_by(
-      Grade
+    Grade
       .joins("INNER JOIN used_subs ON grades.submission_id = used_subs.submission_id")
       .joins("INNER JOIN assignments ON used_subs.assignment_id = assignments.id")
       .joins("INNER JOIN registrations ON used_subs.user_id = registrations.user_id")
@@ -253,8 +255,19 @@ class Course < ApplicationRecord
       .distinct.select("users.name AS user_name")
       .where(score: nil)
       .where("registrations.role": Registration::roles["student"])
-      .order("assignments.due_date", "users.name"),
-      [:assignment_id, :submission_id, :id])
+      .order("assignments.due_date", "users.name")
+  end
+
+  def missing_grading
+    expected = assignments.joins(:graders).select(:id, "graders.id as grader_id").group_by(&:id)
+               .map{|a_id, graders| [a_id, graders.map(&:grader_id)]}.to_h
+    used_subs = Submission.where(id: UsedSub.where(assignment_id: assignments.map(&:id)).select(:submission_id))
+    sub_ids_missing = used_subs.joins(:grades)
+                      .select("submissions.id", "submissions.assignment_id", "grades.grader_id as grader_id")
+                      .group_by(&:id).select do |s_id, info|
+      !info.map(&:grader_id).to_set.superset?(expected[info.first.assignment_id].to_set)
+    end.keys
+    used_subs.where(id: sub_ids_missing)
   end
 
   def abnormal_subs
@@ -280,7 +293,11 @@ class Course < ApplicationRecord
   end
 
   def unpublished_grades
+    multi_group_by(unpublished_grades_query, [:assignment_id])
+  end
+  def unpublished_grades_query
     Submission
+      .where.not("submissions.id": pending_grading_query.map(&:submission_id) + missing_grading.map(&:id))
       .joins("INNER JOIN used_subs ON submissions.id = used_subs.submission_id")
       .where("used_subs.assignment_id": assignments_sorted.map(&:id))
       .joins("INNER JOIN grades ON grades.submission_id = submissions.id")

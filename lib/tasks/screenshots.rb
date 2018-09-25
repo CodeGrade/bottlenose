@@ -323,8 +323,8 @@ class Screenshots
       HOOKS[:after_all].each do |m| ss.send(m) end
       
       dir = Upload.base_upload_dir.to_s
-      puts dir
       if Rails.env.test? && dir =~ /test/
+        puts "Cleaning up #{dir}"
         FileUtils.rm_rf(dir)
       end
     end
@@ -372,7 +372,7 @@ class Screenshots
                                     show_in_lists: false, new_sections: @sections)
     @fred_reg.save_sections
 
-    @students.sample(30).each do |student|
+    @students.sample(60).each do |student|
       reg = Registration.create(course: @course, user: student,
                                 role: Registration::roles[:student], show_in_lists: true,
                                 new_sections: [@sections.sample])
@@ -380,19 +380,23 @@ class Screenshots
     end
 
     @assignments = []
-    ts = Teamset.create(course: @course, name: "Teamset 1")
-    assn = Files.new(name: "Assignment 1", blame: @fred, teamset: ts, lateness_config: @late_per_day,
-                     course: @course, available: Time.now - 10.days, due_date: Time.now - 1.days,
-                     points_available: 2.5)
+    # ASSIGNMENT 1
+    ts1 = Teamset.create(course: @course, name: "Teamset 1")
+    assn = Files.create(name: "Assignment 1", blame: @fred, teamset: ts1, lateness_config: @late_per_day,
+                        course: @course, available: Time.now - 15.days, due_date: Time.now - 10.days,
+                        points_available: 2.5)
     assn.graders << RacketStyleGrader.new(assignment: assn, params: "80", avail_score: 30, order: 1)
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 2)
+    assn.save!
     @assignments << assn
 
-    ts = Teamset.create(course: @course, name: "Teamset 2")
-    ts.randomize(2, "course", Time.now - 10.days)
-    assn = Files.new(name: "Assignment 2", blame: @fred, teamset: ts, lateness_config: @late_per_day,
-                     course: @course, available: Time.now - 10.days, due_date: Time.now + 7.days,
-                     points_available: 2.5, team_subs: true)
+
+    # ASSIGNMENT 2
+    ts2 = Teamset.create(course: @course, name: "Teamset 2")
+    ts2.randomize(2, "course", Time.now - 10.days)
+    assn = Files.create(name: "Assignment 2", blame: @fred, teamset: ts2, lateness_config: @late_per_day,
+                        course: @course, available: Time.now - 10.days, due_date: Time.now - 5.days,
+                        points_available: 2.5, team_subs: true)
     u = build(:upload, user: @fred, assignment: assn)
     u.upload_data = FakeUpload.new(Rails.root.join("test", "fixtures", "files", "fundies-config.json").to_s)
     assn.graders << JavaStyleGrader.new(assignment: assn, avail_score: 30, order: 1, upload: u)
@@ -403,37 +407,57 @@ class Screenshots
     g.errors_to_show = 3
     assn.graders << g
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
+    assn.save!
     @assignments << assn
     
+
+    # ASSIGNMENT 3
+    ts3 = Teamset.create(course: @course, name: "Teamset 3")
+    ts3.randomize(3, "course", Time.now - 10.days)
+    assn = Files.create(name: "Assignment 3", blame: @fred, teamset: ts3, lateness_config: @late_per_day,
+                        course: @course, available: Time.now - 5.days, due_date: Time.now - 1.days,
+                        points_available: 2.5, team_subs: true)
+    u = build(:upload, user: @fred, assignment: assn)
+    u.upload_data = FakeUpload.new(Rails.root.join("test", "fixtures", "files", "fundies-config.json").to_s)
+    assn.graders << JavaStyleGrader.new(assignment: assn, avail_score: 30, order: 1, upload: u)
+    assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
+    assn.save!
+    @assignments << assn
     
-    (3..5).each do |i|
+
+    # ASSIGNMENTS 4--6
+    (4..6).each do |i|
       ts = Teamset.create(course: @course, name: "Teamset #{i}")
-      assn = create(:assignment, name: "Assignment #{i}", course: @course, teamset: ts,
-                    blame: @fred, points_available: 2.5)
+      assn = Files.create(name: "Assignment #{i}", blame: @fred, teamset: ts, lateness_config: @late_per_day,
+                          course: @course, available: Time.now + 1.days, due_date: Time.now + 7.days,
+                          points_available: 2.5, team_subs: false)
+      assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 1)
+      assn.save!
       @assignments << assn
     end
-    @assignments.map(&:save!)
     puts "Done."
   end
 
-  def create_submission(course, students, assignment, file)
-    user = students.sample
-    sub = create(:submission, assignment: assignment, type: "FilesSub", user: user,
-                 team: user.active_team_for(course, assignment), created_at: Time.now - 1.5.days)
-    sub.upload_file = fixture_file_upload(Rails.root.join("test", "fixtures", "files/#{assignment.name}/#{file}"),
-                                          "application/octet-stream")
-    sub.save_upload
-    sub.save!
-    sub.set_used_sub!
-    sub
+  def create_submission(course, students, assn, file, count = 1)
+    students.to_a.sample(count).map do |user|
+      sub = FilesSub.create(assignment: assn, user: user,
+                            team: user.active_team_for(course, assn), created_at: assn.available + 1.5.days)
+      sub.upload_file = fixture_file_upload(Rails.root.join("test", "fixtures", "files/#{assn.name}/#{file}"),
+                                            "application/octet-stream")
+      sub.save_upload
+      sub.save!
+      sub.set_used_sub!
+      sub
+    end
   end
 
-  def grade_sub(sub, graders)
+  def grade_sub(sub, graders, complete)
     graders.each do |g| g.ensure_grade_exists_for! sub end
     sub.grades.each do |g|
       g.score = Random.rand(g.out_of)
       g.save
     end
+    sub.compute_grade! if complete
   end
   
   def set_default_size
@@ -474,33 +498,51 @@ class Screenshots
     end
     def course_page
       sign_in(@fred)
-      students = @course.students.to_a
       # These take a while, because they each launch DrRacket to render the file...
-      subs = (1..15).to_a.map do create_submission(@course, students, @assignments[0], "sample.rkt") end
-      subs = (1..15).to_a.map do create_submission(@course, students, @assignments[1], "Mobiles.java") end
-
-      graders = @assignments[0].graders.to_a
-      @assignments[0].submissions.each do |s| grade_sub(s, graders) end
-      subs[0].team.dissolve(Time.now)
+      create_submission(@course, @course.students, @assignments[0], "sample.rkt", 15)
+      create_submission(@course, @course.students, @assignments[1], "Mobiles.java", 15)
+      create_submission(@course, @course.students, @assignments[2], "Mobiles.java", 15)
+      
+      # Assn 0 is fully graded, but unpublished
+      @assignments[0].submissions.each do |s| grade_sub(s, @assignments[0].graders.to_a, false) end
+      # Assn 1 is fully ungraded, and no grades even exist yet
+      # Assn 1 should also have an abnormal submission for the team below
+      @assignments[1].used_submissions[0].team.dissolve(@assignments[1].due_date - 1.day)
+      # Assn 2 has grades filled in for the first two graders, but not the third yet,
+      # so it is missing
+      graders = @assignments[2].graders.to_a
+      @assignments[2].submissions.each do |s|
+        grade_sub(s, graders[0...-1], false)
+      end
 
       visit(course_path(@course))
       yield
+      assignments, missing, abnormal, unpublished, current_teams, pending = page.find_all("div.panel").to_a
+      set_full_page
+      yield options: bbox(missing)
+      yield options: bbox(abnormal)
+      # Fill in the missing graders, and now it should be pending
+      @assignments[2].submissions.each do |s|
+        graders[-1].ensure_grade_exists_for! s
+      end
+      visit(course_path(@course))
+      assignments, abnormal, unpublished, current_teams, pending = page.find_all("div.panel").to_a
+      yield options: bbox(unpublished)
+      yield options: bbox(pending)
+      set_default_size
       box = bbox(page.find_all("a.btn").to_a[2])
       scale_box box, 0.1, 0.1
       highlight_area("assignments", box)
       yield
 
       visit(course_assignment_path(@course, @assignments[0]))
+      highlight_area("publish", scale_box(bbox(page.find("a[data-confirm]")), 0.1, 0.1))
+      yield
+      remove_highlight("publish")
       accept_alert do
         page.find("a[data-confirm]").click
       end
       yield
-      visit(course_path(@course))
-      assignments, abnormal, unpublished, current_teams, pending = page.find_all("div.panel").to_a
-      set_full_page
-      yield options: bbox(abnormal)
-      yield options: bbox(unpublished)
-      yield options: bbox(pending)
     end
     def assignments_page
       sign_in(@fred)
@@ -543,6 +585,8 @@ class Screenshots
       accept_alert do
         create_missing.click
       end
+      yield
+      visit course_assignment_path(@course, @assignments[2])
       yield
     end
 

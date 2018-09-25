@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_08_01_182418) do
+ActiveRecord::Schema.define(version: 2018_09_24_222312) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -312,6 +312,7 @@ ActiveRecord::Schema.define(version: 2018_08_01_182418) do
     t.integer "user_id", null: false
     t.integer "assignment_id", null: false
     t.integer "submission_id", null: false
+    t.index ["assignment_id"], name: "index_used_subs_on_assignment_id"
     t.index ["user_id", "assignment_id"], name: "unique_sub_per_user_assignment", unique: true
   end
 
