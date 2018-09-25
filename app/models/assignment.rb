@@ -417,6 +417,7 @@ class Assignment < ApplicationRecord
       # ourselves again, with the updated assignment_upload field...but that would be
       # infinitely recursive.  So prevent the regress by disabling this after_save callback
       self.assignment_upload_id = up.id
+      @assignment_file_data = nil
       oldSave = @inSave
       @inSave = true
       self.save

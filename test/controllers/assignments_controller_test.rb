@@ -61,6 +61,92 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert_equal 0, @assn.teamset.teams.count
   end
 
+  test "should create code-review assignment" do
+    sign_in @fred
+    teamset_count = Teamset.count
+    upload_file = fixture_file_upload(
+      "files/peer-eval.yaml",'application/octet-stream')
+    assert_difference('Assignment.count') do
+      post :create, params: {
+             course_id: @cs101.id,
+             assignment: {
+               teamset_plan: "none",
+               assignment: "Dance a jig.",
+               points_available: 100,
+               name: "Useful Work",
+               due_date: '2019-05-22',
+               available: '2011-05-22',
+               type: "Codereview",
+               assignment_file: upload_file,
+               graders_attributes: {
+                 "1477181088065"=> {
+                   "type"=>"CodereviewGrader",
+                   "review_target"=>"self",
+                   "review_count"=>"1",
+                   "review_threshold"=>"75",
+                   "order"=>"1",
+                   "_destroy"=>"false",
+                 }
+               },
+               related_assignment_id: @assn_no_teams_1.id,
+               lateness_config_attributes: {
+                 "type"=>"LatePerHourConfig",
+                 "frequency"=>"1",
+                 "percent_off"=>"25",
+                 "max_penalty"=>"100",
+                 "days_per_assignment"=>"22"
+               },
+             }
+           }
+    end
+ 
+    @assn = assigns(:assignment)
+    assert_redirected_to [@cs101, @assn.becomes(Assignment)]
+    assert_equal teamset_count + 1, Teamset.count
+    assert_equal 0, @assn.teamset.teams.count
+  end
+
+  test "should create questions assignment" do
+    sign_in @fred
+    teamset_count = Teamset.count
+    upload_file = fixture_file_upload(
+      "files/peer-eval.yaml",'application/octet-stream')
+    assert_difference('Assignment.count') do
+      post :create, params: {
+             course_id: @cs101.id,
+             assignment: {
+               teamset_plan: "none",
+               assignment: "Dance a jig.",
+               points_available: 100,
+               name: "Useful Work",
+               due_date: '2019-05-22',
+               available: '2011-05-22',
+               type: "Questions",
+               assignment_file: upload_file,
+               graders_attributes: {
+                 "1477181088065"=> {
+                   "type"=>"QuestionsGrader",
+                   "order"=>"1",
+                   "_destroy"=>"false",
+                 }
+               },
+               lateness_config_attributes: {
+                 "type"=>"LatePerHourConfig",
+                 "frequency"=>"1",
+                 "percent_off"=>"25",
+                 "max_penalty"=>"100",
+                 "days_per_assignment"=>"22"
+               },
+             }
+           }
+    end
+ 
+    @assn = assigns(:assignment)
+    assert_redirected_to [@cs101, @assn.becomes(Assignment)]
+    assert_equal teamset_count + 1, Teamset.count
+    assert_equal 0, @assn.teamset.teams.count
+  end
+
   test "should create assignment with no preset teams" do
     sign_in @fred
     teamset_count = Teamset.count
