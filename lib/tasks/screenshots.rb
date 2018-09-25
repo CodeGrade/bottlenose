@@ -3,8 +3,8 @@ APP_PATH = File.expand_path('../../../config/application',  __FILE__)
 require File.expand_path('../../../config/boot',  __FILE__)
 require APP_PATH
 Rails.env = ENV["RAILS_ENV"] = "test"
-Rails.application.require_environment!
 Rails.logger = ActiveSupport::Logger.new("/dev/null") # Don't need logging for this
+Rails.application.require_environment!
 
 require 'capybara'
 require 'capybara/rails'
