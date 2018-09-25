@@ -166,6 +166,16 @@
     form_tabs_init_all(el);
   }
 
+  function on_add_interlock(evt, el) {
+    var relAssignment = el.find("select[name$='[related_assignment_id]']");
+    el.find("select[name$='[constraint]']").change(function(){
+      if (this.value == "check_section_toggles") {
+        $(relAssignment).hide();
+      } else {
+        $(relAssignment).show();
+      }
+    });
+  }
 
   function activate_file_picker($e) {
     $e.find(".custom-file").change(function() {
@@ -193,12 +203,15 @@
                               $("input[name$='[order]']").map(function() { return $(this).val() }).toArray()));
 
     $('.graders-list').on('cocoon:after-insert', on_add_grader);
+    $('.interlocks-list').on('cocoon:after-insert', on_add_interlock);
+
     $('.spinner').each(function (_ii, div) {
       activateSpinner(div);
       if ($(div).find("input").prop("disabled")) {
         disableSpinner(div);
       }
     });
+
 
     $("#files-graders").sortable({
       placeholder: "ui-state-highlight",
