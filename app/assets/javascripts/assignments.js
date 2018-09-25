@@ -212,7 +212,6 @@
       }
     });
 
-
     $("#files-graders").sortable({
       placeholder: "ui-state-highlight",
       update: function(e, ui) {
