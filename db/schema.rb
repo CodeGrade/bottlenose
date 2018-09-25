@@ -216,14 +216,6 @@ ActiveRecord::Schema.define(version: 2018_09_24_011746) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "section_toggles", force: :cascade do |t|
-    t.integer "section_id", null: false
-    t.integer "assignment_id", null: false
-    t.boolean "submissions_allowed", default: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "sections", id: :serial, force: :cascade do |t|
     t.integer "course_id", null: false
     t.integer "crn", null: false
@@ -232,6 +224,14 @@ ActiveRecord::Schema.define(version: 2018_09_24_011746) do
     t.integer "type", default: 0, null: false
     t.index ["course_id"], name: "index_sections_on_course_id"
     t.index ["crn", "course_id"], name: "index_sections_on_crn_and_course_id", unique: true
+  end
+
+  create_table "submission_enabled_toggles", force: :cascade do |t|
+    t.integer "section_id", null: false
+    t.integer "assignment_id", null: false
+    t.boolean "submissions_allowed", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "submission_views", force: :cascade do |t|

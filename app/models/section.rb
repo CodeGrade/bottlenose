@@ -11,7 +11,7 @@ class Section < ApplicationRecord
   has_many :registrations, through: :registration_sections
   has_many :users, through: :registrations
 
-  has_many :section_toggles
+  has_many :submission_enabled_toggles
 
   validates :crn, presence: true
   validates :instructor, presence: true

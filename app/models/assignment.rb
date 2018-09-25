@@ -40,7 +40,7 @@ class Assignment < ApplicationRecord
   has_many :related_interlocks, :foreign_key => "related_assignment_id", :class_name => "Interlock"
   accepts_nested_attributes_for :interlocks, allow_destroy: true
   has_many :submission_views
-  has_many :section_toggles
+  has_many :submission_enabled_toggles
 
   has_many :codereview_matchings, dependent: :destroy
   has_many :individual_extensions, dependent: :destroy
