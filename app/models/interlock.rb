@@ -6,7 +6,7 @@ class Interlock < ApplicationRecord
                     :check_section_toggles]
 
   def to_s
-    if self.constraint == :check_section_toggles
+    if self.constraint == "check_section_toggles"
       Interlock.constraint_to_s(self.constraint)
     else
       "#{Interlock.constraint_to_s(self.constraint)} #{self.related_assignment.name}"
