@@ -65,20 +65,30 @@ module AssignmentsHelper
         Integer(val) rescue false
       end
       @questions.each_with_index do |section, index|
-        if !(section.is_a? Object) || !(section.keys.is_a? Array) || section.keys.count > 1
+        if !(section.is_a? Hash) || !(section.keys.is_a? Array) || section.keys.count > 1
           self.errors.add(:base, "Section #{index} is malformed")
           next
         else
           section.each do |secName, sec_questions|
+            if !sec_questions.is_a? Array
+              self.errors.add(:base, "Section #{index} (named \"#{secName}\") is malformed")
+              next
+            end
             sec_questions.each_with_index do |question, q_index|
+              if !question.is_a? Hash
+                self.errors.add(:base, "Section #{index}, question #{q_index} is malformed")
+                next
+              end
               question.each do |type, q|
                 question_count += 1
-                question_desc =
-                  if question.dig(type, "name")
-                    "\"#{question[type]["name"]}\" (question #{q_index + 1} within section #{secName})"
-                  else
-                    "Question #{question_count} (in section #{secName})"
-                  end
+                question_desc = "Question #{question_count} (question #{q_index + 1} within section \"#{secName}\")"
+                if !q.is_a? Hash
+                  self.errors.add(:base, "#{question_desc} is malformed")
+                  next
+                end
+                if q["name"]
+                  question_desc = "\"#{question[type]["name"]}\" (question #{q_index + 1} within section \"#{secName}\")"                  
+                end
                 begin
                   if !(type.is_a? String)
                     self.errors.add(:base, "#{question_desc} has unknown type #{type}")
@@ -101,7 +111,7 @@ module AssignmentsHelper
                       self.errors.add(:base, "#{question_desc} has an invalid rubric")
                     else
                       q["rubric"].each_with_index do |guide, i|
-                        if !(guide.is_a? Object) || guide.keys.count != 1
+                        if !(guide.is_a? Hash) || guide.keys.count != 1
                           self.errors.add(:base, "#{question_desc}, rubric entry #{i} is ill-formed: expect an object with exactly one key")
                         else
                           guide.each do |weight, desc|
@@ -112,7 +122,7 @@ module AssignmentsHelper
                             end
                             if desc.is_a? String
                               # ok
-                            elsif (desc.is_a? Object) && (desc.keys.sort != ["feedback", "hint"])
+                            elsif (desc.is_a? Hash) && (desc.keys.sort != ["feedback", "hint"])
                               self.errors.add(:base, "#{question_desc}, rubric entry #{i} has malformed feedback (expected either a String, or a `hint` and a `feedback` message)")
                             end
                           end
@@ -165,7 +175,7 @@ module AssignmentsHelper
                         self.errors.add(:base, "#{question_desc} has a non-list of parts")
                       else
                         q["parts"].each_with_index do |part, part_i|
-                          if !part.is_a? Object
+                          if !part.is_a? Hash
                             self.errors.add(:base, "#{question_desc} has a non-object part ##{part_i + 1}")
                           elsif part.keys.count > 1
                             self.errors.add(:base, "#{question_desc} part ##{part_i + 1} has too many keys")
