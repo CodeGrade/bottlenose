@@ -205,7 +205,7 @@ class JunitGrader < Grader
     return if self.upload.nil? || self.test_class.blank?
     begin
       entries = self.upload.upload_entries
-      if entries["#{testClass}.java"]
+      if entries["#{self.test_class}.java"]
         # ok, nothing to do
       elsif entries["starter"] && entries["testing"]
         ok = true
