@@ -1,6 +1,7 @@
 <% @page_title = @grader.display_type %>
 <% cur_reg = current_user.registration_for(@course) %>
 <% content_for :wide_content_before do %>
+<%= javascript_include_tag "dompurify/dist/purify.min.js" %>
 <script>
   <%= render 'submissions/purify.js' %>
 </script>
