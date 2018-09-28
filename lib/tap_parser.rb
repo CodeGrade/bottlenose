@@ -110,8 +110,8 @@ class TapParser
     while @lines.length > 0 && (mm = @lines[0].match(regex))
       line = next_line
       break if line == (indent + "...")
-      # nuke any ANSI escape codes
-      info.push(mm[1].gsub("\u001B", "ESC").gsub("\b", "\\b"))
+      # nuke any ANSI escape codes, or null-bytes
+      info.push(mm[1].gsub("\u001B", "ESC").gsub("\b", "\\b").gsub("\u0000", "\\\\0"))
     end
     begin
       YAML.load(info.join("\n"))
