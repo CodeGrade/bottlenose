@@ -7,13 +7,13 @@ $(function() {
       var deductions = 0;
       for (var i = 0; i < commentObjs.length; i++) {
         if (commentObjs[i].shouldDelete) continue;
-        if (commentObjs[i].severity === "bonus")
+        if (commentObjs[i].severity.toLowerCase() === "bonus")
           deductions -= commentObjs[i].deduction;
         else
           deductions += commentObjs[i].deduction;
       }
       for (var i = 0; i < inertComments.length; i++) {
-        if (inertComments[i].severity === "bonus")
+        if (inertComments[i].severity.toLowerCase() === "bonus")
           deductions -= inertComments[i].deduction;
         else
           deductions += inertComments[i].deduction;
