@@ -34,6 +34,9 @@ class Assignment < ApplicationRecord
   has_many :graders, dependent: :destroy, autosave: true
   accepts_nested_attributes_for :graders, allow_destroy: true
 
+  has_many :submission_enabled_toggles, dependent: :destroy, autosave: true
+  accepts_nested_attributes_for :submission_enabled_toggles, allow_destroy: true
+
   has_many :grader_allocations, dependent: :destroy
   
   has_many :interlocks, dependent: :destroy
@@ -54,6 +57,7 @@ class Assignment < ApplicationRecord
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
   validates :graders, :presence => true
+  validate :valid_interlocks
 
 
   def submission_prohibited(submission, staff_override)
@@ -481,7 +485,6 @@ class Assignment < ApplicationRecord
     super(attrs)
   end
 
-
   private
   
   def allowed_for_lateness(sub)
@@ -547,5 +550,9 @@ class Assignment < ApplicationRecord
     return false
   end
 
-
+  def valid_interlocks
+    if self.interlocks.select {|i| i.constraint == "check_section_toggles"}.size > 1
+      self.errors.add(:base, "Can only have one section-based interlock")
+    end
+  end
 end

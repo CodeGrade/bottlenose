@@ -158,12 +158,6 @@ class AssignmentsController < ApplicationController
     end
     @assignment = Assignment.new(ap)
 
-    @assignment.interlocks.each do |lock|
-      if lock[:constraint] == "check_section_toggles"
-        lock.related_assignment = @assignment
-      end
-    end
-
     if @assignment.save
       redirect_to course_assignment_path(@course, @assignment), notice: 'Assignment was successfully created.'
     else
@@ -201,12 +195,6 @@ class AssignmentsController < ApplicationController
     need_to_unpublish_grades =
       @assignment.graders.any?{|g| g.new_record? || g.changed? || g.marked_for_destruction?}
 
-    @assignment.interlocks.each do |lock|
-      if lock[:constraint] == "check_section_toggles"
-        lock.related_assignment = @assignment
-      end
-    end
-    
     if @assignment.save
       count = 0
       if need_to_unpublish_grades
