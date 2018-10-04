@@ -49,6 +49,7 @@ class CoursesControllerTest < ActionController::TestCase
                lateness_config_attributes: {
                  type: "FixedDaysConfig",
                  days_per_assignment: 1,
+                 max_penalty: 4,
                }
              }
            }
@@ -81,6 +82,7 @@ class CoursesControllerTest < ActionController::TestCase
                lateness_config_attributes: {
                  type: "FixedDaysConfig",
                  days_per_assignment: 1,
+                 max_penalty: 4,
                }
              }
            }
@@ -99,7 +101,7 @@ class CoursesControllerTest < ActionController::TestCase
   test "should show course with assignments, with no submissions" do
     sign_in @fred
 
-    lateness = create(:lateness_config, type: "FixedDaysConfig", days_per_assignment: 1)
+    lateness = create(:lateness_config, type: "FixedDaysConfig", days_per_assignment: 1, max_penalty: 4)
     gc = create(:grader, type: "ManualGrader", avail_score: 50)
     ts = create(:teamset, name: "Teamset for dummy assignment")
     a1 = create(:assignment,

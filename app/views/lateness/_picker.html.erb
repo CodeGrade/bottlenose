@@ -110,9 +110,16 @@
           <div class="form-inline">
             Allow users or teams at most
             <%= fd.spinner "days_per_assignment", cfg.days_per_assignment, min: 0, max: 5 %>
-            late days per assignment with no penalty, up to
+            late days per assignment with no penalty.
+          </div>
+          <br>
+          <div class="form-inline">
+            Stop accepting assignments after
+            <%# NOTE: deliberately on form f (for the course), not fd (for the config) %>
             <%= f.spinner "total_late_days", @course.total_late_days || 4, min: 0, max: 100 %>
-            late days for the entire course.
+            late days for the entire course or
+            <%= fd.spinner "max_penalty", cfg.max_penalty || 100, min: 1, max: 100 %> late assignments,
+            whichever is lower.
           </div>
         </div>
       <% end %>
