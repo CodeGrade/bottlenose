@@ -100,7 +100,7 @@ class TapErrorReport(BaseReport):
                 
     def error(self, line_number, offset, text, check):
         code = text[:4]
-        if not self.ignored(self.filename, code)
+        if not self.ignored(self.filename, code):
             text = "%s.  Problem occurs at column %d" % (text[5:], offset)
             file_deductions = self.deductions[self.filename] = self.deductions.get(self.filename, {})
             file_deductions["total"] = file_deductions.get("total", 0) + 1

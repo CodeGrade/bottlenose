@@ -22,7 +22,7 @@
   <div class="alert alert-danger">
     <p>This assignment requires team <%= type[:noun].pluralize(2) %>,
       and you are not currently in a team.</p>
-    <% if staff_override %>
+    <% if @staff_override %>
     <p>You need to 
       <%= link_to "stop impersonating the student and enroll the student in a team",
           edit_course_teamset_path(@course, @assignment.teamset) %>
@@ -33,31 +33,13 @@
     <p>Contact a professor to join a team.</p>
     <% end %>
   </div>
-  <% elsif !not_following && !staff_override %>
-    <div class="alert alert-danger">
-    <p>You are not allowed to resubmit your assignment after you've
-      already submitted to a related assignment.</p>
-  </div> 
-  <% elsif !allowed && !staff_override %>
+  <% elsif @submission_prohibited %>
   <div class="alert alert-danger">
-    <p>It's too late to submit to this assignment: you either have
-      too few late days remaining, or it's too long after the
-      assignment is due.</p>
-  </div> 
-  <% elsif rate_limit == "permanent" && !staff_override %>
-  <div class="alert alert-danger">
-    <p>You cannot attempt more <%= type[:noun].pluralize(2) %> for this assignment: you've
-      reached the maximum number of attempts allowed.</p>
-  </div> 
-  <% elsif rate_limit == "temporary" && !staff_override %>
-  <div class="alert alert-danger">
-    <p>You cannot <%= type[:verb] %> to this assignment right now: you've tried
-      too many times in the past hour.  Please wait a while before
-      trying again.</p>
-  </div> 
+    <p><%= @submission_prohibited %></p>
+  </div>
   <% else %>
     <% @accept_inputs = true %>
-    <% if DateTime.current > @assignment.effective_due_date(current_user, @team) && staff_override %>
+    <% if DateTime.current > @assignment.effective_due_date(current_user, @team) && @staff_override %>
     <div class="alert alert-info">
       <p>You are <%= type[:gerund] %> on behalf of a student.  Should
         this <%= type[:noun] %>

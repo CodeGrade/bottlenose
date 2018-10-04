@@ -7,7 +7,8 @@
     <td class="col-sm-4"><%= f.spinner "avail_score", f.object.avail_score || 50, min: 0, delta: 5 %></td>
     <td><%= f.check_box :extra_credit, data: {toggle: "toggle", on: "Extra credit", off: "Regular"} %></td>
   </tr>
-  <%= render "graders/grader_file_picker", f: f, id: f.object.id.to_s, label: "Reference tests:" %>
+  <%= render "graders/grader_file_picker", f: f, id: f.object.id.to_s,
+      label: "Reference tests:", schema: "junit-schema" %>
   <tr class="form-group">
     <td class="col-sm-2"><%= f.label "test_class", "Test class:" %></td>
     <td class="col-sm-4"><%= f.text_field "test_class" %></td>

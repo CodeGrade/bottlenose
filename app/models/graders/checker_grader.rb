@@ -210,7 +210,7 @@ class CheckerGrader < Grader
     begin
       entries = self.upload.upload_entries
       if entries.size == 1 && entries.keys.any?{|k| k.ends_with? ".java"}
-        if !self.upload.upload_data.include? "class #{self.test_class}"
+        if !self.upload.upload_data.match? /class #{self.test_class}\b/
           add_error("The uploaded Java file does not contain the specified test class #{self.test_class}")
         end
       elsif entries["starter"] && entries["testing"]

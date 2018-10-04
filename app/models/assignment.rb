@@ -56,30 +56,15 @@ class Assignment < ApplicationRecord
   validates :graders, :presence => true
 
 
-  def submissions_blocked(user, team)
-    locks = self.interlocks.group_by(&:constraint)
-    locks["no_submission_unless_submitted"]&.each do |lock|
-      if lock.related_assignment.submissions_for(user).empty?
-        return "You have not submitted to #{lock.related_assignment.name}, and so cannot submit to this assignment"
-      end
-    end
-    locks["no_submission_after_viewing"]&.each do |lock|
-      views =
-        if self.team_subs?
-          SubmissionView.where(assignment: lock.related_assignment, team: team)
-        else
-          SubmissionView.where(assignment: lock.related_assignment, user: user)
-        end
-      if !views.empty?
-        return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
-      end
-    end
-    if locks["check_section_toggles"]
-      if SubmissionEnabledToggle.where(section: user.sections, assignment: self, submissions_allowed: true).empty?
-        return "Submissions are currently not enabled for your section"
-      end
-    end
-    return false
+  def submission_prohibited(submission, staff_override)
+    return false if staff_override
+
+    return allowed_for_lateness(submission) ||
+           sub_after_related(submission.user) ||
+           sub_needs_team(submission) ||
+           rate_limit(submission) ||
+           submissions_interlocked(submission.user, submission.team) ||
+           false # no other reasons to reject the submission
   end
 
   def legal_teamset_actions
@@ -315,29 +300,6 @@ class Assignment < ApplicationRecord
     self.lateness_config.late_penalty(self, sub)
   end
 
-  def sub_allow_submission?(sub)
-    self.lateness_config.allow_submission?(self, sub)
-  end
-
-  def sub_not_following_related?(user)
-    # Is this submission not coming *after* any submissions to related assignments?
-    related = Assignment.where(related_assignment_id: self.id)
-    return related.all? do |a|
-      a.submissions_for(user).empty?
-    end
-  end
-
-  def rate_limit?(sub)
-    if (self.max_attempts.to_i > 0) && (self.submissions.count >= self.max_attempts.to_i)
-      "permanent"
-    elsif (self.rate_per_hour.to_i > 0) &&
-          (self.submission.where('created_at >= ?', DateTime.now - 1.hour).count > self.rate_per_hour.to_i)
-      "temporary"
-    else
-      false
-    end
-  end
-
   def destroy
     au = self.assignment_upload
     au.destroy unless au.nil?
@@ -382,8 +344,8 @@ class Assignment < ApplicationRecord
       g.assignment = self
       g.assignment_id = self.id
       g.save!
-      self.graders << g
     end
+    self.graders.reload
     return true
   end
 
@@ -423,6 +385,7 @@ class Assignment < ApplicationRecord
       # ourselves again, with the updated assignment_upload field...but that would be
       # infinitely recursive.  So prevent the regress by disabling this after_save callback
       self.assignment_upload_id = up.id
+      @assignment_file_data = nil
       oldSave = @inSave
       @inSave = true
       self.save
@@ -517,4 +480,72 @@ class Assignment < ApplicationRecord
     end
     super(attrs)
   end
+
+
+  private
+  
+  def allowed_for_lateness(sub)
+    if !self.lateness_config.allow_submission?(self, sub)
+      "It's too late to submit to this assignment: " +
+        "you either have too few late days remaining, " +
+        "or it's too long after the assignment is due."
+    else
+      false
+    end
+  end
+
+  def sub_after_related(user)
+    # Is this submission not coming *after* any submissions to related assignments?
+    related = Assignment.where(related_assignment_id: self.id)
+    if !related.all?{|a| a.submissions_for(user).empty?}
+      "You are not allowed to resubmit your assignment after you've already submitted to a related assignment"
+    else
+      false
+    end
+  end
+
+  def sub_needs_team(sub)
+    if sub.team.nil? && self.team_subs?
+      "This assignment requires team #{self.type == 'Files' ? 'submissions' : 'responses'}," +
+        " and you are not currently in a team.  Contact a professor to join a team."
+    else
+      false
+    end
+  end
+
+  def rate_limit(sub)
+    if (self.max_attempts.to_i > 0) && (self.submissions.count >= self.max_attempts.to_i)
+      "You cannot attempt more #{self.type == 'Files' ? 'submissions' : 'responses'} for this assignment: " +
+        "you've reached the maximum number of attempts allowed."
+    elsif (self.rate_per_hour.to_i > 0) &&
+          (self.submission.where('created_at >= ?', DateTime.now - 1.hour).count > self.rate_per_hour.to_i)
+      "You cannot #{self.type == 'Files' ? 'submit' : 'respond'} to this assignment right now: " +
+        "you've tried too many times in the past hour.  Please wait a while before trying again."
+    else
+      false
+    end
+  end
+
+  def submissions_interlocked(user, team)
+    locks = self.interlocks.group_by(&:constraint)
+    locks["no_submission_unless_submitted"]&.each do |lock|
+      if lock.related_assignment.submissions_for(user).empty?
+        return "You have not submitted to #{lock.related_assignment.name}, and so cannot submit to this assignment"
+      end
+    end
+    locks["no_submission_after_viewing"]&.each do |lock|
+      views =
+        if self.team_subs?
+          SubmissionView.where(assignment: lock.related_assignment, team: team)
+        else
+          SubmissionView.where(assignment: lock.related_assignment, user: user)
+        end
+      if !views.empty?
+        return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
+      end
+    end
+    return false
+  end
+
+
 end

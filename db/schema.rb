@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_09_24_011746) do
+ActiveRecord::Schema.define(version: 2018_09_24_222312) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -226,14 +226,6 @@ ActiveRecord::Schema.define(version: 2018_09_24_011746) do
     t.index ["crn", "course_id"], name: "index_sections_on_crn_and_course_id", unique: true
   end
 
-  create_table "submission_enabled_toggles", force: :cascade do |t|
-    t.integer "section_id", null: false
-    t.integer "assignment_id", null: false
-    t.boolean "submissions_allowed", default: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-  end
-
   create_table "submission_views", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "team_id"
@@ -320,6 +312,7 @@ ActiveRecord::Schema.define(version: 2018_09_24_011746) do
     t.integer "user_id", null: false
     t.integer "assignment_id", null: false
     t.integer "submission_id", null: false
+    t.index ["assignment_id"], name: "index_used_subs_on_assignment_id"
     t.index ["user_id", "assignment_id"], name: "unique_sub_per_user_assignment", unique: true
   end
 

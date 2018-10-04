@@ -21,7 +21,7 @@ class Exam < Assignment
       end
     else
       begin
-        questions = YAML.load(File.read(upload.tempfile))
+        questions = YAML.load(upload.read)
         upload.rewind
       rescue Psych::SyntaxError => e
         self.errors.add(:base, "Could not parse the supplied file")
@@ -43,7 +43,10 @@ class Exam < Assignment
         Integer(val) rescue false
       end
       questions.each_with_index do |q, q_num|
-        if q["parts"].is_a? Array
+        if !q.is_a? Hash
+          make_err "Question #{q_num} is malformed"
+          next
+        elsif q["parts"].is_a? Array
           q["parts"].each_with_index do |part, p_num|
             if !is_float(part["weight"])
               make_err "Question #{part['name']} has an invalid weight"

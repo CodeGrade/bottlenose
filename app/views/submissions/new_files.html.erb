@@ -15,19 +15,12 @@
 
 
 <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)] do |f| %>
-  <% f.object = @submission.becomes(@submission.class)
-     allowed = @assignment.sub_allow_submission?(@submission)
-     not_following = @assignment.sub_not_following_related?(current_user)
-     rate_limit = @assignment.rate_limit?(@submission)
-     staff_override = true_user.course_staff?(@course)
-     %>
+  <% f.object = @submission.becomes(@submission.class) %>
   <%= f.hidden_field :type, value: "FilesSub" %>
   <%= render "new_common", f: f, type: {noun: "submission", verb: "submit", gerund: "submitting" },
-      not_following: not_following, allowed: allowed,
-      rate_limit: rate_limit, staff_override: staff_override,
       container_style: "col-md-12" do %>
 
-<% if (allowed && not_following && !rate_limit) || staff_override %>
+<% if !@submission_prohibited || @staff_override %>
 <% if @assignment.request_time_taken %>
 <div class="form-group">
   <%= f.label :time_taken, "How many hours have you worked on this assignment?" %>

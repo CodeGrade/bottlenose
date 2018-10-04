@@ -33,6 +33,10 @@ class JavaStyleGrader < Grader
       {},
       ["java", "-jar", Rails.root.join("lib/assets/StyleChecker.jar").to_s,
        files_dir.to_s,
+       "+pmdAddClasspath", Rails.root.join("lib/assets/junit-4.12.jar").to_s,
+       "+pmdAddClasspath", Rails.root.join("lib/assets/hamcrest-core-1.3.jar").to_s,
+       "+pmdAddClasspath", Rails.root.join("lib/assets/annotations.jar").to_s,
+       "+pmdAddClasspath", Rails.root.join("lib/assets/mockito-core-2.0.7-beta.jar").to_s,
        "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
        "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
        "-maxPoints", self.avail_score.to_s],
@@ -50,6 +54,17 @@ class JavaStyleGrader < Grader
     # we already compute the score here based on the TAP output
   end
 
+
+  KNOWN_CATEGORIES = [
+    "default",
+    "naming", "namingWarning",
+    "formatting", "formattingWarning",
+    "coding", "codingMinor", "codingWarning",
+    "documentation",
+    "testing", "testingMinor",
+    "suggestion",
+    "ignore"
+  ].map!(&:downcase)
   def proper_configuration
     return if self.upload.nil?
     begin
@@ -79,7 +94,7 @@ class JavaStyleGrader < Grader
               new_v.each do |vk, vv|
                 case vk.downcase
                 when "category"
-                  if json[vv].nil?
+                  if json[vv].nil? && !KNOWN_CATEGORIES.member?(vv.downcase)
                     add_error("Key #{k} maps to category #{vv}, which doesn't exist")
                   end
                 when "description"

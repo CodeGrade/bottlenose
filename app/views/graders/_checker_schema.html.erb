@@ -1,0 +1,49 @@
+<div class="row">
+  <div class="col-sm-12">
+    <div id="checker-schema" class="fade modal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header alert alert-info">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Checker Grader Schema</h4>
+          </div>
+          <div class="modal-body">
+            <ul>
+              <li>The Checker grader accepts either individual Java
+                files, or archive files (tar, zip, or tar.gz)</li>
+              <li>If an archive file, the archive must contain the
+                following four directories, which must each be non-empty:
+                <ul>
+                  <li><code>starter/src</code></li>
+                  <li><code>starter/test</code></li>
+                  <li><code>testing/src</code></li>
+                  <li><code>testing/test</code></li>
+                </ul>
+              </li>
+              <li>The grader will copy the <code>starter</code> files
+                into the compilation directory, then the students'
+                files, and finally copy the <code>testing</code>
+                files.  This ensures that student code cannot
+                overwrite instructor tests.</li>
+              <li>There must be a Java that contains a package-scoped
+              class with the same name as specified in the
+                grader.</li>
+            </ul>
+            <p>Here is a short example Checker grader test file layout:</p>
+            <pre>CheckerGrading.zip
+├── starter
+│   ├── src
+│   │   └── .ignore
+│   └── test
+│       └── .ignore
+└── testing
+    ├── src
+    │   └── bouncing.jar
+    └── test
+        └── hw1acc-p5-tests.java</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

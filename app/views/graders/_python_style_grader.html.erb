@@ -12,5 +12,6 @@
     <td class="col-sm-4"><%= f.spinner "line_length", f.object.line_length || f.object.default_line_length, :min => 0 %></td>
     <td></td>
   </tr>
-  <%= render "graders/grader_file_picker", f: f, id: f.object.id.to_s, label: "Custom configuration:" %>
+  <%= render "graders/grader_file_picker", f: f, id: f.object.id.to_s,
+      label: "Custom configuration:", schema: "python-style-schema" %>
 </table>

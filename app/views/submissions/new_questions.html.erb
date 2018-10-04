@@ -19,19 +19,12 @@
 <% sub_id = "newsub" %>
 
 <%= form_for [@course, @assignment.becomes(Assignment), @submission.becomes(Submission)] do |f| %>
-  <% f.object = @submission.becomes(@submission.class)
-     allowed = @assignment.sub_allow_submission?(@submission)
-     not_following = @assignment.sub_not_following_related?(current_user)
-     rate_limit = @assignment.rate_limit?(@submission)
-     staff_override = true_user.course_staff?(@course)
-     %>
+  <% f.object = @submission.becomes(@submission.class) %>
   <%= f.hidden_field :type, value: "QuestionsSub" %>
   <%= render "new_common", f: f, type: {noun: "response", verb: "respond", gerund: "responding" },
-      not_following: not_following, allowed: allowed,
-      rate_limit: rate_limit, staff_override: staff_override,
       container_style: "container" do %>
 
-<% if (allowed && not_following && !rate_limit) || staff_override %>
+<% if !@submission_prohibited || @staff_override %>
 <script>
   $(function() {
   $("textarea.sourceCode").each(function(index, code) {

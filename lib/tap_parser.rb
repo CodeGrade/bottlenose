@@ -104,14 +104,21 @@ class TapParser
     end
   end
 
+  def make_yaml_safe(str)
+    str.scrub do |bytes|
+      "\u27e6#{bytes.unpack("H*")[0]}\u27e7" # square double brackets for invalid chars
+    end.gsub(/\P{print}/) do |match|
+      "\u27ea#{match.unpack("H*")[0]}\u27eb" # angled double brackets for unprintable chars
+    end
+  end
+
   def parse_info(indent)
     info = []
     regex = Regexp.new("^" + indent + "(.*)$")
     while @lines.length > 0 && (mm = @lines[0].match(regex))
       line = next_line
       break if line == (indent + "...")
-      # nuke any ANSI escape codes
-      info.push(mm[1].gsub("\u001B", "ESC").gsub("\b", "\\b"))
+      info.push(make_yaml_safe(mm[1]))
     end
     begin
       YAML.load(info.join("\n"))

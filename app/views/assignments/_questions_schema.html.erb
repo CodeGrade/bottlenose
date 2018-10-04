@@ -1,7 +1,13 @@
 <div class="row">
   <div class="col-sm-12">
-    <div id="<%= id %>" class="well-sm collapse">
-      <h5>YAML Question schema:</h5>
+    <div id="<%= id %>" class="fade modal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header alert alert-info">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">YAML Question Schema</h4>
+          </div>
+          <div class="modal-body">
       <ul>
         <li>A question file contains a list of sections.</li>
         <li>A section has a name and a list of questions.</li>
@@ -44,11 +50,13 @@
               submission</li>
             <li><code>text</code> requests a free-response answer.</li>
           </ul>
+          <strong>Note:</strong> <code>codeTag</code> and <code>codeTags</code> are <em>not
+            allowed</em> on <code>Questions</code> assignments, since there
+          is no underlying <code>Files</code> submission to tag.
         </li>
       </ul>
       <p>Here is a short example question file:</p>
-      <pre>
----
+      <pre>---
 - Design:
   - YesNo:
       name: "Public/private distinction?"
@@ -136,7 +144,10 @@
               You seem to inadvertently test the empty model.
               Try making your tests more explicit
         - 0: "No"
-      </pre>
+...</pre>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

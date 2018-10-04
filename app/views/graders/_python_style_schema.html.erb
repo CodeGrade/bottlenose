@@ -1,0 +1,89 @@
+<div class="row">
+  <div class="col-sm-12">
+    <div id="python-style-schema" class="fade modal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header alert alert-info">
+            <button type="button" class="close" data-dismiss="modal">&times;</button>
+            <h4 class="modal-title">Python Style Grader Schema</h4>
+          </div>
+          <div class="modal-body">
+            <p>The Python style grader accepts a config file written in
+              JSON, with the following keys:</p>
+            <ul>
+              <li><code>"maximum deductions per file":
+                &lt;number&gt;</code> &mdash; optional, default 50,
+                specifies how many points can be deducted per file
+                before a "mercy rule" kicks in and stops deducting for
+                further violations in that file.  (Further mistakes
+                are still reported, though.)</li>
+              <li>The style grader checks
+                for <a href="https://pycodestyle.readthedocs.io/en/latest/intro.html#error-codes">the
+                following style errors</a>, and breaks them down into
+                Errors and Warnings, and subdivides each category by
+                prefix ("E1", "W2", etc.).  The configuration file
+                allows you to specify either a precise error code
+                (<code>"E112"</code>) or merely a prefix
+                (<code>"E2"</code>), and will organize the
+                configurations into a tree based on those prefixes,
+                and select the most specific options accordingly.
+                This allows you to configure e.g. all the errors at
+                once, but override configuration for just one
+                particular error code.  Within each grouping, the
+                configuration file accepts four possible fields:
+                <ul>
+                  <li><code>"description": &lt;string&gt;</code> gives
+                    the overall category of the error.
+                    E.g. <code>"E1"</code> errors have a description
+                    of <code>"Formatting (Indentation)"</code>.</li>
+                  <li><code>"deduction": &lt;integer&gt;</code>
+                    &mdash; <em>optional</em>, default 1, gives the penalty
+                    value for each infraction of this rule.</li>
+                  <li><code>"maximumDeductions":
+                    &lt;integer&gt;</code> &mdash; <em>optional</em>, default
+                    1000, specifies how many times this particular
+                    error can be deducted before a "mercy rule" kicks
+                    in.</li>
+                  <li><code>"severity": &lt;string&gt;</code>, allowed
+                    values <code>"Error"</code>, <code>"Warning"</code>, <code>"Info"</code>
+                    or "ignore".  The default is either <code>"Error"</code>
+                    or <code>"Warning"</code> (based on the error code
+                    names), and gives the severity of the comment to
+                    be displayed.  If a style error is worth
+                    reporting, but not worth deducting points,
+                    consider making the severity <code>"Warning"</code>
+                    or <code>"Info"</code>.  If you want to specify
+                    that this entire rule be ignored,
+                    specify <code>"ignore"</code>.</li>
+                </ul>
+              </li>
+
+
+            </ul>
+            <p>Here is a short example Python style grader config file:</p>
+            <pre>{
+  "maximum deductions per file": 10,
+  "W": {
+    "severity": "ignore"
+  },
+  "W2": {
+    "severity": "Error"
+  },
+  "E302": {
+    "description": "Whee!",
+    "maximumDeductions": 2
+  },
+  "E251": {
+    "maximumDeductions": 3,
+    "deduction": 5000
+  },
+  "E111" {
+    "severity": "ignore"
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

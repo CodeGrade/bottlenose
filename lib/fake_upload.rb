@@ -24,4 +24,7 @@ class FakeUpload
   def size
     @size || File.size(@path)
   end
+
+  def rewind
+  end
 end

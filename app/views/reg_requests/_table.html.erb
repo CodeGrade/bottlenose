@@ -76,8 +76,16 @@
     <% requests.each do |request| %>
       <% classes = request.reg_request_sections.map do |sec|
            "sec_#{@section_crns[sec.section_id]}"
-         end.flatten.uniq.compact.join(" ")%>
-      <tr class="<%= classes %>">
+         end
+          if request.role == 'grader'
+            classes << "info"
+          elsif request.role == 'assistant'
+            classes << "warning"
+          elsif request.role == 'professor'
+            classes << "danger"
+          end
+        %>
+      <tr class="<%= classes.flatten.uniq.compact.join(" ") %>">
         <td><%= show_user request.user %></td>
         <td><%= request.role.humanize %></td>
         <td><%= request.user.email %></td>

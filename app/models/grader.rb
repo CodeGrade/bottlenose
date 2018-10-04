@@ -380,7 +380,8 @@ class Grader < ApplicationRecord
     Float(v) rescue false
   end
   def add_error(msg)
-    self.errors.add("##{self.order + 1}", msg)
+    order = self.assignment.graders.sort_by(&:order).index(self)
+    self.errors.add("##{order + 1}", msg)
   end
 
 end

@@ -112,39 +112,4 @@ class SubmissionsControllerTest < ActionController::TestCase
     get :show, params: {id: @john_hello, course_id: @cs101.id, assignment_id: @hello.id }
     assert_response :success
   end
-
-  test "should get edit" do
-    skip
-
-    sign_in @fred
-    get :edit, params: { id: @john_hello, course_id: @cs101.id, assignment_id: @hello }
-    assert_response :success
-  end
-
-  test "should update submission" do
-    skip
-
-    put :update,
-        {id: @john_hello},
-        { submission: {
-            student_notes: "Bacon!",
-            type: "FilesSub",
-            assignment: @john_hello.assignment,
-            user_id: @john.id }
-        },
-        {user_id: @fred.id}
-    assert_response :redirect
-  end
-
-
-  
-  #test "should destroy submission" do
-  #  skip "Code to delete submissions intentionally disabled."
-  #
-  #  assert_difference('Submission.count', -1) do
-  #    delete :destroy, {id: @john_hello}, {user_id: @fred.id}
-  #  end
-  #
-  #  assert_response :redirect
-  #end
 end

@@ -16,5 +16,9 @@
               <% else %>
               class="btn btn-warning remove-custom-file"
               <% end %> >Clear grader file</button>
+      <% if local_assigns[:schema] %>
+      <span class="btn btn-info" data-toggle="modal"
+            data-target="#<%= schema %>">See schema</span>
+      <% end %>
     </td>
   </tr>
