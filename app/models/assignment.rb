@@ -547,6 +547,11 @@ class Assignment < ApplicationRecord
         return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
       end
     end
+    locks["check_section_toggles"]&.each do |lock|
+      if SectionToggle.where(section: user.sections, assignment: self, submissions_allowed: true).empty?
+        return "Submissions are not currently enabled for your section"
+      end
+    end
     return false
   end
 
