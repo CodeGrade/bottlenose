@@ -38,7 +38,7 @@
     <% end %>
     <% cur_reg = current_user.registration_for(@course) %>
     <% if cur_reg&.assistant? %>
-      <%= render "interlock_toggles", gradesheet: @gradesheet %>
+      <%= render "submission_enabled_toggles", gradesheet: @gradesheet %>
     <% end %>
   </div>
 
