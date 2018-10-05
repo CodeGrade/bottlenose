@@ -107,7 +107,7 @@ class TapParser
   def make_yaml_safe(str)
     str.scrub do |bytes|
       "\u27e6#{bytes.unpack("H*")[0]}\u27e7" # square double brackets for invalid chars
-    end.gsub(/\P{print}/) do |match|
+    end.gsub(/[^\p{print}\p{space}]/) do |match|
       "\u27ea#{match.unpack("H*")[0]}\u27eb" # angled double brackets for unprintable chars
     end
   end
