@@ -14,7 +14,7 @@ Question:
     - TrueFalse
     - Numeric
     - MultipleChoice
-    - Freeform
+    - Text
 YesNo:
   object:
     - key: "name"
@@ -85,7 +85,7 @@ MultipleChoice:
       optional: true
     - key: "rubric"
       value: Rubric
-Freeform:
+Text:
   object:
     - key: "name"
       value: String
@@ -107,11 +107,11 @@ QuestionParts:
   array: QuestionPart
 QuestionPart:
   one_of:
-    - Text
+    - TextPart
     - RequiredText
     - CodeTag
     - CodeTags
-Text:
+TextPart:
   object:
     - key: "text"
       value: String
@@ -133,6 +133,7 @@ RubricEntry:
   dictionary:
     key: [Float, [0, 1]]
     value: RubricItem
+    size: 1
 RubricItem:
   one_of:
     - String

@@ -2,7 +2,6 @@ require 'test_helper'
 require 'schema_checker'
 
 class AssignmentTest < ActiveSupport::TestCase
-  include AssignmentsHelper
   attr_accessor :assignment_upload
   attr_accessor :errors
   test "invalid questions" do
@@ -31,27 +30,34 @@ YAML
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- BadAnswerType:
     - MultipleChoice: oops
 ...
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- MissingFields:
     - MultipleChoice: 
         weight: 5
 ...
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- MissingFields:
+    - MultipleChoice: 
+        correctAnswer: 5
+...
+YAML
+    inputs << <<-YAML
+---
+- WrongTypeMissingFields:
     - MultipleChoice: 
         weight: true
 ...
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- UnknownKey:
     - MultipleChoice: 
         name: MyQuestion
         woof: 5
@@ -59,42 +65,44 @@ YAML
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- NonStringKey:
     - MultipleChoice: 
         5: true
 ...
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- UnknownQuestion:
     - SomeWeirdQuestion: 
         5: true
 ...
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- NonStringQuestion:
     - 42: 
         5: true
 ...
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- IntegerRubric:
     - MultipleChoice: 
         name: MyQuestion
         weight: 5
         correctAnswer: false
+        prompt: Hi
         rubric: 42
 ...
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- MalformedRubric:
     - MultipleChoice: 
         name: MyQuestion
         weight: 5
         correctAnswer: 0
+        prompt: Hi
         rubric:
           - foo: bar
             baz: quux
@@ -102,11 +110,25 @@ YAML
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- TooManyKeysInRubric:
+    - MultipleChoice: 
+        name: MyQuestion
+        weight: 5
+        correctAnswer: 0
+        prompt: Hi
+        rubric:
+          - 1: bar
+            0.5: quux
+...
+YAML
+    inputs << <<-YAML
+---
+- AnswerOutOfRange:
     - MultipleChoice: 
         name: MyQuestion
         weight: 5
         correctAnswer: 666
+        prompt: Hi
         options:
           - Foo
           - Bar
@@ -117,7 +139,7 @@ YAML
 YAML
     inputs << <<-YAML
 ---
-- FirstSection:
+- KeysOutOfRange:
     - MultipleChoice: 
         name: MyQuestion
         weight: 5
@@ -132,17 +154,127 @@ YAML
             1.5: quux
 ...
 YAML
+    inputs << <<-YAML
+---
+- BadBoolean:
+    - YesNo:
+        name: MyQuestion
+        weight: 5
+        correctAnswer: disagree
+        prompt: Hi
+        rubric:
+          - 0: foo
+          - 0.5: bar
+          - 1: baz
+...
+YAML
+    inputs << <<-YAML
+---
+- BadBoolean:
+    - TrueFalse:
+        name: MyQuestion
+        weight: 5
+        correctAnswer: disagree
+        prompt: Hi
+        rubric:
+          - 0: foo
+          - 0.5: bar
+          - 1: baz
+...
+YAML
+    inputs << <<-YAML
+---
+- BadNumeric:
+    - Numeric:
+        name: MyQuestion
+        weight: 5
+        min: true
+        max: hello
+        correctAnswer: [1,2,3]
+        prompt: Hi
+        rubric:
+          - 0: foo
+          - 0.5: bar
+          - 1: baz
+...
+YAML
+    inputs << <<-YAML
+---
+- BadNumericAnswer:
+    - Numeric:
+        name: MyQuestion
+        weight: 5
+        min: 0
+        max: 5
+        correctAnswer: 10
+        prompt: Hi
+        rubric:
+          - 0: foo
+          - 0.5: bar
+          - 1: baz
+...
+YAML
+    inputs << <<-YAML
+---
+- BadParts:
+    - Numeric:
+        name: MyQuestion
+        weight: 5
+        min: 0
+        max: 5
+        correctAnswer: 5
+        prompt: Hi
+        rubric:
+          - 0: foo
+          - 0.5: bar
+          - 1: baz
+        parts: true
+...
+YAML
+    inputs << <<-YAML
+---
+- BadParts:
+    - Numeric:
+        name: MyQuestion
+        weight: 5
+        min: 0
+        max: 5
+        correctAnswer: 5
+        prompt: Hi
+        rubric:
+          - 0: foo
+          - 0.5: bar
+          - 1: baz
+        parts: 
+          - true
+          - false
+...
+YAML
+    inputs << <<-YAML
+---
+- BadParts:
+    - Numeric:
+        name: MyQuestion
+        weight: 5
+        min: 0
+        max: 5
+        correctAnswer: 5
+        prompt: Hi
+        rubric:
+          - 0: foo
+          - 0.5: bar
+          - 1: baz
+        parts: 
+          - [5]
+          - unknown: hello
+...
+YAML
 
     sc = SchemaChecker.new(Rails.root.join("app/helpers/questions_schema.yaml"))
     inputs.each_with_index do |input, n|
-      self.errors = ActiveModel::Errors.new(nil)
-      @assignment_file_data = FakeUpload.new("test #{n}", input)
-      assert_not check_questions_schema
-      puts "Existing:"
-      puts self.errors.full_messages
-      puts "New:"
-      puts sc.check(YAML.load(input))
-      puts
+      assert_not_equal [], sc.check(YAML.load(input))
     end
+    valid_file = YAML.load(File.read(Rails.root.join("test/fixtures/files/peer-eval.yaml")))
+    assert_equal [], sc.check(valid_file)
   end
 end

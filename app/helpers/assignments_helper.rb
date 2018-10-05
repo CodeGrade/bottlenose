@@ -1,3 +1,4 @@
+require 'schema_checker'
 module AssignmentsHelper
   def join(arr, between, before_last=nil)
     ans = ""
@@ -55,150 +56,13 @@ module AssignmentsHelper
       self.errors.add(:base, "Supplied file does not contain a list of sections")
       return false
     else
-      question_count = 0
-      @total_weight = 0
-      question_kinds = Assignment.question_kinds.keys
-      def is_float(val)
-        Float(val) rescue false
-      end
-      def is_int(val)
-        Integer(val) rescue false
-      end
-      @questions.each_with_index do |section, index|
-        if !(section.is_a? Hash) || !(section.keys.is_a? Array) || section.keys.count > 1
-          self.errors.add(:base, "Section #{index} is malformed")
-          next
-        else
-          section.each do |secName, sec_questions|
-            if !sec_questions.is_a? Array
-              self.errors.add(:base, "Section #{index} (named \"#{secName}\") is malformed")
-              next
-            end
-            sec_questions.each_with_index do |question, q_index|
-              if !question.is_a? Hash
-                self.errors.add(:base, "Section #{index}, question #{q_index} is malformed")
-                next
-              end
-              question.each do |type, q|
-                question_count += 1
-                question_desc = "Question #{question_count} (question #{q_index + 1} within section \"#{secName}\")"
-                if !q.is_a? Hash
-                  self.errors.add(:base, "#{question_desc} is malformed")
-                  next
-                end
-                if q["name"]
-                  question_desc = "\"#{question[type]["name"]}\" (question #{q_index + 1} within section \"#{secName}\")"                  
-                end
-                begin
-                  if !(type.is_a? String)
-                    self.errors.add(:base, "#{question_desc} has unknown type #{type}")
-                    next
-                  elsif !question_kinds.member?(type.underscore)
-                    self.errors.add(:base, "#{question_desc} has unknown type #{type}")
-                    next
-                  else
-                    if q["weight"].nil? || !is_float(q["weight"])
-                      self.errors.add(:base, "#{question_desc} has missing or invalid weight")
-                    end
-                    @total_weight += Float(q["weight"])
-                    ans = q["correctAnswer"]
-                    if ans.nil?
-                      self.errors.add(:base, "#{question_desc} is missing a correctAnswer")
-                    end
-                    if q["rubric"].nil?
-                      self.errors.add(:base, "#{question_desc} is missing a rubric")
-                    elsif !(q["rubric"].is_a? Array)
-                      self.errors.add(:base, "#{question_desc} has an invalid rubric")
-                    else
-                      q["rubric"].each_with_index do |guide, i|
-                        if !(guide.is_a? Hash) || guide.keys.count != 1
-                          self.errors.add(:base, "#{question_desc}, rubric entry #{i} is ill-formed: expect an object with exactly one key")
-                        else
-                          guide.each do |weight, desc|
-                            if !is_float(weight)
-                              self.errors.add(:base, "#{question_desc}, rubric entry #{i} has non-numeric weight")
-                            elsif Float(weight) < 0 || Float(weight) > 1
-                              self.errors.add(:base, "#{question_desc}, rubric entry #{i} has out-of-bounds weight")
-                            end
-                            if desc.is_a? String
-                              # ok
-                            elsif (desc.is_a? Hash) && (desc.keys.sort != ["feedback", "hint"])
-                              self.errors.add(:base, "#{question_desc}, rubric entry #{i} has malformed feedback (expected either a String, or a `hint` and a `feedback` message)")
-                            end
-                          end
-                        end
-                      end
-                    end
-                    if q["prompt"].nil?
-                      self.errors.add(:base, "#{question_desc} is missing a prompt")
-                    end
-                    case type
-                    when "YesNo", "TrueFalse"
-                      if ans && ![true, false].member?(ans)
-                        self.errors.add(:base, "Boolean question #{question_desc} has a non-boolean correctAnswer")
-                      end
-                    when "Numeric"
-                      min = q["min"]
-                      max = q["max"]
-                      if max.nil? || !is_float(min)
-                        self.errors.add(:base, "Numeric question #{question_desc} has a non-numeric max")
-                      else
-                        max = max.to_f
-                      end
-                      if min.nil? || !is_float(min)
-                        self.errors.add(:base, "Numeric question #{question_desc} has a non-numeric min")
-                      else
-                        min = min.to_f
-                      end
-                      if ans && !is_float(ans)
-                        self.errors.add(:base, "Numeric question #{question_desc} has a non-numeric ans")
-                      else
-                        ans = ans.to_f
-                      end
-                      if is_float(min) && is_float(max) && is_float(ans) && !(min <= ans && ans <= max)
-                        self.errors.add(:base, "Numeric question #{question_desc} has a correctAnswer outside the specified range")
-                      end
-                    when "MultipleChoice"
-                      if ans && !is_int(ans)
-                        self.errors.add(:base, "MultipleChoice question #{question_desc} has a non-numeric correctAnswer")
-                      else
-                        ans = ans.to_i
-                      end
-                      if q["options"].nil? || !(q["options"].is_a? Array)
-                        self.errors.add(:base, "MultipleChoice question #{question_desc} is missing an array of choices")
-                      elsif is_int(ans) && (ans < 0 || ans >= q["options"].count)
-                        self.errors.add(:base, "MultipleChoice question #{question_desc} has a correctAnswer not in the available choices")
-                      end
-                    end
-                    if q["parts"]
-                      if !q["parts"].is_a? Array
-                        self.errors.add(:base, "#{question_desc} has a non-list of parts")
-                      else
-                        q["parts"].each_with_index do |part, part_i|
-                          if !part.is_a? Hash
-                            self.errors.add(:base, "#{question_desc} has a non-object part ##{part_i + 1}")
-                          elsif part.keys.count > 1
-                            self.errors.add(:base, "#{question_desc} part ##{part_i + 1} has too many keys")
-                          elsif !["codeTag", "codeTags", "requiredText", "text"].member?(part.keys[0])
-                            self.errors.add(:base, "#{question_desc} part ##{part_i + 1} has an invalid type #{part.keys[0]}")
-                          elsif [Questions].member? self.class && ["codeTag", "codeTags"].member?(part.keys[0])
-                            self.errors.add(:base, "#{question_desc} part ##{part_i + 1} asks for #{part.keys[0]}, but there is no related assignment in a Questions assignment")
-                          end
-                        end
-                      end
-                    end
-                  end
-                rescue Exception => e
-                  self.errors.add(:base, "#{question_desc} in section #{secName} could not be parsed: #{e}")
-                end
-              end
-            end
-          end
-        end
-      end
+      sc = SchemaChecker.new(Rails.root.join("app/helpers/questions_schema.yaml"))
+      sc.check(@questions).each{|e| self.errors.add(:base, e)}      
       return false if self.errors.count > 0
+      @questions = sc.convert(@questions)
+      @weights = @questions.map{|section| section.map{|_, qs| qs.map{|q| q.first[1]["weight"]}}}
+      @total_weight = @weights.flatten.sum
+      return true
     end
-    @weights = @questions.map{|section| section.map{|_, qs| qs.map{|q| Float(q.first[1]["weight"])}}}
-    return true
   end
 end

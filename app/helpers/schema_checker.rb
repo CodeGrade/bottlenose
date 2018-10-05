@@ -4,10 +4,10 @@ require 'active_support/inflector'
 class SchemaChecker
   def check(yaml)
     @path = []
-    @checker["start"][:check].call(yaml, [], @checker).map!{|s| s.gsub(/^: /, "")}
+    @checker["start"][:check].call(yaml, []).map!{|s| s.gsub(/^: /, "")}
   end
   def convert(yaml)
-    @checker["start"][:convert].call(yaml, @checker)
+    @checker["start"][:convert].call(yaml)
   end
   def initialize(schema)
     schema =
@@ -54,13 +54,13 @@ class SchemaChecker
     }
     @checker["Integer"] = {
       check: lambda {|val, parent, refinement=nil|
-        val = (Integer(val) rescue false)
-        if val
+        val_clean = (Integer(val) rescue false)
+        if val_clean
           if (refinement.is_a? Array) && (refinement.size == 2)
             lo = get_number(parent, refinement[0])
             hi = get_number(parent, refinement[1])
             if hi && lo
-              if lo <= val && val < hi
+              if lo <= val_clean && val_clean < hi
                 []
               else
                 ["#{make_path}: Expected an integer in the range [#{lo}, #{hi - 1}], but got #{elide(val, 2)}"]
@@ -78,12 +78,12 @@ class SchemaChecker
     }
     @checker["Float"] = {
       check: lambda {|val, parent, refinement=nil|
-        val = (Float(val) rescue false)
-        if val
+        val_clean = (Float(val) rescue false)
+        if val_clean
           if refinement.is_a? Array
             lo = get_number(parent, refinement[0])
             hi = get_number(parent, refinement[1])
-            if lo <= val && val <= hi
+            if lo <= val_clean && val_clean <= hi
               []
             else
               ["#{make_path}: Expected a float in the range [#{lo}, #{hi}], but got #{elide(val, 2)}"]
@@ -154,7 +154,7 @@ class SchemaChecker
     if arr.size > 1
       arr[0...-1].map{|i| "`#{i}`"}.join(', ') + " #{joiner} `#{arr[-1]}`"
     else
-      arr[0]
+      "`#{arr[0]}`"
     end
   end
 
@@ -169,6 +169,13 @@ class SchemaChecker
       @checker[type][:check].call(val, parent)
     elsif type.is_a? Array
       @checker[type[0]][:check].call(val, parent, type[1])
+    end
+  end
+  def do_convert(type, val)
+    if type.is_a? String
+      @checker[type][:convert].call(val)
+    elsif type.is_a? Array
+      @checker[type[0]][:convert].call(val)
     end
   end
   def produce(type, typename)
@@ -188,7 +195,7 @@ class SchemaChecker
           end},
         convert: lambda{|val|
           val.map do |v|
-            @checker[type["array"]][:convert].call(v)
+            do_convert(type["array"], v)
           end
         }
       }
@@ -199,6 +206,15 @@ class SchemaChecker
           if !val.is_a? Hash
             errors << "#{make_path}: Expected a dictionary, but got #{elide(val, 2)}"
           else
+            if type["dictionary"]["size"] && val.size != type["dictionary"]["size"]
+              errors << "#{make_path}: Expected an object with exactly #{type['dictionary']['size']} #{'key'.pluralize(type['dictionary']['size'])}"
+            end
+            if type["dictionary"]["minSize"] && val.size < type["dictionary"]["minSize"]
+              errors << "#{make_path}: Expected an object with at least #{type['dictionary']['minSize']} #{'key'.pluralize(type['dictionary']['minSize'])}"
+            end
+            if type["dictionary"]["maxSize"] && val.size > type["dictionary"]["maxSize"]
+              errors << "#{make_path}: Expected an object with at most #{type['dictionary']['maxSize']} #{'key'.pluralize(type['dictionary']['maxSize'])}"
+            end
             val.each do |k, v|
               in_path ["#{k} key"] do
                 errors.push(*do_check(type["dictionary"]["key"], k, val))
@@ -212,8 +228,8 @@ class SchemaChecker
         },
         convert: lambda {|val|
           val.map do |k, v|
-            [@checker[type["dictionary"]["key"]][:convert].call(k),
-             @checker[type["dictionary"]["type"]][:convert].call(v)]
+            [do_convert(type["dictionary"]["key"], k),
+             do_convert(type["dictionary"]["value"], v)]
           end.to_h
         }
       }
@@ -235,7 +251,7 @@ class SchemaChecker
         },
         convert: lambda {|val|
           val.map do |k, v|
-            [k, @checker[type["labeled_value"]["value"]][:convert].call(v)]
+            [k, do_convert(type["labeled_value"]["value"], v)]
           end.to_h
         }
       }
@@ -279,7 +295,7 @@ class SchemaChecker
             [field["key"], field["value"]]
           end.to_h
           val.map do |k, v|
-            [k, @checker[converters[k]][:convert].call(v)]
+            [k, do_convert(converters[k], v)]
           end.to_h
         }
       }
@@ -296,7 +312,7 @@ class SchemaChecker
         convert: lambda {|val|
           type["one_of"].each do |typ|
             if @checker[typ][:check].call(val, "").empty?
-              return @checker[typ][:convert].call(val)
+              return do_convert(typ, val)
             end
           end
         }
@@ -316,7 +332,7 @@ class SchemaChecker
           end
         },
         convert: lambda {|val|
-          @checker[val.first[0]][:convert].call(val.first[1])
+          [[val.first[0], do_convert(val.first[0], val.first[1])]].to_h
         }
       }
     end
