@@ -36,6 +36,7 @@
         <%= link_to gradesheet.assignment.assignment_file_name, gradesheet.assignment.assignment_file_path %>
       </p>
     <% end %>
+    <%= render "interlock_toggles", gradesheet: @gradesheet %>
   </div>
 
   <div class="col-sm-6">

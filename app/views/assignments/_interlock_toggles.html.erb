@@ -1,0 +1,17 @@
+<% toggles = gradesheet.assignment.submission_enabled_toggles %>
+<% unless toggles.empty? %>
+  <p>
+    <b>Toggle section availability:</b>
+    <% gradesheet.assignment.course.sections.each do |section| %>
+      <div>
+        <span><%= section.to_s %></span>
+        <% sec_toggles = toggles.select{|toggle| toggle.section == section} %>
+        <% sec_toggles.each do |toggle| %>
+          <%= check_box_tag "allow_submission_#{toggle.id}", nil,
+            toggle.submissions_allowed,
+            data: {toggle: "toggle", on: "Enabled", off: "Disabled"} %>
+        <% end %>
+      </div>
+    <% end %>
+  </p>
+<% end %>
