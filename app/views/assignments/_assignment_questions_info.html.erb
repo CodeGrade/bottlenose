@@ -36,7 +36,9 @@
         <%= link_to gradesheet.assignment.assignment_file_name, gradesheet.assignment.assignment_file_path %>
       </p>
     <% end %>
-    <%= render "interlock_toggles", gradesheet: @gradesheet %>
+    <% if cur_reg&.assistant? %>
+      <%= render "interlock_toggles", gradesheet: @gradesheet %>
+    <% end %>
   </div>
 
   <div class="col-sm-6">
