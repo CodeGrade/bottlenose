@@ -1,3 +1,4 @@
+require 'schema_checker'
 class Exam < Assignment
   validates :related_assignment_id, :absence => true
   validate :set_exam_graders
@@ -28,49 +29,20 @@ class Exam < Assignment
         return false
       end
     end
-    if !questions.is_a? Array
-      self.errors.add(:base, "Supplied file does not contain a list of questions")
-      return false
-    else
-      @total_weight = 0
-      def make_err(msg)
-        self.errors.add(:base, msg)
-      end
-      def is_float(val)
-        Float(val) rescue false
-      end
-      def is_int(val)
-        Integer(val) rescue false
-      end
-      questions.each_with_index do |q, q_num|
-        if !q.is_a? Hash
-          make_err "Question #{q_num} is malformed"
-          next
-        elsif q["parts"].is_a? Array
-          q["parts"].each_with_index do |part, p_num|
-            if !is_float(part["weight"])
-              make_err "Question #{part['name']} has an invalid weight"
-              next
-            elsif !part["extra"]
-              @total_weight += Float(part["weight"])
-            end
-          end
-        elsif !is_float(q["weight"])
-          make_err "Question #{q['name']} has an invalid weight"
-          next
-        elsif !q["extra"]
-          @total_weight += Float(q["weight"])
-        end
-      end
-      return false if self.errors.count > 0
-      grader = self.graders.first
-      if grader.nil?
-        grader = Grader.new(type: "ExamGrader", assignment: self)
-        self.graders << grader
-      end
-      grader.avail_score = @total_weight
-      grader.order = self.graders.count + 1
+    @total_weight = 0
+    sc = SchemaChecker.new(Rails.root.join("app/helpers/exams_schema.yaml"))
+    sc.check(questions).each{|e| self.errors.add(:base, e)}
+    return false if self.errors.count > 0
+    questions = sc.convert(questions)
+    weights = questions.map{|q| q["parts"] || q}.flatten.select{|q| !q["extra"]}.map{|q| q["weight"]}
+    @total_weight = weights.sum
+    grader = self.graders.first
+    if grader.nil?
+      grader = Grader.new(type: "ExamGrader", assignment: self)
+      self.graders << grader
     end
+    grader.avail_score = @total_weight
+    grader.order = self.graders.count + 1
   end
 
   def update_exam_submission_times

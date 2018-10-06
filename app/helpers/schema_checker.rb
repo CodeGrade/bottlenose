@@ -4,9 +4,12 @@ require 'active_support/inflector'
 class SchemaChecker
   def check(yaml)
     @path = []
+    @commit = nil
     @checker["start"][:check].call(yaml, []).map!{|s| s.gsub(/^: /, "")}
   end
   def convert(yaml)
+    @path = []
+    @commit = nil
     @checker["start"][:convert].call(yaml)
   end
   def initialize(schema)
@@ -125,7 +128,7 @@ class SchemaChecker
     @path.each do |p|
       case op
       when :named
-        if new_path[name_offset].empty?
+        if new_path[name_offset].blank?
           new_path << p
         else
           new_path[name_offset] = "#{new_path[name_offset]} (\"#{p}\")"
@@ -137,7 +140,6 @@ class SchemaChecker
         op = nil
       when :ignore
         op = nil
-      # do nothing
       else
         if p.is_a? Symbol
           op = p
@@ -182,17 +184,27 @@ class SchemaChecker
     if type["array"]
       {
         check: lambda {|val, parent, refinement=nil|
+          errors = []
           if !val.is_a? Array
-            ["#{make_path}: Expected an array of #{type["array"].pluralize}, but got #{elide(val, 2)}"]
+            errors << "#{make_path}: Expected an array of #{type["array"].pluralize}, but got #{elide(val, 2)}"
           else
-            errors = []
+            if type["size"] && val.size != type["size"]
+              errors << "#{make_path}: Expected an array with exactly #{type['size']} #{'item'.pluralize(type['size'])}"
+            end
+            if type["minSize"] && val.size < type["minSize"]
+              errors << "#{make_path}: Expected an array with at least #{type['minSize']} #{'item'.pluralize(type['minSize'])}"
+            end
+            if type["maxSize"] && val.size > type["maxSize"]
+              errors << "#{make_path}: Expected an array with at most #{type['maxSize']} #{'item'.pluralize(type['maxSize'])}"
+            end
             val.each_with_index do |v, v_index|
               in_path ["#{type["array"]} #{v_index + 1}"] do
                 errors.push(*do_check(type["array"], v, val))
               end
             end
-            errors
-          end},
+          end
+          errors
+        },
         convert: lambda{|val|
           val.map do |v|
             do_convert(type["array"], v)
@@ -260,7 +272,7 @@ class SchemaChecker
         check: lambda {|val, parent, refinement=nil|
           errors = []
           checkers = type["object"].map do |field|
-            [field["key"], {count: 0, optional: field["optional"], value: field["value"]}]
+            [field["key"], {count: 0, commit: field["commit"], optional: field["optional"], value: field["value"]}]
           end.to_h
           if !val.is_a? Hash
             errors << "#{make_path}: Expected an object, but got #{elide(val, 2)}"
@@ -274,6 +286,7 @@ class SchemaChecker
             in_path named do
               val.each do |k, v|
                 if checkers[k]
+                  @commit = make_path if checkers[k][:commit]
                   in_path ["#{k}"] do
                     errors.push(*do_check(checkers[k][:value], v, val))
                     checkers[k][:count] += 1
@@ -302,16 +315,31 @@ class SchemaChecker
     elsif type["one_of"]
       {
         check: lambda {|val, parent, refinement=nil|
+          commit = @commit
+          @commit = nil
+          errors = []
+          errors << "#{make_path}: Expected one of #{options(type["one_of"])}, got #{elide(val, 2)}"
           type["one_of"].each do |typ|
-            if do_check(typ, val, parent).empty?
+            as_typ = do_check(typ, val, parent)
+            if as_typ.empty?
+              @commit = commit
               return []
+            elsif @commit
+              @commit = commit
+              return as_typ
+            else
+              msg_prefix = /#{make_path}\s*.*?(?:> |: )?/
+              as_typ.each do |msg|
+                errors << "\tIf this is a #{typ}, then: #{msg.gsub(msg_prefix, '')}"
+              end
             end
           end
-          ["#{make_path}: Expected one of #{options(type["one_of"])}, got #{elide(val, 2)}"]
+          @commit = commit
+          errors
         },
         convert: lambda {|val|
           type["one_of"].each do |typ|
-            if @checker[typ][:check].call(val, "").empty?
+            if do_check(typ, val, "").empty?
               return do_convert(typ, val)
             end
           end

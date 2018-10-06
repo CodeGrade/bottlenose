@@ -52,17 +52,12 @@ module AssignmentsHelper
       self.errors.add(:base, "Could not parse the supplied file: #{e}")
       return false
     end
-    if !@questions.is_a? Array
-      self.errors.add(:base, "Supplied file does not contain a list of sections")
-      return false
-    else
-      sc = SchemaChecker.new(Rails.root.join("app/helpers/questions_schema.yaml"))
-      sc.check(@questions).each{|e| self.errors.add(:base, e)}      
-      return false if self.errors.count > 0
-      @questions = sc.convert(@questions)
-      @weights = @questions.map{|section| section.map{|_, qs| qs.map{|q| q.first[1]["weight"]}}}
-      @total_weight = @weights.flatten.sum
-      return true
-    end
+    sc = SchemaChecker.new(Rails.root.join("app/helpers/questions_schema.yaml"))
+    sc.check(@questions).each{|e| self.errors.add(:base, e)}      
+    return false if self.errors.count > 0
+    @questions = sc.convert(@questions)
+    @weights = @questions.map{|section| section.map{|_, qs| qs.map{|q| q.first[1]["weight"]}}}
+    @total_weight = @weights.flatten.sum
+    return true
   end
 end

@@ -277,4 +277,84 @@ YAML
     valid_file = YAML.load(File.read(Rails.root.join("test/fixtures/files/peer-eval.yaml")))
     assert_equal [], sc.check(valid_file)
   end
+
+  test "invalid exams" do
+    inputs = []
+    inputs << <<-YAML
+---
+NotAnArray: true
+...
+YAML
+    inputs << <<-YAML
+---
+- not a question
+...
+YAML
+    inputs << <<-YAML
+---
+- name: false
+...
+YAML
+    inputs << <<-YAML
+---
+- weight: "not a number"
+...
+YAML
+    inputs << <<-YAML
+---
+- name: "missing weight"
+...
+YAML
+    inputs << <<-YAML
+---
+- name: "bad extra"
+  extra: "yup"
+...
+YAML
+    inputs << <<-YAML
+---
+- name: "bad parts"
+  parts: []
+...
+YAML
+    inputs << <<-YAML
+---
+- name: "bad parts"
+  parts: 
+    - weight: true
+...
+YAML
+    inputs << <<-YAML
+---
+- name: "bad parts"
+  parts: 
+    - weight: 5
+      name: "bad extra"
+      extra: 5
+...
+YAML
+    inputs << <<-YAML
+---
+- name: "bad parts1"
+  parts: 
+    - weight: 5
+      name: "ok"
+      extra: false
+    - weight: 5
+      name: "bad extra2"
+      extra: 5
+- name: "bad parts2"
+  parts: 
+    - weight: 5
+      name: "bad extra"
+      extra: 5
+...
+YAML
+    sc = SchemaChecker.new(Rails.root.join("app/helpers/exams_schema.yaml"))
+    inputs.each_with_index do |input, n|
+      assert_not_equal [], sc.check(YAML.load(input))
+    end
+    valid_file = YAML.load(File.read(Rails.root.join("test/fixtures/files/test-exam.yaml")))
+    assert_equal [], sc.check(valid_file)
+  end
 end
