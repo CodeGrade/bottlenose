@@ -9,7 +9,7 @@ class AssignmentsController < ApplicationController
   before_action -> { require_admin_or_prof(course_assignments_path) },
                 only: [:edit, :edit_weights, :update, :update_weights,
                        :new, :create, :destroy, :recreate_grades]
-  before_action :require_admin_or_assistant, only: [:tarball, :publish]
+  before_action :require_admin_or_assistant, only: [:update_section_toggles, :tarball, :publish]
 
   def show
     admin_view = current_user_site_admin? || current_user_staff_for?(@course)
@@ -281,6 +281,29 @@ class AssignmentsController < ApplicationController
                   notice: "#{pluralize(count, 'grade')} created"
   end
 
+  def update_section_toggles
+    toggle_params = params.permit(:assignment_id, :state, :submission_enabled_toggle_id)
+    toggle = SubmissionEnabledToggle.where(id: toggle_params[:submission_enabled_toggle_id]).first
+    if toggle.nil?
+      render json: {}, status: 404
+      return
+    end
+    requested_state = toggle_params[:state]
+    if toggle.submissions_allowed.to_s == requested_state.to_s
+      all_toggles = SubmissionEnabledToggle.where(assignment_id: toggle_params[:assignment_id])
+      result = []
+      all_toggles.each do |toggle|
+        new_state = toggle.submissions_allowed ? "on" : "off"
+        result << {id: toggle.id, state: new_state}
+      end
+      render json: result, status: 409 # conflict
+      return
+    else
+      toggle.update_attributes(submissions_allowed: requested_state)
+      render json: {}
+      return
+    end
+  end
 
 
 

@@ -7,9 +7,12 @@
         <span><%= section.to_s %></span>
         <% sec_toggles = toggles.select{|toggle| toggle.section == section} %>
         <% sec_toggles.each do |toggle| %>
-          <%= check_box_tag "allow_submission_#{toggle.id}", nil,
-            toggle.submissions_allowed,
-            data: {toggle: "toggle", on: "Enabled", off: "Disabled"} %>
+          <span class="toggle-wrapper" id="toggle-wrapper-<%=toggle.id%>">
+            <%= check_box_tag "allow-#{toggle.id}", nil,
+              toggle.submissions_allowed,
+              data: {toggle: "toggle", on: "Enabled", off: "Disabled"},
+              class: "submission-enabled-toggle" %>
+          </span>
         <% end %>
       </div>
     <% end %>
