@@ -1,8 +1,8 @@
-<% toggles = gradesheet.assignment.submission_enabled_toggles %>
+<% toggles = @assignment.submission_enabled_toggles %>
 <% unless toggles.empty? %>
   <p>
     <b>Toggle section availability:</b>
-    <% gradesheet.assignment.course.sections.each do |section| %>
+    <% @course.sections.each do |section| %>
       <div>
         <span><%= section.to_s %></span>
         <% sec_toggles = toggles.select{|toggle| toggle.section == section} %>
