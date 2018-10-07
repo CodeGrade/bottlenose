@@ -263,30 +263,28 @@
   }
 
   function toggles_init() {
-    $.each($('.toggle-wrapper'), function(index, toggleWrapper) {
-      $(toggleWrapper).click(function(e) {
-        e.stopPropagation(); // calling bootstrapToggle on the toggle itself fires the 'change' event, so the wrapper is necessary to change the toggle's value without firing the event
-        var toggle = $(toggleWrapper).find('.submission-enabled-toggle')[0];
-        var toggleId = toggle.id.split('-')[1];
-        var data = {state: !toggle.checked}; // attemp to flip
-        function complete(xhr, status) {
-          if (xhr.status == 409) {
-            alert("That section was toggled by another user. Toggles have been updated to match the current state.");
-            $.each(xhr.responseJSON, function(index, newState) {
-              var sel = '.submission-enabled-toggle#allow-' + newState.id;
-              $(sel).bootstrapToggle(newState.state);
-            });
-          } else if (xhr.status == 200) {
-            // successfully changed the state
-            $(toggle).bootstrapToggle('toggle'); // display success to user
-          } else {
-            alert("Error (" + xhr.status + ") while trying to change section toggle.");
-            toggle.bootstrapToggle('toggle'); // set it back because of the error
-          }
+    $('.toggle-wrapper').click(function(e) {
+      e.stopPropagation(); // calling bootstrapToggle on the toggle itself fires the 'change' event, so the wrapper is necessary to change the toggle's value without firing the event
+      var toggle = $(this).find('.submission-enabled-toggle')[0];
+      var toggleId = toggle.id.split('-')[1];
+      var data = {state: !toggle.checked}; // attemp to flip
+      function complete(xhr, status) {
+        if (xhr.status == 409) {
+          alert("That section was toggled by another user. Toggles have been updated to match the current state.");
+          $.each(xhr.responseJSON, function(index, newState) {
+            var sel = '.submission-enabled-toggle#allow-' + newState.id;
+            $(sel).bootstrapToggle(newState.state);
+          });
+        } else if (xhr.status == 200) {
+          // successfully changed the state
+          $(toggle).bootstrapToggle('toggle'); // display success to user
+        } else {
+          alert("Error (" + xhr.status + ") while trying to change section toggle.");
+          toggle.bootstrapToggle('toggle'); // set it back because of the error
         }
-        var url = window.location.href + '/submission_enabled_toggles/' + toggleId + '/update';
-        $.ajax({url: url, data: data, type: 'PATCH', complete: complete});
-      });
+      }
+      var url = window.location.href + '/submission_enabled_toggles/' + toggleId + '/update';
+      $.ajax({url: url, data: data, type: 'PATCH', complete: complete});
     });
   }
 
