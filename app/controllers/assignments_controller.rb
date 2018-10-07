@@ -33,6 +33,9 @@ class AssignmentsController < ApplicationController
     @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
     @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
 
+    @toggles = @assignment.submission_enabled_toggles.includes(:section)
+               .map{|t| [t.section, t]}.group_by{|k, _| k.type}.map{|k, v| [k, v.to_h]}.to_h
+
     self.send("show_#{@assignment.type.capitalize}")
     if admin_view
       render "show_#{@assignment.type.underscore}"

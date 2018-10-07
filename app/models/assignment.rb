@@ -548,8 +548,13 @@ class Assignment < ApplicationRecord
       end
     end
     locks["check_section_toggles"]&.each do |lock|
-      if SubmissionEnabledToggle.where(section: user.sections, assignment: self, submissions_allowed: true).empty?
-        return "Submissions are not currently enabled for your section"
+      relevant_sections = user.sections.where(course: self.course)
+      if SubmissionEnabledToggle.where(section: relevant_sections, assignment: self, submissions_allowed: true).empty?
+        if relevant_sections.count == 1
+          return "Submissions are not currently enabled for your section"
+        else
+          return "Submissions are not currently enabled for any of your sections"
+        end
       end
     end
     return false

@@ -1,20 +1,19 @@
-<% toggles = @assignment.submission_enabled_toggles %>
-<% unless toggles.empty? %>
-  <p>
-    <b>Toggle section availability:</b>
-    <% @course.sections.each do |section| %>
-      <div>
-        <span><%= section.to_s %></span>
-        <% sec_toggles = toggles.select{|toggle| toggle.section == section} %>
-        <% sec_toggles.each do |toggle| %>
-          <span class="toggle-wrapper" id="toggle-wrapper-<%=toggle.id%>">
-            <%= check_box_tag "allow-#{toggle.id}", nil,
-              toggle.submissions_allowed,
-              data: {toggle: "toggle", on: "Enabled", off: "Disabled"},
-              class: "submission-enabled-toggle" %>
-          </span>
-        <% end %>
-      </div>
-    <% end %>
-  </p>
+<% unless @toggles.empty? %>
+<p><b>Toggle section availability:</b></p>
+<% @toggles.each do |section_type, toggles| %>
+<div class="col-sm-12">
+  <p><b>By <%= section_type %></b></p>
+  <% toggles.each do |section, toggle| %>
+  <label style="font-weight: normal;">
+    <span class="toggle-wrapper" id="toggle-wrapper-<%=toggle.id%>">
+      <%= check_box_tag "allow-#{toggle.id}", nil,
+          toggle.submissions_allowed,
+          data: {toggle: "toggle", on: "Enabled", off: "Disabled"},
+          class: "submission-enabled-toggle" %>
+    </span>
+    <%= section.to_s %>
+  </label>
+  <% end %>
+</div>
+<% end %>
 <% end %>
