@@ -8,7 +8,7 @@
     <span class="toggle-wrapper" id="toggle-wrapper-<%=toggle.id%>">
       <%= check_box_tag "allow-#{toggle.id}", nil,
           toggle.submissions_allowed,
-          data: {toggle: "toggle", on: "Enabled", off: "Disabled"},
+          data: {toggle: "toggle", on: "Enabled", off: "Disabled", stid: toggle.id},
           class: "submission-enabled-toggle" %>
     </span>
     <%= section.to_s %>

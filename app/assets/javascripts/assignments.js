@@ -266,7 +266,7 @@
     $('.toggle-wrapper').click(function(e) {
       e.stopPropagation(); // calling bootstrapToggle on the toggle itself fires the 'change' event, so the wrapper is necessary to change the toggle's value without firing the event
       var toggle = $(this).find('.submission-enabled-toggle')[0];
-      var toggleId = toggle.id.split('-')[1];
+      var toggleId = $(toggle).data("stid");
       var data = {state: !toggle.checked}; // attemp to flip
       function complete(xhr, status) {
         if (xhr.status == 409) {
