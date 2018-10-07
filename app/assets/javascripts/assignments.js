@@ -284,7 +284,7 @@
             toggle.bootstrapToggle('toggle'); // set it back because of the error
           }
         }
-        var url = 'submission_enabled_toggles/' + toggleId + '/update';
+        var url = window.location.href + '/submission_enabled_toggles/' + toggleId + '/update';
         $.ajax({url: url, data: data, type: 'PATCH', complete: complete});
       });
     });
