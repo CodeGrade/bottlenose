@@ -291,8 +291,8 @@ class AssignmentsController < ApplicationController
       render json: {not_found: true}, status: 404
       return
     end
-    requested_state = toggle_params[:state]
-    if toggle.submissions_allowed.to_s == requested_state.to_s
+    requested_state = toggle_params[:state] == "true" ? true : false
+    if toggle.submissions_allowed == requested_state
       all_toggles = SubmissionEnabledToggle.where(assignment_id: toggle_params[:assignment_id])
       result = []
       all_toggles.each do |toggle|
