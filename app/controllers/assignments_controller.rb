@@ -288,7 +288,7 @@ class AssignmentsController < ApplicationController
     toggle_params = params.permit(:assignment_id, :state, :submission_enabled_toggle_id)
     toggle = SubmissionEnabledToggle.where(id: toggle_params[:submission_enabled_toggle_id]).first
     if toggle.nil?
-      render json: {}, status: 404
+      render json: {not_found: true}, status: 404
       return
     end
     requested_state = toggle_params[:state]
@@ -303,7 +303,7 @@ class AssignmentsController < ApplicationController
       return
     else
       toggle.update_attributes(submissions_allowed: requested_state)
-      render json: {}
+      render json: {updated: true}
       return
     end
   end
