@@ -1,6 +1,7 @@
 class Interlock < ApplicationRecord
   belongs_to :assignment
   belongs_to :related_assignment, class_name: "Assignment"
+  has_many :submission_enabled_toggles, dependent: :destroy
   enum constraint: [:no_submission_unless_submitted,
                     :no_submission_after_viewing,
                     :check_section_toggles]
@@ -24,8 +25,9 @@ class Interlock < ApplicationRecord
     if constraint == "check_section_toggles"
       self.related_assignment = self.assignment
       self.assignment.course.sections.each do |section|
-        self.assignment.submission_enabled_toggles <<
-        SubmissionEnabledToggle.find_or_initialize_by(assignment: self.assignment, section: section)
+        set = SubmissionEnabledToggle.find_or_initialize_by(assignment: self.assignment, section: section)
+        set.interlock = self
+        self.submission_enabled_toggles << set
       end
     end
   end

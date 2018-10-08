@@ -229,6 +229,7 @@ ActiveRecord::Schema.define(version: 2018_10_04_011746) do
   create_table "submission_enabled_toggles", force: :cascade do |t|
     t.integer "section_id", null: false
     t.integer "assignment_id", null: false
+    t.integer "interlock_id", null: false
     t.boolean "submissions_allowed", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
