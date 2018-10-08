@@ -286,7 +286,7 @@ class AssignmentsController < ApplicationController
 
   def update_section_toggles
     toggle_params = params.permit(:assignment_id, :state, :submission_enabled_toggle_id)
-    toggle = SubmissionEnabledToggle.where(id: toggle_params[:submission_enabled_toggle_id]).first
+    toggle = SubmissionEnabledToggle.find_by(id: toggle_params[:submission_enabled_toggle_id])
     if toggle.nil?
       render json: {not_found: true}, status: 404
       return
