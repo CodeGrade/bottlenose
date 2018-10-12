@@ -5,7 +5,7 @@ function toggles_init() {
     e.stopPropagation(); // calling bootstrapToggle on the toggle itself fires the 'change' event, so the wrapper is necessary to change the toggle's value without firing the event
     var toggle = $(this).find('.submission-enabled-toggle')[0];
     var toggleId = $(toggle).data("stid");
-    var data = {state: !toggle.checked}; // attemp to flip
+    var data = {state: !toggle.checked}; // attempt to flip
     function complete(xhr, status) {
       if (xhr.status == 409) {
         alert("That section was toggled by another user. Toggles have been updated to match the current state.");

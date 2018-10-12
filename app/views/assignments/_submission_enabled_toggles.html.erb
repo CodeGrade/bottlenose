@@ -4,15 +4,13 @@
 <div class="col-sm-12">
   <p><b>By <%= section_type %></b></p>
   <% toggles.each do |section, toggle| %>
-  <label style="font-weight: normal;">
-    <span class="toggle-wrapper" id="toggle-wrapper-<%=toggle.id%>">
-      <%= check_box_tag "allow-#{toggle.id}", nil,
-          toggle.submissions_allowed,
-          data: {toggle: "toggle", on: "Enabled", off: "Disabled", stid: toggle.id},
-          class: "submission-enabled-toggle" %>
-    </span>
-    <%= section.to_s %>
-  </label>
+  <span class="toggle-wrapper" id="toggle-wrapper-<%=toggle.id%>">
+    <%= check_box_tag "allow-#{toggle.id}", nil,
+        toggle.submissions_allowed,
+        data: {toggle: "toggle", on: "Enabled", off: "Disabled", stid: toggle.id},
+        class: "submission-enabled-toggle" %>
+  </span>
+  <%= section.to_s %>
   <% end %>
 </div>
 <% end %>
