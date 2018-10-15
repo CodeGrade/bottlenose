@@ -1,9 +1,9 @@
 <% unless @toggles.empty? %>
 <p><b>Toggle section availability:</b></p>
-<% @toggles.each do |section_type, toggles| %>
+<% @toggles.sort_by(&:first).each do |section_type, toggles| %>
 <div class="col-sm-12">
   <p><b>By <%= section_type %></b></p>
-  <% toggles.each do |section, toggle| %>
+  <% toggles.sort_by{|s, _| s.crn}.each do |section, toggle| %>
   <p>
     <span class="toggle-wrapper" id="toggle-wrapper-<%=toggle.id%>">
       <%= check_box_tag "allow-#{toggle.id}", nil,

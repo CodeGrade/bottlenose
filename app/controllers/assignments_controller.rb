@@ -285,25 +285,26 @@ class AssignmentsController < ApplicationController
   end
 
   def update_section_toggles
-    toggle_params = params.permit(:assignment_id, :state, :submission_enabled_toggle_id)
-    toggle = SubmissionEnabledToggle.find_by(id: toggle_params[:submission_enabled_toggle_id])
+    toggle_params = params.permit(:assignment_id, :course_id, :state, :submission_enabled_toggle_id)
+    all_toggles = SubmissionEnabledToggle.where(assignment_id: toggle_params[:assignment_id]).map{|t| [t.id, t]}.to_h
+    toggle_id = toggle_params[:submission_enabled_toggle_id].to_i
+    toggle = all_toggles[toggle_id]
     if toggle.nil?
-      render json: {not_found: true}, status: 404
+      render json: {not_found: true, changes: []}, status: 404
       return
     end
     requested_state = toggle_params[:state] == "true"
     if toggle.submissions_allowed == requested_state
-      all_toggles = SubmissionEnabledToggle.where(assignment_id: toggle_params[:assignment_id])
       result = []
-      all_toggles.each do |toggle|
-        new_state = toggle.submissions_allowed ? "on" : "off"
-        result << {id: toggle.id, state: new_state}
+      all_toggles.each do |t_id, t|
+        new_state = t.submissions_allowed
+        result << {id: t.id, state: new_state}
       end
-      render json: result, status: 409 # conflict
+      render json: {changes: result}, status: 409 # conflict
       return
     else
       toggle.update_attributes(submissions_allowed: requested_state)
-      render json: {updated: true}
+      render json: {changes: [{id: toggle.id, state: requested_state}], updated: true}
       return
     end
   end
