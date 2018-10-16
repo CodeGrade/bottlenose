@@ -104,8 +104,8 @@ class SubmissionsController < ApplicationController
     
     @submission_prohibited = @assignment.submission_prohibited(@submission, @staff_override)
     if @submission_prohibited
-      redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                    alert: @submission_prohibited
+      redirect_to course_assignment_path(@course, @assignment),
+        alert: @submission_prohibited
       return
     end
 
