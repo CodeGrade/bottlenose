@@ -812,4 +812,102 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert_redirected_to [@cs101, "assignments"]
   end
 
+  ##################################################
+  # SubmissionEnabledToggles and interlocks
+  ##################################################
+  test "should not allow two check_section_toggles interlocks on create" do
+    sign_in(@fred)
+    post :create, params: {
+      course_id: @cs101.id,
+      assignment: {
+        teamset_plan: "none",
+        assignment: "Dance a jig.",
+        points_available: 100,
+        name: "Useful Work",
+        due_date: '2019-05-22',
+        available: '2011-05-22',
+        type: "Files",
+        graders_attributes: {
+          "1477181088065"=> {
+            "type"=>"ManualGrader",
+            "avail_score"=>"50",
+            "order"=>"1",
+            "_destroy"=>"false",
+          }
+        },
+        interlocks_attributes: {
+          "1539721230721" => {
+            "constraint"=>"check_section_toggles"
+          },
+          "1539721230722" => {
+            "constraint"=>"check_section_toggles"
+          }
+        },
+        lateness_config_attributes: {
+          "type"=>"LatePerHourConfig",
+          "frequency"=>"1",
+          "percent_off"=>"25",
+          "max_penalty"=>"100",
+          "days_per_assignment"=>"22"
+        },
+      }
+    }
+    assert_response 400
+    @assn = assigns(:assignment)
+    assert_equal(["Can only have one section-based interlock"], @assn.errors.full_messages)
+  end
+
+  test "should not allow two check_section_toggles interlocks on update" do
+    sign_in(@fred)
+    post :create, params: {
+      course_id: @cs101.id,
+      assignment: {
+        teamset_plan: "none",
+        assignment: "Dance a jig.",
+        points_available: 100,
+        name: "Useful Work",
+        due_date: '2019-05-22',
+        available: '2011-05-22',
+        type: "Files",
+        graders_attributes: {
+          "1477181088065"=> {
+            "type"=>"ManualGrader",
+            "avail_score"=>"50",
+            "order"=>"1",
+            "_destroy"=>"false",
+          }
+        },
+        interlocks_attributes: {
+          "1539721230721" => {
+            "constraint"=>"check_section_toggles"
+          }
+        },
+        lateness_config_attributes: {
+          "type"=>"LatePerHourConfig",
+          "frequency"=>"1",
+          "percent_off"=>"25",
+          "max_penalty"=>"100",
+          "days_per_assignment"=>"22"
+        },
+      }
+    }
+    assert_response 302
+    @assn = assigns(:assignment).becomes(Assignment)
+    assert_redirected_to [@cs101, @assn]
+
+    put :update, params: {
+      id: @assn.id,
+      course_id: @cs101.id,
+      assignment: {
+        interlocks_attributes: {
+          "1539721230722" => {
+            "constraint"=>"check_section_toggles"
+          }
+        },
+      }
+    }
+    assert_response 400
+    @assn = assigns(:assignment)
+    assert_equal(["Can only have one section-based interlock"], @assn.errors.full_messages)
+  end
 end
