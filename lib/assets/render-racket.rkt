@@ -114,6 +114,13 @@
                                                find-first-snip)
                                          text))
            (display (add-text (get-output-string text)) out)]
+          [(equal? snip-name (format "~s" '((lib "collapsed-snipclass.ss" "framework")
+                                            (lib "collapsed-snipclass-wxme.ss" "framework"))))
+           ;; Display collapsed-snips in collapsed form isn't good for grading:
+           ;; it hides code, and could hide badly long lines.  So,
+           ;; expand the snip to its hidden pieces, instead.
+           (for ([kid (in-list (send snip get-saved-snips))])
+             (display-all kid out))]
           ;; [(equal? (send (send snip get-snipclass) get-classname)
           ;;            "wxmedia")
           ;;    (displayln "WXMEDIA")

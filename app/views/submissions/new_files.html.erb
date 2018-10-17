@@ -37,14 +37,22 @@
 <div class="form-group">
   <%= f.label :upload_file %>
   <div class="hidden alert alert-warning" id="archive-warning">
+    <p class="archive-only text-danger"><b>Your selected file is in an unsupported archive format.</b></p>
     <p>If your homework requires submitting multiple files:</p>
     <ul>
-      <li>Please archive them and submit either a <code>.zip</code>,
-        a <code>.tar</code>, a <code>.tar.gz</code> or
-        a <code>.tgz</code> file.</li>
-      <li>Other archive formats (e.g. <code>.rar</code>, <code>.jar</code>,
+      <li class="archive-only text-danger bg-danger">Please archive them and submit either
+        a <code>.zip</code>, a <code>.tar</code>,
+        a <code>.tar.gz</code> or a <code>.tgz</code> file.</li>
+      <li class="archive-only text-danger bg-danger">Other archive formats
+        (e.g. <code>.rar</code>, <code>.jar</code>,
         <code>7z</code> and others) are <i><b>not</b></i> supported,
         and will not be extracted.</li>
+      <li>Your archive may be no larger than
+        <b><%= @course.sub_max_size %>MB</b>, may contain no more than
+        <b><%= ArchiveUtils.MAX_FILES %> files and directories (total)</b>,
+        and may be no larger than
+        <b><%= ArchiveUtils.MAX_SIZE / 1.megabyte %>MB</b>
+        when extracted.</li>
       <li>Please check that the directory structure of your submission
         matches any requirements specified by the assignment.</li>
       <li>Make sure that your archive is <i><b>not</b></i>
@@ -75,8 +83,13 @@
   var archiveExtensions = <%= raw json_escape(JSON.generate(ArchiveUtils.ARCHIVE_EXTENSIONS)) %>;
   $("#submission_upload_file").change(function(e) {
     var filename = $(this).val();
-    if (archiveExtensions[filename.split('.').pop().toLowerCase()] === false) {
+    var ext = filename.split('.').pop().toLowerCase();
+    if (archiveExtensions[ext] === false) {
       $("#archive-warning").removeClass("hidden");
+      $("#archive-warning .archive-only").removeClass("hidden");
+    } else if (archiveExtensions[ext] === true) {
+      $("#archive-warning").removeClass("hidden");
+      $("#archive-warning .archive-only").addClass("hidden");
     } else {
       $("#archive-warning").addClass("hidden");
     }
