@@ -897,36 +897,7 @@ class AssignmentsControllerTest < ActionController::TestCase
   end
 
   test "should not allow two check_section_toggles interlocks on update" do
-    grader = Grader.create(
-      type: "ManualGrader",
-      avail_score: 50,
-      order: 1
-    )
-    lateness = LatenessConfig.create(
-      type: "LatePerHourConfig",
-      frequency: "1",
-      percent_off: "25",
-      max_penalty: "100",
-      days_per_assignment: "22"
-    )
-    teamset = Teamset.create(
-      course: @cs101,
-      name: "cs101 teamset"
-    )
-    @assn = Assignment.create(
-      course: @cs101,
-      blame: @fred,
-      teamset_plan: "none",
-      assignment: "Dance a jig.",
-      points_available: 100,
-      name: "Useful Work",
-      due_date: '2019-05-22',
-      available: '2011-05-22',
-      type: "Files",
-      graders: [grader],
-      lateness_config: lateness,
-      teamset: teamset
-    )
+    @assn = create(:assignment, course: @cs101, teamset: @ts1)
 
     @lock = Interlock.new(
       constraint: "check_section_toggles",
