@@ -857,7 +857,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert_equal(["Can only have one section-based interlock"], @assn.errors.full_messages)
   end
 
-  test "should not allow two check_section_toggles interlocks on update" do
+  test "creating an assignment with one check_section_toggles interlock works" do
     sign_in(@fred)
     post :create, params: {
       course_id: @cs101.id,
@@ -894,13 +894,54 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert_response 302
     @assn = assigns(:assignment).becomes(Assignment)
     assert_redirected_to [@cs101, @assn]
+  end
 
+  test "should not allow two check_section_toggles interlocks on update" do
+    grader = Grader.create(
+      type: "ManualGrader",
+      avail_score: 50,
+      order: 1
+    )
+    lateness = LatenessConfig.create(
+      type: "LatePerHourConfig",
+      frequency: "1",
+      percent_off: "25",
+      max_penalty: "100",
+      days_per_assignment: "22"
+    )
+    teamset = Teamset.create(
+      course: @cs101,
+      name: "cs101 teamset"
+    )
+    @assn = Assignment.create(
+      course: @cs101,
+      blame: @fred,
+      teamset_plan: "none",
+      assignment: "Dance a jig.",
+      points_available: 100,
+      name: "Useful Work",
+      due_date: '2019-05-22',
+      available: '2011-05-22',
+      type: "Files",
+      graders: [grader],
+      lateness_config: lateness,
+      teamset: teamset
+    )
+
+    @lock = Interlock.new(
+      constraint: "check_section_toggles",
+      assignment: @assn,
+      related_assignment: @assn
+    )
+    assert @lock.save
+
+    sign_in(@fred)
     put :update, params: {
       id: @assn.id,
       course_id: @cs101.id,
       assignment: {
         interlocks_attributes: {
-          "1539721230722" => {
+          "1539721230726" => {
             "constraint"=>"check_section_toggles"
           }
         },
