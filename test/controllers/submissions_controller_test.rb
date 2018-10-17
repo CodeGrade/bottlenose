@@ -112,4 +112,61 @@ class SubmissionsControllerTest < ActionController::TestCase
     get :show, params: {id: @john_hello, course_id: @cs101.id, assignment_id: @hello.id }
     assert_response :success
   end
+
+  test "a user with no enabled sections should not be able to submit" do
+    @lock = Interlock.create(
+      constraint: "check_section_toggles",
+      assignment: @hello,
+      related_assignment: @hello
+    )
+
+    upload = fixture_file_upload(
+      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+
+    sign_in @john
+
+    post :create, params: {
+      course_id: @cs101.id, 
+      assignment_id: @hello.id,
+      submission: {
+        type: "FilesSub",
+        student_notes: "@@@skip tests@@@",
+        file_name: "HelloWorld.tgz",
+        upload_file: upload },
+    }
+    prohib = assigns(:submission_prohibited)
+    assert_equal prohib, "Submissions are not currently enabled for your section"
+    assert_equal prohib, flash[:alert]
+    assert_redirected_to [@cs101, @hello]
+  end
+
+  test "a user with one enabled section should be able to submit" do
+    @lock = Interlock.create(
+      constraint: "check_section_toggles",
+      assignment: @hello,
+      related_assignment: @hello
+    )
+
+    @lock.submission_enabled_toggles.first.update_attribute(:submissions_allowed, true)
+
+    upload = fixture_file_upload(
+      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+
+    sign_in @john
+
+    post :create, params: {
+      course_id: @cs101.id, 
+      assignment_id: @hello.id,
+      submission: {
+        type: "FilesSub",
+        student_notes: "@@@skip tests@@@",
+        file_name: "HelloWorld.tgz",
+        upload_file: upload },
+    }
+    sub = assigns(:submission).becomes(Submission)
+    prohib = assigns(:submission_prohibited)
+    assert_not prohib
+    assert_equal flash[:notice], "Submission was successfully created."
+    assert_redirected_to [@cs101, @hello, sub]
+  end
 end
