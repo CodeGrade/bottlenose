@@ -413,7 +413,7 @@ class SubmissionsController < ApplicationController
     if (@submission.save_upload(prof_overrides) && @submission.save)
       @submission.set_used_sub!
       @submission.create_grades!
-      @submission.autograde!
+      @submission.autograde!(true)
       path = course_assignment_submission_path(@course, @assignment, @submission)
       redirect_to(path, notice: 'Submission was successfully created.')
     else

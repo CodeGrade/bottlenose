@@ -24,6 +24,10 @@
       <% @queue_stats.each do |_, job| %>
       <p>Grading <%= job[:grader_type] %> for <%= link_to "#{job[:user_name]}",
              course_assignment_submission_path(job[:course], job[:assn], job[:sub]) %>
+        <% priority = job.dig(:opts, :prio)
+           if priority %>
+        with priority <%= priority %>
+        <% end %>
         (<%= job[:wait_s] %>)
       </p>
       <% end %>
