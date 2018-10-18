@@ -22,12 +22,22 @@
 
 <% grades_info = @student_info.map do |u|
       sub = used_subs[u.id]&.first
-      grades = @grade_comments[sub.id] if sub
-      grades = (0..col_count - 1).map{|i| grades[i].weight } if grades
-      curve = grades&.dig(flat_questions.count)&.weight
-      score = grades&.sum
-      { nuid: u.nuid, sub_id: sub&.id, name: u.name, grades: grades, score: score, curve: curve }
-    end
+      if sub.nil?
+        nil
+      else 
+        grades = @grade_comments[sub.id]
+        if grades.slice(*(0...col_count)).empty?
+          curve = grades.dig(flat_questions.count).weight
+          grades = []
+          score = nil
+        else
+          curve = grades.dig(flat_questions.count).weight
+          grades = (0..col_count - 1).map{|i| grades[i].weight }
+          score = grades.sum
+        end
+        { nuid: u.nuid, sub_id: sub&.id, name: u.name, grades: grades, score: score, curve: curve }
+      end
+    end.compact
 %>
 
 <div class="row">
