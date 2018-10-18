@@ -86,10 +86,14 @@ class SchemaChecker
           if refinement.is_a? Array
             lo = get_number(parent, refinement[0])
             hi = get_number(parent, refinement[1])
-            if lo <= val_clean && val_clean <= hi
-              []
+            if lo && hi
+              if lo <= val_clean && val_clean <= hi
+                []
+              else
+                ["#{make_path}: Expected a float in the range [#{lo}, #{hi}], but got #{elide(val, 2)}"]
+              end
             else
-              ["#{make_path}: Expected a float in the range [#{lo}, #{hi}], but got #{elide(val, 2)}"]
+              []
             end
           else
             []
