@@ -243,8 +243,8 @@ class Submission < ApplicationRecord
     else
       if config.autograde?
         # Students will have their delayed jobs de-prioritized based on how many submissions
-        # they've spammed the system with in the past hour
-        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
+        # they've spammed the system with in the past fifteen minutes
+        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 15.minutes).count
         config.autograde!(assignment, self, num_recent_attempts)
         true
       else
@@ -272,8 +272,8 @@ class Submission < ApplicationRecord
     num_recent_attempts =
       if delay
         # Students will have their delayed jobs de-prioritized based on how many submissions
-        # they've spammed the system with in the past hour
-        assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
+        # they've spammed the system with in the past fifteen minutes
+        assignment.submissions_for(user).where("created_at > ?", Time.now - 15.minutes).count
       else
         0
       end
