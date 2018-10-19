@@ -1,6 +1,6 @@
 require 'clamp'
 class QuestionsGrader < Grader
-  def autograde!(assignment, sub)
+  def autograde!(assignment, sub, prio = 0)
     g = self.grade_for sub
 
     g.out_of = self.avail_score
