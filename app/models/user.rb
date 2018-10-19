@@ -106,7 +106,7 @@ class User < ApplicationRecord
                                            "-resize", "200x300",
                                            "-delete", "1--1", # ignore all but the first frame of gifs
                                            "-define", "jpeg:extent=50KB",
-                                           "-auto-rotate",
+                                           "-auto-orient",
                                            "jpg:#{new_file}")
       if status.success?
         self.profile_path = new_file
