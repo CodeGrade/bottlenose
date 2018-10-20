@@ -33,11 +33,15 @@ GoogleCharts.load('corechart', function() {
     timeTicks.push({v: i, f: makeFriendlyDate(allTimes[i].time)});
   var options = {
     title: 'Submission time distribution',
-    legend: { position: 'none' },
+    legend: { position: 'in' },
     colors: [colors[0], colors[10]],
     interpolateNulls: false,
     focusTarget: 'category',
     lineWidth: 3,
+    series: {
+      0: { labelInLegend: "All (<%= allSubs.count %>)" },
+      1: { labelInLegend: "Used (<%= usedSubs.count %>)" }
+    },
     hAxis: {
       title: 'Submission time',
       baseline: 0,
