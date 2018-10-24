@@ -1,5 +1,4 @@
 class UsersController < ApplicationController
-  before_action :require_current_user
   before_action :require_site_admin, only: [:index]
   def index
     @users = User.order(:name)

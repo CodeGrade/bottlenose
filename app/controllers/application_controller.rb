@@ -61,6 +61,11 @@ ERROR
   end
 
   def require_site_admin
+    if current_user.nil?
+      session[:next] = request.fullpath
+      redirect_to root_path, alert: "You need to log in first."
+      return
+    end
     unless current_user_site_admin?
       redirect_to root_path, alert: "Must be an admin."
       return
