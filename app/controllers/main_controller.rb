@@ -9,6 +9,11 @@ class MainController < ApplicationController
     if current_user
       if (current_user.sign_in_count == 1 && (current_user.profile.to_s.empty? || current_user.nickname.to_s.empty?))
         redirect_to edit_user_path(current_user), notice: profile_notice
+      elsif session[:next]
+        redir = session[:next]
+        session[:next] = nil
+        redirect_to redir
+        return
       else
         @teams = multi_group_by(current_user.teams.includes(:users).order(end_date: :desc, id: :asc),
                                 [:course_id, :teamset_id])

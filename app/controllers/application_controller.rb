@@ -71,6 +71,7 @@ ERROR
   # logged in.
   def require_current_user
     if current_user.nil?
+      session[:next] = request.fullpath
       redirect_to root_path, alert: "You need to log in first."
       return
     end
