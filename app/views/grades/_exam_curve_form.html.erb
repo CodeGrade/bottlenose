@@ -31,7 +31,7 @@
           grades = []
           score = nil
         else
-          curve = grades.dig(flat_questions.count).weight
+          curve = grades.dig(flat_questions.count)&.weight
           grades = (0..col_count - 1).map{|i| grades[i].weight }
           score = grades.sum
         end
