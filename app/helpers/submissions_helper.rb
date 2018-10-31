@@ -38,7 +38,12 @@ module SubmissionsHelper
   def check_questions_schema(questions, answers, questions_count, related_files = nil)
     questions.keys.each_with_index do |sub_id, sub_num|
       questions[sub_id].zip(answers[sub_id]).each_with_index do |(q, a), i|
-        prefix = "Section #{sub_num + 1}, question #{i + 1}"
+        if q["sectionName"]
+          prefix = "Section `#{q["sectionName"]}`"
+        else
+          prefix = "Section #{sub_num + 1}"
+        end
+        prefix = "#{prefix}, question #{i + 1}"
         if a.nil? || a["main"].nil?
           self.errors.add(:base, "#{prefix} is missing an answer")
           next
@@ -82,9 +87,9 @@ module SubmissionsHelper
                     file = related_files&.dig(sub_id.to_i)&.find{|f| f[:link] == ap["file"].to_s}
                     line_num = (Integer(ap["line"]) rescue nil)
                     if file.nil? || line_num.nil?
-                      self.errors.add(:base, "#{prefix} part #{j + 1} has an invalid code-tag")
+                      self.errors.add(:base, "#{prefix}, part #{j + 1} has an invalid code-tag")
                     elsif (line_num < 1 || line_num > file[:contents].lines.count)
-                      self.errors.add(:base, "#{prefix} part #{j + 1} has an invalid line number")
+                      self.errors.add(:base, "#{prefix}, part #{j + 1} has an invalid line number")
                     end
                   end
                 else
