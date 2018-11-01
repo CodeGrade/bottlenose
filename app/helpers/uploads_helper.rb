@@ -33,6 +33,20 @@ module UploadsHelper
       end
     end
 
+    create_handler :md do |extracted_path, f|
+      converted_path = extracted_path.dirname.join("converted")
+      output_path = f.to_s.gsub(extracted_path.to_s, converted_path.to_s)
+      Pathname.new(output_path).dirname.mkpath
+      orig_content = File.read(f)
+      content = Kramdown::Document.new(orig_content, input: 'GFM',
+                                       hard_wrap: false,
+                                       math_engine_opts: {preview: true, preview_as_code: true})
+      sanitized = ActionController::Base.helpers.sanitize(content.to_html,
+                                                          scrubber: SubmissionsHelper::MarkupScrubber.new)
+      File.open(output_path, "w") do |f|
+        f.write sanitized
+      end
+    end
 
     create_handler :rtf do |extracted_path, f|
       return false unless (File.read(f, 6) == "{\\rtf1" rescue false)

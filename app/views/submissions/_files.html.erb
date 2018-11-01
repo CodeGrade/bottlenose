@@ -110,12 +110,25 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
       </div>
     </div>
     <div id="markup_markdown_<%= i %>_<%= root %>" class="tab-pane nested" style="position: relative;">
-      <div id="iframe_<%= i %>_<%= root %>" style="border: 0px; width: 100%; height: 100%; overflow: scroll;">
-        <%= content = Kramdown::Document.new(f[:contents], input: 'GFM',
-                                            hard_wrap: false,
-                                            math_engine_opts: {preview: true, preview_as_code: true})
-            sanitize(content.to_html, scrubber: SubmissionsHelper::MarkupScrubber.new) %>
-      </div>
+      <script>
+        (function() {
+          var iframe = document.createElement("iframe");
+          iframe.setAttribute("sandbox", "");
+          iframe.setAttribute("id", "iframe_<%= i %>_<%= root %>");
+          // get this as AJAX, so that we don't have to mess with content-dispositions
+          $.ajax({
+            type: "GET",
+            url: "<%= f[:link].gsub('/extracted/', '/converted/') %>"
+          }).done(function(content) {
+            iframe.setAttribute("srcdoc", content);
+          }).fail(function(jqXHR, status, err) {
+            iframe.setAttribute("srcdoc", "<p>Could not display preview of Markdown file</p>");
+          }).always(function() {
+            document.getElementById("markup_markdown_<%= i %>_<%= root %>").appendChild(iframe);
+            $(window).resize();
+          });
+        })();
+      </script>
     </div>
   </div>
   <% elsif (f[:type] == "application/xml") || (f[:type] == "text/html") %>
