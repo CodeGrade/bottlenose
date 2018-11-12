@@ -59,12 +59,12 @@ class TeamsetSpreadsheet < Spreadsheet
     users.each do |u|
       reg = regs[u.id]
       lecture = reg[Section::types["lecture"]]
-      row = [ sanitize(u.last_name || u.name),
+      row = [ sanitize(u.last_name || u.name || "<anonymous>"),
               sanitize(u.first_name || ""),
-              sanitize(lecture&.dig(:section)&.instructor&.last_name || ""),
-              u.nuid || "",
-              sanitize(u.username),
-              sanitize(u.email)]
+              sanitize(lecture&.dig(:section)&.instructor&.last_name || "<no instructor>"),
+              u.nuid || "<###>",
+              sanitize(u.username || "<no username>"),
+              sanitize(u.email || "<no email>")]
       course_section_types.each do |type|
         section = reg[Section::types[type]]&.fetch(:section)
         row.push(section&.crn || "")

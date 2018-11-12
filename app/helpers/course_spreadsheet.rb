@@ -150,15 +150,15 @@ class CourseSpreadsheet < Spreadsheet
     @users.each do |u|
       reg = @regs[u.id]
       lecture = reg[Section::types["lecture"]]
-      row = [ sanitize(u.last_name || u.name),
+      row = [ sanitize(u.last_name || u.name || "<anonymous>"),
               sanitize(u.first_name || ""),
-              sanitize(lecture&.dig(:section)&.instructor&.last_name || ""),
-              u.nuid || "",
-              sanitize(u.username),
-              sanitize(u.email)]
+              sanitize(lecture&.dig(:section)&.instructor&.last_name || "<no instructor>"),
+              u.nuid || "<###>",
+              sanitize(u.username || "<no username>"),
+              sanitize(u.email || "<no email>")]
       course_section_types.each do |type|
         section = reg[Section::types[type]]&.fetch(:section)
-        row.push(section&.crn || "")
+        row.push(section&.crn || "<no CRN>")
       end
       row.push(lecture&.dig(:dropped_date) || "", "", "")
       sheet.push_row(nil, row)
@@ -178,7 +178,7 @@ class CourseSpreadsheet < Spreadsheet
       subs_for_grading = UsedSub.where(assignment: assn).to_a
       assn.cache_effective_due_dates!(@users)
       
-      sheet.columns.push(Col.new((assn.extra_credit ? "(E.C.) " : "") + sanitize(assn.name), "Number"))
+      sheet.columns.push(Col.new((assn.extra_credit ? "(E.C.) " : "") + sanitize(assn.name || "Assignment #{assn.id}"), "Number"))
       @graders_count = grades.graders.count
       grades.graders.each_with_index do |g, i|
         sheet.columns.push(Col.new("", "Number")) if i > 0
@@ -287,7 +287,7 @@ class CourseSpreadsheet < Spreadsheet
     start_col = sheet.columns.count
 
     hw_cols.each do |assn, col|
-      sheet.columns.push(Col.new((assn.extra_credit ? "(E.C.) " : "") + sanitize(assn.name), "Percent"))
+      sheet.columns.push(Col.new((assn.extra_credit ? "(E.C.) " : "") + sanitize(assn.name || "Assignment #{assn.id}"), "Percent"))
       labels.push(Cell.new(assn.points_available / 100.0))
       weight.push(Cell.new(""))
 

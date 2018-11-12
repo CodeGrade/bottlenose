@@ -213,6 +213,7 @@ class Spreadsheet
   end
 
   def sanitize(str)
+    return "" unless str.is_a? String
     str.gsub(/^\s*[-+=@]+/, "").strip
   end
 
