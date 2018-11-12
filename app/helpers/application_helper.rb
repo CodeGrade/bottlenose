@@ -243,8 +243,11 @@ module ApplicationHelper
     when ".mp3"
       "audio/mpeg"
     else
-      if File.basename(full_path.to_s) == "Makefile"
+      case File.basename(full_path.to_s).downcase
+      when "makefile"
         "text/x-makefile"
+      when "readme"
+        "text/plain"
       else
         "text/unknown"
       end
