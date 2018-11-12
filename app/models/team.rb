@@ -57,7 +57,7 @@ class Team < ApplicationRecord
 
   def used_submissions
     Submission.joins("INNER JOIN used_subs ON submissions.id = used_subs.submission_id")
-      .where(team: self)
+      .where(team: self).distinct
   end
 
   private
