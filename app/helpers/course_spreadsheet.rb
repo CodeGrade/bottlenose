@@ -91,7 +91,7 @@ class CourseSpreadsheet < Spreadsheet
         end
         if sub.nil?
           questions.each do |g| sheet.push_row(i, "") end
-          sheet.push_row(i, [0, "No submission"])
+          sheet.push_row(i, ["No submission", "No submission"])
           curved = Cell.new(nil,
                             CellRef.new(nil,
                                         Spreadsheet.col_name(weight.count - 3), true, i + sheet.header_rows.length + 2, false,
@@ -308,11 +308,11 @@ class CourseSpreadsheet < Spreadsheet
           joined_date = user_regs.values.map{|r| r[:joined_date]}.min
           dropped_date = user_regs.values.map{|r| r[:dropped_date]}.min
           if joined_date && assn.due_date <= joined_date
-            sheet.push_row(i, [0, "Late registration", "Late registration", "Late registration"])
+            sheet.push_row(i, ["Late registration", "Late registration", "Late registration", "Late registration"])
           elsif dropped_date && assn.due_date >= dropped_date
-            sheet.push_row(i, [0, "Dropped", "Dropped", "Dropped"])
+            sheet.push_row(i, ["Dropped", "Dropped", "Dropped", "Dropped"])
           else
-            sheet.push_row(i, [0, "No submission", 0, 0])
+            sheet.push_row(i, ["No submission", "No submission", 0, 0])
           end
         else
           plagiarism_status = grades.plagiarism_status[sub_id.submission_id]
