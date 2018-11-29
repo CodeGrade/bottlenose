@@ -139,6 +139,13 @@ div.grader-config {
    }
 }
 
+@media(max-width: $screen-sm-max) {
+    .topmost {
+        position: relative;
+        z-index: 1000;
+    }
+}
+
 .panel-tab-pane {
     border: 1px solid $table-border-color;
     border-radius: 5px;

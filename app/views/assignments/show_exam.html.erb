@@ -9,7 +9,7 @@
 
 <% cur_reg = current_user.registration_for(@course) %>
 <% if cur_reg&.professor? %>
-<p class="pull-right">
+<p class="pull-right topmost">
   <%= link_to "Edit Assignment",
       edit_course_assignment_path(@course, @gradesheet.assignment), class: "btn btn-default" %>
 </p>
