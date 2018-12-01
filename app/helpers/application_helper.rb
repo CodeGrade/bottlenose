@@ -234,7 +234,7 @@ module ApplicationHelper
       "text/html"
     when ".css"
       "text/css"
-    when ".tap", ".txt"
+    when ".tap", ".txt", ".text"
       "text/plain"
     when ".pdf"
       "application/pdf"

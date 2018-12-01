@@ -1,3 +1,4 @@
+<% @@MAX_LINES = 10000 %>
 <%= javascript_include_tag "pdfjs-dist/build/pdf.min.js" %>
 <%= javascript_include_tag "pdfjs-dist/web/pdf_viewer.js" %>
 <style>
@@ -20,7 +21,7 @@
   display: flex;
   flex-direction: column;
 }
-.flexV > .warningContent + *, .nested-tabs > ul + * {
+.flexV > .warningContent + *, .nested-tabs > ul + *, .tab-pane.nested > div.contentTooLong {
   flex: 1;
   overflow-y: scroll;
 }
@@ -80,11 +81,22 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </ul>
   <div class="tab-content" style="height: 100%;">
     <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">
+      <% if f[:contents].lines.length > @@MAX_LINES %>
+      <div class="contentTooLong">
+        <div class="warningContent" data-source="<%= f[:link] %>">
+          <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
+          <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+          <textarea style="display: none;" data-source="<%= f[:link] %>"
+                    id="contents_<%= i %>_<%= root %>"><%= render html: f[:contents] %></textarea>
+        </div>
+      </div>
+      <% else %>
       <div>
         <textarea class="sourceCode" data-lang="markdown"
                   data-source="<%= f[:link] %>"
                   id="contents_<%= i %>_<%= root %>"><%= render html: f[:contents] %></textarea>
       </div>
+      <% end %>
     </div>
     <div id="markup_markdown_<%= i %>_<%= root %>" class="tab-pane nested" style="position: relative;">
       <% content = Kramdown::Document.new(f[:contents], input: 'GFM', hard_wrap: false, 
@@ -122,11 +134,22 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </ul>
   <div class="tab-content" style="height: 100%;">
     <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">
+      <% if contents.lines.length > @@MAX_LINES %>
+      <div class="contentTooLong">
+        <div class="warningContent" data-source="<%= f[:link] %>">
+          <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
+          <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+          <textarea style="display: none;" data-source="<%= f[:link] %>"
+                    id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
+        </div>
+      </div>
+      <% else %>
       <div>
         <textarea class="sourceCode" data-lang="<%= f[:type] %>"
                   data-source="<%= f[:link] %>"
                   id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
       </div>
+      <% end %>
     </div>
     <div id="markup_image_<%= i %>_<%= root %>" class="tab-pane nested" style="position: relative;">
       <div style="position: absolute; z-index: 1; box-sizing: border-box; top: 0; bottom: 0; left: 0; right: 0;">
@@ -178,7 +201,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   <% elsif ApplicationHelper::binary?(f[:type]) %>
   <div class="nonCMwrapper flexV">
     <div class="warningContent" data-source="<%= f[:link] %>">
-    <%= link_to "Download #{f[:name]}", f[:link] %>
+    <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
     </div>
   </div>
   <% elsif f[:type] == "symlink" %>
@@ -189,7 +212,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
     <%= link_to f[:link_to], f[:link_href], class: "symlink-jump", data: {root: root} %>
     <% end %>
   </div>
-  <% elsif f[:contents].lines.length > 10000 %>
+  <% elsif f[:contents].lines.length > @@MAX_LINES %>
   <div class="nonCMwrapper flexV">
     <div class="warningContent" data-source="<%= f[:link] %>">
     <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
