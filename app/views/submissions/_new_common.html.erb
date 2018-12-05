@@ -39,20 +39,27 @@
   </div>
   <% else %>
     <% @accept_inputs = true %>
-    <% if DateTime.current > @assignment.effective_due_date(current_user, @team) && @staff_override %>
+    <% if @staff_override %>
     <div class="alert alert-info">
-      <p>You are <%= type[:gerund] %> on behalf of a student.  Should
-        this <%= type[:noun] %>
-        be exempt from lateness penalties?
+      <p>
+        You are <%= type[:gerund] %> on behalf of a student.
+        <% if DateTime.current > @assignment.effective_due_date(current_user, @team) %>
+        Should this <%= type[:noun] %> be exempt from lateness penalties?
         <%= f.check_box :ignore_late_penalty, :checked => "checked",
         data: {toggle: "toggle", on: "Yes", off: "No"} %>
+        <% else %>
+        It is before the deadline, so this submission will be
+        considered on-time.
+        <% end %>
       </p>
       <div class="row">
+        <% if DateTime.current > @assignment.effective_due_date(current_user, @team) %>
         <div class="col-sm-6">
           <p>If lateness is not ignored, this <%= type[:noun] %> should claim to
             have been submitted at:</p>
           <%= f.text_field :created_at, class: 'form-control', disabled: "disabled" %>
         </div>
+        <% end %>
         <div class="col-sm-6" style="padding-top: 1em;">
           <div class="col-md-6">Waive file-size limits?
             <%= check_box_tag "override_size", true, false, data: {toggle: "toggle", on: "Yes", off: "No" } %></div>
