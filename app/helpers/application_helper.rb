@@ -132,7 +132,22 @@ module ApplicationHelper
                 ].flatten.join("\n").html_safe)
   end
   
+  def code_textarea(str, options = {})
+    # Within textareas, the initial newline is ignored
+    # (https://w3c.github.io/html/syntax.html#restrictions-on-content-models)
+    # so to handle files that start with whitespace, we have to be a bit careful.
 
+    # The content_tag function will implicitly add a newline always, and using
+    # a helper renderer function (as opposed to writing a <textarea> tag directly),
+    # avoids any confusion of how to use it
+
+    # The string will be rendered to html (to escape any special characters),
+    # unless it's already been explicitly marked as html_safe.
+    str = render(html: str) unless str.html_safe?
+    content_tag(:textarea, str, options)
+  end
+
+  
   
   def registration_show_toggle_path(reg_id)
     "/registrations/#{reg_id}/toggle_show"

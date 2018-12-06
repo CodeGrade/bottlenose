@@ -1,12 +1,6 @@
 <% @@MAX_LINES = 10000 %>
 <%= javascript_include_tag "pdfjs-dist/build/pdf.min.js" %>
 <%= javascript_include_tag "pdfjs-dist/web/pdf_viewer.js" %>
-<% def render_textarea(str)
-      # Within textareas, the initial newline is ignored
-      # so to handle files that start with blank lines, ensure we add
-      # a newline in a uniform manner
-     "\n".html_safe + render(html: str)
-   end %>
 <style>
 .embed-replaced { vertical-align: baseline; display: inline-block; }
 .embed-image { }
@@ -92,15 +86,18 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
         <div class="warningContent" data-source="<%= f[:link] %>">
           <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
           <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
-          <textarea style="display: none;" data-source="<%= f[:link] %>"
-                    id="contents_<%= i %>_<%= root %>"><%= render_textarea f[:contents] %></textarea>
+          <%= code_textarea f[:contents],
+              id: "contents_#{i}_#{root}",
+              style: "display: none;",
+              data: {source: f[:link]} %>
         </div>
       </div>
       <% else %>
       <div>
-        <textarea class="sourceCode" data-lang="markdown"
-                  data-source="<%= f[:link] %>"
-                  id="contents_<%= i %>_<%= root %>"><%= render_textarea f[:contents] %></textarea>
+        <%= code_textarea f[:contents],
+            id: "contents_#{i}_#{root}",
+            class: "sourceCode", 
+            data: {lang: "markdown", source: f[:link]} %>
       </div>
       <% end %>
     </div>
@@ -129,7 +126,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </div>
   <% elsif (f[:type] == "application/xml") || (f[:type] == "text/html") %>
   <% begin
-     contents = render_textarea f[:contents]
+     contents = render html: f[:contents]
      type = if (f[:name].ends_with? ".svg") then "SVG"
             elsif (f[:name].ends_with? ".html") then "HTML"
             else "XML" end %>
@@ -145,15 +142,18 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
         <div class="warningContent" data-source="<%= f[:link] %>">
           <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
           <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
-          <textarea style="display: none;" data-source="<%= f[:link] %>"
-                    id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
+          <%= code_textarea contents,
+              id: "contents_#{i}_#{root}",
+              style: "display: none;",
+              data: {source: f[:link]} %>
         </div>
       </div>
       <% else %>
       <div>
-        <textarea class="sourceCode" data-lang="<%= f[:type] %>"
-                  data-source="<%= f[:link] %>"
-                  id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
+        <%= code_textarea contents,
+            id: "contents_#{i}_#{root}",
+            class: "sourceCode", 
+            data: {lang: f[:type], source: f[:link]} %>
       </div>
       <% end %>
     </div>
@@ -228,11 +228,12 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   <% else %>
   <% begin
        raise "" if (f[:name].ends_with?(".class") && f[:contents].starts_with?("\xCA\xFE\xBA\xBE"))
-       contents = render_textarea f[:contents] %>
+       contents = render html: f[:contents] %>
   <div>
-    <textarea class="sourceCode" data-lang="<%= f[:type] %>"
-              data-source="<%= f[:link] %>"
-              id="contents_<%= i %>_<%= root %>"><%= contents %></textarea>
+    <%= code_textarea contents,
+        id: "contents_#{i}_#{root}",
+        class: "sourceCode",
+        data: {lang: f[:type], source: f[:link]}%>
   </div>
   <% rescue Exception => err %>
   <div class="nonCMwrapper flexV">
