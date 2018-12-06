@@ -142,7 +142,8 @@ class CourseSpreadsheet < Spreadsheet
       first_question_col = weight.count - questions.count - 4
       @sections_by_type.each_with_index do |(type, secs), sec_type_idx|
         if stats_per_section[type].nil?
-          stats_per_section[type] = [""] * (first_question_col - 2) + ["#{type.humanize} section"]
+          stats_per_section[type] =
+            [""] * (first_question_col - 2) + ["#{type.humanize} #{"section".pluralize(secs.count)}"]
           stats_rows.push stats_per_section[type]
         end
         secs.each do |sec|
@@ -204,6 +205,7 @@ class CourseSpreadsheet < Spreadsheet
           std: [""] * (first_question_col - 2),
           max: [""] * (first_question_col - 2),
         }
+        stats_rows.push []
         stats_rows.push stats_per_section["ALL"][:min]
         stats_rows.push stats_per_section["ALL"][:avg]
         stats_rows.push stats_per_section["ALL"][:std]
@@ -272,6 +274,14 @@ class CourseSpreadsheet < Spreadsheet
     labels, weight  = create_name_columns(sheet)
 
     hw_cols = []
+
+    # Skip two rows after all the user rows, to make room for stats-per-section rows
+    sheet.push_row(nil, [])
+    sheet.push_row(nil, [])
+
+    stats_per_section = {}
+    stats_rows = []
+      
 
     @course.assignments.where.not(type: ["Exam", "Questions"]).order(:due_date).each do |assn|
       used_subs = assn.all_used_subs.includes(:user, :team).references(:user, :team).to_a
@@ -375,7 +385,103 @@ class CourseSpreadsheet < Spreadsheet
           end
         end
       end
+
+      first_grader_col = weight.count - graders.count - 4
+      @sections_by_type.each_with_index do |(type, secs), sec_type_idx|
+        if stats_per_section[type].nil?
+          stats_per_section[type] =
+            [""] * (first_grader_col - 2) + ["#{type.humanize} #{"section".pluralize(secs.count)}"]
+          stats_rows.push stats_per_section[type]
+        end
+        secs.each do |sec|
+          if stats_per_section[sec.crn].nil?
+            stats_per_section[sec.crn] = {
+              min: [""] * (first_grader_col - 2),
+              avg: [""] * (first_grader_col - 2),
+              std: [""] * (first_grader_col - 2),
+              max: [""] * (first_grader_col - 2),
+            }
+            stats_rows.push stats_per_section[sec.crn][:min]
+            stats_rows.push stats_per_section[sec.crn][:avg]
+            stats_rows.push stats_per_section[sec.crn][:std]
+            stats_rows.push stats_per_section[sec.crn][:max]
+          end
+          min_row = stats_per_section[sec.crn][:min]
+          avg_row = stats_per_section[sec.crn][:avg]
+          std_row = stats_per_section[sec.crn][:std]
+          max_row = stats_per_section[sec.crn][:max]
+          
+          min_row.push(*(([""] * (first_grader_col - min_row.count - 2)) + ["#{sec.to_s(show_type: false)}", "min"]))
+          avg_row.push(*(([""] * (first_grader_col - avg_row.count - 2)) + ["", "avg"]))
+          std_row.push(*(([""] * (first_grader_col - std_row.count - 2)) + ["", "stdev"]))
+          max_row.push(*(([""] * (first_grader_col - max_row.count - 2)) + ["", "max"]))
+
+          (0 .. graders.count).each do |idx|
+            grader_values = Range.new(Spreadsheet.col_name(first_grader_col + idx), true,
+                                      sheet.header_rows.length + 2, true,
+                                      Spreadsheet.col_name(first_grader_col + idx), true,
+                                      @users.count + sheet.header_rows.length + 1, true)
+            sections_values = Range.new(Spreadsheet.col_name(6 + sec_type_idx), true,
+                                        sheet.header_rows.length + 2, true,
+                                        Spreadsheet.col_name(6 + sec_type_idx), true,
+                                        @users.count + sheet.header_rows.length + 1, true)
+
+            min_row << Cell.new(nil, Formula.new(nil, "MIN",
+                                                 Formula.new(nil, "IF",
+                                                             Formula.new(nil, "=", sections_values, sec.crn),
+                                                             grader_values, "\"\"")), true)
+            avg_row << Cell.new(nil, Formula.new(nil, "AVERAGE",
+                                                 Formula.new(nil, "IF",
+                                                             Formula.new(nil, "=", sections_values, sec.crn),
+                                                             grader_values, "\"\"")), true)
+            std_row << Cell.new(nil, Formula.new(nil, "STDEVP",
+                                                 Formula.new(nil, "IF",
+                                                             Formula.new(nil, "=", sections_values, sec.crn),
+                                                             grader_values, "\"\"")), true)
+            max_row << Cell.new(nil, Formula.new(nil, "MAX",
+                                                 Formula.new(nil, "IF",
+                                                             Formula.new(nil, "=", sections_values, sec.crn),
+                                                             grader_values, "\"\"")), true)
+          end
+        end
+      end
+      if stats_per_section["ALL"].nil?
+        stats_per_section["ALL"] = {
+          min: [""] * (first_grader_col - 2),
+          avg: [""] * (first_grader_col - 2),
+          std: [""] * (first_grader_col - 2),
+          max: [""] * (first_grader_col - 2),
+        }
+        stats_rows.push []
+        stats_rows.push stats_per_section["ALL"][:min]
+        stats_rows.push stats_per_section["ALL"][:avg]
+        stats_rows.push stats_per_section["ALL"][:std]
+        stats_rows.push stats_per_section["ALL"][:max]
+      end
+      min_row = stats_per_section["ALL"][:min]
+      avg_row = stats_per_section["ALL"][:avg]
+      std_row = stats_per_section["ALL"][:std]
+      max_row = stats_per_section["ALL"][:max]
+
+      min_row.push(*(([""] * (first_grader_col - min_row.count - 2)) + ["ALL SECTIONS", "min"]))
+      avg_row.push(*(([""] * (first_grader_col - avg_row.count - 2)) + ["", "avg"]))
+      std_row.push(*(([""] * (first_grader_col - std_row.count - 2)) + ["", "stdev"]))
+      max_row.push(*(([""] * (first_grader_col - max_row.count - 2)) + ["", "max"]))
+
+      (0 .. graders.count).each do |idx|
+        grader_values = Range.new(Spreadsheet.col_name(first_grader_col + idx), true,
+                                    sheet.header_rows.length + 2, true,
+                                    Spreadsheet.col_name(first_grader_col + idx), true,
+                                    @users.count + sheet.header_rows.length + 1, true)
+        min_row << Cell.new(nil, Formula.new(nil, "MIN", grader_values))
+        avg_row << Cell.new(nil, Formula.new(nil, "AVERAGE", grader_values))
+        std_row << Cell.new(nil, Formula.new(nil, "STDEVP", grader_values))
+        max_row << Cell.new(nil, Formula.new(nil, "MAX", grader_values))
+      end
+
     end
+
+    stats_rows.each do |r| sheet.push_row(nil, r) end
     
     return sheet, hw_cols
   end
