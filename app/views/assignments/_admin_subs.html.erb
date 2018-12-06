@@ -13,6 +13,7 @@
   #number-submissions.show_one .all { display: none; }
   #number-submissions { display: inline-block; margin-left: 2em; }
   #select-sections select { font-size: 80%; }
+  .submitter { font-weight: bold; }
 </style>
 <% end %>
 <div style="display: flex; flex-direction: row; align-items: baseline; justify-content: space-between;">
@@ -131,7 +132,11 @@
   <table id="submissions" class="table table-striped row-vcenter">
     <thead>
       <tr>
+        <% if @gradesheet.assignment.team_subs? %>
+        <th>Team (submitter in bold)</th>
+        <% else %>
         <th>Submitter</th>
+        <% end %>
         <th>Date</th>
         <th>Status</th>
 
@@ -169,8 +174,16 @@
          end
          %>
       <tr class="<%= classes %>">
-      <td><%= maybe_link_user(current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
-                            sub.user) %></td>
+        <% if @gradesheet.assignment.team_subs? %>
+        <td>
+          <%= maybe_link_team(current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
+                              current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
+                              sub.team, [[sub.user_id, "submitter"]].to_h) %>
+        </td>
+        <% else %>
+        <td><%= maybe_link_user(current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
+                                sub.user) %></td>
+        <% end %>
         <td><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
         <% scores = grade[:staff_scores] %>
         <td><%= status_image(sub, 100.0 * scores[:raw_score] / @gradesheet.max_score) %></td>

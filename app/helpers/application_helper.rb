@@ -107,18 +107,18 @@ module ApplicationHelper
   def show_user(user)
     maybe_link_user(true, user)
   end
-  def maybe_link_user(show, user)
+  def maybe_link_user(show, user, extra_class="")
     if show
-      link_to(user.display_name, user_path(user), class: "user-link", data: user_link_data(user))
+      link_to(user.display_name, user_path(user), class: "user-link #{extra_class}".strip, data: user_link_data(user))
     else
-      content_tag :span, user.name, class: "user-link", data: user_link_data(user)
+      content_tag :span, user.name, class: "user-link #{extra_class}".strip, data: user_link_data(user)
     end
   end
 
   def show_team(team)
     maybe_link_team(true, true, team)
   end
-  def maybe_link_team(show_team, show_user, team)
+  def maybe_link_team(show_team, show_user, team, highlights={})
     content_tag(:span, [
                   if show_team
                     link_to("Team #{team.id}", course_teamset_team_path(@course, team.teamset, team))
@@ -127,7 +127,7 @@ module ApplicationHelper
                   end,
                   " - ",
                   team.users.sort_by(&:sort_name).map do |u|
-                    maybe_link_user(show_user, u).html_safe
+                    maybe_link_user(show_user, u, highlights[u.id]).html_safe
                   end.to_sentence
                 ].flatten.join("\n").html_safe)
   end
