@@ -19,7 +19,11 @@ class Team < ApplicationRecord
   end
 
   def member_names
-    users.sort_by(&:sort_name).map(&:display_name).to_sentence
+    sorted_users.map(&:display_name).to_sentence
+  end
+
+  def sorted_users
+    users.sort_by(&:sort_name)
   end
 
   # If the end date of a team is not set (nil) then this team does not

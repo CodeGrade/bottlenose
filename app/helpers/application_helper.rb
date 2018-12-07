@@ -100,7 +100,7 @@ module ApplicationHelper
   def user_link_data(user)
     {
       toggle: "tooltip",
-      delay: {show:0, hide: 250},
+      delay: {show: 0, hide: 250},
       title: "#{image_tag(user_image(user), alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
     }
   end
@@ -126,7 +126,7 @@ module ApplicationHelper
                     "Team #{team.id}"
                   end,
                   " - ",
-                  team.users.sort_by(&:sort_name).map do |u|
+                  team.sorted_users.map do |u|
                     maybe_link_user(show_user, u, highlights[u.id]).html_safe
                   end.to_sentence
                 ].flatten.join("\n").html_safe)

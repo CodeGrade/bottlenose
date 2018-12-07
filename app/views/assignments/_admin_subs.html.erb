@@ -220,13 +220,22 @@
                 <span class="caret"></span>
                 <span class="sr-only">Toggle Dropdown</span>
               </button><% #
-              %><ul class="dropdown-menu">
+              %><ul class="dropdown-menu dropdown-menu-right">
                 <li><%= link_to "View active", 
                         course_assignment_submission_path(@course, @gradesheet.assignment, sub), 
                         class: "dropdown-item" %></li>
+                <% if @gradesheet.assignment.team_subs? %>
+                <li class="menu-separator"></li>
+                <% sub.team.sorted_users.each do |u| %>
+                <li><%= link_to "View all for #{u.display_name}",
+                        course_assignment_user_path(@course, @gradesheet.assignment, u),
+                        class: "dropdown-item" %></li>
+                <% end %>
+                <% else %>
                 <li><%= link_to "View all", 
                         course_assignment_user_path(@course, @gradesheet.assignment, sub.user.id), 
                         class: "dropdown-item" %></li>
+                <% end %>
               <!-- <div class="dropdown-divider"></div> -->
               </ul>
             </div>        
