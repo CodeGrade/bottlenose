@@ -147,7 +147,8 @@ class SubmissionsControllerTest < ActionController::TestCase
       related_assignment: @hello
     )
 
-    @lock.submission_enabled_toggles.first.update_attribute(:submissions_allowed, true)
+    sets = @lock.submission_enabled_toggles.to_a
+    sets.first.update_attribute(:submissions_allowed, true)
 
     upload = fixture_file_upload(
       'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
@@ -172,8 +173,11 @@ class SubmissionsControllerTest < ActionController::TestCase
 
   test "section toggles are applied like ormap" do
     @section2 = create(:section, course: @cs101, instructor: @fred, crn: 12346)
-    @cs101.reload
+    mark = create(:user, name: "Mark Mischievous", first_name: "Mark", last_name: "Mischievous")
+    create(:registration, course: @cs101, user: mark, role: Registration::roles[:student], show_in_lists: true, sections: [@section, @section2])
+    @section2.save
     @hello2 = create(:assignment, course: @cs101, teamset: @ts1)
+    @cs101.reload
 
     @lock = Interlock.create(
       constraint: "check_section_toggles",
@@ -181,13 +185,16 @@ class SubmissionsControllerTest < ActionController::TestCase
       related_assignment: @hello2
     )
 
-    @lock.submission_enabled_toggles.first.update_attribute(:submissions_allowed, true)
-    @lock.submission_enabled_toggles.second.update_attribute(:submissions_allowed, false)
+    sets = @lock.submission_enabled_toggles.to_a
+
+    sets.first.update_attribute(:submissions_allowed, false)
+    sets.second.update_attribute(:submissions_allowed, true)
+    sets.third.update_attribute(:submissions_allowed, false)
 
     upload = fixture_file_upload(
       'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
 
-    sign_in @john
+    sign_in mark
 
     post :create, params: {
       course_id: @cs101.id,
@@ -196,16 +203,17 @@ class SubmissionsControllerTest < ActionController::TestCase
         type: "FilesSub",
         student_notes: "@@@skip tests@@@",
         file_name: "HelloWorld.tgz",
-        upload_file: upload },
+        upload_file: upload
+      }
     }
     sub = assigns(:submission).becomes(Submission)
     prohib = assigns(:submission_prohibited)
+
     assert_not prohib
     assert_equal flash[:notice], "Submission was successfully created."
     assert_redirected_to [@cs101, @hello2, sub]
 
-    @lock.submission_enabled_toggles.first.update_attribute(:submissions_allowed, false)
-    @lock.submission_enabled_toggles.second.update_attribute(:submissions_allowed, false)
+    sets.second.update_attribute(:submissions_allowed, false)
     post :create, params: {
       course_id: @cs101.id,
       assignment_id: @hello2.id,
@@ -213,10 +221,11 @@ class SubmissionsControllerTest < ActionController::TestCase
         type: "FilesSub",
         student_notes: "@@@skip tests@@@",
         file_name: "HelloWorld.tgz",
-        upload_file: upload },
+        upload_file: upload
+      }
     }
     prohib = assigns(:submission_prohibited)
-    assert_equal prohib, "Submissions are not currently enabled for your section"
+    assert_equal prohib, "Submissions are not currently enabled for any of your sections"
     assert_equal prohib, flash[:alert]
     assert_redirected_to [@cs101, @hello2]
   end
