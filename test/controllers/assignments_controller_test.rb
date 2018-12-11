@@ -922,4 +922,31 @@ class AssignmentsControllerTest < ActionController::TestCase
     @assn = assigns(:assignment)
     assert_equal(["Can only have one section-based interlock"], @assn.errors.full_messages)
   end
+
+  test "flip section toggles from assignment edit page" do
+    @assn = create(:assignment, course: @cs101, teamset: @ts1)
+    @lock = Interlock.new(
+      constraint: "check_section_toggles",
+      assignment: @assn,
+      related_assignment: @assn
+    )
+    @lock.save
+    @cs101.reload
+
+    sign_in(@fred)
+    get :show, params: {id: @assn.id, course_id: @cs101.id}
+
+    sets = @lock.submission_enabled_toggles.to_a
+    sets.each do |set|
+      assert_not set.submissions_allowed
+      patch :update_section_toggles, params: {
+        assignment_id: @assn.id,
+        course_id: @cs101.id,
+        submission_enabled_toggle_id: set.id,
+        state: true
+      }, xhr: true
+      set.reload
+      assert set.submissions_allowed
+    end
+  end
 end
