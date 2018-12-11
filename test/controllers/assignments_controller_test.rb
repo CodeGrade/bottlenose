@@ -949,4 +949,35 @@ class AssignmentsControllerTest < ActionController::TestCase
       assert set.submissions_allowed
     end
   end
+
+  test "flip section toggles when they've already been flipped" do
+    @assn = create(:assignment, course: @cs101, teamset: @ts1)
+    @lock = Interlock.new(
+      constraint: "check_section_toggles",
+      assignment: @assn,
+      related_assignment: @assn
+    )
+    @lock.save
+    @cs101.reload
+
+    sign_in(@fred)
+    get :show, params: {id: @assn.id, course_id: @cs101.id}
+
+    sets = @lock.submission_enabled_toggles.to_a
+    sets.each do |set|
+      assert_not set.submissions_allowed
+      set.update_attribute(:submissions_allowed, true)
+      assert set.submissions_allowed
+      patch :update_section_toggles, params: {
+        assignment_id: @assn.id,
+        course_id: @cs101.id,
+        submission_enabled_toggle_id: set.id,
+        state: true
+      }, xhr: true
+      set.reload
+      # this should not have changed the value, since it was true and the user requested true
+      # it should just show the new values to the user
+      assert set.submissions_allowed
+    end
+  end
 end
