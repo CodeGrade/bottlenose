@@ -974,6 +974,7 @@ class AssignmentsControllerTest < ActionController::TestCase
         submission_enabled_toggle_id: set.id,
         state: true
       }, xhr: true
+      assert_response 409
       set.reload
       # this should not have changed the value, since it was true and the user requested true
       # it should just show the new values to the user
