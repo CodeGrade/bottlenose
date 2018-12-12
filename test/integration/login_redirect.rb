@@ -9,12 +9,9 @@ class LoginRedirectTest < ActionDispatch::IntegrationTest
 
   test "redirect to intended page after login" do
     get '/users'
-    assert_redirected_to root_path
-    assert_equal '/users', session[:next]
+    assert_redirected_to root_path(next: "/users")
     @fred.update_attribute(:sign_in_count, 2)
     sign_in @fred
-    get '/'
-    assert_redirected_to '/users'
-    assert_nil session[:next]
+    assert_equal users_path, request.fullpath
   end
 end
