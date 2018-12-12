@@ -61,6 +61,10 @@ ERROR
   end
 
   def require_site_admin
+    if current_user.nil?
+      redirect_to root_path(next: request.fullpath), alert: "You need to log in first."
+      return
+    end
     unless current_user_site_admin?
       redirect_to root_path, alert: "Must be an admin."
       return
@@ -71,7 +75,7 @@ ERROR
   # logged in.
   def require_current_user
     if current_user.nil?
-      redirect_to root_path, alert: "You need to log in first."
+      redirect_to root_path(next: request.fullpath), alert: "You need to log in first."
       return
     end
   end
@@ -114,6 +118,10 @@ ERROR
     devise_parameter_sanitizer.permit(:sign_up) do |user|
       user.permit(:name, :email, :username, :password, :password_confirmation)
     end
+  end
+
+  def after_sign_in_path_for(resource)
+    params[:next] || super
   end
 
   def array_from_hash(h)
