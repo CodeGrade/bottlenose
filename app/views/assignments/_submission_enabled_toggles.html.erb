@@ -1,0 +1,23 @@
+<% unless @toggles.empty? %>
+<p><b>Toggle section availability:</b></p>
+<% @toggles.sort_by(&:first).each do |section_type, toggles| %>
+<div class="col-sm-12">
+  <p><b>By <%= section_type %></b></p>
+  <% toggles.sort_by{|s, _| s.crn}.each do |section, toggle| %>
+  <p>
+    <span class="toggle-wrapper" id="toggle-wrapper-<%=toggle.id%>">
+      <%= check_box_tag "allow-#{toggle.id}", nil,
+        toggle.submissions_allowed,
+        data: {toggle: "toggle", on: "Enabled", off: "Disabled", stid: toggle.id},
+        class: "submission-enabled-toggle" %>
+    </span>
+    <%= section.to_s(show_type: false) %>
+  </p>
+  <% end %>
+</div>
+<% end %>
+<% end %>
+
+<script>
+  <%= render "submission_enabled_toggles.js" %>
+</script>

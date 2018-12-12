@@ -122,6 +122,10 @@ Bottlenose::Application.routes.draw do
           end
         end
       end
+
+      resources :submission_enabled_toggles, only: [] do
+        patch 'update' => 'assignments#update_section_toggles', as: 'update'
+      end
     end
     resources :teamsets, only: [:index, :edit, :update] do
       collection do

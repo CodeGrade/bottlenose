@@ -812,4 +812,173 @@ class AssignmentsControllerTest < ActionController::TestCase
     assert_redirected_to [@cs101, "assignments"]
   end
 
+  ##################################################
+  # SubmissionEnabledToggles and interlocks
+  ##################################################
+  test "should not allow two check_section_toggles interlocks on create" do
+    sign_in(@fred)
+    post :create, params: {
+      course_id: @cs101.id,
+      assignment: {
+        teamset_plan: "none",
+        assignment: "Dance a jig.",
+        points_available: 100,
+        name: "Useful Work",
+        due_date: '2019-05-22',
+        available: '2011-05-22',
+        type: "Files",
+        graders_attributes: {
+          "1477181088065"=> {
+            "type"=>"ManualGrader",
+            "avail_score"=>"50",
+            "order"=>"1",
+            "_destroy"=>"false",
+          }
+        },
+        interlocks_attributes: {
+          "1539721230721" => {
+            "constraint"=>"check_section_toggles"
+          },
+          "1539721230722" => {
+            "constraint"=>"check_section_toggles"
+          }
+        },
+        lateness_config_attributes: {
+          "type"=>"LatePerHourConfig",
+          "frequency"=>"1",
+          "percent_off"=>"25",
+          "max_penalty"=>"100",
+          "days_per_assignment"=>"22"
+        },
+      }
+    }
+    assert_response 400
+    @assn = assigns(:assignment)
+    assert_equal(["Can only have one section-based interlock"], @assn.errors.full_messages)
+  end
+
+  test "creating an assignment with one check_section_toggles interlock works" do
+    sign_in(@fred)
+    post :create, params: {
+      course_id: @cs101.id,
+      assignment: {
+        teamset_plan: "none",
+        assignment: "Dance a jig.",
+        points_available: 100,
+        name: "Useful Work",
+        due_date: '2019-05-22',
+        available: '2011-05-22',
+        type: "Files",
+        graders_attributes: {
+          "1477181088065"=> {
+            "type"=>"ManualGrader",
+            "avail_score"=>"50",
+            "order"=>"1",
+            "_destroy"=>"false",
+          }
+        },
+        interlocks_attributes: {
+          "1539721230721" => {
+            "constraint"=>"check_section_toggles"
+          }
+        },
+        lateness_config_attributes: {
+          "type"=>"LatePerHourConfig",
+          "frequency"=>"1",
+          "percent_off"=>"25",
+          "max_penalty"=>"100",
+          "days_per_assignment"=>"22"
+        },
+      }
+    }
+    assert_response 302
+    @assn = assigns(:assignment).becomes(Assignment)
+    assert_redirected_to [@cs101, @assn]
+  end
+
+  test "should not allow two check_section_toggles interlocks on update" do
+    @assn = create(:assignment, course: @cs101, teamset: @ts1)
+
+    @lock = Interlock.new(
+      constraint: "check_section_toggles",
+      assignment: @assn,
+      related_assignment: @assn
+    )
+    assert @lock.save
+
+    sign_in(@fred)
+    put :update, params: {
+      id: @assn.id,
+      course_id: @cs101.id,
+      assignment: {
+        interlocks_attributes: {
+          "1539721230726" => {
+            "constraint"=>"check_section_toggles"
+          }
+        },
+      }
+    }
+    assert_response 400
+    @assn = assigns(:assignment)
+    assert_equal(["Can only have one section-based interlock"], @assn.errors.full_messages)
+  end
+
+  test "flip section toggles from assignment edit page" do
+    @assn = create(:assignment, course: @cs101, teamset: @ts1)
+    @lock = Interlock.new(
+      constraint: "check_section_toggles",
+      assignment: @assn,
+      related_assignment: @assn
+    )
+    @lock.save
+    @cs101.reload
+
+    sign_in(@fred)
+    get :show, params: {id: @assn.id, course_id: @cs101.id}
+
+    sets = @lock.submission_enabled_toggles.to_a
+    sets.each do |set|
+      assert_not set.submissions_allowed
+      patch :update_section_toggles, params: {
+        assignment_id: @assn.id,
+        course_id: @cs101.id,
+        submission_enabled_toggle_id: set.id,
+        state: true
+      }, xhr: true
+      set.reload
+      assert set.submissions_allowed
+    end
+  end
+
+  test "flip section toggles when they've already been flipped" do
+    @assn = create(:assignment, course: @cs101, teamset: @ts1)
+    @lock = Interlock.new(
+      constraint: "check_section_toggles",
+      assignment: @assn,
+      related_assignment: @assn
+    )
+    @lock.save
+    @cs101.reload
+
+    sign_in(@fred)
+    get :show, params: {id: @assn.id, course_id: @cs101.id}
+
+    sets = @lock.submission_enabled_toggles.to_a
+    sets.each do |set|
+      assert_not set.submissions_allowed
+      set.update_attribute(:submissions_allowed, true)
+      assert set.submissions_allowed
+      patch :update_section_toggles, params: {
+        assignment_id: @assn.id,
+        course_id: @cs101.id,
+        submission_enabled_toggle_id: set.id,
+        state: true
+      }, xhr: true
+      assert_response 409
+      set.reload
+      # this should not have changed the value, since it was true and the user requested true
+      # it should just show the new values to the user
+      assert set.submissions_allowed
+    end
+  end
 end

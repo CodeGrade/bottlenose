@@ -9,18 +9,22 @@
   in <i>other</i> assignments.</p>
 <o id="<%= asgn.type %>_interlocks" class="interlocks-list interlock-defns">
   <%= f.fields_for :interlocks, asgn.interlocks do |il| %>
-  <li class="nested-fields"><div style="position: relative; vertical-align: middle;"><%= il.object.to_s %>
-    <%= link_to_remove_association "Remove", il, class: 'btn btn-danger pull-right',
-        style: "vertical-align: initial, margin: -6pt -8pt;" %>
-    </div>
-    <span style="clear: both;">&nbsp;</span>
-  </li>
+    <% if il.object.new_record? %>
+      <% render "interlock", interlock: il.object, asgn: asgn, f: il %>
+    <% else %>
+      <li class="nested-fields"><div style="position: relative; vertical-align: middle;"><%= il.object.to_s %>
+        <%= link_to_remove_association "Remove", il, class: 'btn btn-danger pull-right',
+          style: "vertical-align: initial, margin: -6pt -8pt;" %>
+      </div>
+      <span style="clear: both;">&nbsp;</span>
+      </li>
+    <% end %>
   <% end %>
 </o>
 <%= link_to_add_association("Add interlock",
     f, :interlocks, partial: 'assignments/interlock',
     render_options: {"constraint" => Interlock::constraints[:no_submission_unless_submitted],
-                     locals: {asgn: asgn}},
+                     locals: {asgn: asgn, interlock: nil}},
     "data-association-insertion-node" => "##{asgn.type}_interlocks",
     "data-association-insertion-method" => 'append',
     class: 'btn btn-default' ) %>

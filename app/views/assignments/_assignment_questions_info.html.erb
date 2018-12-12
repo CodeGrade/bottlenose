@@ -36,6 +36,9 @@
         <%= link_to gradesheet.assignment.assignment_file_name, gradesheet.assignment.assignment_file_path %>
       </p>
     <% end %>
+    <% if cur_reg&.assistant? %>
+      <%= render "submission_enabled_toggles" %>
+    <% end %>
   </div>
 
   <div class="col-sm-6">

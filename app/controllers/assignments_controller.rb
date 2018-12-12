@@ -9,7 +9,7 @@ class AssignmentsController < ApplicationController
   before_action -> { require_admin_or_prof(course_assignments_path) },
                 only: [:edit, :edit_weights, :update, :update_weights,
                        :new, :create, :destroy, :recreate_grades]
-  before_action :require_admin_or_assistant, only: [:tarball, :publish]
+  before_action :require_admin_or_assistant, only: [:update_section_toggles, :tarball, :publish]
 
   def show
     admin_view = current_user_site_admin? || current_user_staff_for?(@course)
@@ -32,6 +32,9 @@ class AssignmentsController < ApplicationController
                 .map{|s| [s.id, s]}.to_h
     @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
     @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
+
+    @toggles = @assignment.submission_enabled_toggles.includes(:section)
+               .map{|t| [t.section, t]}.group_by{|k, _| k.type}.map{|k, v| [k, v.to_h]}.to_h
 
     self.send("show_#{@assignment.type.capitalize}")
     if admin_view
@@ -194,7 +197,7 @@ class AssignmentsController < ApplicationController
 
     need_to_unpublish_grades =
       @assignment.graders.any?{|g| g.new_record? || g.changed? || g.marked_for_destruction?}
-    
+
     if @assignment.save
       count = 0
       if need_to_unpublish_grades
@@ -281,6 +284,30 @@ class AssignmentsController < ApplicationController
                   notice: "#{pluralize(count, 'grade')} created"
   end
 
+  def update_section_toggles
+    toggle_params = params.permit(:assignment_id, :course_id, :state, :submission_enabled_toggle_id)
+    all_toggles = SubmissionEnabledToggle.where(assignment_id: toggle_params[:assignment_id]).map{|t| [t.id, t]}.to_h
+    toggle_id = toggle_params[:submission_enabled_toggle_id].to_i
+    toggle = all_toggles[toggle_id]
+    if toggle.nil?
+      render json: {not_found: true, changes: []}, status: 404
+      return
+    end
+    requested_state = toggle_params[:state] == "true"
+    if toggle.submissions_allowed == requested_state
+      result = []
+      all_toggles.each do |t_id, t|
+        new_state = t.submissions_allowed
+        result << {id: t.id, state: new_state}
+      end
+      render json: {changes: result}, status: 409 # conflict
+      return
+    else
+      toggle.update_attributes(submissions_allowed: requested_state)
+      render json: {changes: [{id: toggle.id, state: requested_state}], updated: true}
+      return
+    end
+  end
 
 
 

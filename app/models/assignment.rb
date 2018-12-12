@@ -34,12 +34,16 @@ class Assignment < ApplicationRecord
   has_many :graders, dependent: :destroy, autosave: true
   accepts_nested_attributes_for :graders, allow_destroy: true
 
+  has_many :submission_enabled_toggles, dependent: :destroy, autosave: true
+  accepts_nested_attributes_for :submission_enabled_toggles, allow_destroy: true
+
   has_many :grader_allocations, dependent: :destroy
   
   has_many :interlocks, dependent: :destroy
   has_many :related_interlocks, :foreign_key => "related_assignment_id", :class_name => "Interlock"
   accepts_nested_attributes_for :interlocks, allow_destroy: true
   has_many :submission_views
+  has_many :submission_enabled_toggles
 
   has_many :codereview_matchings, dependent: :destroy
   has_many :individual_extensions, dependent: :destroy
@@ -53,6 +57,7 @@ class Assignment < ApplicationRecord
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
   validates :graders, :presence => true
+  validate :valid_interlocks
 
 
   def submission_prohibited(submission, staff_override)
@@ -480,7 +485,6 @@ class Assignment < ApplicationRecord
     super(attrs)
   end
 
-
   private
   
   def allowed_for_lateness(sub)
@@ -543,8 +547,22 @@ class Assignment < ApplicationRecord
         return "You (or a teammate) have already viewed #{lock.related_assignment.name}, and so cannot submit to this assignment"
       end
     end
+    locks["check_section_toggles"]&.each do |lock|
+      relevant_sections = user.sections.where(course: self.course)
+      if SubmissionEnabledToggle.where(section: relevant_sections, assignment: self, submissions_allowed: true).empty?
+        if relevant_sections.count == 1
+          return "Submissions are not currently enabled for your section"
+        else
+          return "Submissions are not currently enabled for any of your sections"
+        end
+      end
+    end
     return false
   end
 
-
+  def valid_interlocks
+    if self.interlocks.select {|i| i.constraint == "check_section_toggles"}.size > 1
+      self.errors.add(:base, "Can only have one section-based interlock")
+    end
+  end
 end
