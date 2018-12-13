@@ -53,3 +53,5 @@ db/dump.sql.gz
 *.class
 lib/assets/*.jar
 lib/tasks/demo-images/*_*.jpg
+
+screenshots/
