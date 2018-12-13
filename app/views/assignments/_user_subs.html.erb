@@ -56,7 +56,8 @@
         <% end %>
       </td>
       <% if gradesheet.assignment.team_subs? %>
-      <td><%= maybe_link_team(cur_reg_staff, cur_reg_staff, sub.team, [[sub.user_id, "submitter"]].to_h) %></td>
+      <td><%= maybe_link_team(cur_reg_staff, cur_reg_staff || [current_user.id],
+                              sub.team, [[sub.user_id, "submitter"]].to_h) %></td>
       <% else %>
       <td><%= maybe_link_user(cur_reg_staff, sub.user) %></td>
       <% end %>

@@ -1,5 +1,8 @@
 <% cur_reg_staff = cur_reg&.staff? %>
-<% show_user = current_user.site_admin? || current_user.professor_ever? || current_user.id == @submission.user.id %>
+<% show_all_users = current_user.site_admin? || current_user.professor_ever? %>
+<style>
+  .submitter { font-weight: bold; }
+</style>
 
 <p>
   <%= link_to "Back to Assignment: #{@assignment.name}", course_assignment_path(@course, @assignment) %>
@@ -20,8 +23,8 @@
   <% else %>
     <tr>
       <td><strong>Team</strong></td>
-      <td><%= maybe_link_team cur_reg_staff, show_user, @submission.team %>
-        (submitted by <%= @submission.user.name %>)</td>
+      <td><%= maybe_link_team cur_reg_staff, show_all_users || [current_user.id], @submission.team,
+                              [[@submission.user_id, "submitter"]].to_h %></td>
     </tr>
   <% end %>
   <tr>

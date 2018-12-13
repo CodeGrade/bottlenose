@@ -177,7 +177,7 @@
         <% if @gradesheet.assignment.team_subs? %>
         <td>
           <%= maybe_link_team(current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
-                              current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
+                              current_user.site_admin? || cur_user_prof_ever || [current_user.id],
                               sub.team, [[sub.user_id, "submitter"]].to_h) %>
         </td>
         <% else %>

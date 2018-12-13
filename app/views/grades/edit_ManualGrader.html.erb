@@ -15,34 +15,7 @@
 
 <h1>Submission</h1>
 
-<table class="table row-vcenter">
-  <tr>
-    <td><strong>Assignment</strong></td>
-    <td><%= @submission.assignment.name %></td>
-  </tr>
-  <% if @submission.team.nil? %>
-    <tr>
-      <td><strong>Student</strong></td>
-      <td><%= @submission.user.name %></td>
-    </tr>
-  <% else %>
-    <tr>
-      <td><strong>Team</strong></td>
-      <td><%= @submission.team %></td>
-    </tr>
-  <% end %>
-  <tr>
-    <td><strong>Submission Time</strong></td>
-    <td><span class="local-time"><%= @submission.created_at.iso8601 %></span></td>
-  </tr>
-  <tr>
-    <td><strong>Student Notes</strong></td>
-    <td>
-      <div class="prose"><%= @submission.student_notes %></div>
-    </td>
-  </tr>
-</table>
-
+<%= render 'submissions/sub_info' %>
 
 <h1>Manual Grading</h1>
 <p>The treeview to the left shows the files in this submission.  Click
