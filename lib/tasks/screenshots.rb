@@ -760,6 +760,15 @@ class Screenshots
   end
 end
 
+if ENV["SEED"]
+  RANDOM_SEED = ENV["SEED"].to_i
+else
+  srand
+  RANDOM_SEED = srand % 0xFFFF
+end
+srand RANDOM_SEED
+puts "SEED=#{RANDOM_SEED}"
+
 
 FactoryBot.find_definitions
 Utilities.redefine_factories
