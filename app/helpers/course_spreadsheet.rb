@@ -107,7 +107,14 @@ class CourseSpreadsheet < Spreadsheet
           sheet.push_row(i, [curved, 0])
         else
           grade_comments = all_grade_comments[sub_id.submission_id].sort_by{|c| c.line}
-          q_grades = grade_comments.slice(0..questions.count-1).map{|c| (c && c["weight"])}
+          if exam.is_a? Exam
+            # Exam scores are absolute scores, so just sum them up
+            q_grades = grade_comments.slice(0..questions.count-1).map{|c| (c && c["weight"])}
+          else
+            # Questions grades are percentages (like codereviews), so sum must be weighted first
+            q_grades = grade_comments.slice(0..questions.count-1).zip(questions)
+                       .map{|c, q| c && (c["weight"] * q["weight"])}
+          end
           q_grades.each do |g|
             sheet.push_row(i, g || "<none>")
           end
