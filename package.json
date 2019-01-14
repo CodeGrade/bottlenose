@@ -4,8 +4,8 @@
   "description": "Course hand-in server",
   "main": "index.js",
   "dependencies": {
-    "codemirror": "^5.40.0",
-    "dompurify": "^1.0.7",
+    "codemirror": "^5.42.2",
+    "dompurify": "^1.0.8",
     "pdfjs-dist": "latest",
     "pyret-codemirror-mode": "git://github.com/brownplt/pyret-codemirror-mode.git#master"
   },
