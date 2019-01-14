@@ -1,4 +1,4 @@
-<% unless @toggles.empty? %>
+<% if @toggles && !@toggles.empty? %>
 <p><b>Toggle section availability:</b></p>
 <% @toggles.sort_by(&:first).each do |section_type, toggles| %>
 <div class="col-sm-12">
@@ -16,8 +16,8 @@
   <% end %>
 </div>
 <% end %>
-<% end %>
 
 <script>
   <%= render "submission_enabled_toggles.js" %>
 </script>
+<% end %>
