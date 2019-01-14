@@ -1,4 +1,4 @@
-<% if !@toggles&.empty? %>
+<% if @toggles && !@toggles.empty? %>
 <p><b>Toggle section availability:</b></p>
 <% @toggles.sort_by(&:first).each do |section_type, toggles| %>
 <div class="col-sm-12">
