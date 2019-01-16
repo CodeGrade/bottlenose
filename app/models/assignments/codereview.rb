@@ -42,6 +42,7 @@ class Codereview < Assignment
         qs.each do |question|
           question.each do |type, q|
             q["type"] = type;
+            q["sectionName"] = name
             flat.push q
           end
         end

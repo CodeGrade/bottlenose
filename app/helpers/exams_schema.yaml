@@ -1,0 +1,41 @@
+---
+start: Questions
+Questions:
+  array: Question
+Question:
+  one_of:
+    - SingleQuestion
+    - PartQuestion
+SingleQuestion:
+  object:
+    - key: "name"
+      value: String
+      optional: true
+    - key: "weight"
+      value: Float
+      commit: true
+    - key: "extra"
+      value: Boolean
+      optional: true
+PartQuestion:
+  object:
+    - key: "name"
+      value: String
+      optional: true      
+    - key: "parts"
+      value: Parts
+      commit: true
+Parts:
+  array: Part
+  minSize: 1
+Part:
+  object:
+    - key: "weight"
+      value: Float
+    - key: "name"
+      value: String
+      optional: true
+    - key: "extra"
+      value: Boolean
+      optional: true
+...

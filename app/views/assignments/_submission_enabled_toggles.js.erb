@@ -1,0 +1,33 @@
+run_on_page("assignments/show", toggles_init);
+
+function toggles_init() {
+  var busy = false;
+  function toggleChange(e) {
+    if (busy) {
+      return;
+    }
+    busy = true;
+    var toggle = this;
+    var toggleId = $(toggle).data("stid");
+    // this event runs after the state has changed (checked is already the new value)
+    var data = {state: $(toggle).prop('checked')};
+    function complete(xhr, status) {
+      if (xhr.status == 409) {
+        alert("That section was toggled by another user. Toggles have been updated to match the current state.");
+      } else if (xhr.status == 200) {
+        // successfully changed the state
+      } else {
+        alert("Error (" + xhr.status + ") while trying to change section toggle.");
+      }
+      $.each(xhr.responseJSON.changes, function(index, newState) {
+        var sel = '.submission-enabled-toggle#allow-' + newState.id;
+        $(sel).bootstrapToggle(newState.state ? "on" : "off");
+      });
+      busy = false;
+    }
+    var baseUrl = "<%= course_assignment_submission_enabled_toggle_update_path(assignment_id: @assignment.id, course_id: @course.id, submission_enabled_toggle_id: '(setid)') %>";
+    var url = baseUrl.replace('(setid)', toggleId);
+    $.ajax({url: url, data: data, type: 'PATCH', complete: complete});
+  }
+  $('.submission-enabled-toggle').change(toggleChange);
+}

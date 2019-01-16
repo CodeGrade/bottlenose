@@ -7,11 +7,17 @@
     No submissions yet.
   </div>
 <% else %>
+<style>
+  .submitter { font-weight: bold; }
+</style>
   <table class="table table-striped row-vcenter">
     <tr>
       <th>Status</th>
+      <% if gradesheet.assignment.team_subs? %>
+      <th>Team (submitter in bold)</th>
+      <% else %>
       <th>Submitter</th>
-      <% if gradesheet.assignment.team_subs? %><th>Team</th><% end %>
+      <% end %>
       <th>Date</th>
       <th>Status</th>
       <% gradesheet.grades[:graders].each do |c| %>
@@ -49,8 +55,12 @@
               title="This submission is used for grading"></span>
         <% end %>
       </td>
+      <% if gradesheet.assignment.team_subs? %>
+      <td><%= maybe_link_team(cur_reg_staff, cur_reg_staff || [current_user.id],
+                              sub.team, [[sub.user_id, "submitter"]].to_h) %></td>
+      <% else %>
       <td><%= maybe_link_user(cur_reg_staff, sub.user) %></td>
-      <% if gradesheet.assignment.team_subs? %><td><%= sub.team %></td><% end %>
+      <% end %>
       <td><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
       <% scores = if cur_reg_staff then grade[:staff_scores] else grade[:blind_scores] end %>
       <% if scores[:raw_score]
@@ -100,7 +110,7 @@
               <span class="caret"></span>
               <span class="sr-only">Toggle Dropdown</span>
             </button><% #
-            %><ul class="dropdown-menu">
+            %><ul class="dropdown-menu dropdown-menu-right">
               <li><%= link_to "View", 
                       course_assignment_submission_path(course, gradesheet.assignment, sub), 
                       class: "dropdown-item" %></li>

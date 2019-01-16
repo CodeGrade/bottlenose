@@ -162,6 +162,7 @@ $(function (){
           cm.CodeMirror.setSize(null, codeHeight - tabbarHeight - tabpaneBulk);
         });
         $(nested).find("iframe, div[id^='iframe_']").height(codeHeight - tabbarHeight - tabpaneBulk);
+        $(nested).find("div.contentTooLong").height(codeHeight - tabbarHeight - tabpaneBulk);
       });
       $("#" + root).find(".nonCMwrapper").height(codeHeight);
       $("#" + root).find(".files-sidebar .files-treeview").height(filesHeight);

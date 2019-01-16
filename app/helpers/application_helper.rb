@@ -100,25 +100,25 @@ module ApplicationHelper
   def user_link_data(user)
     {
       toggle: "tooltip",
-      delay: {show:0, hide: 250},
+      delay: {show: 0, hide: 250},
       title: "#{image_tag(user_image(user), alt: user.display_name, style: 'max-height: 300px; max-width: 300px;')}"
     }
   end
   def show_user(user)
     maybe_link_user(true, user)
   end
-  def maybe_link_user(show, user)
-    if show
-      link_to(user.display_name, user_path(user), class: "user-link", data: user_link_data(user))
+  def maybe_link_user(show, user, extra_class="")
+    if show == true || (show.is_a?(Array) && show.member?(user.id))
+      link_to(user.display_name, user_path(user), class: "user-link #{extra_class}".strip, data: user_link_data(user))
     else
-      content_tag :span, user.name, class: "user-link", data: user_link_data(user)
+      content_tag :span, user.name, class: "user-link #{extra_class}".strip, data: user_link_data(user)
     end
   end
 
   def show_team(team)
     maybe_link_team(true, true, team)
   end
-  def maybe_link_team(show_team, show_user, team)
+  def maybe_link_team(show_team, show_users, team, highlights={})
     content_tag(:span, [
                   if show_team
                     link_to("Team #{team.id}", course_teamset_team_path(@course, team.teamset, team))
@@ -126,13 +126,28 @@ module ApplicationHelper
                     "Team #{team.id}"
                   end,
                   " - ",
-                  team.users.sort_by(&:sort_name).map do |u|
-                    maybe_link_user(show_user, u).html_safe
+                  team.sorted_users.map do |u|
+                    maybe_link_user(show_users, u, highlights[u.id]).html_safe
                   end.to_sentence
                 ].flatten.join("\n").html_safe)
   end
   
+  def code_textarea(str, options = {})
+    # Within textareas, the initial newline is ignored
+    # (https://w3c.github.io/html/syntax.html#restrictions-on-content-models)
+    # so to handle files that start with whitespace, we have to be a bit careful.
 
+    # The content_tag function will implicitly add a newline always, and using
+    # a helper renderer function (as opposed to writing a <textarea> tag directly),
+    # avoids any confusion of how to use it
+
+    # The string will be rendered to html (to escape any special characters),
+    # unless it's already been explicitly marked as html_safe.
+    str = render(html: str) unless str.html_safe?
+    content_tag(:textarea, str, options)
+  end
+
+  
   
   def registration_show_toggle_path(reg_id)
     "/registrations/#{reg_id}/toggle_show"
@@ -234,7 +249,7 @@ module ApplicationHelper
       "text/html"
     when ".css"
       "text/css"
-    when ".tap", ".txt"
+    when ".tap", ".txt", ".text"
       "text/plain"
     when ".pdf"
       "application/pdf"
@@ -243,8 +258,11 @@ module ApplicationHelper
     when ".mp3"
       "audio/mpeg"
     else
-      if File.basename(full_path.to_s) == "Makefile"
+      case File.basename(full_path.to_s).downcase
+      when "makefile"
         "text/x-makefile"
+      when "readme"
+        "text/plain"
       else
         "text/unknown"
       end

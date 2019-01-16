@@ -46,7 +46,7 @@ class RegistrationsControllerTest < ActionController::TestCase
 
   test "should get new only when logged in as admin or staff" do
     get :new, params: {course_id: @cs301.id}
-    assert_redirected_to root_path
+    assert_redirected_to root_path(next: new_course_registration_path(@cs301))
     assert_match "You need to log in first", flash[:alert]
 
     sign_in @students[1]

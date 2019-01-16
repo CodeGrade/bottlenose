@@ -113,38 +113,120 @@ class SubmissionsControllerTest < ActionController::TestCase
     assert_response :success
   end
 
-  test "should get edit" do
-    skip
+  test "a user with no enabled sections should not be able to submit" do
+    @lock = Interlock.create(
+      constraint: "check_section_toggles",
+      assignment: @hello,
+      related_assignment: @hello
+    )
 
-    sign_in @fred
-    get :edit, params: { id: @john_hello, course_id: @cs101.id, assignment_id: @hello }
-    assert_response :success
+    upload = fixture_file_upload(
+      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+
+    sign_in @john
+
+    post :create, params: {
+      course_id: @cs101.id, 
+      assignment_id: @hello.id,
+      submission: {
+        type: "FilesSub",
+        student_notes: "@@@skip tests@@@",
+        file_name: "HelloWorld.tgz",
+        upload_file: upload },
+    }
+    prohib = assigns(:submission_prohibited)
+    assert_equal prohib, "Submissions are not currently enabled for your section"
+    assert_equal prohib, flash[:alert]
+    assert_redirected_to [@cs101, @hello]
   end
 
-  test "should update submission" do
-    skip
+  test "a user with one enabled section should be able to submit" do
+    @lock = Interlock.create(
+      constraint: "check_section_toggles",
+      assignment: @hello,
+      related_assignment: @hello
+    )
 
-    put :update,
-        {id: @john_hello},
-        { submission: {
-            student_notes: "Bacon!",
-            type: "FilesSub",
-            assignment: @john_hello.assignment,
-            user_id: @john.id }
-        },
-        {user_id: @fred.id}
-    assert_response :redirect
+    sets = @lock.submission_enabled_toggles.to_a
+    sets.first.update_attribute(:submissions_allowed, true)
+
+    upload = fixture_file_upload(
+      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+
+    sign_in @john
+
+    post :create, params: {
+      course_id: @cs101.id, 
+      assignment_id: @hello.id,
+      submission: {
+        type: "FilesSub",
+        student_notes: "@@@skip tests@@@",
+        file_name: "HelloWorld.tgz",
+        upload_file: upload },
+    }
+    sub = assigns(:submission).becomes(Submission)
+    prohib = assigns(:submission_prohibited)
+    assert_not prohib
+    assert_equal flash[:notice], "Submission was successfully created."
+    assert_redirected_to [@cs101, @hello, sub]
   end
 
+  test "section toggles are applied like ormap" do
+    @section2 = create(:section, course: @cs101, instructor: @fred, crn: 12346)
+    mark = create(:user, name: "Mark Mischievous", first_name: "Mark", last_name: "Mischievous")
+    create(:registration, course: @cs101, user: mark, role: Registration::roles[:student], show_in_lists: true, sections: [@section, @section2])
+    @section2.save
+    @hello2 = create(:assignment, course: @cs101, teamset: @ts1)
+    @cs101.reload
 
-  
-  #test "should destroy submission" do
-  #  skip "Code to delete submissions intentionally disabled."
-  #
-  #  assert_difference('Submission.count', -1) do
-  #    delete :destroy, {id: @john_hello}, {user_id: @fred.id}
-  #  end
-  #
-  #  assert_response :redirect
-  #end
+    @lock = Interlock.create(
+      constraint: "check_section_toggles",
+      assignment: @hello2,
+      related_assignment: @hello2
+    )
+
+    sets = @lock.submission_enabled_toggles.to_a
+
+    sets.first.update_attribute(:submissions_allowed, false)
+    sets.second.update_attribute(:submissions_allowed, true)
+    sets.third.update_attribute(:submissions_allowed, false)
+
+    upload = fixture_file_upload(
+      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+
+    sign_in mark
+
+    post :create, params: {
+      course_id: @cs101.id,
+      assignment_id: @hello2.id,
+      submission: {
+        type: "FilesSub",
+        student_notes: "@@@skip tests@@@",
+        file_name: "HelloWorld.tgz",
+        upload_file: upload
+      }
+    }
+    sub = assigns(:submission).becomes(Submission)
+    prohib = assigns(:submission_prohibited)
+
+    assert_not prohib
+    assert_equal flash[:notice], "Submission was successfully created."
+    assert_redirected_to [@cs101, @hello2, sub]
+
+    sets.second.update_attribute(:submissions_allowed, false)
+    post :create, params: {
+      course_id: @cs101.id,
+      assignment_id: @hello2.id,
+      submission: {
+        type: "FilesSub",
+        student_notes: "@@@skip tests@@@",
+        file_name: "HelloWorld.tgz",
+        upload_file: upload
+      }
+    }
+    prohib = assigns(:submission_prohibited)
+    assert_equal prohib, "Submissions are not currently enabled for any of your sections"
+    assert_equal prohib, flash[:alert]
+    assert_redirected_to [@cs101, @hello2]
+  end
 end

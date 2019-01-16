@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2018_09_24_222312) do
+ActiveRecord::Schema.define(version: 2018_10_04_011746) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -224,6 +224,15 @@ ActiveRecord::Schema.define(version: 2018_09_24_222312) do
     t.integer "type", default: 0, null: false
     t.index ["course_id"], name: "index_sections_on_course_id"
     t.index ["crn", "course_id"], name: "index_sections_on_crn_and_course_id", unique: true
+  end
+
+  create_table "submission_enabled_toggles", force: :cascade do |t|
+    t.integer "section_id", null: false
+    t.integer "assignment_id", null: false
+    t.integer "interlock_id", null: false
+    t.boolean "submissions_allowed", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "submission_views", force: :cascade do |t|

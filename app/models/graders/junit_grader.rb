@@ -55,12 +55,12 @@ class JunitGrader < Grader
       Audit.log("#{prefix}From = #{from} and contains src/ and test/")
       # FileUtils.cp_r("#{from.join('src')}/.", "#{to.join('src')}/")
       # FileUtils.cp_r("#{from.join('test')}/.", "#{to.join('test')}/")
-      FileUtils.cp_r("#{from.join('src')}/.", "#{to}")
-      FileUtils.cp_r("#{from.join('test')}/.", "#{to}")
+      FileUtils.cp_r("#{from.join('src')}/.", "#{to}", remove_destination: true)
+      FileUtils.cp_r("#{from.join('test')}/.", "#{to}", remove_destination: true)
     else
       Audit.log("#{prefix}From = #{from} and does not contain src/ and test/")
       # FileUtils.cp_r("#{from}/.", "#{to.join('src')}/")
-      FileUtils.cp_r("#{from}/.", "#{to}/")
+      FileUtils.cp_r("#{from}/.", "#{to}/", remove_destination: true)
     end
   end
   
@@ -205,7 +205,7 @@ class JunitGrader < Grader
     return if self.upload.nil? || self.test_class.blank?
     begin
       entries = self.upload.upload_entries
-      if entries["#{testClass}.java"]
+      if entries["#{self.test_class}.java"]
         # ok, nothing to do
       elsif entries["starter"] && entries["testing"]
         ok = true

@@ -243,8 +243,8 @@ class Submission < ApplicationRecord
     else
       if config.autograde?
         # Students will have their delayed jobs de-prioritized based on how many submissions
-        # they've spammed the system with in the past hour
-        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 1.hour).count
+        # they've spammed the system with in the past fifteen minutes
+        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 15.minutes).count
         config.autograde!(assignment, self, num_recent_attempts)
         true
       else
@@ -267,12 +267,20 @@ class Submission < ApplicationRecord
     assignment.graders.each do |gr| gr.ensure_grade_exists_for!(self) end
   end
 
-  def autograde!
+  def autograde!(delay = false)
     complete = true
+    num_recent_attempts =
+      if delay
+        # Students will have their delayed jobs de-prioritized based on how many submissions
+        # they've spammed the system with in the past fifteen minutes
+        assignment.submissions_for(user).where("created_at > ?", Time.now - 15.minutes).count
+      else
+        0
+      end
     assignment.graders.each do |gr|
       complete = complete && gr.autograde?
       begin
-        gr.autograde!(assignment, self) # make sure we create all needed grades
+        gr.autograde!(assignment, self, num_recent_attempts) # make sure we create all needed grades
       rescue Exception => e
         Audit.log "Assignment #{assignment.id}, submission #{self.id} failed autograding:"
         Audit.log e.inspect

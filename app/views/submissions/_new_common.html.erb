@@ -22,7 +22,7 @@
   <div class="alert alert-danger">
     <p>This assignment requires team <%= type[:noun].pluralize(2) %>,
       and you are not currently in a team.</p>
-    <% if staff_override %>
+    <% if @staff_override %>
     <p>You need to 
       <%= link_to "stop impersonating the student and enroll the student in a team",
           edit_course_teamset_path(@course, @assignment.teamset) %>
@@ -33,44 +33,33 @@
     <p>Contact a professor to join a team.</p>
     <% end %>
   </div>
-  <% elsif !not_following && !staff_override %>
-    <div class="alert alert-danger">
-    <p>You are not allowed to resubmit your assignment after you've
-      already submitted to a related assignment.</p>
-  </div> 
-  <% elsif !allowed && !staff_override %>
+  <% elsif @submission_prohibited %>
   <div class="alert alert-danger">
-    <p>It's too late to submit to this assignment: you either have
-      too few late days remaining, or it's too long after the
-      assignment is due.</p>
-  </div> 
-  <% elsif rate_limit == "permanent" && !staff_override %>
-  <div class="alert alert-danger">
-    <p>You cannot attempt more <%= type[:noun].pluralize(2) %> for this assignment: you've
-      reached the maximum number of attempts allowed.</p>
-  </div> 
-  <% elsif rate_limit == "temporary" && !staff_override %>
-  <div class="alert alert-danger">
-    <p>You cannot <%= type[:verb] %> to this assignment right now: you've tried
-      too many times in the past hour.  Please wait a while before
-      trying again.</p>
-  </div> 
+    <p><%= @submission_prohibited %></p>
+  </div>
   <% else %>
     <% @accept_inputs = true %>
-    <% if DateTime.current > @assignment.effective_due_date(current_user, @team) && staff_override %>
+    <% if @staff_override %>
     <div class="alert alert-info">
-      <p>You are <%= type[:gerund] %> on behalf of a student.  Should
-        this <%= type[:noun] %>
-        be exempt from lateness penalties?
+      <p>
+        You are <%= type[:gerund] %> on behalf of a student.
+        <% if DateTime.current > @assignment.effective_due_date(current_user, @team) %>
+        Should this <%= type[:noun] %> be exempt from lateness penalties?
         <%= f.check_box :ignore_late_penalty, :checked => "checked",
         data: {toggle: "toggle", on: "Yes", off: "No"} %>
+        <% else %>
+        It is before the deadline, so this submission will be
+        considered on-time.
+        <% end %>
       </p>
       <div class="row">
+        <% if DateTime.current > @assignment.effective_due_date(current_user, @team) %>
         <div class="col-sm-6">
           <p>If lateness is not ignored, this <%= type[:noun] %> should claim to
             have been submitted at:</p>
           <%= f.text_field :created_at, class: 'form-control', disabled: "disabled" %>
         </div>
+        <% end %>
         <div class="col-sm-6" style="padding-top: 1em;">
           <div class="col-md-6">Waive file-size limits?
             <%= check_box_tag "override_size", true, false, data: {toggle: "toggle", on: "Yes", off: "No" } %></div>

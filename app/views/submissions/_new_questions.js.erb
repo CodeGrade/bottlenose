@@ -47,7 +47,7 @@ $(function() {
           if (this.selectedIndex == 1) {
             res.group.answered = true; // <none> option
           } else {
-            res.group.answered = ($(res.group.parts[1]).val() !== "");
+            res.group.answered = (res.group.parts[1] !== undefined) && ($(res.group.parts[1].target).val() !== "");
           }
         }
       } else if (isTextInput(this)) {
@@ -78,8 +78,8 @@ $(function() {
         $(res.target).removeClass("unanswered");
       }
     }
-    clean.apply(this);
     cur.parts.push(res);
+    clean.apply(this);
     $(this).on("change", clean).on("focus", clean);
     $('button.btn.answer[data-id="' + this.id + '"]').on("click", clean);
     if (this instanceof HTMLInputElement && this.type === "hidden") {

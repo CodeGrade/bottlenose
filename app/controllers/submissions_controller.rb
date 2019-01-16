@@ -60,15 +60,13 @@ class SubmissionsController < ApplicationController
       @submission_view.save
     end
 
-    sub_blocked = @assignment.submissions_blocked(current_user, @team)
-    if sub_blocked
-      if current_user.course_staff?(@course) || prof_override?
-        # allow submission
-      else
-        redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                      alert: sub_blocked
-        return
-      end
+    @staff_override = current_user.course_staff?(@course) || prof_override?      
+    
+    @submission_prohibited = @assignment.submission_prohibited(@submission, @staff_override)
+    if @submission_prohibited
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: @submission_prohibited
+      return
     end
 
     self.send("new_#{@assignment.type.capitalize}")
@@ -96,21 +94,21 @@ class SubmissionsController < ApplicationController
     else
       @team = nil
     end
-    sub_blocked = @assignment.submissions_blocked(current_user, @team)
-    if sub_blocked
-      if current_user.course_staff?(@course) ||
-         (current_user.id != true_user&.id && true_user&.course_staff?(@course))
-        # allow submission
-      else
-        redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                      alert: sub_blocked
-        return
-      end
-    end
 
     @submission = Submission.new(submission_params)
+    @submission.user ||= current_user
     @submission.assignment = @assignment
     @submission.team = @team
+
+    @staff_override = current_user.course_staff?(@course) || prof_override?
+    
+    @submission_prohibited = @assignment.submission_prohibited(@submission, @staff_override)
+    if @submission_prohibited
+      redirect_to course_assignment_path(@course, @assignment),
+        alert: @submission_prohibited
+      return
+    end
+
 
     if true_user_staff_for?(@course) || current_user_staff_for?(@course)
       @submission.user ||= current_user
@@ -415,7 +413,7 @@ class SubmissionsController < ApplicationController
     if (@submission.save_upload(prof_overrides) && @submission.save)
       @submission.set_used_sub!
       @submission.create_grades!
-      @submission.autograde!
+      @submission.autograde!(true)
       path = course_assignment_submission_path(@course, @assignment, @submission)
       redirect_to(path, notice: 'Submission was successfully created.')
     else

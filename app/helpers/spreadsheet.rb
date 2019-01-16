@@ -98,7 +98,7 @@ class Spreadsheet
       @to_row_abs = "$" if to_row_abs
     end
     def to_s
-      "#{@from_col_abs}#{@from_col}#{@from_row_abs}#{@from_row}:#{@to_col_abs}#{@to_col}#{@to_row_abs}#{@from_row}"
+      "#{@from_col_abs}#{@from_col}#{@from_row_abs}#{@from_row}:#{@to_col_abs}#{@to_col}#{@to_row_abs}#{@to_row}"
     end
     def contains(col, row)
       print "col: #{col}, row: #{row}, from_col/row: #{@from_col}/#{@from_row}, to_col/row: #{@to_col}/#{@to_row}\n"
@@ -109,13 +109,15 @@ class Spreadsheet
   class Cell
     attr_reader :value
     attr_reader :formula
+    attr_reader :array_formula
     attr_accessor :sheet_name
     attr_accessor :row
     attr_accessor :col
-    def initialize(value=nil, formula=nil)
+    def initialize(value=nil, formula=nil, array_formula=false)
       debugger if (value.nil? && formula.nil?)
       @value = value
       @formula = formula
+      @array_formula = array_formula
     end
 
     def sanity_check
@@ -213,6 +215,7 @@ class Spreadsheet
   end
 
   def sanitize(str)
+    return "" unless str.is_a? String
     str.gsub(/^\s*[-+=@]+/, "").strip
   end
 
@@ -224,7 +227,7 @@ class Spreadsheet
     @twoPct.set_num_format("0.00%")
     @rawString = workbook.add_format(num_format: "@")
     def render_row(ws, s, r, r_num, row_offset)
-      r.each_with_index do |c, c_num|
+      r&.each_with_index do |c, c_num|
         if s.columns[c_num]&.type == "Percent"
           format = @twoPct
         elsif s.columns[c_num]&.type == "String"
@@ -233,7 +236,11 @@ class Spreadsheet
           format = nil
         end
         if c.formula
-          ws.write_formula(r_num + row_offset, c_num, "=#{c.formula}", format)
+          if c.array_formula
+            ws.write_formula(r_num + row_offset, c_num, "{=#{c.formula}}", format)
+          else
+            ws.write_formula(r_num + row_offset, c_num, "=#{c.formula}", format)
+          end
         elsif c.value.is_a? Numeric
           ws.write_number(r_num + row_offset, c_num, c.value, format)
         elsif (c.value.is_a? DateTime) || (c.value.is_a? Time)

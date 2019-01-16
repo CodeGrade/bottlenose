@@ -33,7 +33,6 @@ module UploadsHelper
       end
     end
 
-
     create_handler :rtf do |extracted_path, f|
       return false unless (File.read(f, 6) == "{\\rtf1" rescue false)
       # Creates the path .../converted/directory/where/file/is/

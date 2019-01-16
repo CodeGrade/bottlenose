@@ -1,0 +1,151 @@
+---
+start: Sections
+Sections:
+  array: Section
+Section:
+  labeled_value:
+    label: String
+    value: Questions
+Questions:
+  array: Question
+Question:
+  tagged_one_of:
+    - YesNo
+    - TrueFalse
+    - Numeric
+    - MultipleChoice
+    - Text
+YesNo:
+  object:
+    - key: "name"
+      value: String
+      optional: true
+    - key: "weight"
+      value: Float
+    - key: "correctAnswer"
+      value: Boolean
+    - key: "prompt"
+      value: String
+    - key: "parts"
+      value: QuestionParts
+      optional: true
+    - key: "rubric"
+      value: Rubric
+TrueFalse:
+  object:
+    - key: "name"
+      value: String
+      optional: true
+    - key: "weight"
+      value: Float
+    - key: "correctAnswer"
+      value: Boolean
+    - key: "prompt"
+      value: String
+    - key: "parts"
+      value: QuestionParts
+      optional: true
+    - key: "rubric"
+      value: Rubric
+Numeric:
+  object:
+    - key: "name"
+      value: String
+      optional: true
+    - key: "weight"
+      value: Float
+    - key: "min"
+      value: Float
+    - key: "max"
+      value: Float
+    - key: "correctAnswer"
+      value: [Float, ["min", "max"]]
+    - key: "prompt"
+      value: String
+    - key: "parts"
+      value: QuestionParts
+      optional: true
+    - key: "rubric"
+      value: Rubric
+MultipleChoice:
+  object:
+    - key: "name"
+      value: String
+      optional: true
+    - key: "weight"
+      value: Float
+    - key: "correctAnswer"
+      value: [Integer, [0, "options"]]
+    - key: "prompt"
+      value: String
+    - key: "options"
+      value: Options
+    - key: "parts"
+      value: QuestionParts
+      optional: true
+    - key: "rubric"
+      value: Rubric
+Text:
+  object:
+    - key: "name"
+      value: String
+      optional: true
+    - key: "weight"
+      value: Float
+    - key: "correctAnswer"
+      value: String
+    - key: "prompt"
+      value: String
+    - key: "parts"
+      value: QuestionParts
+      optional: true
+    - key: "rubric"
+      value: Rubric
+Options:
+  array: String
+QuestionParts:
+  array: QuestionPart
+QuestionPart:
+  one_of:
+    - TextPart
+    - RequiredText
+    - CodeTag
+    - CodeTags
+TextPart:
+  object:
+    - key: "text"
+      value: String
+      commit: true
+RequiredText:
+  object:
+    - key: "requiredText"
+      value: String
+      commit: true
+CodeTag:
+  object:
+    - key: "codeTag"
+      value: String
+      commit: true
+CodeTags:
+  object:
+    - key: "codeTags"
+      value: String
+      commit: true
+Rubric:
+  array: RubricEntry
+RubricEntry:
+  dictionary:
+    key: [Float, [0, 1]]
+    value: RubricItem
+    size: 1
+RubricItem:
+  one_of:
+    - String
+    - Hint
+Hint:
+  object:
+    - key: "hint"
+      value: String
+    - key: "feedback"
+      value: String
+...

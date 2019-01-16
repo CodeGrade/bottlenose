@@ -4,11 +4,12 @@
   .carousel-control { background-image: none; width: initial; }
 </style>
 <div id="grade-histograms" style="padding-bottom: 0.5em;"
-     class="collapsed collapse carousel initial">
+     class="collapsed collapse carousel initial" data-interval="false">
   <div class="carousel-inner">
     <div id="histogram" class="item active"></div>
     <div id="byGraders" class="item active"></div>
     <div id="bySectionTypes" class="item active"></div>
+    <div id="byTime" class="item active"></div>
   </div>
 
   <a class="left carousel-control" href="#grade-histograms" data-slide="prev">
@@ -20,4 +21,9 @@
     <span class="sr-only">Next</span>
   </a>
 </div>
+<script><%= render "time_distribution.js",
+            assn: @gradesheet.assignment,
+            allSubs: @gradesheet.assignment.submissions,
+            usedSubs: @gradesheet.submissions
+            %></script>
 <script><%= render "grade_distribution.js" %></script>

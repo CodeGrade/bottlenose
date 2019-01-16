@@ -19,6 +19,10 @@ require 'open3'
 
 module Utilities
   include Warden::Test::Helpers
+  include Rails.application.routes.url_helpers
+  def default_url_options
+    ActionMailer::Base.default_url_options
+  end
 
   def set_window_size(width = nil, height = nil)
     window = Capybara.current_session.current_window
@@ -45,7 +49,7 @@ module Utilities
   def highlight_area(id, box, strokeColor = "rgba(244, 208, 63, 0.5)", fillColor = "rgba(247, 220, 111, 0.5)")
     width = box["right"] - box["left"]
     height = box["bot"] - box["top"]
-    page.execute_script(<<-JAVASCRIPT, id, box["left"], box["top"], width, height, fillColor, strokeColor)
+    page.evaluate_script(<<-JAVASCRIPT, id, box["left"], box["top"], width, height, fillColor, strokeColor)
 (function(id, left, top, width, height, fillColor, strokeColor) {
   var canvas = document.createElement("canvas");
   canvas.width = width;
@@ -86,6 +90,7 @@ module Utilities
 
   $(document.body).append($canvas);
   $canvas.offset({left: left, top: top});
+  return canvas;
 }).apply(this, arguments)
 JAVASCRIPT
   end
@@ -150,6 +155,19 @@ JAVASCRIPT
     box["bot"] += dy if box["bot"]
     box["width"] += 2 * dx if box["width"]
     box["height"] += 2 * dy if box["height"]
+    box
+  end
+
+  def inflate_box(box, left, top = nil, right = nil, bottom = nil)
+    top = top || left
+    right = right || left
+    bottom = bottom || top
+    box["left"] -= left
+    box["top"] -= top
+    box["right"] += right
+    box["bot"] += bottom
+    box["width"] += (left + right) if box["width"]
+    box["height"] += (top + bottom) if box["height"]
     box
   end
 
@@ -378,23 +396,31 @@ class Screenshots
                                 new_sections: [@sections.sample])
       reg.save_sections
     end
+    puts "Done."
 
     @assignments = []
-    # ASSIGNMENT 1
-    ts1 = Teamset.create(course: @course, name: "Teamset 1")
-    assn = Files.create(name: "Assignment 1", blame: @fred, teamset: ts1, lateness_config: @late_per_day,
+    # ASSIGNMENT 1 -- Fully graded, published
+    print "Creating Assignment 1..."
+    ts = Teamset.create(course: @course, name: "Teamset 1")
+    assn = Files.create(name: "Assignment 1", blame: @fred, teamset: ts, lateness_config: @late_per_day,
                         course: @course, available: Time.now - 15.days, due_date: Time.now - 10.days,
                         points_available: 2.5)
     assn.graders << RacketStyleGrader.new(assignment: assn, params: "80", avail_score: 30, order: 1)
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 2)
     assn.save!
     @assignments << assn
+    # These take a while, because they each launch DrRacket to render the file...
+    # This assignment is fully graded, and published
+    create_submission(@course, @course.students, assn, "sample.rkt", 15)
+      .each do |s| grade_sub(s, assn.graders.to_a, true) end
+    puts "Done."
 
 
-    # ASSIGNMENT 2
-    ts2 = Teamset.create(course: @course, name: "Teamset 2")
-    ts2.randomize(2, "course", Time.now - 10.days)
-    assn = Files.create(name: "Assignment 2", blame: @fred, teamset: ts2, lateness_config: @late_per_day,
+    # ASSIGNMENT 2 -- Full graded, unpublished
+    print "Creating Assignment 2..."
+    ts = Teamset.create(course: @course, name: "Teamset 2")
+    ts.randomize(2, "course", Time.now - 10.days)
+    assn = Files.create(name: "Assignment 2", blame: @fred, teamset: ts, lateness_config: @late_per_day,
                         course: @course, available: Time.now - 10.days, due_date: Time.now - 5.days,
                         points_available: 2.5, team_subs: true)
     u = build(:upload, user: @fred, assignment: assn)
@@ -409,12 +435,43 @@ class Screenshots
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
     assn.save!
     @assignments << assn
+    create_submission(@course, @course.students, assn, "Mobiles.java", 15)
+    # This assignment is fully graded, but unpublished
+    assn.submissions.each do |s| grade_sub(s, assn.graders.to_a, false) end
+    puts "Done."
     
-
+    
     # ASSIGNMENT 3
-    ts3 = Teamset.create(course: @course, name: "Teamset 3")
-    ts3.randomize(3, "course", Time.now - 10.days)
-    assn = Files.create(name: "Assignment 3", blame: @fred, teamset: ts3, lateness_config: @late_per_day,
+    print "Creating Assignment 3..."
+    ts = Teamset.create(course: @course, name: "Teamset 3")
+    ts.randomize(2, "course", Time.now - 10.days)
+    assn = Files.create(name: "Assignment 3", blame: @fred, teamset: ts, lateness_config: @late_per_day,
+                        course: @course, available: Time.now - 10.days, due_date: Time.now - 5.days,
+                        points_available: 2.5, team_subs: true)
+    u = build(:upload, user: @fred, assignment: assn)
+    u.upload_data = FakeUpload.new(Rails.root.join("test", "fixtures", "files", "fundies-config.json").to_s)
+    assn.graders << JavaStyleGrader.new(assignment: assn, avail_score: 30, order: 1, upload: u)
+    u = build(:upload, user: @fred, assignment: assn)
+    u.upload_data = FakeUpload.new(Rails.root.join("test", "fixtures", "files", "Assignment 2", "checker-tests.java").to_s)
+    g = CheckerGrader.new(assignment: assn, upload: u, avail_score: 50, order: 2)
+    g.test_class = "ExamplesMobilesReference"
+    g.errors_to_show = 3
+    assn.graders << g
+    assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
+    assn.save!
+    @assignments << assn
+    create_submission(@course, @course.students, assn, "Mobiles.java", 15)
+    # This assignment is fully ungraded, and no grades even exist yet
+    # This assignment should also have an abnormal submission for the team below
+    assn.used_submissions[0].team.dissolve(assn.due_date - 1.day)
+    puts "Done."
+
+
+    # ASSIGNMENT 4
+    print "Creating Assignment 4..."
+    ts = Teamset.create(course: @course, name: "Teamset 4")
+    ts.randomize(3, "course", Time.now - 10.days)
+    assn = Files.create(name: "Assignment 4", blame: @fred, teamset: ts, lateness_config: @late_per_day,
                         course: @course, available: Time.now - 5.days, due_date: Time.now - 1.days,
                         points_available: 2.5, team_subs: true)
     u = build(:upload, user: @fred, assignment: assn)
@@ -423,10 +480,48 @@ class Screenshots
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
     assn.save!
     @assignments << assn
+    create_submission(@course, @course.students, assn, "Mobiles.java", 15)
+    # This assignment has grades filled in for the first two graders, but not the third yet,
+    # so it is missing
+    graders = assn.graders.to_a.sort_by(&:order)
+    assn.submissions.each do |s| grade_sub(s, graders[0...-1], false) end
+    puts "Done."
     
 
-    # ASSIGNMENTS 4--6
-    (4..6).each do |i|
+    # ASSIGNMENT 1 Self-eval
+    print "Creating Assigmment 1 Self-eval..."
+    assn1 = @assignments[0]
+    u = build(:upload, user: @fred, assignment: assn1)
+    u = FakeUpload.new(Rails.root.join("test", "fixtures", "files", "peer-eval.yaml").to_s)
+    assn = Codereview.new(name: "Assignment 1 self-eval", blame: @fred, teamset: assn1.teamset,
+                          lateness_config: @late_per_day, course: @course, related_assignment: assn1,
+                          available: assn1.due_date, due_date: assn1.due_date + 25.hours,
+                          points_available: 2.5, team_subs: assn1.team_subs, assignment_file: u,
+                          prevent_late_submissions: assn1.id)
+    assn.graders << CodereviewGrader.new(review_target: "self", review_count: 1, review_threshold: 75,
+                                         upload_by_user_id: @fred.id, order: 1)
+    assn.save!
+    @assignments << assn
+    puts "Done."
+
+    # ASSIGNMENT 2 Peer-eval
+    print "Creating Assigmment 2 Self-eval..."
+    assn2 = @assignments[1]
+    u = FakeUpload.new(Rails.root.join("test", "fixtures", "files", "peer-eval.yaml").to_s)
+    assn = Codereview.new(name: "Assignment 2 self-eval", blame: @fred, teamset: assn2.teamset,
+                          lateness_config: @late_per_day, course: @course, related_assignment: assn2,
+                          available: assn2.due_date, due_date: assn2.due_date + 25.hours,
+                          points_available: 2.5, team_subs: assn2.team_subs, assignment_file: u,
+                          prevent_late_submissions: assn2.id)
+    assn.graders << CodereviewGrader.new(review_target: "peer", review_count: 2, review_threshold: 75,
+                                         upload_by_user_id: @fred.id, order: 1)
+    assn.save!
+    @assignments << assn
+    puts "Done."
+    
+    # ASSIGNMENTS 5--7
+    (5..7).each do |i|
+      print "Creating Assignment #{i}..."
       ts = Teamset.create(course: @course, name: "Teamset #{i}")
       assn = Files.create(name: "Assignment #{i}", blame: @fred, teamset: ts, lateness_config: @late_per_day,
                           course: @course, available: Time.now + 1.days, due_date: Time.now + 7.days,
@@ -434,8 +529,8 @@ class Screenshots
       assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 1)
       assn.save!
       @assignments << assn
+      puts "Done."
     end
-    puts "Done."
   end
 
   def create_submission(course, students, assn, file, count = 1)
@@ -455,6 +550,7 @@ class Screenshots
     graders.each do |g| g.ensure_grade_exists_for! sub end
     sub.grades.each do |g|
       g.score = Random.rand(g.out_of)
+      g.available = g.grader.autograde? || complete
       g.save
     end
     sub.compute_grade! if complete
@@ -498,23 +594,7 @@ class Screenshots
     end
     def course_page
       sign_in(@fred)
-      # These take a while, because they each launch DrRacket to render the file...
-      create_submission(@course, @course.students, @assignments[0], "sample.rkt", 15)
-      create_submission(@course, @course.students, @assignments[1], "Mobiles.java", 15)
-      create_submission(@course, @course.students, @assignments[2], "Mobiles.java", 15)
       
-      # Assn 0 is fully graded, but unpublished
-      @assignments[0].submissions.each do |s| grade_sub(s, @assignments[0].graders.to_a, false) end
-      # Assn 1 is fully ungraded, and no grades even exist yet
-      # Assn 1 should also have an abnormal submission for the team below
-      @assignments[1].used_submissions[0].team.dissolve(@assignments[1].due_date - 1.day)
-      # Assn 2 has grades filled in for the first two graders, but not the third yet,
-      # so it is missing
-      graders = @assignments[2].graders.to_a
-      @assignments[2].submissions.each do |s|
-        grade_sub(s, graders[0...-1], false)
-      end
-
       visit(course_path(@course))
       yield
       assignments, missing, abnormal, unpublished, current_teams, pending = page.find_all("div.panel").to_a
@@ -522,8 +602,11 @@ class Screenshots
       yield options: bbox(missing)
       yield options: bbox(abnormal)
       # Fill in the missing graders, and now it should be pending
-      @assignments[2].submissions.each do |s|
-        graders[-1].ensure_grade_exists_for! s
+      grader = @assignments[3].graders.last
+      @assignments[3].submissions.each do |s|
+        @assignments[3].graders.each do |g|
+          g.ensure_grade_exists_for! s
+        end
       end
       visit(course_path(@course))
       assignments, abnormal, unpublished, current_teams, pending = page.find_all("div.panel").to_a
@@ -534,15 +617,6 @@ class Screenshots
       scale_box box, 0.1, 0.1
       highlight_area("assignments", box)
       yield
-
-      visit(course_assignment_path(@course, @assignments[0]))
-      highlight_area("publish", scale_box(bbox(page.find("a[data-confirm]")), 0.1, 0.1))
-      yield
-      remove_highlight("publish")
-      accept_alert do
-        page.find("a[data-confirm]").click
-      end
-      yield
     end
     def assignments_page
       sign_in(@fred)
@@ -551,8 +625,13 @@ class Screenshots
       yield
       set_full_page
       page.find_all(".panel").each do |panel|
-        yield options: clip(bbox(panel), nil, 350)
+        yield options: clip(bbox(panel), nil, 400)
       end
+      summary = @course.score_summary
+      student = summary.sort_by{|s| s[:used].size}.last
+      row = page.find("tr", text: student[:s].display_name)
+      row.click
+      yield options: bbox(row)
     end
 
     def facebook_page
@@ -563,10 +642,23 @@ class Screenshots
 
     def assignment_page
       sign_in(@fred)
+      # Fully graded & published assignment
       visit course_assignment_path(@course, @assignments[0])
-      yield # Fully graded assignment
-      subs = @assignments[1].submissions
-      graders = @assignments[1].graders.to_a
+      yield
+
+      # Fully graded, unpublished assignment
+      visit(course_assignment_path(@course, @assignments[1]))
+      highlight_area("publish", scale_box(bbox(page.find("a[data-confirm]")), 0.1, 0.1))
+      yield
+      remove_highlight("publish")
+      accept_alert do
+        page.find("a[data-confirm]").click
+      end
+      yield # fully graded and published
+
+      # puts Grade.count
+      subs = @assignments[2].submissions
+      graders = @assignments[2].graders.to_a.sort_by(&:order)
       last_grader = graders.pop
       subs.each do |s|
         graders.each do |g|
@@ -577,7 +669,7 @@ class Screenshots
           g.save
         end
       end
-      visit course_assignment_path(@course, @assignments[1])
+      visit course_assignment_path(@course, @assignments[2])
       create_missing = page.find("a.btn-warning")
       highlight_area("assignments", scale_box(bbox(create_missing), 0.1, 0.1), "rgba(240, 0, 0, 0.5)")
       yield # Mostly graded assignment
@@ -586,8 +678,57 @@ class Screenshots
         create_missing.click
       end
       yield
-      visit course_assignment_path(@course, @assignments[2])
+      visit course_assignment_path(@course, @assignments[3])
       yield
+
+      histograms = page.find("button#toggle-histograms")
+      actions = histograms.find(:xpath, "..")
+      histograms_hilite = highlight_area("histograms", scale_box(bbox(histograms), 0.1, 0.1), "rgba(240, 0, 0, 0.5)")
+      yield options: bbox(actions, histograms_hilite) # Mostly graded assignment
+      remove_highlight("histograms")
+      histograms.click
+
+      grades = page.find("div#grade-histograms")
+      left = grades.find(".left.carousel-control")
+      right = grades.find(".right.carousel-control")
+      highlight_area("left", bbox(left.find(".glyphicon")))
+      highlight_area("right", bbox(right.find(".glyphicon")))
+      yield options: bbox(grades, left, right)
+      remove_highlight("left")
+      remove_highlight("right")
+      right.click
+      yield options: bbox(grades, left, right)
+      right.click
+      yield options: bbox(grades, left, right)
+    end
+
+    def assignment_extensions_page
+      visit course_assignment_path(@course, @assignments[3])
+      extensions = page.find("a", text: "Manage individual extensions")
+      highlight_area("extend", scale_box(bbox(extensions), 0.1, 0.1))
+      yield
+      remove_highlight("extend")
+      extensions.click
+      yield # extensions page
+
+      row = page.find_all("tbody tr").first
+      text = row.find("input#due_date")
+      text.click
+      widget = row.find(".bootstrap-datetimepicker-widget")
+      yield options: bbox(row, text, widget)
+      submit = row.find(".submit")
+      text.set(DateTime.now + 2.days)
+      submit.click
+      yield options: bbox(row)
+
+      page.refresh
+      hilite = highlight_area("revoke_all", scale_box(bbox(page.find("a#revoke_all")), 0.1, 0.1))
+      yield options: bbox(page.find("h3", text: "Existing extensions"), hilite)
+      remove_highlight("revoke_all")
+
+      row = page.find_all("tbody tr").first
+      row.find(".revoke").click
+      yield options: bbox(row)
     end
 
     def assignment_weights_page
@@ -598,13 +739,39 @@ class Screenshots
       page.execute_script("window.scrollBy(0, 10000)"); # scroll to bottom
       yield
     end
+
+    def review_matchings_page
+      sign_in(@fred)
+      visit course_assignment_path(@course, @assignments[5])
+      matchings_button = page.find("a", text: "Edit review matchings")
+      hilite = highlight_area("matchings", scale_box(bbox(matchings_button), 0.1, 0.1))
+      info = matchings_button.find_all(:xpath, "../following-sibling::div[@class='row']")
+      yield options: bbox(info, hilite)
+      remove_highlight("matchings")
+      page.find("a", text: "Edit review matchings").click
+      page.find_all("input[value='Assign review matchings']")[0].click
+      set_full_page
+      well = page.find_all("div.well > *")
+      yield options: inflate_box(bbox(well[0..1]), 19, 19, 0)
+      yield options: inflate_box(bbox(well[2..5]), 19)
+      yield options: inflate_box(bbox(well[6..8]), 19)
+      yield options: clip(bbox(page.find_all("div.well ~ *")), nil, 300)
+    end
   end
 end
+
+if ENV["SEED"]
+  RANDOM_SEED = ENV["SEED"].to_i
+else
+  srand
+  RANDOM_SEED = srand % 0xFFFF
+end
+srand RANDOM_SEED
+puts "SEED=#{RANDOM_SEED}"
 
 
 FactoryBot.find_definitions
 Utilities.redefine_factories
-include Rails.application.routes.url_helpers
 Capybara.default_driver = :selenium_chrome
 DatabaseCleaner.strategy = :deletion
 DatabaseCleaner.start

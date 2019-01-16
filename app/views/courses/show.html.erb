@@ -41,8 +41,38 @@
   </div>
 </div>
 <div class="row">
-  <%= link_to "Withdraw from this course", withdraw_course_path(@course),
-      method: :delete,
-      class: "pull-right btn btn-danger",
-      data: {confirm: "Are you absolutely sure you want to withdraw from this course?"} %>
+  <button type="button" class="pull-right btn btn-danger"
+    data-keybaord="true" data-toggle="modal" data-target="#withdraw">
+    Withdraw from this course
+  </button>
+</div>
+<div id="withdraw" class="modal fade" tabindex="-1" role="dialog">
+  <div class="modal-dialog">
+    <div class="modal-content" style="overflow: hidden;">
+      <div class="modal-header panel-heading alert-danger">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h4 class="modal-title">Withdraw from this course?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Are you absolutely sure you want to withdraw from this
+          course?</p>
+        <p>
+          You <i>still</i> will have to withdraw from the course at the
+          registrar, <i>separately</i> from withdrawing on this site.
+          <i><b>Failure to do so will result in your still getting a
+          grade for this course!</b></i>
+        </p>
+      </div>
+      <div class="modal-footer alert-danger">
+        <button type="submit" class="btn btn-success btn-default pull-left" data-dismiss="modal">
+          <span class="glyphicon glyphicon-ok"></span> Stay enrolled
+        </button>        
+        <%= link_to withdraw_course_path(@course),
+            method: :delete, class: "pull-right btn btn-danger" do %>
+          <span class="glyphicon glyphicon-log-out"></span>
+          Withdraw from this course on Bottlenose
+        <% end %>
+      </div>
+    </div>
+  </div>
 </div>

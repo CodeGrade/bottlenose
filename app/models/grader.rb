@@ -50,7 +50,8 @@ class Grader < ApplicationRecord
         user_name: sub.user.display_name,
         course: assn.course.id,
         assn: assn.id,
-        sub: sub.id
+        sub: sub.id,
+        opts: opts
       }
       job[:id]
     end

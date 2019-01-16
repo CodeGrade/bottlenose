@@ -6,7 +6,7 @@ class ExamGrader < Grader
     # and don't compute_grade automatically; wait to publish
   end
 
-  def autograde!(assignment, sub)
+  def autograde!(assignment, sub, prio = 0)
     g = self.grade_for sub
 
     g.out_of = self.avail_score
