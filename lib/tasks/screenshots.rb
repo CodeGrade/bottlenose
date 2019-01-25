@@ -335,7 +335,7 @@ class Screenshots
               options["height"] = options["bot"].ceil - options["top"]
             end
             if options["width"] && options["height"]
-              ss.inflate_box_pct options, dpi, dpi
+              ss.scale_box options, dpi, dpi
               geometry = "#{options["width"].ceil}x#{options["height"].ceil}+#{options["left"]}+#{options["top"]}"
               output, err, status =
                            Open3.capture3("convert",
