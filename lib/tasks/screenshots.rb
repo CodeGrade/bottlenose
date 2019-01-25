@@ -6,6 +6,7 @@ Rails.env = ENV["RAILS_ENV"] = "test"
 Rails.logger = ActiveSupport::Logger.new("/dev/null") # Don't need logging for this
 Rails.application.require_environment!
 
+require 'chromedriver-helper'
 require 'capybara'
 require 'capybara/rails'
 require 'fake_upload'
@@ -32,6 +33,9 @@ module Utilities
       height = height || h
     end
     window.resize_to(width, height)
+  end
+  def get_dpi
+    page.evaluate_script("window.devicePixelRatio").to_f
   end
   def set_full_page
     height = page.evaluate_script("$(document.body).outerHeight(true)")
@@ -145,10 +149,19 @@ JAVASCRIPT
   end
 
   def scale_box(box, scaleX, scaleY)
+    box["left"] *= scaleX
+    box["top"] *= scaleY
+    box["width"] *= scaleX if box["width"]
+    box["height"] *= scaleY if box["height"]
+    box["right"] *= scaleX if box["right"]
+    box["bot"] *= scaleY if box["bot"]
+  end
+  
+  def inflate_box_pct(box, marginPctX, marginPctY)
     width = box["width"] || (box["right"] - box["left"])
     height = box["height"] || (box["bot"] - box["top"])
-    dx = width * scaleX
-    dy = height * scaleY
+    dx = width * marginPctX
+    dy = height * marginPctY
     box["left"] -= dx;
     box["top"] -= dy
     box["right"] += dx if box["right"]
@@ -297,6 +310,8 @@ class Screenshots
       ss.chrome_height =
         Capybara.current_session.current_window.size()[1] - ss.page.evaluate_script("window.innerHeight")
 
+      dpi = ss.get_dpi
+      puts "DPI is #{dpi}"
       
       HOOKS[:before_all].each do |m| ss.send(m) end
       ScreenshotScripts.instance_methods(false).each do |method|
@@ -320,6 +335,7 @@ class Screenshots
               options["height"] = options["bot"].ceil - options["top"]
             end
             if options["width"] && options["height"]
+              ss.inflate_box_pct options, dpi, dpi
               geometry = "#{options["width"].ceil}x#{options["height"].ceil}+#{options["left"]}+#{options["top"]}"
               output, err, status =
                            Open3.capture3("convert",
@@ -614,7 +630,7 @@ class Screenshots
       yield options: bbox(pending)
       set_default_size
       box = bbox(page.find_all("a.btn").to_a[2])
-      scale_box box, 0.1, 0.1
+      inflate_box_pct box, 0.1, 0.1
       highlight_area("assignments", box)
       yield
     end
@@ -648,7 +664,7 @@ class Screenshots
 
       # Fully graded, unpublished assignment
       visit(course_assignment_path(@course, @assignments[1]))
-      highlight_area("publish", scale_box(bbox(page.find("a[data-confirm]")), 0.1, 0.1))
+      highlight_area("publish", inflate_box_pct(bbox(page.find("a[data-confirm]")), 0.1, 0.1))
       yield
       remove_highlight("publish")
       accept_alert do
@@ -671,7 +687,7 @@ class Screenshots
       end
       visit course_assignment_path(@course, @assignments[2])
       create_missing = page.find("a.btn-warning")
-      highlight_area("assignments", scale_box(bbox(create_missing), 0.1, 0.1), "rgba(240, 0, 0, 0.5)")
+      highlight_area("assignments", inflate_box_pct(bbox(create_missing), 0.1, 0.1), "rgba(240, 0, 0, 0.5)")
       yield # Mostly graded assignment
       remove_highlight("assignments")
       accept_alert do
@@ -683,7 +699,7 @@ class Screenshots
 
       histograms = page.find("button#toggle-histograms")
       actions = histograms.find(:xpath, "..")
-      histograms_hilite = highlight_area("histograms", scale_box(bbox(histograms), 0.1, 0.1), "rgba(240, 0, 0, 0.5)")
+      histograms_hilite = highlight_area("histograms", inflate_box_pct(bbox(histograms), 0.1, 0.1), "rgba(240, 0, 0, 0.5)")
       yield options: bbox(actions, histograms_hilite) # Mostly graded assignment
       remove_highlight("histograms")
       histograms.click
@@ -705,7 +721,7 @@ class Screenshots
     def assignment_extensions_page
       visit course_assignment_path(@course, @assignments[3])
       extensions = page.find("a", text: "Manage individual extensions")
-      highlight_area("extend", scale_box(bbox(extensions), 0.1, 0.1))
+      highlight_area("extend", inflate_box_pct(bbox(extensions), 0.1, 0.1))
       yield
       remove_highlight("extend")
       extensions.click
@@ -722,7 +738,7 @@ class Screenshots
       yield options: bbox(row)
 
       page.refresh
-      hilite = highlight_area("revoke_all", scale_box(bbox(page.find("a#revoke_all")), 0.1, 0.1))
+      hilite = highlight_area("revoke_all", inflate_box_pct(bbox(page.find("a#revoke_all")), 0.1, 0.1))
       yield options: bbox(page.find("h3", text: "Existing extensions"), hilite)
       remove_highlight("revoke_all")
 
@@ -744,7 +760,7 @@ class Screenshots
       sign_in(@fred)
       visit course_assignment_path(@course, @assignments[5])
       matchings_button = page.find("a", text: "Edit review matchings")
-      hilite = highlight_area("matchings", scale_box(bbox(matchings_button), 0.1, 0.1))
+      hilite = highlight_area("matchings", inflate_box_pct(bbox(matchings_button), 0.1, 0.1))
       info = matchings_button.find_all(:xpath, "../following-sibling::div[@class='row']")
       yield options: bbox(info, hilite)
       remove_highlight("matchings")
@@ -772,7 +788,7 @@ puts "SEED=#{RANDOM_SEED}"
 
 FactoryBot.find_definitions
 Utilities.redefine_factories
-Capybara.default_driver = :selenium_chrome
+Capybara.default_driver = :selenium_chrome_headless
 DatabaseCleaner.strategy = :deletion
 DatabaseCleaner.start
 
