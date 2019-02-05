@@ -109,7 +109,10 @@ module ApplicationHelper
   end
   def maybe_link_user(show, user, extra_class="")
     if show == true || (show.is_a?(Array) && show.member?(user.id))
-      link_to(user.display_name, user_path(user), class: "user-link #{extra_class}".strip, data: user_link_data(user))
+      content_tag(:span,[
+          link_to(user.display_name, user_path(user), class: "user-link #{extra_class}".strip, data: user_link_data(user)),
+          content_tag(:span, "(#{user.username})", class: "username")
+        ].flatten.join(" ").html_safe)
     else
       content_tag :span, user.name, class: "user-link #{extra_class}".strip, data: user_link_data(user)
     end
