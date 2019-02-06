@@ -43,7 +43,7 @@
 //= require_tree .
 
 
-function enableShowUsernames(elts) {
+function enableShowUsername(elts) {
   $(elts).click(function(){ 
     $(this).toggleClass("active");
     $("#" + $(this).data("target")).toggleClass("showusernames");
