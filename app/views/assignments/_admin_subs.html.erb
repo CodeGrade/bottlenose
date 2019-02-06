@@ -138,9 +138,7 @@
           <% else %> 
           Submitter
           <% end %>
-          <button class="btn btn-default no-resort" id="show_username" title="Show/hide usernames" data-target="submissions">
-            <span class="glyphicon glyphicon-user"></span>
-          </button>
+          <%= toggle_usernames_button("show_username", "submissions") %>
         </th>
         <th>Date</th>
         <th>Status</th>
@@ -278,10 +276,7 @@
         widgets: ['uitheme']
       });
       $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
-      $("#show_username").click(function(){
-        $(this).toggleClass("active");
-        $("#" + $(this).data("target")).toggleClass("showusernames");
-      })
+      enableShowUsername("#show_username");
     });
     <% if cur_user_prof_ever || cur_reg&.staff? %>
     $(function() {
