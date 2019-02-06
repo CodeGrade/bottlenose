@@ -276,8 +276,8 @@
         widgets: ['uitheme']
       });
       $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
+      enableShowUsernames("#show_username");
     });
-    enableShowUsername("#show_username");
     <% if cur_user_prof_ever || cur_reg&.staff? %>
     $(function() {
       var prevSection = "show_all";
