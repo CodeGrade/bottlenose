@@ -144,6 +144,8 @@ GEM
       railties (>= 3.2.16)
     json (2.1.0)
     kramdown (2.0.0)
+    kramdown-parser-gfm (1.0.1)
+      kramdown (~> 2.0)
     launchy (2.4.3)
       addressable (~> 2.3)
     libv8 (3.16.14.19)
@@ -321,6 +323,7 @@ DEPENDENCIES
   jquery-tablesorter
   jquery-ui-rails
   kramdown
+  kramdown-parser-gfm
   launchy
   listen
   minitest-reporters
