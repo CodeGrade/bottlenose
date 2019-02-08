@@ -132,14 +132,16 @@
   <table id="submissions" class="table table-striped row-vcenter">
     <thead>
       <tr>
-        <% if @gradesheet.assignment.team_subs? %>
-        <th>Team (submitter in bold)</th>
-        <% else %>
-        <th>Submitter</th>
-        <% end %>
+        <th>
+          <% if @gradesheet.assignment.team_subs? %>
+          Team (submitter in bold)
+          <% else %> 
+          Submitter
+          <% end %>
+          <%= toggle_usernames_button("show_username", "submissions") %>
+        </th>
         <th>Date</th>
         <th>Status</th>
-
         <% @gradesheet.grades[:graders].each do |c| %>
         <th class="text-right">
           <% if c.autograde? && cur_reg&.professor? %>
@@ -274,6 +276,7 @@
         widgets: ['uitheme']
       });
       $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
+      enableShowUsernames("#show_username");
     });
     <% if cur_user_prof_ever || cur_reg&.staff? %>
     $(function() {

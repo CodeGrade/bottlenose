@@ -6,6 +6,12 @@ module ApplicationHelper
     SecureRandom.hex
   end
 
+  def toggle_usernames_button(id, target, class: nil) 
+    button_tag(type: nil, class: "btn btn-default no-resort", title: "Show/hide usernames", id: id, data: {target: target}) do
+      content_tag(:span, nil, class: "glyphicon glyphicon-user")
+    end 
+   end
+
   def select_user_hash(users = nil)
     users ||= User.all
     hash = {}
@@ -109,9 +115,15 @@ module ApplicationHelper
   end
   def maybe_link_user(show, user, extra_class="")
     if show == true || (show.is_a?(Array) && show.member?(user.id))
-      link_to(user.display_name, user_path(user), class: "user-link #{extra_class}".strip, data: user_link_data(user))
+      content_tag(:span,[
+          link_to(user.display_name, user_path(user), class: "user-link #{extra_class}".strip, data: user_link_data(user)),
+          content_tag(:span, "(#{user.username})", class: "username")
+      ].flatten.join(" ").html_safe)
     else
-      content_tag :span, user.name, class: "user-link #{extra_class}".strip, data: user_link_data(user)
+      content_tag(:span,[
+        content_tag(:span, user.name, class: "user-link #{extra_class}".strip, data: user_link_data(user)),
+        content_tag(:span, "(#{user.username})", class: "username")
+      ].flatten.join(" ").html_safe)
     end
   end
 
@@ -147,8 +159,6 @@ module ApplicationHelper
     content_tag(:textarea, str, options)
   end
 
-  
-  
   def registration_show_toggle_path(reg_id)
     "/registrations/#{reg_id}/toggle_show"
   end
