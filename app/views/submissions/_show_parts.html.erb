@@ -19,11 +19,11 @@
     <% end %>
     <% elsif part["text"] %>
     <p><%= sanitize_question(part["text"]) %></p>
-    <textarea disabled class="form-control optional" rows="5"
+    <textarea readonly class="form-control optional" rows="5"
               name="answers[<%= sub_id %>][<%= i %>][parts][<%= part_i %>][info]"><%= part_ans&.dig('info') %></textarea>
     <% elsif part["requiredText"] %>
     <p><%= sanitize_question(part["requiredText"]) %></p>
-    <textarea disabled class="form-control <%= if @answers && part_ans&.dig('info').blank? then 'unanswered' end %>" rows="5"
+    <textarea readonly class="form-control <%= if @answers && part_ans&.dig('info').blank? then 'unanswered' end %>" rows="5"
               name="answers[<%= sub_id %>][<%= i %>][parts][<%= part_i %>][info]"><%= part_ans&.dig('info') %></textarea>
     <% end %>
   <% end %>

@@ -43,6 +43,14 @@ div.CodeMirror .highlightLine {
    max-width: unset;
 }
 
+.username {
+   display: none;
+}
+
+.showusernames .username {
+   display: inline;
+}
+
 .gradeA { color: darkgreen; }
 .gradeB { color: green; }
 .gradeC { color: darkgoldenrod; }

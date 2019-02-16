@@ -65,7 +65,7 @@
       $("#completed").removeClass("disabled").prop("disabled", false).val("Mark grading as complete");
     });
     activateCommentEditing(<%= @grader.extra_credit %>, <%= @grade.id %>, <%= @grade.out_of %>,
-      "<%= current_user.name %>", <%= cur_reg&.professor? %>,
+      "<%= current_user.name %>", <%= cur_reg&.professor? || false %>,
       "<%= course_assignment_submission_grade_path(@course, @assignment, @submission, @grade) %>",
       function(e, reason) {
         var $completed = $("#completed");

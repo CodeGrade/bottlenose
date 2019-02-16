@@ -329,6 +329,7 @@ class AssignmentsController < ApplicationController
                                :removefile, :extra_credit,
                                :teamset_plan, :teamset_source_use, :teamset_source_copy,
                                :prevent_late_submissions,
+                               :lateness_config_id,
                                interlocks_attributes: [
                                  :id, :_destroy, :constraint, :related_assignment_id
                                ],
