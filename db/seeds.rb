@@ -1,40 +1,102 @@
-require 'devise/encryptor'
+admin = User.create(
+  name: "Site Administrator",
+  first_name: "Site",
+  last_name: "Administrator",
+  nickname: "Admin",
+  email: "admin@example.com",
+  site_admin: true,
+  username: "admin",
+  nuid: 1234567,
+  encrypted_password: Devise::Encryptor.digest(User, "admin")
+)
+admin.save!
 
-[Course, Bucket, Assignment, Registration].each do |model|
-  model.reset_column_information
-end
+prof = User.create(
+  name: "Doctor Professor",
+  first_name: "Doctor",
+  last_name: "Professor",
+  nickname: "Dr. P",
+  email: "prof@example.com",
+  site_admin: false,
+  username: "prof",
+  nuid: 2345678,
+  encrypted_password: Devise::Encryptor.digest(User, "prof")
+)
+prof.save!
 
-def random(arr)
-  arr[rand(arr.count)]
-end
+f18 = Term.create(semester: "fall", year: 2018)
+f18.save!
 
-case Rails.env
-when "development"
-  nat = User.create!(
-                     username: "nat",
-                     name: "Nat Tuck",
-                     first_name: "Nat",
-                     last_name: "Tuck",
-                     nickname: "Nat",
-                     site_admin: true,
-                     )
+lc = LatenessConfig.create(
+  type: "LatePerDayConfig",
+  days_per_assignment: 4,
+  percent_off: 25,
+  frequency: 1,
+  max_penalty: 100)
+lc.save!
 
-  nat.encrypted_password = Devise::Encryptor.digest(nat.class, "bacon88")
-  nat.save!
+fundies = Course.new(
+  term: f18,
+  name: "CS2500",
+  footer: "",
+  lateness_config: lc)
 
-  fixed_lateness = FixedDaysConfig.create!(days_per_assignment: 2)
-  pct_lateness = LatePerDayConfig.create!(percent_off: 25, frequency: 1, days_per_assignment: 4, max_penalty: 100)
-  
-  # Create two terms.
-  fall = Term.create!(name: "Fall 2015")
-  spring = Term.create!(name: "Spring 2016")
-when "production"
-  nat = User.create!(
-                     username: "ntuck",
-                     name: "Nat Tuck",
-                     first_name: "Nat",
-                     last_name: "Tuck",
-                     nickname: "Nat",
-                     site_admin: true,
-                     )
+lec = Section.new(
+  course: fundies,
+  crn: 0,
+  meeting_time: "MWR 10:30am",
+  instructor: prof,
+  type: "lecture"
+)
+
+lab1 = Section.new(
+  course: fundies,
+  crn: 1,
+  meeting_time: "F 1:35pm",
+  instructor: prof,
+  type: "lab"
+)
+
+lab2 = Section.new(
+  course: fundies,
+  crn: 2,
+  meeting_time: "F 3:25pm",
+  instructor: prof,
+  type: "lab"
+)
+
+fundies.sections = [lec, lab1, lab2]
+
+fundies.save!
+
+for i in 0..39
+  lab = i < 20 ? lab1 : lab2
+  num = i.to_s.rjust(2, "0")
+  user = User.create(
+    name: "User #{num}",
+    first_name: "User",
+    last_name: num,
+    nickname: "Nickname #{num}",
+    email: "user#{i}@example.com",
+    site_admin: false,
+    username: "user#{num}",
+    nuid: 1000000 + i,
+    encrypted_password: Devise::Encryptor.digest(User, "user#{num}"),
+  )
+  reg = Registration.create(
+    course: fundies,
+    user: user,
+    role: "student",
+    show_in_lists: false,
+  )
+  reg.save!
+  RegistrationSection.create(
+    registration: reg,
+    section: lec
+  ).save!
+  RegistrationSection.create(
+    registration: reg,
+    section: lab
+  ).save!
+  user.save!
 end
