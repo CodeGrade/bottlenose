@@ -383,11 +383,20 @@ class Submission < ApplicationRecord
         return nil if File.basename(item[:full_path].to_s) == ".DS_Store"
         comments = @lineCommentsByFile[item[:public_link].to_s] || {noCommentsFor: item[:public_link].to_s}
         mimetype = ApplicationHelper.mime_type(item[:full_path])
+        contents = begin
+                     File.read(item[:full_path].to_s)
+                   rescue Errno::EACCES => e
+                     "Could not access file:\n#{e.to_s.gsub(item[:full_path].to_s, item[:public_link].to_s)}"
+                   rescue Errno::ENOENT => e
+                     "Somehow, #{item[:public_link]} does not exist"
+                   rescue Exception => e
+                     "Error reading file:\n#{e.to_s.gsub(item[:full_path].to_s, item[:public_link].to_s)}"
+                   end
         @submission_files.push({
           link: item[:public_link],
           name: item[:public_link].sub(/^.*extracted\//, ""),
           pdf_path: item[:converted_path],
-          contents: ensure_utf8(File.read(item[:full_path].to_s), mimetype),
+          contents: ensure_utf8(contents, mimetype),
           type: mimetype,
           href: @submission_files.count + 1,
           lineComments: comments

@@ -230,26 +230,28 @@ class ArchiveUtils
     end
   end
 
-  def self.extract(file, mime, dest)
+  def self.extract(file, mime, dest, force_readable: false)
     # Extracts the file to the given destination
     # Ensures that any symlinks created are entirely local to the destination
     # Assumes that too_many_files? and total_size_too_large? are ok with this file
     # Raises an exception if symlinks are malicious
 
+
     if is_zip?(file, mime)
-      zip_extract(file, dest)
+      zip_extract(file, dest, force_readable)
     elsif is_tar?(file, mime)
-      tar_extract(file, dest)
+      tar_extract(file, dest, force_readable)
     elsif is_tar_gz?(file, mime)
-      tar_gz_extract(file, dest)
+      tar_gz_extract(file, dest, force_readable)
     elsif is_gz?(file, mime)
       dest = File.join(dest, File.basename(file, ".gz"))
-      gzip_extract(file, dest)
+      gzip_extract(file, dest, force_readable)
     else
       if File.symlink?(file)
         raise SafeExtractionError.new(file, dest, nil)
       end
       FileUtils.cp(file, dest)
+      FileUtils.chmod "u+r", dest, verbose: false if force_readable
     end
   end
 
@@ -493,7 +495,7 @@ class ArchiveUtils
       end
     end
   end
-  def self.helper_extract(file, type, archive, dest)
+  def self.helper_extract(file, type, archive, dest, force_readable)
     seen_symlinks = false
     archive.safe_each do |entry|
       out = encode_or_escape(File.join(dest, entry.name.gsub("\\", "/").sub(/\/$/, "")))
@@ -511,6 +513,7 @@ class ArchiveUtils
             f.print entry.read
           end
           FileUtils.chmod entry.unix_perms, out, verbose: false if entry.unix_perms
+          FileUtils.chmod "u+r", out, verbose: false if force_readable
         else
           FileUtils.rm_rf out unless File.file? out
           FileUtils.mkdir_p(File.dirname(out))
@@ -547,20 +550,21 @@ class ArchiveUtils
     raise FileReadError.new(file, type, e)
   end
 
-  def self.zip_extract(file, dest)
-    Zip::File.open(file) do |zf| helper_extract(file, 'zip', zf, dest) end
+  def self.zip_extract(file, dest, force_readable)
+    Zip::File.open(file) do |zf| helper_extract(file, 'zip', zf, dest, force_readable) end
   end
-  def self.tar_extract(file, dest)
-    File.open(file) do |source| helper_extract(file, 'tar', Gem::Package::TarReader.new(source), dest) end
+  def self.tar_extract(file, dest, force_readable)
+    File.open(file) do |source| helper_extract(file, 'tar', Gem::Package::TarReader.new(source), dest, force_readable) end
   end
-  def self.tar_gz_extract(file, dest)
-    Zlib::GzipReader.open(file) do |source| helper_extract(file, 'tar_gz', Gem::Package::TarReader.new(source), dest) end
+  def self.tar_gz_extract(file, dest, force_readable)
+    Zlib::GzipReader.open(file) do |source| helper_extract(file, 'tar_gz', Gem::Package::TarReader.new(source), dest, force_readable) end
   end
-  def self.gzip_extract(file, dest)
+  def self.gzip_extract(file, dest, force_readable)
     Zlib::GzipReader.open(file) do |input_stream|
       File.open(dest, "w") do |output_stream|
         IO.copy_stream(input_stream, output_stream)
       end
+      FileUtils.chmod "u+r", dest, verbose: false if force_readable
     end
     return true
   end
