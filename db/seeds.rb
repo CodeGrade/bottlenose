@@ -103,5 +103,22 @@ when "development"
     user.save!
   end
 when "production"
-  # create an admin user based on username
+  require 'etc'
+
+  username = Etc.getlogin
+  info = Etc.getpwnam(username)
+  name = info.gecos.split(/,/).first
+
+  name_split = name.split
+  first_name = name_split[0]
+  last_name = name_split[1]
+
+  admin = User.create(
+    name: name,
+    first_name: first_name,
+    last_name: last_name,
+    site_admin: true,
+    username: username,
+  )
+  admin.save!
 end
