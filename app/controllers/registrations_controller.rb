@@ -40,14 +40,13 @@ class RegistrationsController < ApplicationController
       @registration = Registration.new(reg_params)
     end
 
-    if @registration && @registration.save && @registration.save_sections
-      redirect_to course_registrations_path(@course),
-                  notice: 'Registration was successfully created.'
-    else
-      if @registration && !@registration.new_record?
-        @registration.delete
+    Registration.transaction do
+      if @registration && @registration.save && @registration.save_sections
+        redirect_to course_registrations_path(@course),
+          notice: 'Registration was successfully created.'
+      else
+        render action: :new, status: 400
       end
-      render action: :new, status: 400
     end
   end
 
