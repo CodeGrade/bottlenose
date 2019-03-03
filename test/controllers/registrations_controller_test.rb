@@ -24,7 +24,7 @@ class RegistrationsControllerTest < ActionController::TestCase
     sign_in @john
     get :index, params: {course_id: @cs301.id}
     assert_response :redirect
-    assert_match "Must be an admin or staff", flash[:alert]
+    assert_match "Must be an admin, professor or assistant", flash[:alert]
   end
 
   test "should create registration" do
@@ -52,7 +52,7 @@ class RegistrationsControllerTest < ActionController::TestCase
     sign_in @students[1]
     get :new, params: {course_id: @cs301.id}
     assert_redirected_to root_path
-    assert_match "Must be an admin or staff", flash[:alert]
+    assert_match "Must be an admin, professor or assistant", flash[:alert]
     sign_out @students[1]
 
     sign_in @fred
