@@ -10,6 +10,17 @@ Bottlenose is built expecting the following environment:
   * A BTRFS (or ZFS) filesystem for /var (if possible)
   * PostgreSQL
   * Ruby + Bundler
+  * Homebrew
+  
+### Homebrew
+
+```	
+# Install Homebrew
+$/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+# Install postgres, Ruby, and npm 
+brew install ruby postgresql node
+```
 
 ### Postgres
 
@@ -29,10 +40,8 @@ the pg_hba.conf in /etc/postgres/.../ to allow local ident auth.
 
 ### Ruby
 
-Best practice for Ruby in development is to use a version manager like
-[rvm](http://rvm.io) or rbenv. Once you have the correct version installed,
-
-```sh
+```
+sh
 # Install Ruby's package manager "Bundler".
 gem install bundler
 
@@ -40,7 +49,34 @@ gem install bundler
 # (from the bottlenose directory checked out from git)
 bundle install
 ```
+### Capybara-webkit
 
+**Prerequisite: Xcode (between 9.4 - 10.1).** Newer versions of Xcode will not work and you will have to downgrade! To do this follow these [instructions] (https://medium.com/@tseboho/how-to-downgrade-xcode-4359df5158d5)
+
+**NOTE:** 
+
+Qt 5.5 is the last version of Qt that capybara-webkit will support. The Qt project has dropped the WebKit bindings from binary releases in 5.6. Make sure that you have Xcode installed (between 9.4 - 10.1). Under Xcode preferences locations, make sure there is a version set. Qt 5.5 was removed from homebrew in newer commits. The previous/parent commit was **9ba3d6e**. So, to be able to install Qt 5.5 with homebrew checkout the old commit first:
+
+```
+brew update
+cd $( brew --prefix )/Homebrew/Library/Taps/homebrew/homebrew-core
+git checkout 9ba3d6ef8891e5c15dbdc9333f857b13711d4e97 Formula/qt@5.5.rb
+brew install qt@5.5
+```
+**NOTE:**  
+
+- If you got error fatal: reference is not a tree: 9ba3d6ef8891e5c15dbdc9333f857b13711d4e97, use git fetch --unshallow to complete git history.
+- If you get Error: qt@5.5: unknown version :mountain_lion or :mojave, comment out line #25 in Formula/qt@5.5.rb
+
+The Homebrew formula for qt@5.5 is keg only which means binaries like qmake will not be symlinked into your /usr/local/bin directory and therefore will not be available for capybara-webkit.
+```
+# Then add to your shell configuration file:
+echo 'export PATH="$(brew --prefix qt@5.5)/bin:$PATH"' >> ~/.bashrc	
+
+#N ow you can install capybara-webkit
+ gem install capybara-webkit
+```
+ 
 ### Running Bottlenose
 
 Bottlenose is mostly a standard Rails app.
@@ -57,6 +93,9 @@ rake backburner:work
 
 # Start the server
 rails s
+
+#If it returns an error saying it cannot find rails use
+script/rails s
 
 # App should be at localhost:3000, as per usual.
 ```
