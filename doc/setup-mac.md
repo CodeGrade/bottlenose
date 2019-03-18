@@ -65,7 +65,7 @@ brew install qt@5.5
 ```
 **NOTE:**  
 
-- If you got error fatal: reference is not a tree: 9ba3d6ef8891e5c15dbdc9333f857b13711d4e97, use git fetch --unshallow to complete git history.
+- If you get Error fatal: reference is not a tree: 9ba3d6ef8891e5c15dbdc9333f857b13711d4e97, use git fetch --unshallow to complete git history.
 - If you get Error: qt@5.5: unknown version :mountain_lion or :mojave, comment out line #25 in Formula/qt@5.5.rb
 
 The Homebrew formula for qt@5.5 is keg only which means binaries like qmake will not be symlinked into your /usr/local/bin directory and therefore will not be available for capybara-webkit.
@@ -73,7 +73,7 @@ The Homebrew formula for qt@5.5 is keg only which means binaries like qmake will
 # Then add to your shell configuration file:
 echo 'export PATH="$(brew --prefix qt@5.5)/bin:$PATH"' >> ~/.bashrc	
 
-#N ow you can install capybara-webkit
+# Now you can install capybara-webkit
  gem install capybara-webkit
 ```
  
