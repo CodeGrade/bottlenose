@@ -19,7 +19,7 @@ Bottlenose is built expecting the following environment:
 $/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
 # Install postgres, Ruby, and npm 
-brew install ruby postgresql node
+brew install postgresql node
 ```
 
 ### Postgres
@@ -40,8 +40,8 @@ the pg_hba.conf in /etc/postgres/.../ to allow local ident auth.
 
 ### Ruby
 
+Best practice for Ruby in development is to use a version manager like rvm or rbenv. Once you have the correct version [installed] (https://github.com/rbenv/rbenv#homebrew-on-macos)
 ```
-sh
 # Install Ruby's package manager "Bundler".
 gem install bundler
 
