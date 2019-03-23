@@ -1,4 +1,4 @@
-# Bottlenose
+# Bottlenose &middot; [![Build Status](https://travis-ci.org/CodeGrade/bottlenose.svg?branch=master)](https://travis-ci.org/CodeGrade/bottlenose)
 
 Bottlenose is a web app for managing assignment submission and grading in
 computer science courses. It provides a flexible mechanism for automatic grading
