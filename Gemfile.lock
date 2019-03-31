@@ -146,6 +146,9 @@ GEM
     kramdown (2.0.0)
     kramdown-parser-gfm (1.0.1)
       kramdown (~> 2.0)
+    kramdown-syntax-coderay (1.0.1)
+      coderay (~> 1.1)
+      kramdown (~> 2.0)
     launchy (2.4.3)
       addressable (~> 2.3)
     libv8 (3.16.14.19)
@@ -307,6 +310,7 @@ DEPENDENCIES
   capybara-webkit
   chromedriver-helper
   cocoon
+  coderay
   coffee-rails
   coffee-rails-source-maps
   daemons
@@ -324,6 +328,7 @@ DEPENDENCIES
   jquery-ui-rails
   kramdown
   kramdown-parser-gfm
+  kramdown-syntax-coderay
   launchy
   listen
   minitest-reporters
