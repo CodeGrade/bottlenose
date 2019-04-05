@@ -38,7 +38,43 @@
               data-target="#exam-schema">See schema</span>
       </p>
       <div>&nbsp;</div>
+      <% if !@existing_subs %>
       <%= render "assignment_file_picker", f: f, asgn: asgn, id: "exam" %>
+      <% else %>
+      <div id="exam_editing" class="alert alert-danger">
+        <p>
+          Cannot edit the exam file: grades are already entered.
+          <%= check_box_tag "enable_editing", true, false, data:
+              {toggle: "toggle", on: "Edit exam file", off: "Editing locked" } %>
+        </p>
+        <label>
+          <input type="radio" name="assignment[exam_disposal]" value="delete" checked disabled>
+          Delete <b><i>all</i></b> existing submissions.
+        </label>
+        <label>
+          <input type="radio" name="assignment[exam_disposal]" value="percentage" disabled>
+          Treat all existing question scores as percentages.
+        </label>
+        <label>
+          <input type="radio" name="assignment[exam_disposal]" value="points" disabled>
+          Treat all existing question scores as absolute points.
+        </label>
+        <%= render "assignment_file_picker", f: f, asgn: asgn, id: "exam",
+            disabled: true %>
+      </div>
+      <script>
+        $("#enable_editing").change(function() {
+          if ($(this).prop("checked")) {
+            $("#exam_editing").find("input, button").prop("disabled", false);
+            $("#exam > label.btn-file").removeAttr("disabled");
+          } else {
+            $("#exam_editing").find("input, button").prop("disabled", true);
+            $("#exam > label.btn-file").attr("disabled", "disabled");
+          }
+          $(this).prop("disabled", false);
+        });
+      </script>
+      <% end %>
     </div>
     <div class="form-group col-sm-6">
       <%= f.label :points_available %>
