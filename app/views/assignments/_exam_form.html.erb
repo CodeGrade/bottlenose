@@ -47,15 +47,15 @@
           <%= check_box_tag "enable_editing", true, false, data:
               {toggle: "toggle", on: "Edit exam file", off: "Editing locked" } %>
         </p>
-        <label>
+        <label title="Use this option if the rubric has changed substantially, and it's easier to just start entering grades from scratch.">
           <input type="radio" name="assignment[exam_disposal]" value="delete" checked disabled>
           Delete <b><i>all</i></b> existing submissions.
         </label>
-        <label>
+        <label title="Use this option if you want to rescale existing scores. Only valid if the questions have not changed!">
           <input type="radio" name="assignment[exam_disposal]" value="percentage" disabled>
           Treat all existing question scores as percentages.
         </label>
-        <label>
+        <label title="Use this option if you want to keep exact points unchanged. Only valid if the questions have not changed, and no student's score would be greater than the new maximums!">
           <input type="radio" name="assignment[exam_disposal]" value="points" disabled>
           Treat all existing question scores as absolute points.
         </label>
