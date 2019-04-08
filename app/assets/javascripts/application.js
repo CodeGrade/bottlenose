@@ -42,6 +42,14 @@
 //= require pyret-codemirror-mode/mode/pyret
 //= require_tree .
 
+
+function enableShowUsernames(elts) {
+  $(elts).click(function(){ 
+    $(this).toggleClass("active");
+    $("#" + $(this).data("target")).toggleClass("showusernames");
+  });
+}
+
 // Based on https://stackoverflow.com/questions/14324919/status-of-rails-link-to-function-deprecation
 function enableReflectiveCalls() {
   $('[data-on][data-call][data-args]').each(function(d){
@@ -61,7 +69,6 @@ function enableReflectiveCalls() {
     $(this).data("already-enabled-reflective-call", true);
   });
 }
-
 
 var validKeys = {
   "ArrowLeft": true,

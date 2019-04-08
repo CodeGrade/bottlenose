@@ -103,6 +103,8 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
     </div>
     <div id="markup_markdown_<%= i %>_<%= root %>" class="tab-pane nested" style="position: relative;">
       <% content = Kramdown::Document.new(f[:contents], input: 'GFM', hard_wrap: false, 
+                                          syntax_highlighter: :rouge,
+                                          syntax_highlighter_opts: {formatter: "html_legacy", line_numbers: true, inline_theme: "github"},
                                           math_engine_opts: {preview: true, preview_as_code: true})
          content = sanitize(content.to_html, scrubber: SubmissionsHelper::MarkupScrubber.new)
          content = escape_javascript(render("submissions/markdown_template.html", body: content)) %>

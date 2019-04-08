@@ -41,6 +41,9 @@ gem 'font-awesome-rails'
 gem 'addressable'
 
 gem 'kramdown' # needed for markdown support
+gem 'kramdown-parser-gfm' # needed for Github-flavored markdown, as of kramdown 2.0.0
+gem 'rouge'
+#gem 'kramdown-syntax-coderay' # support for syntax highlighting, as of kramdown 2.0.0
 
 # needed to run graders in the background
 gem 'backburner'
