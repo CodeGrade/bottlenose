@@ -31,9 +31,31 @@ class RegistrationsController < ApplicationController
 
     uu = User.find_by(username: reg_params[:username])
     if uu
+      if !current_user.site_admin?
+        logged_in_role = current_user.registration_for(@course).role
+        new_role = reg_params[:role]
+        if uu == current_user
+          redirect_back fallback_location: course_registrations_path(@course),
+            alert: "You are not allowed to create a registration for yourself."
+          return
+        end
+        if new_role != "student" && logged_in_role != "professor"
+          redirect_back fallback_location: course_registrations_path(@course),
+            alert: "You are not allowed to create #{new_role} registrations."
+          return
+        end
+      end
       @registration = Registration.find_by(course_id: @course, user_id: uu.id)
     end
     if @registration
+      new_role = reg_params[:role]
+      cur_role = @registration.role
+      logged_in_role = current_user.registration_for(@course).role
+      if Registration.roles[new_role] < Registration.roles[cur_role] && logged_in_role != "professor"
+          redirect_back fallback_location: course_registrations_path(@course),
+            alert: "You are not allowed to downgrade registrations."
+          return
+      end
       @registration.assign_attributes(reg_params)
     else
       # Create @registration object for errors.
