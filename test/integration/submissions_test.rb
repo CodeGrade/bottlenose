@@ -186,7 +186,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  "After grading the extra credit, cur increases, max increases, min increases, but remaining stays the same")
   end
 
-  test "Can handle extra credit in grading" do
+  test "Can handle extra credit in manual grading" do
     @as4 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now - 1.days, points_available: 5)
     @as4.reload # needed for the lateness config
     @regGrader = @as4.graders.first
@@ -207,6 +207,34 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @sub4.reload
     @sub4.compute_grade!
     assert_equal(100.0 * (25.0 + 10.0) / 50.0, @sub4.score, "With extra credit, score is boosted")
+  end
+
+  test "Can handle extra credit in exam grading" do
+    @as5 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam",
+                    available: Time.now - 1.days, blame: @fred)
+    @as5.assignment_file = assign_upload_obj("Exam-EC", "exam.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as5.graders << g
+    @as5.save!
+    @as5.reload
+
+    @sub5 = ExamSub.new(user: @john, assignment: @as5, created_at: @as5.due_date - 1.minute)
+    @sub5.save!
+    @sub5.set_used_sub!
+    @sub5.create_grades!
+    @as5.flattened_questions.each_with_index do |q, i|
+      if q["extra"]
+        @sub5.grade_question!(@fred, i, 3)
+      else
+        @sub5.grade_question!(@fred, i, q["weight"])
+      end
+    end
+    g.expect_num_questions(@as5.flattened_questions.count)
+    g.grade(@as5, @sub5)
+    @sub5.compute_grade!
+    assert_equal(100.0 * (g.normal_weight + 3.0) / g.normal_weight, @sub5.score,
+                 "With extra credit, score is above 100%")
   end
   
   def course_assn_with_teams(num_students, team_size)

@@ -160,6 +160,24 @@ class Grader < ApplicationRecord
     select(column_names - ["id"]).distinct
   end
 
+  # NOTE: These two methods may be overridden if a single grader contains
+  # both regular and E.C. weight
+  def normal_weight
+    if self.extra_credit
+      0.0
+    else
+      self.avail_score.to_f
+    end
+  end
+
+  def extra_credit_weight
+    if self.extra_credit
+      self.avail_score.to_f
+    else
+      0.0
+    end
+  end
+  
   def grade_sync!(assignment, submission)
     ans = do_grading(assignment, submission)
     submission.compute_grade! if submission.grade_complete?

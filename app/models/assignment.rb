@@ -59,6 +59,14 @@ class Assignment < ApplicationRecord
   validates :graders, :presence => true
   validate :valid_interlocks
 
+  attr_reader :need_to_unpublish_grades
+  before_save :set_need_to_unpublish_grades
+
+  def set_need_to_unpublish_grades
+    @need_to_unpublish_grades =
+      self.graders.any?{|g| g.new_record? || g.changed? || g.marked_for_destruction?}
+  end
+
 
   def submission_prohibited(submission, staff_override)
     return false if staff_override
