@@ -51,7 +51,7 @@ class RegistrationsController < ApplicationController
       new_role = reg_params[:role]
       cur_role = @registration.role
       logged_in_role = current_user.registration_for(@course).role
-      if Registration.roles[new_role] < Registration.roles[cur_role] && logged_in_role != "professor"
+      if Registration.roles[new_role] < Registration.roles[cur_role]
           redirect_back fallback_location: course_registrations_path(@course),
             alert: "You are not allowed to downgrade registrations."
           return
