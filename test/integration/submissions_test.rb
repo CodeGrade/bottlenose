@@ -291,7 +291,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     begin 
       @as7.update_submissions_if_needed
     rescue  
-      assert_equal(@as7.errors.messages, {:base=>["Question count has changed"]}, "Checking that an error is thrown as question count has changed")
+      assert_equal(@as7.errors.full_messages, ["Question count has changed"], "Checking that an error is thrown as question count has changed")
     end  
     @as7.save!
     @as7.reload
@@ -326,7 +326,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     begin 
       @as8.update_submissions_if_needed
     rescue  
-      assert_equal(@as8.errors.messages, {:base=>["At least one grade on Question 3 is greater than the new maximum score"]}, "Checking that an error is thrown as question count has changed")
+      assert_equal(@as8.errors.full_messages, ["At least one grade on Question 3 is greater than the new maximum score"], "Checking that an error is thrown as question count has changed")
     end  
     @as8.save!
     @as8.reload
@@ -394,6 +394,27 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @sub10.compute_grade!
     assert_equal(113.73, @sub10.score.round(2), "Corrected score with correct yaml file")
 
+  end
+
+  test "Can handle changing exam file with a incorrect format one" do
+    @as11 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam",
+                    available: Time.now - 1.days, blame: @fred)
+    @as11.assignment_file = assign_upload_obj("Exam", "exam_incorrect_format.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as11.graders << g
+    begin
+      @as11.save!
+    rescue  
+      assert_equal(@as11.errors.full_messages, ["Could not parse the supplied file"], "Checking that an error if the exam file is malformed") 
+    end
+    @as11.assignment_file = assign_upload_obj("Exam-EC", "exam.yaml")
+    @as11.save!
+    @as11.reload
+    @as11.assignment_file = assign_upload_obj("Exam", "exam_incorrect_format.yaml")
+    @as11.save!
+    assert_equal(@as11.errors.full_messages, ["Could not parse the supplied file"], "Checking that an error if the exam file is malformed after update")
+ 
   end
   
   def course_assn_with_teams(num_students, team_size)
