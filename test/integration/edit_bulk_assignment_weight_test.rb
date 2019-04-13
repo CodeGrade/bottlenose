@@ -9,6 +9,9 @@ class EditBulkAssignmentWeightTest < ActionDispatch::IntegrationTest
     @pset.save!
     @pset2 = build(:assignment, course: @cs101, name: "Assignment 2", points_available: 25, teamset: @ts1)
     @pset2.save!
+  end
+
+  def create_exams
     @exam = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
                     available: Time.now - 1.days, blame: @fred)
@@ -23,10 +26,21 @@ class EditBulkAssignmentWeightTest < ActionDispatch::IntegrationTest
     g = ExamGrader.new(avail_score: 50, order: 1)
     @exam2.graders << g
     @exam2.save!
+  end  
 
+  test "successfully updating weights of all assignments without any exams" do
+    sign_in @fred
+    visit weights_course_assignments_path(@cs101)
+    fill_in(id: "weight_" + @pset.id.to_s , with: 50, fill_options: { clear: :backspace })
+    fill_in(id: "weight_" + @pset2.id.to_s , with: 50, fill_options: { clear: :backspace })
+    click_button('Update weights')
+    visit weights_course_assignments_path(@cs101)
+    assert_equal "50.0", find_field(id: "weight_" + @pset.id.to_s ).value
+    assert_equal "50.0", find_field(id: "weight_" + @pset2.id.to_s ).value
   end
 
   test "successfully updating weights of all assignments" do
+    create_exams
     sign_in @fred
     visit weights_course_assignments_path(@cs101)
     fill_in(id: "weight_" + @pset.id.to_s , with: 10, fill_options: { clear: :backspace })
@@ -40,6 +54,7 @@ class EditBulkAssignmentWeightTest < ActionDispatch::IntegrationTest
   end
 
   test "successfully updating weights of all assignments and exams" do
+    create_exams
     sign_in @fred
     visit weights_course_assignments_path(@cs101)
     fill_in(id: "weight_" + @pset.id.to_s , with: 20, fill_options: { clear: :backspace })
