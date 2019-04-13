@@ -49,9 +49,9 @@ class Exam < Assignment
 
   def update_submissions_if_needed
     return if @inSave
-    if !self.assignment_upload_id_changed && @assignment_file_data.nil? 
+    if !self.assignment_upload_id_changed? && @assignment_file_data.nil? 
       return 
-    elsif self.assignment_upload_id_changed || @assignment_file_data.nil?
+    elsif self.assignment_upload_id_changed? || @assignment_file_data.nil?
       debugger
     end
     begin
