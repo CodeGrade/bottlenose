@@ -107,10 +107,12 @@ class AssignmentsController < ApplicationController
 
     @assignment = @files if @assignment.nil?
     @legal_actions = @files.legal_teamset_actions.reject{|k, v| v.is_a? String}
+    @existing_subs = !@assignment.used_submissions.empty?
   end
 
   def edit
     @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
+    @existing_subs = !@assignment.used_submissions.empty?
   end
 
   def edit_weights
@@ -176,6 +178,7 @@ class AssignmentsController < ApplicationController
       @assignment.destroy
       @assignment = new_assn
       @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
+      @existing_subs = !@assignment.used_submissions.empty?
       new
       render action: "new", status: 400
     end
@@ -195,18 +198,18 @@ class AssignmentsController < ApplicationController
     @assignment.assign_attributes(ap)
     @assignment.current_user = current_user
 
-    need_to_unpublish_grades =
-      @assignment.graders.any?{|g| g.new_record? || g.changed? || g.marked_for_destruction?}
-
     if @assignment.save
       count = 0
-      if need_to_unpublish_grades
+      if @assignment.need_to_unpublish_grades == "force"
+        count = @assignment.submissions.update_all(score: nil)
+      elsif @assignment.need_to_unpublish_grades
         count = @assignment.submissions.where.not(score: nil).update_all(score: nil)
       end
       redirect_to course_assignment_path(@course, @assignment),
                   notice: "Assignment was successfully updated; #{pluralize(count, 'grade')} unpublished."
     else
       @legal_actions = @assignment.legal_teamset_actions.reject{|k, v| v.is_a? String}
+      @existing_subs = !@assignment.used_submissions.empty?
       render action: "edit", status: 400
     end
   end
@@ -326,6 +329,7 @@ class AssignmentsController < ApplicationController
                                :points_available, :hide_grading, :blame_id,
                                :assignment_file,  :type, :related_assignment_id,
                                :course_id, :team_subs, :request_time_taken,
+                               :exam_disposal,
                                :removefile, :extra_credit,
                                :teamset_plan, :teamset_source_use, :teamset_source_copy,
                                :prevent_late_submissions,

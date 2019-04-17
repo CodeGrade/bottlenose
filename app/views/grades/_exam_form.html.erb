@@ -33,10 +33,20 @@
       <% questions.each do |q| %>
         <% if q["parts"] %>
         <% q["parts"].each_with_index do |p, i| %>
-        <th><small><%= if i == 0 then q["name"] else "" end %><br><%= p["name"] %></small></th>
+        <th><small>
+          <% if p["extra"] %>
+          <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
+          <% end %>
+          <%= if i == 0 then q["name"] else "" end %><br><%= p["name"] %>
+        </small></th>
         <% end %>
         <% else %>
-        <th><small><%= q["name"] %><% if any_parts %><br>&nbsp;<% end %></small></th>
+        <th><small>
+          <% if q["extra"] %>
+          <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
+          <% end %>
+          <%= q["name"] %><% if any_parts %><br>&nbsp;<% end %>
+        </small></th>
         <% end %>
       <% end %>
       <th>Curved <% if any_parts %><br><% end %>grade</th>

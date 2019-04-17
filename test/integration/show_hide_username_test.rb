@@ -1,9 +1,9 @@
 require 'test_helper'
 
 class ShowHideUsernameTest < ActionDispatch::IntegrationTest
-include Devise::Test::IntegrationHelpers
- setup do
-    Capybara.default_driver = :selenium_chrome
+  include Devise::Test::IntegrationHelpers
+  setup do
+    Capybara.default_driver = :selenium_chrome_headless
     make_standard_course
     @pset = build(:assignment, course: @cs101, name: "Assignment 1", teamset: @ts1)
     @pset.save!

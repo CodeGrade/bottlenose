@@ -306,7 +306,7 @@ class Submission < ApplicationRecord
     log = ""
     self.grades.includes(:grader).each do |g|
       return if g.score.nil?
-      component_weight = g.grader.avail_score.to_f
+      component_weight = g.grader.avail_score.to_f # Ignore normal/e.c. distinction for now
       if (g.out_of.to_f == 0.0)
         grade_component = 0.0
       else
@@ -314,8 +314,12 @@ class Submission < ApplicationRecord
       end
       log += "#{g.grader.type}#{if g.grader.extra_credit then ' (E.C.)' end} => #{grade_component} / #{component_weight}, "
       score += grade_component
-      max_score += component_weight unless g.grader.extra_credit
-      max_score_with_ec += component_weight
+      max_score += g.grader.normal_weight # IGNORING any extra credit weight
+      # NOTE: normal_weight + extra_credit_weight =?= component_weight
+      # In manual graders, this will definitely be an equality, because they are mutually exclusive
+      # But in exam graders, this may not be an equality, because exams can have e.c. questions
+      # separately from their normal questions.
+      max_score_with_ec += g.grader.normal_weight + g.grader.extra_credit_weight
     end
     plagiarism = self.plagiarism_status
     if plagiarism.count > 0
