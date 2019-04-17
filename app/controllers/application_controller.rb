@@ -3,8 +3,8 @@ require 'audit'
 class ApplicationController < ActionController::Base
   impersonates :user
 
-  rescue_from DeviseLdapAuthenticatable::LdapException do |exception|
-    render :text => exception, :status => 500
+  rescue_from DeviseLdapAuthenticatable::LdapException, Net::LDAP::Error do |exception|
+    redirect_back fallback_location: root_path, alert: "There was an error logging in. Please contact a professor or site admin."
   end
   protect_from_forgery
 
