@@ -49,12 +49,20 @@ class Exam < Assignment
 
   def update_submissions_if_needed
     return if @inSave
-    return if self.used_subs.empty?
-    if @assignment_file_data.nil?
+    if !self.assignment_upload_id_changed? && @assignment_file_data.nil? 
+      return 
+    elsif self.assignment_upload_id_changed? || @assignment_file_data.nil?
       debugger
     end
+    begin
+      @new_questions = YAML.load(@assignment_file_data.read)
+      @assignment_file_data.rewind
+    rescue Psych::SyntaxError => e
+      self.errors.add(:base, "Could not parse the supplied file")
+      raise ActiveRecord::Rollback
+    end
+    return if self.used_subs.empty?
     @old_questions = questions(self.assignment_upload.submission_path)
-    @new_questions = YAML.load(@assignment_file_data.read)
     @assignment_file_data.rewind
     @old_flat = self.flattened_questions(@old_questions)
     @new_flat = self.flattened_questions(@new_questions)

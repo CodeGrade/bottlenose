@@ -18,7 +18,7 @@ class RegistrationsController < ApplicationController
     if current_user.site_admin?
       @role = "professor"
     else
-      @role = current_user.registration_for(@course).role
+      @role = @registration&.role
     end
   end
 
@@ -72,7 +72,7 @@ class RegistrationsController < ApplicationController
   end
 
   def bulk_edit
-    @cur_role = current_user.registration_for(@course)&.role
+    @cur_role = (current_user_site_admin? ? "professor" : @registration&.role)
     if params[:role] == "student"
       @registrations = @course.registrations
                        .where(role: Registration::roles["student"])
