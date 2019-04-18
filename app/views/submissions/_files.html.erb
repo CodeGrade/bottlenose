@@ -206,6 +206,28 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
     </audio>
     <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
   </div>
+  <% elsif f[:type] == "text/unknown" && f[:contents].ascii_only? %>
+  <div class="nonCMwrapper flexV">
+      <% if f[:contents].lines.length > @@MAX_LINES %>
+      <div class="contentTooLong">
+        <div class="warningContent" data-source="<%= f[:link] %>">
+          <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
+          <p><%= link_to "Download #{f[:name]}", f[:link] %></p>
+          <%= code_textarea (render html: f[:contents]),
+              id: "contents_#{i}_#{root}",
+              style: "display: none;",
+              data: {source: f[:link]} %>
+        </div>
+      </div>
+      <% else %>
+      <div>
+        <%= code_textarea (render html: f[:contents]),
+            id: "contents_#{i}_#{root}",
+            class: "sourceCode", 
+            data: {lang: f[:type], source: f[:link]} %>
+      </div>
+      <% end %>
+  </div>
   <% elsif ApplicationHelper::binary?(f[:type]) %>
   <div class="nonCMwrapper flexV">
     <div class="warningContent" data-source="<%= f[:link] %>">
