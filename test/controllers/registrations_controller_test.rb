@@ -116,4 +116,23 @@ class RegistrationsControllerTest < ActionController::TestCase
 
     assert_redirected_to course_registrations_path(@cs301)
   end
+
+  test "graders cannot create registrations" do
+    mike_reg = Registration.create(course: @cs101,
+                                   user: @mike,
+                                   role: "grader",
+                                   show_in_lists: false)
+    mike_reg.save!
+    sign_in @mike
+    post :create, params: {
+        course_id: @cs101.id,
+        registration: {
+            username: @john.username,
+            role: "student"
+        },
+        new_sections: [@section.crn.to_s]
+    }
+    assert_redirected_to root_path
+    assert_match "Must be an admin, professor or assistant.", flash[:alert]
+  end
 end
