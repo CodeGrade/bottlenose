@@ -117,11 +117,11 @@ class RegistrationsControllerTest < ActionController::TestCase
     assert_redirected_to course_registrations_path(@cs301)
   end
 
-  def attempt_register_john(role)
+  def attempt_register_user(user, role)
     post :create, params: {
         course_id: @cs101.id,
         registration: {
-            username: @john.username,
+            username: user.username,
             role: role
         },
         new_sections: [@section.crn.to_s]
@@ -135,7 +135,7 @@ class RegistrationsControllerTest < ActionController::TestCase
                                    show_in_lists: false)
     mike_reg.save!
     sign_in @mike
-    attempt_register_john "student"
+    attempt_register_user @john, "student"
     assert_redirected_to root_path
     assert_match "Must be an admin, professor or assistant.", flash[:alert]
   end
@@ -143,7 +143,7 @@ class RegistrationsControllerTest < ActionController::TestCase
   test "professors can create registrations of any role" do
     sign_in @fred
     Registration.roles.each do |role, num|
-      attempt_register_john role
+      attempt_register_user @john, role
       assert_redirected_to course_registrations_path @cs101
       assert_nil flash[:alert]
     end
@@ -157,12 +157,12 @@ class RegistrationsControllerTest < ActionController::TestCase
     mike_reg.save!
     sign_in @mike
 
-    attempt_register_john "student"
+    attempt_register_user @john, "student"
     assert_redirected_to course_registrations_path @cs101
     assert_nil flash[:alert]
 
     %w(grader assistant professor).each do |role|
-      attempt_register_john role
+      attempt_register_user @john, role
       assert_redirected_to course_registrations_path @cs101
       assert_match "You are not allowed to create #{role} registrations.", flash[:alert]
     end
