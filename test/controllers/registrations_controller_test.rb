@@ -135,4 +135,20 @@ class RegistrationsControllerTest < ActionController::TestCase
     assert_redirected_to root_path
     assert_match "Must be an admin, professor or assistant.", flash[:alert]
   end
+
+  test "professors can create registrations of any role" do
+    sign_in @fred
+    Registration.roles.each do |role, num|
+      post :create, params: {
+          course_id: @cs101.id,
+          registration: {
+              username: @john.username,
+              role: role
+          },
+          new_sections: [@section.crn.to_s]
+      }
+      assert_redirected_to course_registrations_path @cs101
+      assert_nil flash[:alert]
+    end
+  end
 end
