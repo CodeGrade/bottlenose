@@ -981,4 +981,41 @@ class AssignmentsControllerTest < ActionController::TestCase
       assert set.submissions_allowed
     end
   end
+
+  test "ensure only one interlock is created when assignment is updated" do
+    @files = Files.new(course: @cs101, teamset: @ts1, team_subs: false, lateness_config: @cs101.lateness_config,
+                       name: "Files hw", due_date: Date.current - 1.days + 12.hours, points_available: 10,
+                       available: Date.current - 1.days, blame: @fred)
+    @files.graders << JavaStyleGrader.new(order: 1, avail_score: 50, params: "")
+    @files.graders << ManualGrader.new(order: 2, avail_score: 75, params: "")
+    @files.save!
+
+    @codereview = Codereview.new(course: @cs101, teamset: @ts1, team_subs: false,
+                                 lateness_config: @cs101.lateness_config, related_assignment: @files,
+                                 name: "Codereview hw",
+                                 due_date: Date.current - 1.days + 12.hours, points_available: 10,
+                                 available: Date.current - 1.days, blame: @fred)
+    @codereview.assignment_file = assign_upload_obj("", "peer-eval.yaml")
+    @codereview.graders << CodereviewGrader.new(avail_score: 5, order: 1,
+                                                review_target: "self", review_count: 1, review_threshold: 75)
+    @codereview.save!
+
+    @lock = Interlock.new(
+        constraint: "no_submission_after_viewing",
+        assignment: @files,
+        related_assignment: @codereview
+    )
+    @lock.save!
+
+    sign_in(@fred)
+    assert_equal 1, @codereview.related_interlocks.size
+    assert_equal 1, Interlock.where(related_assignment: @codereview).size
+
+    @codereview.update_attribute(:prevent_late_submissions, @files.id)
+    @codereview.save!
+    @codereview.reload
+
+    assert_equal 1, @codereview.related_interlocks.size
+    assert_equal 1, Interlock.where(related_assignment: @codereview).size
+  end
 end

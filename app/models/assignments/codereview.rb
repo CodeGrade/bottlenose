@@ -14,9 +14,8 @@ class Codereview < Assignment
     !(prevent_late_submissions.empty?)
   end
   def prevent_late_submissions=(aid)
-    i = self.related_interlocks.find_or_initialize_by(assignment: self,
-                                                      constraint: Interlock::constraints[:no_submission_after_viewing])
-    i.assignment_id = aid
+    self.related_interlocks.find_or_initialize_by(assignment_id: aid,
+                                                  constraint: Interlock::constraints[:no_submission_after_viewing])
   end
 
   def review_count
