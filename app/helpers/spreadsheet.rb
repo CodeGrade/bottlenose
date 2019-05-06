@@ -78,6 +78,36 @@ class Spreadsheet
     end
   end
 
+  class Chart
+    attr_accessor :series
+    def initialize
+      @series = []
+    end
+    def insert_into(workbook, ws, cellref)
+      chart = workbook.add_chart(type: 'column', embedded: 1)
+      @series.each do |s|
+        chart.add_series(name: s.name.to_s,
+                         categories: "=#{ws.name}!#{s.categories}", values: "=#{ws.name}!#{s.values}")
+      end
+      chart.set_legend(position: 'none')
+      ws.insert_chart(cellref.to_s, chart)
+    end
+    def add_series(name, categories, values)
+      @series << ChartSeries.new(name, categories, values)
+    end
+  end
+
+  class ChartSeries
+    attr_accessor :name
+    attr_accessor :categories
+    attr_accessor :values
+    def initialize(name, categories, values)
+      @name = name
+      @categories = categories
+      @values = values
+    end
+  end
+
   class Range
     attr_accessor :from_col
     attr_accessor :from_row
@@ -142,6 +172,8 @@ class Spreadsheet
     attr_reader :header_rows
     attr_reader :rows
     attr_reader :columns
+    attr_reader :frozen_row
+    attr_reader :frozen_col
     def initialize(name, columns=nil, header_rows=nil, rows=nil)
       @name = name.gsub(/[\[\]:\*\/\\]/, '_')
       if name.length > 31
@@ -178,6 +210,11 @@ class Spreadsheet
           cell.col = Spreadsheet.col_name(c)
         end
       end
+    end
+
+    def freeze_panes(row, col)
+      @frozen_row = row
+      @frozen_col = col
     end
 
     def sanity_check
@@ -221,11 +258,11 @@ class Spreadsheet
 
   def to_xlsx
     io = StringIO.new
-    workbook = WriteXLSX.new(io)
+    @workbook = WriteXLSX.new(io)
 
-    @twoPct = workbook.add_format
+    @twoPct = @workbook.add_format
     @twoPct.set_num_format("0.00%")
-    @rawString = workbook.add_format(num_format: "@")
+    @rawString = @workbook.add_format(num_format: "@")
     def render_row(ws, s, r, r_num, row_offset)
       r&.each_with_index do |c, c_num|
         if s.columns[c_num]&.type == "Percent"
@@ -245,13 +282,17 @@ class Spreadsheet
           ws.write_number(r_num + row_offset, c_num, c.value, format)
         elsif (c.value.is_a? DateTime) || (c.value.is_a? Time)
           ws.write_date_time(r_num + row_offset, c_num, c.value.to_formatted_s(:db), format)
+        elsif c.value.is_a? Chart
+          c.value.insert_into(@workbook, ws, CellRef.new(nil,
+                                                         Spreadsheet.col_name(c_num), false,
+                                                         r_num + row_offset, false, ""))
         else
           ws.write_string(r_num + row_offset, c_num, c.value, format)
         end
       end
     end
     @sheets.each do |s|
-      ws = workbook.add_worksheet(s.name)
+      ws = @workbook.add_worksheet(s.name)
       row_offset = 0
       s.columns.each_with_index do |c, c_num|
         ws.write_string(0 + row_offset, c_num, sanitize(c.name))
@@ -264,8 +305,9 @@ class Spreadsheet
       s.rows.each_with_index do |r, r_num|
         render_row(ws, s, r, r_num, row_offset)
       end
+      ws.freeze_panes(s.frozen_row, s.frozen_col)
     end
-    workbook.close
+    @workbook.close
     io.string
   end
 end

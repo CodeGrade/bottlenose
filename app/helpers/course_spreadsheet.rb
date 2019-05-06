@@ -36,6 +36,7 @@ class CourseSpreadsheet < Spreadsheet
 
   def create_exams(sheet)
     labels, weight = create_name_columns(sheet)
+    sheet.freeze_panes(sheet.header_rows.length + 1, labels.length - 2)
 
     exam_cols = []
 
@@ -279,6 +280,7 @@ class CourseSpreadsheet < Spreadsheet
   
   def create_hws(sheet, exams)
     labels, weight  = create_name_columns(sheet)
+    sheet.freeze_panes(sheet.header_rows.length + 1, labels.length - 2)
 
     hw_cols = []
 
@@ -495,6 +497,8 @@ class CourseSpreadsheet < Spreadsheet
 
   def create_summary(sheet, exams, exam_cols, hws, hw_cols)
     labels, weight = create_name_columns(sheet)
+    raw_label_count = labels.length - 3
+    sheet.freeze_panes(sheet.header_rows.length + 1, raw_label_count + 1)
 
     hw_headers = hws.header_rows.count + 1 + 1 # 1 for the header labels, and one because 1-indexed
 
@@ -535,6 +539,59 @@ class CourseSpreadsheet < Spreadsheet
                                                   Range.new(Spreadsheet.col_name(start_col), true, i + hw_headers, false,
                                                             Spreadsheet.col_name(end_col), true, i + hw_headers, false))))
     end
+
+    ###############################
+    # Create grade vlookup
+    @grades = ["F", "D-", "D",  "D+", "C-", "C",  "C+", "B-", "B",  "B+", "A-", "A" ]
+    @breaks = [0.0, 0.60, 0.63, 0.66, 0.70, 0.73, 0.76, 0.80, 0.83, 0.86, 0.90, 0.93]
+
+    sheet.columns.push(Col.new("FINAL", "String"), Col.new("", "String"), Col.new("", "String"))
+    sheet.columns.push(Col.new("Cutoff", "Percent"), Col.new("Grade", "String"), Col.new("Count", "Number"))
+    @users.each_with_index do |u, i|
+      sheet.push_row(i, Cell.new(nil, Formula.new("Please recalculate", "IF",
+                                                  Formula.new("Please recalculate", "=",
+                                                              CellRef.new(nil,
+                                                                          Spreadsheet.col_name(raw_label_count), true,
+                                                                          i + hw_headers, false,
+                                                                          "FALSE"),
+                                                              "\"\""),
+                                                  Formula.new("Please recalculate", "VLOOKUP",
+                                                              CellRef.new(nil, Spreadsheet.col_name(end_col + 1), true,
+                                                                          i + hw_headers, false,
+                                                                          "Please recalculate"),
+                                                              Range.new(Spreadsheet.col_name(end_col + 5), true,
+                                                                        hw_headers + 1, true,
+                                                                        Spreadsheet.col_name(end_col + 6), true,
+                                                                        hw_headers + @grades.count, true),
+                                                              2),
+                                                  "\"W\"")))
+    end
+
+    #################################
+    # Create grade histogram
+    sheet.push_row(0, ["", "", "", "W"])
+    @breaks.zip(@grades).each_with_index do |(b, g), i|
+      sheet.push_row(i + 1, ["", "", b, g])
+    end
+    (0..@grades.length).each do |i|
+      sheet.push_row(i, Cell.new(nil, Formula.new("Please recalculate", "COUNTIF",
+                                                  Range.new(Spreadsheet.col_name(end_col + 2), true,
+                                                            hw_headers, true,
+                                                            Spreadsheet.col_name(end_col + 2), true,
+                                                            hw_headers + @users.count - 1, true),
+                                                  CellRef.new(nil,
+                                                              Spreadsheet.col_name(end_col + 6), true,
+                                                              i + hw_headers, true,
+                                                              @grades[i]))))
+    end
+
+    chart = Chart.new
+    chart.add_series(nil,
+                     Range.new(Spreadsheet.col_name(end_col + 6), true, hw_headers, true,
+                               Spreadsheet.col_name(end_col + 6), true, hw_headers + @grades.count, true),
+                     Range.new(Spreadsheet.col_name(end_col + 7), true, hw_headers, true,
+                               Spreadsheet.col_name(end_col + 7), true, hw_headers + @grades.count, true))
+    sheet.push_row(@grades.length + 2, ["", "", Cell.new(chart)])
 
     sheet
   end
