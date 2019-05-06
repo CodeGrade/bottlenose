@@ -148,4 +148,23 @@ class RegistrationsControllerTest < ActionController::TestCase
       assert_nil flash[:alert]
     end
   end
+
+  test "TAs can only sign up students" do
+    mike_reg = Registration.create(course: @cs101,
+                                   user: @mike,
+                                   role: "assistant",
+                                   show_in_lists: false)
+    mike_reg.save!
+    sign_in @mike
+
+    attempt_register_john "student"
+    assert_redirected_to course_registrations_path @cs101
+    assert_nil flash[:alert]
+
+    %w(grader assistant professor).each do |role|
+      attempt_register_john role
+      assert_redirected_to course_registrations_path @cs101
+      assert_match "You are not allowed to create #{role} registrations.", flash[:alert]
+    end
+  end
 end
