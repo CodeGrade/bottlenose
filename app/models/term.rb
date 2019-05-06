@@ -22,10 +22,6 @@ class Term < ApplicationRecord
 
   def canonical_name
     season = "#{Term.semesters[semester]}_#{semester}"
-    
-    # Fall is part of numerically-next *academic* year
-    effective_year = year
-    effective_year += 1    if Term.semesters[semester] < Term.semesters[:spring]
 
     arch = archived? ? "a" : "z"
 
@@ -34,6 +30,12 @@ class Term < ApplicationRecord
 
   def query_code
     # For use with querying university rosters
-    "#{year}#{Term.semesters[semester]}"
+    "#{effective_year}#{Term.semesters[semester]}"
+  end
+
+  private
+  def effective_year
+    # Fall is part of numerically-next *academic* year
+    year + ((Term.semesters[semester] < Term.semesters[:spring]) ? 1 : 0)
   end
 end
