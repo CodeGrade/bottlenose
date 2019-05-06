@@ -122,7 +122,7 @@ class RegistrationsControllerTest < ActionController::TestCase
         course_id: @cs101.id,
         registration: {
             username: @john.username,
-            role: "student"
+            role: role
         },
         new_sections: [@section.crn.to_s]
     }
