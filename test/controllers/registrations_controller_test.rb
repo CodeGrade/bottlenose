@@ -167,4 +167,12 @@ class RegistrationsControllerTest < ActionController::TestCase
       assert_match "You are not allowed to create #{role} registrations.", flash[:alert]
     end
   end
+
+  test "self-registration disallowed" do
+    sign_in @fred
+    attempt_register_user @fred, "professor"
+
+    assert_redirected_to course_registrations_path @cs101
+    assert_match "You are not allowed to create a registration for yourself.", flash[:alert]
+  end
 end
