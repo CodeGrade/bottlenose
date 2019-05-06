@@ -70,7 +70,7 @@ class RequestRegTest < ActionDispatch::IntegrationTest
         }
     }
     sign_in @fred
-    delete accept_course_reg_request_path @cs101, RegRequest.find_by(user: @john)
+    delete accept_course_reg_request_path(@cs101, RegRequest.find_by(user: @john))
     assert new_section.students.include? @john
   end
 
