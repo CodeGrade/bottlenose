@@ -229,7 +229,7 @@ class SubmissionsController < ApplicationController
       info: {user_id: current_user.id}.to_json)
     sub_comment.save
     redirect_to course_assignment_path(@course, @assignment),
-                notice: "Submission marked as plagiarized for #{guilty_users.values.map(&:name)}.to_sentence}"
+                notice: "Submission marked as plagiarized for #{guilty_users.values.map(&:name).to_sentence}"
   end
 
   def split_submission

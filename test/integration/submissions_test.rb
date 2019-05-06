@@ -186,7 +186,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  "After grading the extra credit, cur increases, max increases, min increases, but remaining stays the same")
   end
 
-  test "Can handle extra credit in grading" do
+  test "Can handle extra credit in manual grading" do
     @as4 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now - 1.days, points_available: 5)
     @as4.reload # needed for the lateness config
     @regGrader = @as4.graders.first
@@ -207,6 +207,214 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @sub4.reload
     @sub4.compute_grade!
     assert_equal(100.0 * (25.0 + 10.0) / 50.0, @sub4.score, "With extra credit, score is boosted")
+  end
+
+  test "Can handle extra credit in exam grading" do
+    @as5 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam",
+                    available: Time.now - 1.days, blame: @fred)
+    @as5.assignment_file = assign_upload_obj("Exam-EC", "exam.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as5.graders << g
+    @as5.save!
+    @as5.reload
+
+    @sub5 = ExamSub.new(user: @john, assignment: @as5, created_at: @as5.due_date - 1.minute)
+    @sub5.save!
+    @sub5.set_used_sub!
+    @sub5.create_grades!
+    @as5.flattened_questions.each_with_index do |q, i|
+      if q["extra"]
+        @sub5.grade_question!(@fred, i, 3)
+      else
+        @sub5.grade_question!(@fred, i, q["weight"])
+      end
+    end
+    g.expect_num_questions(@as5.flattened_questions.count)
+    g.grade(@as5, @sub5)
+    @sub5.compute_grade!
+    assert_equal(100.0 * (g.normal_weight + 3.0) / g.normal_weight, @sub5.score,
+                 "With extra credit, score is above 100%")
+  end
+
+  test "Can handle editing exam file after having submissions and deleting all submissions correctly" do
+    @as6 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
+                    available: Time.now - 1.days, blame: @fred)
+    @as6.assignment_file = assign_upload_obj("Exam", "exam.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as6.graders << g
+    @as6.save!
+    @as6.reload
+    @sub6 = ExamSub.new(user: @john, assignment: @as6, created_at: @as6.due_date - 1.minute)
+    @sub6.save!
+    @sub6.set_used_sub!
+    @sub6.create_grades!
+    @as6.flattened_questions.each_with_index do |q, i|
+      @sub6.grade_question!(@fred, i, q["weight"])
+    end
+    g.expect_num_questions(@as6.flattened_questions.count)
+    g.grade(@as6, @sub6)
+    @sub6.compute_grade!
+    assert_equal(@as6.used_submissions.empty?, false,"Initially entered one grade before noticing error in YAML")
+    @as6.assignment_file = assign_upload_obj("Exam", "exam-v2-correct.yaml")
+    @as6.assign_attributes(:exam_disposal => "delete")
+    @as6.update_submissions_if_needed
+    @as6.save!
+    @as6.reload
+    assert_equal(@as6.used_submissions.empty?, true,"After changing exam yaml and selecting delete, submissions should be empty")
+
+  end
+
+  test "Can handle editing exam file after having submissions and using absolute but question count has changed" do
+    @as7 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
+                    available: Time.now - 1.days, blame: @fred)
+    @as7.assignment_file = assign_upload_obj("Exam", "exam.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as7.graders << g
+    @as7.save!
+    @as7.reload
+    @sub7 = ExamSub.new(user: @john, assignment: @as7, created_at: @as7.due_date - 1.minute)
+    @sub7.save!
+    @sub7.set_used_sub!
+    @sub7.create_grades!
+    @as7.flattened_questions.each_with_index do |q, i|
+      @sub7.grade_question!(@fred, i, q["weight"])
+    end
+    g.expect_num_questions(@as7.flattened_questions.count)
+    g.grade(@as7, @sub7)
+    @sub7.compute_grade!
+    assert_equal(@as7.used_submissions.empty?, false,"Initially entered one grade before noticing error in YAML")
+    @as7.assignment_file = assign_upload_obj("Exam", "exam-v2-error-questions.yaml")
+    @as7.assign_attributes(:exam_disposal => "points")
+    begin 
+      @as7.update_submissions_if_needed
+    rescue  
+      assert_equal(@as7.errors.full_messages, ["Question count has changed"], "Checking that an error is thrown as question count has changed")
+    end  
+    @as7.save!
+    @as7.reload
+    @sub7.compute_grade!
+    assert_equal(@as7.used_submissions.empty?, false,"As the question count error, submissions should be unchanged")
+    assert_equal(100.0 * (g.normal_weight + 7.0) / g.normal_weight, @sub7.score.round, "Score should be unchanged")
+
+  end
+
+  test "Can handle editing exam file after having submissions and using absolute but weight is too low" do
+    @as8 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
+                    available: Time.now - 1.days, blame: @fred)
+    @as8.assignment_file = assign_upload_obj("Exam", "exam.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as8.graders << g
+    @as8.save!
+    @as8.reload
+    @sub8 = ExamSub.new(user: @john, assignment: @as8, created_at: @as8.due_date - 1.minute)
+    @sub8.save!
+    @sub8.set_used_sub!
+    @sub8.create_grades!
+    @as8.flattened_questions.each_with_index do |q, i|
+      @sub8.grade_question!(@fred, i, q["weight"])
+    end
+    g.expect_num_questions(@as8.flattened_questions.count)
+    g.grade(@as8, @sub8)
+    @sub8.compute_grade!
+    assert_equal(@as8.used_submissions.empty?, false,"Initially entered one grade before noticing error in YAML")
+    @as8.assignment_file = assign_upload_obj("Exam", "exam-v2-error-weight.yaml")
+    @as8.assign_attributes(:exam_disposal => "points")
+    begin 
+      @as8.update_submissions_if_needed
+    rescue  
+      assert_equal(@as8.errors.full_messages, ["At least one grade on Question 3 is greater than the new maximum score"], "Checking that an error is thrown as question count has changed")
+    end  
+    @as8.save!
+    @as8.reload
+    @sub8.compute_grade!
+    assert_equal(100.0 * (g.normal_weight + 7.0) / g.normal_weight, @sub8.score.round, "Score should be unchanged")
+    assert_equal(@as8.used_submissions.empty?, false,"After changing exam yaml and selecting delete, submissions should be empty")
+
+  end
+
+  test "Can handle editing exam file after having submissions and using absolute" do
+    @as9 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
+                    available: Time.now - 1.days, blame: @fred)
+    @as9.assignment_file = assign_upload_obj("Exam", "exam.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as9.graders << g
+    @as9.save!
+    @as9.reload
+    @sub9 = ExamSub.new(user: @john, assignment: @as9, created_at: @as9.due_date - 1.minute)
+    @sub9.save!
+    @sub9.set_used_sub!
+    @sub9.create_grades!
+    @as9.flattened_questions.each_with_index do |q, i|
+      @sub9.grade_question!(@fred, i, q["weight"])
+    end
+    g.expect_num_questions(@as9.flattened_questions.count)
+    g.grade(@as9, @sub9)
+    @sub9.compute_grade!
+    assert_equal(100.0 * (g.normal_weight + 7.0) / g.normal_weight, @sub9.score.round, "Current score with first yaml file")
+    @as9.assignment_file = assign_upload_obj("Exam", "exam-v2-correct.yaml")
+    @as9.assign_attributes(:exam_disposal => "points")
+    @as9.update_submissions_if_needed
+    @as9.save!
+    @as9.reload
+    @sub9.compute_grade!
+    assert_equal(111.76, @sub9.score.round(2), "Corrected score with correct yaml file")
+
+  end
+
+  test "Can handle editing exam file after having submissions and using percentages" do
+    @as10 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
+                    available: Time.now - 1.days, blame: @fred)
+    @as10.assignment_file = assign_upload_obj("Exam", "exam.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as10.graders << g
+    @as10.save!
+    @as10.reload
+    @sub10 = ExamSub.new(user: @john, assignment: @as10, created_at: @as10.due_date - 1.minute)
+    @sub10.save!
+    @sub10.set_used_sub!
+    @sub10.create_grades!
+    @as10.flattened_questions.each_with_index do |q, i|
+      @sub10.grade_question!(@fred, i, q["weight"])
+    end
+    g.expect_num_questions(@as10.flattened_questions.count)
+    g.grade(@as10, @sub10)
+    @sub10.compute_grade!
+    assert_equal(100.0 * (g.normal_weight + 7.0) / g.normal_weight, @sub10.score.round, "Current score with first yaml file")
+    @as10.assignment_file = assign_upload_obj("Exam", "exam-v2-correct.yaml")
+    @as10.assign_attributes(:exam_disposal => "percentage")
+    @as10.update_submissions_if_needed
+    @as10.save!
+    @as10.reload
+    @sub10.compute_grade!
+    assert_equal(113.73, @sub10.score.round(2), "Corrected score with correct yaml file")
+
+  end
+
+  test "Can handle changing exam file with a incorrect format one" do
+    @as11 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+                    team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam",
+                    available: Time.now - 1.days, blame: @fred)
+    @as11.assignment_file = assign_upload_obj("Exam", "exam-incorrect-format.yaml")
+    g = ExamGrader.new(avail_score: 50, order: 1)
+    @as11.graders << g
+    begin
+      @as11.save!
+    rescue  
+      assert_equal(@as11.errors.full_messages, ["Could not parse the supplied file"], "Checking that an error if the exam file is malformed") 
+    end
+    @as11.assignment_file = assign_upload_obj("Exam-EC", "exam.yaml")
+    @as11.save!
+    @as11.reload
+    @as11.assignment_file = assign_upload_obj("Exam", "exam-incorrect-format.yaml")
+    @as11.save!
+    assert_equal(@as11.errors.full_messages, ["Could not parse the supplied file"], "Checking that an error if the exam file is malformed after update")
+ 
   end
   
   def course_assn_with_teams(num_students, team_size)

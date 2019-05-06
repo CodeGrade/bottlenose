@@ -29,7 +29,7 @@ gem 'cocoon' # used for dynamically generating nested forms
 
 gem 'rubyzip' # used for reading submitted zip files
 
-gem 'bootstrap-sass', '~> 3.3.7'
+gem 'bootstrap-sass', '>= 3.4.1'
 gem 'sass-rails', '>= 3.2'
 gem 'bootstrap-sass-extras'
 gem 'bootstrap3-datetimepicker-rails' # for the datetime widget
@@ -42,6 +42,8 @@ gem 'addressable'
 
 gem 'kramdown' # needed for markdown support
 gem 'kramdown-parser-gfm' # needed for Github-flavored markdown, as of kramdown 2.0.0
+gem 'rouge'
+#gem 'kramdown-syntax-coderay' # support for syntax highlighting, as of kramdown 2.0.0
 
 # needed to run graders in the background
 gem 'backburner'

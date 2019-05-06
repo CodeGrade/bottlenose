@@ -37,6 +37,14 @@ class ExamGrader < Grader
     end
   end
 
+  def normal_weight
+    self.assignment.flattened_questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum
+  end
+
+  def extra_credit_weight
+    self.assignment.flattened_questions.select{|q| q["extra"]}.map{|q| q["weight"]}.sum
+  end
+  
   protected
 
   def do_grading(assignment, sub)

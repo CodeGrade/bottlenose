@@ -61,12 +61,12 @@ class Upload < ApplicationRecord
   def extract_contents!(mimetype)
     return if Dir.exist?(extracted_path)
 
-    extract_contents_to!(mimetype, extracted_path, true)
+    extract_contents_to!(mimetype, extracted_path, postprocess: true, force_readable: true)
   end
 
-  def extract_contents_to!(mimetype, extracted_path, postprocess)
+  def extract_contents_to!(mimetype, extracted_path, postprocess: false, force_readable: false)
     extracted_path.mkpath
-    ArchiveUtils.extract(submission_path.to_s, mimetype, extracted_path.to_s)
+    ArchiveUtils.extract(submission_path.to_s, mimetype, extracted_path.to_s, force_readable: force_readable)
     return unless postprocess
     found_any = false
     Find.find(extracted_path) do |f|

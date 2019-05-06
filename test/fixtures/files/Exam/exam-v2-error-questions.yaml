@@ -1,0 +1,11 @@
+---
+- name: "Matrix transpose"
+  weight: 11
+- name: "Duplicator iterator"
+  weight: 16
+- name: "Charm bracelets"
+  weight: 12
+- name: "Equality/hashCode"
+  weight: 5
+  extra: true
+...
