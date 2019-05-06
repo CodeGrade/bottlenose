@@ -5,7 +5,7 @@ class ShowHideUsernameTest < ActionDispatch::IntegrationTest
   setup do
     Capybara.default_driver = :selenium_chrome_headless
     make_standard_course
-    @pset = build(:assignment, course: @cs101, name: "Assignment 1", teamset: @ts1)
+    @pset = build(:assignment, course: @cs101, name: "Assignment 1", teamset: @ts1, blame: @fred)
     @pset.save!
     @sub = make_submission(@john, @pset, "sample.rkt")
     @sub.set_used_sub!

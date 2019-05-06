@@ -569,6 +569,7 @@ class CourseSpreadsheet < Spreadsheet
 
     #################################
     # Create grade histogram
+    sheet.pad_to_coords([@grades.length + 3, @breaks.length + 1].max, sheet.rows[0].size)
     sheet.push_row(0, ["", "", "", "W"])
     @breaks.zip(@grades).each_with_index do |(b, g), i|
       sheet.push_row(i + 1, ["", "", b, g])
