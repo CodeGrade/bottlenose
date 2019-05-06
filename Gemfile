@@ -29,7 +29,7 @@ gem 'cocoon' # used for dynamically generating nested forms
 
 gem 'rubyzip' # used for reading submitted zip files
 
-gem 'bootstrap-sass', '~> 3.3.7'
+gem 'bootstrap-sass', '>= 3.4.1'
 gem 'sass-rails', '>= 3.2'
 gem 'bootstrap-sass-extras'
 gem 'bootstrap3-datetimepicker-rails' # for the datetime widget
