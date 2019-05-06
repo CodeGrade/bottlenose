@@ -175,4 +175,20 @@ class RegistrationsControllerTest < ActionController::TestCase
     assert_redirected_to course_registrations_path @cs101
     assert_match "You are not allowed to create a registration for yourself.", flash[:alert]
   end
+
+  test "registration downgrades disallowed" do
+    sign_in @fred
+
+    mike_reg = Registration.create(course: @cs101,
+                                   user: @mike,
+                                   role: "assistant",
+                                   show_in_lists: false)
+    mike_reg.save!
+
+    # downgrade mike to a student
+    attempt_register_user @mike, "student"
+
+    assert_redirected_to course_registrations_path @cs101
+    assert_match "You are not allowed to downgrade registrations.", flash[:alert]
+  end
 end
