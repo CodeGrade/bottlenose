@@ -73,4 +73,23 @@ class RequestRegTest < ActionDispatch::IntegrationTest
     delete accept_course_reg_request_path @cs101, RegRequest.find_by(user: @john)
     assert new_section.students.include? @john
   end
+
+  test "registration via staff page after adding section" do
+    sign_in @fred
+    new_section = Section.new(course: @cs101,
+                              crn: 23456,
+                              meeting_time: "F 1:35pm",
+                              instructor: @fred,
+                              type: "lecture")
+    @cs101.sections << new_section
+    assert_not new_section.students.include? @john
+    post course_registrations_path @cs101, params: {
+        registration: {
+            username: @john.username,
+            role: "student"
+        },
+        new_sections: [@section.crn.to_s, new_section.crn.to_s]
+    }
+    assert new_section.students.include? @john
+  end
 end
