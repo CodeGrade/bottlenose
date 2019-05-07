@@ -117,14 +117,14 @@ class RegistrationsControllerTest < ActionController::TestCase
     assert_redirected_to course_registrations_path(@cs301)
   end
 
-  def attempt_register_user(user, role)
+  def attempt_register_user(user, role, course=@cs101, section=@section)
     post :create, params: {
-        course_id: @cs101.id,
+        course_id: course.id,
         registration: {
             username: user.username,
             role: role
         },
-        new_sections: [@section.crn.to_s]
+        new_sections: [section.crn.to_s]
     }
   end
 
