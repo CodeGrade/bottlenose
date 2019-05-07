@@ -135,18 +135,23 @@ class RegistrationsControllerTest < ActionController::TestCase
                                    show_in_lists: false)
     mike_reg.save!
     sign_in @mike
-    attempt_register_user @john, "grader"
+
+    new_user = create(:user)
+    attempt_register_user new_user, "grader"
+
     assert_redirected_to root_path
     assert_match "Must be an admin, professor or assistant.", flash[:alert]
-    assert_equal "student", @cs101.registrations.find_by(user: @john).role
+    assert_empty @cs101.registrations.where(user: new_user)
   end
 
   test "professors can create registrations of any role" do
     sign_in @fred
     Registration.roles.each do |role, num|
-      attempt_register_user @john, role
+      new_user = create(:user)
+      attempt_register_user new_user, role
       assert_redirected_to course_registrations_path @cs101
       assert_nil flash[:alert]
+      assert_equal role, @cs101.registrations.find_by(user: new_user).role
     end
   end
 
@@ -158,23 +163,36 @@ class RegistrationsControllerTest < ActionController::TestCase
     mike_reg.save!
     sign_in @mike
 
-    attempt_register_user @john, "student"
+    new_user = create(:user)
+
+    attempt_register_user new_user, "student"
     assert_redirected_to course_registrations_path @cs101
     assert_nil flash[:alert]
+    assert_equal "student", @cs101.registrations.find_by(user: new_user).role
+
+    new_user = create(:user)
 
     %w(grader assistant professor).each do |role|
-      attempt_register_user @john, role
+      attempt_register_user new_user, role
       assert_redirected_to course_registrations_path @cs101
       assert_match "You are not allowed to create #{role} registrations.", flash[:alert]
+      assert_empty @cs101.registrations.where(user: new_user)
     end
   end
 
   test "self-registration disallowed" do
-    sign_in @fred
-    attempt_register_user @fred, "professor"
+    mike_reg = Registration.create(course: @cs101,
+                                   user: @mike,
+                                   role: "assistant",
+                                   show_in_lists: false)
+    mike_reg.save!
+
+    sign_in @mike
+    attempt_register_user @mike, "professor"
 
     assert_redirected_to course_registrations_path @cs101
     assert_match "You are not allowed to create a registration for yourself.", flash[:alert]
+    assert_equal "assistant", @cs101.registrations.find_by(user: @mike).role
   end
 
   test "registration downgrades disallowed" do
@@ -191,5 +209,8 @@ class RegistrationsControllerTest < ActionController::TestCase
 
     assert_redirected_to course_registrations_path @cs101
     assert_match "You are not allowed to downgrade registrations.", flash[:alert]
+
+    mike_reg.reload
+    assert_equal "assistant", mike_reg.role
   end
 end
