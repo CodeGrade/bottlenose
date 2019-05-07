@@ -135,9 +135,10 @@ class RegistrationsControllerTest < ActionController::TestCase
                                    show_in_lists: false)
     mike_reg.save!
     sign_in @mike
-    attempt_register_user @john, "student"
+    attempt_register_user @john, "grader"
     assert_redirected_to root_path
     assert_match "Must be an admin, professor or assistant.", flash[:alert]
+    assert_equal "student", @cs101.registrations.find_by(user: @john).role
   end
 
   test "professors can create registrations of any role" do
