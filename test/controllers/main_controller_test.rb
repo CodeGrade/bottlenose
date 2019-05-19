@@ -8,7 +8,7 @@ class MainControllerTest < ActionController::TestCase
 
   test "should get index" do
     get :home
-    assert_response :success
+    assert_redirected_to new_user_session_path
   end
 
   test "lost auth form should create admin on fresh install" do
