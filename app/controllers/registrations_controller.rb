@@ -7,7 +7,7 @@ class RegistrationsController < ApplicationController
   before_action :find_registration, except: [:index, :new, :create, :bulk_enter, :bulk_update, :bulk_edit]
   before_action :require_current_user, except: [:public]
   before_action :require_registered_user, except: [:public, :index, :new, :create]
-  before_action :require_admin_or_staff
+  before_action :require_admin_or_assistant
 
   def index
     @students = @course.students
@@ -31,23 +31,43 @@ class RegistrationsController < ApplicationController
 
     uu = User.find_by(username: reg_params[:username])
     if uu
+      if !current_user.site_admin?
+        logged_in_role = current_user.registration_for(@course).role
+        new_role = reg_params[:role]
+        if uu == current_user
+          redirect_back fallback_location: course_registrations_path(@course),
+            alert: "You are not allowed to create a registration for yourself."
+          return
+        end
+        if new_role != "student" && logged_in_role != "professor"
+          redirect_back fallback_location: course_registrations_path(@course),
+            alert: "You are not allowed to create #{new_role} registrations."
+          return
+        end
+      end
       @registration = Registration.find_by(course_id: @course, user_id: uu.id)
     end
     if @registration
+      new_role = reg_params[:role]
+      cur_role = @registration.role
+      if Registration.roles[new_role] < Registration.roles[cur_role]
+          redirect_back fallback_location: course_registrations_path(@course),
+            alert: "You are not allowed to downgrade registrations."
+          return
+      end
       @registration.assign_attributes(reg_params)
     else
       # Create @registration object for errors.
       @registration = Registration.new(reg_params)
     end
 
-    if @registration && @registration.save && @registration.save_sections
-      redirect_to course_registrations_path(@course),
-                  notice: 'Registration was successfully created.'
-    else
-      if @registration && !@registration.new_record?
-        @registration.delete
+    Registration.transaction do
+      if @registration && @registration.save && @registration.save_sections
+        redirect_to course_registrations_path(@course),
+          notice: 'Registration was successfully created.'
+      else
+        render action: :new, status: 400
       end
-      render action: :new, status: 400
     end
   end
 

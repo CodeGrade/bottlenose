@@ -174,7 +174,7 @@ class CoursesControllerTest < ActionController::TestCase
   end
 
   test "should export gradesheet" do
-    a1 = create(:assignment, course: @course1, name: "Assignment 1", teamset: @ts1)
+    a1 = create(:assignment, course: @course1, name: "Assignment 1", teamset: @ts1, blame: @fred)
     sub1 = create(:submission, assignment: a1, user: @john, score: 20)
 
     sign_in @fred

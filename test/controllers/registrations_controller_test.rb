@@ -24,7 +24,7 @@ class RegistrationsControllerTest < ActionController::TestCase
     sign_in @john
     get :index, params: {course_id: @cs301.id}
     assert_response :redirect
-    assert_match "Must be an admin or staff", flash[:alert]
+    assert_match "Must be an admin, professor or assistant", flash[:alert]
   end
 
   test "should create registration" do
@@ -52,7 +52,7 @@ class RegistrationsControllerTest < ActionController::TestCase
     sign_in @students[1]
     get :new, params: {course_id: @cs301.id}
     assert_redirected_to root_path
-    assert_match "Must be an admin or staff", flash[:alert]
+    assert_match "Must be an admin, professor or assistant", flash[:alert]
     sign_out @students[1]
 
     sign_in @fred
@@ -115,5 +115,102 @@ class RegistrationsControllerTest < ActionController::TestCase
     end
 
     assert_redirected_to course_registrations_path(@cs301)
+  end
+
+  def attempt_register_user(user, role, course=@cs101, section=@section)
+    post :create, params: {
+        course_id: course.id,
+        registration: {
+            username: user.username,
+            role: role
+        },
+        new_sections: [section.crn.to_s]
+    }
+  end
+
+  test "graders cannot create registrations" do
+    mike_reg = Registration.create(course: @cs101,
+                                   user: @mike,
+                                   role: "grader",
+                                   show_in_lists: false)
+    mike_reg.save!
+    sign_in @mike
+
+    new_user = create(:user)
+    attempt_register_user new_user, "grader"
+
+    assert_redirected_to root_path
+    assert_match "Must be an admin, professor or assistant.", flash[:alert]
+    assert_empty @cs101.registrations.where(user: new_user)
+  end
+
+  test "professors can create registrations of any role" do
+    sign_in @fred
+    Registration.roles.each do |role, num|
+      new_user = create(:user)
+      attempt_register_user new_user, role
+      assert_redirected_to course_registrations_path @cs101
+      assert_nil flash[:alert]
+      assert_equal role, @cs101.registrations.find_by(user: new_user).role
+    end
+  end
+
+  test "TAs can only sign up students" do
+    mike_reg = Registration.create(course: @cs101,
+                                   user: @mike,
+                                   role: "assistant",
+                                   show_in_lists: false)
+    mike_reg.save!
+    sign_in @mike
+
+    new_user = create(:user)
+
+    attempt_register_user new_user, "student"
+    assert_redirected_to course_registrations_path @cs101
+    assert_nil flash[:alert]
+    assert_equal "student", @cs101.registrations.find_by(user: new_user).role
+
+    new_user = create(:user)
+
+    %w(grader assistant professor).each do |role|
+      attempt_register_user new_user, role
+      assert_redirected_to course_registrations_path @cs101
+      assert_match "You are not allowed to create #{role} registrations.", flash[:alert]
+      assert_empty @cs101.registrations.where(user: new_user)
+    end
+  end
+
+  test "self-registration disallowed" do
+    mike_reg = Registration.create(course: @cs101,
+                                   user: @mike,
+                                   role: "assistant",
+                                   show_in_lists: false)
+    mike_reg.save!
+
+    sign_in @mike
+    attempt_register_user @mike, "professor"
+
+    assert_redirected_to course_registrations_path @cs101
+    assert_match "You are not allowed to create a registration for yourself.", flash[:alert]
+    assert_equal "assistant", @cs101.registrations.find_by(user: @mike).role
+  end
+
+  test "registration downgrades disallowed" do
+    sign_in @fred
+
+    mike_reg = Registration.create(course: @cs101,
+                                   user: @mike,
+                                   role: "assistant",
+                                   show_in_lists: false)
+    mike_reg.save!
+
+    # downgrade mike to a student
+    attempt_register_user @mike, "student"
+
+    assert_redirected_to course_registrations_path @cs101
+    assert_match "You are not allowed to downgrade registrations.", flash[:alert]
+
+    mike_reg.reload
+    assert_equal "assistant", mike_reg.role
   end
 end

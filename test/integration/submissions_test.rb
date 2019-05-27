@@ -483,12 +483,12 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     
     questions = fixture_file_upload("files/peer-eval.yaml", 'application/octet-stream')
     @helloReview = build(:assignment, course: @largeCourse, teamset: @largeTs, type: "Codereview",
-                         related_assignment: @hello, team_subs: true)
+                         related_assignment: @hello, team_subs: true, blame: @fred)
     @helloReview.assignment_file = questions
     
     @helloReview.graders = [build(:grader, assignment: @helloReview, type: "CodereviewGrader",
                                   params: "peer;2;75", avail_score: 5)]
-    @helloReview.save
+    @helloReview.save!
 
     # Visit the begin-codereview page for each user in each team
     @largeTs.teams.each do |t|
@@ -529,12 +529,12 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
 
     questions = fixture_file_upload("files/peer-eval.yaml", 'application/octet-stream')
     @helloReview = build(:assignment, course: @largeCourse, teamset: @largeTs, type: "Codereview",
-                         related_assignment: @hello, team_subs: true)
+                         related_assignment: @hello, team_subs: true, blame: @fred)
     @helloReview.assignment_file = questions
     
     @helloReview.graders = [build(:grader, assignment: @helloReview, type: "CodereviewGrader",
                                   params: "peer;2;75", avail_score: 5)]
-    @helloReview.save
+    @helloReview.save!
 
 
     teams = @largeTs.teams.to_a

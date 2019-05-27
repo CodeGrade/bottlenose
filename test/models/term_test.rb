@@ -39,14 +39,10 @@ class TermTest < ActiveSupport::TestCase
   end
 
   test "terms have query codes as expected" do
-    query_codes = Term.all_sorted.map(&:query_code)
-    sorted_codes = query_codes.sort_by do |a, b|
-      ai = a.to_i
-      bi = b.to_i
-      ai -= 100 if (ai % 100) < 30 # Fall gets bumped by a year
-      bi -= 100 if (bi % 100) < 30 # so deducting 100 == decrementing the year
-      ai <=> bi
+    Term.all_sorted.partition(&:archived).each do |terms|
+      query_codes = terms.map(&:query_code)
+      sorted_codes = query_codes.shuffle.sort_by(&:to_i)
+      assert_equal query_codes, sorted_codes.reverse
     end
-    assert_equal query_codes, sorted_codes
   end
 end
