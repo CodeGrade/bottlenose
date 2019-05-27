@@ -6,7 +6,7 @@ Rails.env = ENV["RAILS_ENV"] = "test"
 Rails.logger = ActiveSupport::Logger.new("/dev/null") # Don't need logging for this
 Rails.application.require_environment!
 
-require 'chromedriver-helper'
+require 'webdrivers'
 require 'capybara'
 require 'capybara/rails'
 require 'fake_upload'
