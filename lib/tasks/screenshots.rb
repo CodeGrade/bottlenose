@@ -1109,6 +1109,23 @@ class Screenshots
       yield options: bbox(header, footer)
       set_default_size
     end
+    
+    def reviewing_grader_feedback
+      sign_in(@fred)
+      visit course_assignment_path(@course, @assignments[0])
+      
+      view_button = page.find_all(:xpath, ".//a[text() = 'View']")[0]
+      highlight_area("view", bbox(view_button))
+      yield
+      remove_highlight "view"
+      view_button.click
+      
+      manual_feedback_row = page.find(:xpath, ".//tr[./td[contains(text(), 'Manual Feedback')]]")
+      grader_output = manual_feedback_row.find(:xpath, ".//a[text() = 'Grader output']")
+      highlight_area("grader_output", bbox(grader_output))
+      yield
+      remove_highlight "grader_output"
+    end
 
     def facebook_page
       sign_in(@fred)
