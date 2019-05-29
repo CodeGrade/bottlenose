@@ -400,6 +400,16 @@ class Screenshots
     print "Creating default courses..."
     @fred = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher",
                    nickname: "Fred", profile: profile(true), username: "fred")
+    @george = create(:user, name: "George McGrader", first_name: "George", last_name: "McGrader",
+                     nickname: "George", profile: profile(true), username: "george")
+    @henry = create(:user, name: "Henry McAssistant", first_name: "Henry", last_name: "McAssistant",
+                    nickname: "Henry", profile: profile(true), username: "henry")
+    @brian = create(:user, name: "Brian Johnson", first_name: "Brian", last_name: "Johnson",
+                    nickname: "Brian", profile: profile(true), username: "brian")
+    @chris = create(:user, name: "Chris Franklin", first_name: "Chris", last_name: "Franklin",
+                    nickname: "Chris", profile: profile(true), username: "chris")
+    @joe = create(:user, name: "Joe Jones", first_name: "Joe", last_name: "Jones",
+                  nickname: "Joe", profile: profile(true), username: "joe")
     @term = Term.create(semester: Term.semesters[:fall], year: Date.today.year, archived: false)
     @late_per_day = LatePerDayConfig.create(days_per_assignment: 1, percent_off: 50,
                                             frequency: 1, max_penalty: 100)
@@ -411,8 +421,23 @@ class Screenshots
     @course.save
     @fred_reg = Registration.create(course: @course, user: @fred, role: Registration::roles[:professor],
                                     show_in_lists: false, new_sections: @sections)
+                                    @fred_reg.save_sections
     @fred_reg.save_sections
-
+    @george_reg = Registration.create(course: @course, user: @george, role: Registration::roles[:grader],
+                                      show_in_lists: false, new_sections: @sections)
+    @george_reg.save_sections
+    @henry_reg = Registration.create(course: @course, user: @henry, role: Registration::roles[:assistant],
+                                     show_in_lists: false, new_sections: @sections)
+    @henry_reg.save_sections
+    @brian_reg = Registration.create(course: @course, user: @brian, role: Registration::roles[:grader],
+                                     show_in_lists: false, new_sections: @sections)
+    @brian_reg.save_sections
+    @chris_reg = Registration.create(course: @course, user: @chris, role: Registration::roles[:grader],
+                                     show_in_lists: false, new_sections: @sections)
+    @chris_reg.save_sections
+    @joe_reg = Registration.create(course: @course, user: @joe, role: Registration::roles[:grader],
+                                   show_in_lists: false, new_sections: @sections)
+    @joe_reg.save_sections
     @students.sample(60).each do |student|
       reg = Registration.create(course: @course, user: student,
                                 role: Registration::roles[:student], show_in_lists: true,
@@ -997,20 +1022,92 @@ class Screenshots
       remove_highlight "impersonate"
 
       impersonate.click
-      visit(course_path(@course))
       yield
+      visit(course_path(@course))
 
       withdraw = page.find(:xpath, ".//button[contains(text(), 'Withdraw from this course')]")
       hilite = highlight_area("withdraw", bbox(withdraw))
       set_full_page
       yield
       remove_highlight "withdraw"
+      set_default_size
 
       withdraw.click
-      dialog = page.find(:xpath, ".//div[@class='modal-dialog']")
-      yield options: bbox(dialog)
-      page.find(:xpath, ".//button[@type='submit']").click
+      content = page.find(:xpath, ".//div[@class='modal-content']")
+      set_full_page
+      yield options: bbox(content)
+      set_default_size
+      page.find(:xpath, ".//a[contains(@href, 'withdraw')]").click
+      set_full_page
+      yield
       page.find(:xpath, ".//a[text()='Stop Impersonating']").click
+      set_full_page
+      yield
+      set_default_size
+    end
+    
+    def grading
+      sign_in(@fred)
+      visit course_assignment_path(@course, @assignments[3])
+      assign_graders = page.find(:xpath, ".//a[@title='Assign graders']")
+      highlight_area("assign_graders", bbox(assign_graders))
+      yield
+      remove_highlight "assign_graders"
+      assign_graders.click
+      
+      grader_allocation = page.find(:xpath, ".//a[contains(@href, 'grader_allocations')]")
+      highlight_area("grader_allocation", bbox(grader_allocation))
+      yield
+      remove_highlight "grader_allocation"
+      
+      grader_allocation.click
+      page.first('#submission_id option').select_option
+      page.select('Joe Jones', from: 'who_grades_id')
+      assign_grader = page.find(:xpath, ".//input[@value='Assign grader']")
+      highlight_area("assign_grader", bbox(assign_grader))
+      header = page.find(:xpath, ".//h3[contains(text(), 'single grader')]")
+      form = page.find(:xpath, ".//select[@id='who_grades_id']")
+      set_full_page
+      yield options: inflate_box(bbox(header, form), 10, 10, 10, 10)
+      remove_highlight "assign_grader"
+      set_default_size
+      assign_grader.click
+      
+      header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
+      footer = page.find(:xpath, ".//footer")
+      set_full_page
+      yield options: bbox(header, footer)
+      set_default_size
+      
+      joe_span = page.find(:xpath, ".//span[./span[text()='Joe Jones']]")
+      joe_input = joe_span.find(:xpath, ".//input[contains(@id, '_weight')]")
+      joe_input.set(2)
+      assign_graders = page.find(:xpath, ".//input[@value='Assign graders']")
+      highlight_area("assign_graders", bbox(assign_graders))
+      header = page.find(:xpath, ".//h3[contains(text(), 'Bulk grading')]")
+      or_header = page.find(:xpath, ".//h3[@class='middle-separator']")
+      set_full_page
+      yield options: inflate_box(bbox(header, or_header), 10, 10, 10, 10)
+      remove_highlight "assign_graders"
+      set_default_size
+      assign_graders.click
+      
+      header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
+      footer = page.find(:xpath, ".//footer")
+      set_full_page
+      yield options: bbox(header, footer)
+      set_default_size
+      
+      joe_header = page.find(:xpath, ".//h4[contains(text(), 'Joe Jones')]")
+      abandon_all = joe_header.find(:xpath, ".//a[text() = 'Abandon all']")
+      accept_alert do
+        abandon_all.click
+      end
+      header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
+      footer = page.find(:xpath, ".//footer")
+      set_full_page
+      yield options: bbox(header, footer)
+      set_default_size
     end
 
     def facebook_page
@@ -1151,7 +1248,7 @@ puts "SEED=#{RANDOM_SEED}"
 
 FactoryBot.find_definitions
 Utilities.redefine_factories
-Capybara.default_driver = :selenium_chrome_headless
+Capybara.default_driver = :selenium_chrome_headless #:selenium_chrome
 DatabaseCleaner.strategy = :deletion
 DatabaseCleaner.start
 
