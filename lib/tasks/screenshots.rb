@@ -1112,7 +1112,7 @@ class Screenshots
     
     def reviewing_grader_feedback
       sign_in(@fred)
-      visit course_assignment_path(@course, @assignments[0])
+      visit course_assignment_path(@course, @assignments[1])
       
       view_button = page.find_all(:xpath, ".//a[text() = 'View']")[0]
       highlight_area("view", bbox(view_button))
@@ -1122,9 +1122,29 @@ class Screenshots
       
       manual_feedback_row = page.find(:xpath, ".//tr[./td[contains(text(), 'Manual Feedback')]]")
       grader_output = manual_feedback_row.find(:xpath, ".//a[text() = 'Grader output']")
+      header = page.find(:xpath, ".//h1[text() = 'Submission']")
       highlight_area("grader_output", bbox(grader_output))
-      yield
+      set_full_page
+      yield options: inflate_box(bbox(header, grader_output), 10, 10, 10, 10)
+      set_default_size
       remove_highlight "grader_output"
+    end
+    
+    def grader_statistics
+      sign_in(@fred)
+      visit(course_path(@course))
+
+      grader_info = page.find(:xpath, ".//a[text() = 'Grader info']")
+      highlight_area("grader_info", bbox(grader_info))
+      yield
+      remove_highlight "grader_info"
+    end
+    
+    def downloading_teams
+      sign_in(@fred)
+      visit(course_path(@course))
+      
+      page.find(:xpath, ".//a[contains(text(), 'Export')]").click
     end
 
     def facebook_page
