@@ -1145,6 +1145,10 @@ class Screenshots
       visit(course_path(@course))
       
       page.find(:xpath, ".//a[contains(text(), 'Export')]").click
+      export_teamsets = page.find(:xpath, ".//a[contains(text(), 'Teamsets')]")
+      highlight_area("export_teamsets", bbox(export_teamsets))
+      yield
+      remove_highlight "export_teamsets"
     end
 
     def facebook_page
