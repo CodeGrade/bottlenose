@@ -259,6 +259,10 @@ module ApplicationHelper
       "text/html"
     when ".css"
       "text/css"
+    when ".tex", ".sty"
+      "text/x-latex"
+    when ".bib"
+      "text/plain"
     when ".tap", ".txt", ".text"
       "text/plain"
     when ".pdf"
@@ -298,6 +302,7 @@ module ApplicationHelper
          "text/x-yaml",
          "text/html",
          "text/css",
+         "text/x-latex",
          "text/plain",
          "text/x-makefile"
       false

@@ -36,6 +36,7 @@
 //= require codemirror/mode/scheme/scheme
 //= require codemirror/mode/python/python
 //= require codemirror/mode/css/css
+//= require codemirror/mode/stex/stex
 //= require codemirror/mode/xml/xml
 //= require codemirror/mode/yaml/yaml
 //= require codemirror/mode/htmlmixed/htmlmixed
