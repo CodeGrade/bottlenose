@@ -18,7 +18,7 @@ class MainController < ApplicationController
         render "dashboard"
       end
     else
-      render "landing"
+      redirect_to new_user_session_path
     end
   end
 
@@ -43,7 +43,7 @@ class MainController < ApplicationController
 
   def status
     if current_user.nil?
-      render "landing"
+      redirect_to new_user_session_path
       return
     end
 
