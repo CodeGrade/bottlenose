@@ -18,7 +18,7 @@ class MainController < ApplicationController
         render "dashboard"
       end
     else
-      redirect_to new_user_session_path
+      redirect_to new_user_session_path(next: params[:next])
     end
   end
 
