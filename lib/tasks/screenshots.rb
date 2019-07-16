@@ -6,7 +6,7 @@ Rails.env = ENV["RAILS_ENV"] = "test"
 Rails.logger = ActiveSupport::Logger.new("/dev/null") # Don't need logging for this
 Rails.application.require_environment!
 
-require 'chromedriver-helper'
+require 'webdrivers'
 require 'capybara'
 require 'capybara/rails'
 require 'fake_upload'
@@ -447,6 +447,7 @@ class Screenshots
     g = CheckerGrader.new(assignment: assn, upload: u, avail_score: 50, order: 2)
     g.test_class = "ExamplesMobilesReference"
     g.errors_to_show = 3
+    g.test_timeout = 10
     assn.graders << g
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
     assn.save!
@@ -472,6 +473,7 @@ class Screenshots
     g = CheckerGrader.new(assignment: assn, upload: u, avail_score: 50, order: 2)
     g.test_class = "ExamplesMobilesReference"
     g.errors_to_show = 3
+    g.test_timeout = 10
     assn.graders << g
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
     assn.save!
