@@ -21,19 +21,21 @@ class JunitGrader < Grader
     else
       filename = "<no file>"
     end
-    "#{self.avail_score} points: Run JUnit tests in #{test_class} from #{filename}, " +
+    "#{self.avail_score} points: Run JUnit tests in #{test_class} from #{filename} " +
+      "(with default timeout #{test_timeout}), " +
       "and show #{pluralize(errors_to_show, 'failed test')}"
   end
 
   protected
   def load_junit_params
     return if new_record?
-    testClass, errorsToShow = self.params.to_s.split(";")
+    testClass, errorsToShow, testTimeout = self.params.to_s.split(";")
     self.test_class = testClass
     self.errors_to_show = errorsToShow.to_i
+    self.test_timeout = (testTimeout || Grader::DEFAULT_TEST_TIMEOUT).to_i
   end
   def set_junit_params
-    self.params = "#{self.test_class};#{self.errors_to_show}"
+    self.params = "#{self.test_class};#{self.errors_to_show};#{self.test_timeout}"
   end
 
   def copy_srctest_from_to(from, to, prefix = "")
@@ -137,6 +139,7 @@ class JunitGrader < Grader
           test_out, test_err, test_status, timed_out =
                                            ApplicationHelper.capture3("java", "-cp", classpath,
                                                                       "edu.neu.TAPRunner", self.test_class,
+                                                                      "-timeout", self.test_timeout.to_s,
                                                                       chdir: build_dir.to_s,
                                                                       timeout: Grader::DEFAULT_GRADING_TIMEOUT)
           details.write("JUnit output: (exit status #{test_status})\n")
@@ -201,6 +204,9 @@ class JunitGrader < Grader
       if self.errors_to_show.blank?
         add_error("Errors to show cannot be blank")
       end
+      if self.test_timeout.blank?
+        add_error("Default test timeout cannot be blank")
+      end
     end
     return if self.upload.nil? || self.test_class.blank?
     begin
@@ -221,6 +227,9 @@ class JunitGrader < Grader
           if !entries["testing"]["test"]["#{self.test_class}.java"]
             add_error("There is no #{self.test_class}.java file to match the specified test class")
           end
+          if entries["testing"]["test"]["GradingSandbox.java"]
+            add_error("There must not be a class named GradingSandbox")
+          end
         end
       else
         ok = true
@@ -231,6 +240,9 @@ class JunitGrader < Grader
         if ok
           if !entries["test"]["#{self.test_class}.java"]
             add_error("There is no #{self.test_class}.java file to match the specified test class")
+          end
+          if entries["test"]["GradingSandbox.java"]
+            add_error("There must not be a class named GradingSandbox")
           end
         end
       end

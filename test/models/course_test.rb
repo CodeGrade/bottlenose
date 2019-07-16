@@ -54,6 +54,7 @@ class CourseTest < ActiveSupport::TestCase
     g = CheckerGrader.new(assignment: assn, upload: u, avail_score: 50, order: 2)
     g.test_class = "ExamplesMobilesReference"
     g.errors_to_show = 3
+    g.test_timeout = 10
     assn.graders << g
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 3)
     assn.save!

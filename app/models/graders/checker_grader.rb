@@ -7,7 +7,7 @@ class CheckerGrader < Grader
   after_initialize :load_checker_params
   before_validation :set_checker_params
   validate :proper_configuration
-  
+
   def autograde?
     true
   end
@@ -22,19 +22,21 @@ class CheckerGrader < Grader
     else
       filename = "<no file>"
     end
-    "#{self.avail_score} points: Run Checker tests in #{test_class} from #{filename}, " +
+    "#{self.avail_score} points: Run Checker tests in #{test_class} from #{filename} " +
+      "(with default timeout #{test_timeout}), " +
       "and show #{pluralize(errors_to_show, 'failed test')}"
   end
 
   protected
   def load_checker_params
     return if new_record?
-    testClass, errorsToShow = self.params.to_s.split(";")
+    testClass, errorsToShow, testTimeout = self.params.to_s.split(";")
     self.test_class = testClass
     self.errors_to_show = errorsToShow.to_i
+    self.test_timeout = (testTimeout || Grader::DEFAULT_TEST_TIMEOUT).to_i
   end
   def set_checker_params
-    self.params = "#{self.test_class};#{self.errors_to_show}"
+    self.params = "#{self.test_class};#{self.errors_to_show};#{self.test_timeout}"
   end
     
   def copy_srctest_from_to(from, to, prefix = "")
@@ -87,7 +89,7 @@ class CheckerGrader < Grader
               copy_srctest_from_to(self.upload.extracted_path.join("starter"), build_dir, prefix)
             end
             copy_srctest_from_to(u.extracted_path, build_dir, prefix)
-            FileUtils.cp("#{assets_dir}/tester-2.jar", build_dir)
+            FileUtils.cp("#{assets_dir}/tester-3.0.jar", build_dir)
             FileUtils.cp("#{assets_dir}/javalib.jar", build_dir)
             if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
                 Dir.exists?(self.upload.extracted_path.join("testing")))
@@ -99,7 +101,7 @@ class CheckerGrader < Grader
             output, status = Open3.capture2("ls", "-R", build_dir.to_s)
             details.write output
 
-            classpath = "tester-2.jar:javalib.jar:.:./*"
+            classpath = "tester-3.0.jar:javalib.jar:.:./*"
 
             any_problems = false
             Dir.glob("#{build_dir}/**/*.java").each do |file|
@@ -132,6 +134,7 @@ class CheckerGrader < Grader
                                              ApplicationHelper.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000",
                                                                         "-cp", classpath, "tester.Main",
                                                                         "-secmon", "-tap", "-enforceTimeouts",
+                                                                        "-defaultTimeout", self.test_timeout.to_s,
                                                                         self.test_class,
                                                                         chdir: build_dir.to_s,
                                                                         timeout: Grader::DEFAULT_GRADING_TIMEOUT)
@@ -204,6 +207,9 @@ class CheckerGrader < Grader
       end
       if self.errors_to_show.blank?
         add_error("Errors to show cannot be blank")
+      end
+      if self.test_timeout.blank?
+        add_error("Default test timeout cannot be blank")
       end
     end
     return if self.upload.nil? || self.test_class.blank?

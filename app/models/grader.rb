@@ -31,6 +31,8 @@ end
 class Grader < ApplicationRecord
   DEFAULT_COMPILE_TIMEOUT = 60
   DEFAULT_GRADING_TIMEOUT = 300
+  DEFAULT_TEST_TIMEOUT    = 10
+  DEFAULT_ERRORS_TO_SHOW   = 3
   class GradingJob
     # This job class helps keeps track of all jobs that go into the beanstalk system
     # It keeps track of starting times for them, and the arguments passed in.
@@ -141,6 +143,13 @@ class Grader < ApplicationRecord
   def errors_to_show=(value)
     params_will_change! if errors_to_show != value
     @errors_to_show = value
+  end
+  def test_timeout
+    @test_timeout
+  end
+  def test_timeout=(value)
+    params_will_change! if test_timeout != value
+    @test_timeout = value
   end
   def self.default_line_length
     102

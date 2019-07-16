@@ -15,11 +15,24 @@
     <td></td>
   </tr>
   <tr class="form-group">
+    <td class="col-sm-2">
+      <%= f.label "test_timeout", "Maximum timeout per test:",
+          title: "What should the maximum timeout for each @Test be? Individual test methods can apply a shorter timeout if desired." %>
+    </td>
+    <% timeout = begin
+       f.object.test_timeout || Grader::DEFAULT_TEST_TIMEOUT
+       rescue Exception
+       Grader::DEFAULT_TEST_TIMEOUT
+       end %>
+    <td class="col-sm-4"><%= f.spinner "test_timeout", timeout, min: 1, max: 60, delta: 1 %></td>
+    <td></td>
+  </tr>
+  <tr class="form-group">
     <td class="col-sm-2"><%= f.label "errors_to_show", "Number of errors to show:" %></td>
     <% errs = begin
-       f.object.errors_to_show || 3
+       f.object.errors_to_show || Grader::DEFAULT_ERRORS_TO_SHOW
        rescue Exception
-       3
+       Grader::DEFAULT_ERRORS_TO_SHOW
        end %>
     <td class="col-sm-4"><%= f.spinner "errors_to_show", errs, min: 0, delta: 1 %></td>
     <td></td>
