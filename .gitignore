@@ -47,7 +47,7 @@ db/dump.sql.gz
 
 # Other stuff
 .rbx
-
+.idea/
 .vagrant
 
 *.class
