@@ -467,7 +467,7 @@ class Assignment < ApplicationRecord
   end
   
   def main_submissions
-    used_subs.includes(:subsmissions).map do |sfg|
+    used_subs.includes(:submissions).map do |sfg|
       sfg.submission
     end
   end
