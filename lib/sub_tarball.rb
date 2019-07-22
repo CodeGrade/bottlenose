@@ -23,7 +23,7 @@ class SubTarball
       next if sub.file_full_path.blank?
 
       uu = sub.user
-      dd = dirs.join(uu.dir_name)
+      dd = dirs.join("#{sub.id}_#{uu.dir_name}")
       FileUtils.mkdir_p(dd)
 
       FileUtils.cp(sub.file_full_path, dd)
@@ -55,7 +55,7 @@ class SubTarball
       next if sub.upload.nil?
 
       uu = sub.user
-      @dd = dirs.join(uu.dir_name)
+      @dd = dirs.join("#{sub.id}_#{uu.dir_name}")
       FileUtils.mkdir_p(@dd)
 
       def copy_files(extracted)
@@ -84,17 +84,5 @@ class SubTarball
   end
   def full_path
     @as.tarball_full_path
-  end
-
-  def self.untar(source, dest)
-    self.untar_source(File.open(source), dest)
-  end
-
-  def self.untar_gz(source, dest)
-    self.untar_source(Zlib::GzipReader.open(source), dest)
-  end
-
-private
-  def self.untar_source(source, destination)
   end
 end
