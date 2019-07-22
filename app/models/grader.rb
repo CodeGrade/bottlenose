@@ -113,6 +113,8 @@ class Grader < ApplicationRecord
   validates :order, presence: true, uniqueness: {scope: :assignment_id}
   before_save :recompute_grades, if: :avail_score_changed?
   before_save :save_uploads
+
+  include GradersHelper
   
   class << self
     attr_accessor :delayed_grades
@@ -290,6 +292,21 @@ class Grader < ApplicationRecord
     super(attrs)
   end
 
+  def export_data
+    # Export all the data from this grader
+    fail NotImplementedError, "Each grader should implement this"
+  end
+
+  def export_data_schema
+    # Describe the format for export_data
+    fail NotImplementedError, "Each grader should implement this"
+  end
+
+  def import_data
+    # Import all the data (in the same format as produced by export_data)
+    fail NotImplementedError, "Each grader should implement this"
+  end
+
   protected
 
   def save_uploads
@@ -313,94 +330,7 @@ class Grader < ApplicationRecord
     end
     g
   end
-
-  def run_command_produce_tap(assignment, sub, timeout: nil)
-    g = self.grade_for sub
-    u = sub.upload
-    grader_dir = u.grader_path(g)
-
-    grader_dir.mkpath
-
-    prefix = "Assignment #{assignment.id}, submission #{sub.id}"
-
-    tap_out, env, args, replacements = get_command_arguments(assignment, sub)
-
-    Audit.log("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Timeout: #{timeout || 'unlimited'}.  Command line: #{args.join(' ')}")
-    print("#{prefix}: Running #{self.type}.  Extracted dir: #{u.extracted_path}.  Timeout: #{timeout || 'unlimited'}.  Command line: #{args.join(' ')}\n")
-    output, err, status, timed_out = ApplicationHelper.capture3(env, *args, timeout: timeout)
-    File.open(grader_dir.join(tap_out), "w") do |style|
-      replacements&.each do |rep, with|
-        output = output.gsub(rep, with)
-      end
-      style.write(Upload.upload_path_for(output))
-      g.grading_output = style.path
-    end
-    if timed_out || !status&.success?
-      Audit.log "#{prefix}: #{self.type} checker failed: timed out #{timed_out}, status #{status}, error: #{err}"
-      InlineComment.where(submission: sub, grade: g).destroy_all
-
-      g.score = 0
-      g.out_of = self.avail_score
-      g.updated_at = DateTime.now
-      g.available = true
-      g.save!
-
-      InlineComment.create!(
-        submission: sub,
-        title: "Compilation errors",
-        filename: Upload.upload_path_for(sub.upload.extracted_path.to_s),
-        line: 0,
-        grade: g,
-        user: nil,
-        label: "general",
-        severity: InlineComment::severities["error"],
-        weight: self.avail_score,
-        comment: "Could not parse your program, so could not compute any style points at all",
-        suppressed: false)
-
-      return 0
-    else
-      tap = TapParser.new(output)
-      Audit.log "#{prefix}: #{self.type} checker results: Tap: #{tap.points_earned}"
-
-      g.score = tap.points_earned
-      g.out_of = tap.points_available
-      g.updated_at = DateTime.now
-      g.available = true
-      g.save!
-
-      upload_inline_comments(tap, sub)
-
-      return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
-    end
-  end
-
-  def get_command_arguments(assignment, sub)
-    fail NotImplementedError, "Must implement this if you're using run_command_produce_tap"
-  end
-
-  def upload_inline_comments(tap, sub)
-    g = self.grade_for sub
-    InlineComment.where(submission: sub, grade: g).destroy_all
-    ics = tap.tests.map do |t|
-      puts "Severity is #{t[:info]}"
-      InlineComment.new(
-        submission: sub,
-        title: t[:comment],
-        filename: Upload.upload_path_for(t[:info]["filename"]),
-        line: t[:info]["line"],
-        grade: g,
-        user: nil,
-        label: t[:info]["category"],
-        severity: InlineComment::severities[t[:info]["severity"].humanize(:capitalize => false)],
-        comment: t[:info]["message"],
-        weight: t[:info]["weight"],
-        suppressed: t[:info]["suppressed"])
-    end
-    InlineComment.import ics
-  end
-
-
+ 
   def is_int(v)
     Integer(v) rescue false
   end

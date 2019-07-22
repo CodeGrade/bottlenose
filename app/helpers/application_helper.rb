@@ -184,6 +184,9 @@ module ApplicationHelper
   end
 
   def self.capture3(*cmd, stdin_data: '', binmode: false, timeout: nil, signal: :TERM, **opts)
+    if opts[:chdir].nil?
+      opts.delete :chdir
+    end
     Open3.popen3(*cmd, opts) do |i, o, e, t|
       if binmode
         i.binmode

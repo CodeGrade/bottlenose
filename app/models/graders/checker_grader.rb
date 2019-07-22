@@ -39,158 +39,100 @@ class CheckerGrader < Grader
     self.params = "#{self.test_class};#{self.errors_to_show};#{self.test_timeout}"
   end
     
-  def copy_srctest_from_to(from, to, prefix = "")
-    if !prefix.empty?
-      prefix = "#{prefix}: "
-    end
-    if to.kind_of? String
-      to = Pathname.new(to)
-    end
-    if from.kind_of? String
-      from = Pathname.new(from)
-    end
-    # preserves when the submission contains src/ and test/ directories
-    # or creates them if only sources are submitted
-    # to.join("src").mkpath
-    # to.join("test").mkpath
-    
-    if Dir.exists?(from.join("src")) && Dir.exists?(from.join("test"))
-      Audit.log("#{prefix}From = #{from} and contains src/ and test/")
-      # FileUtils.cp_r("#{from.join('src')}/.", "#{to.join('src')}/")
-      # FileUtils.cp_r("#{from.join('test')}/.", "#{to.join('test')}/")
-      FileUtils.cp_r("#{from.join('src')}/.", "#{to}", remove_destination: true)
-      FileUtils.cp_r("#{from.join('test')}/.", "#{to}", remove_destination: true)
-    else
-      Audit.log("#{prefix}From = #{from} and does not contain src/ and test/")
-      # FileUtils.cp_r("#{from}/.", "#{to.join('src')}/")
-      FileUtils.cp_r("#{from}/.", "#{to}/", remove_destination: true)
-    end
-  end
-
   def do_grading(assignment, sub)
     g = self.grade_for sub
-    u = sub.upload
-    grader_dir = u.grader_path(g)
-
-    grader_dir.mkpath
-
-    assets_dir = Rails.root.join('lib/assets')
-    prefix = "Assignment #{assignment.id}, submission #{sub.id}"
-    
-    File.open(grader_dir.join("checker.tap"), "w") do |checker|
-      File.open(grader_dir.join("details.log"), "w") do |details|
-        Dir.mktmpdir("grade-#{sub.id}-#{g.id}") do |build_dir|
-          Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER, autopick: true) do
-          # build_dir = grader_dir.join("build")
-          # build_dir.mkpath
-            Audit.log("#{prefix}: Grading in #{build_dir}")
-            if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
-                Dir.exists?(self.upload.extracted_path.join("testing")))
-              copy_srctest_from_to(self.upload.extracted_path.join("starter"), build_dir, prefix)
-            end
-            copy_srctest_from_to(u.extracted_path, build_dir, prefix)
-            FileUtils.cp("#{assets_dir}/tester-3.0.jar", build_dir)
-            FileUtils.cp("#{assets_dir}/javalib.jar", build_dir)
-            if (Dir.exists?(self.upload.extracted_path.join("starter")) &&
-                Dir.exists?(self.upload.extracted_path.join("testing")))
-              copy_srctest_from_to(self.upload.extracted_path.join("testing"), build_dir, prefix)
-            else
-              copy_srctest_from_to(self.upload.extracted_path, build_dir, prefix)
-            end
-            details.write "Contents of temp directory are:\n"
-            output, status = Open3.capture2("ls", "-R", build_dir.to_s)
-            details.write output
-
-            classpath = "tester-3.0.jar:javalib.jar:.:./*"
-
-            any_problems = false
-            Dir.glob("#{build_dir}/**/*.java").each do |file|
-              next if Pathname.new(file).ascend.any? {|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE" }
-              Audit.log "#{prefix}: Compiling #{file}"
-              comp_out, comp_err, comp_status, timed_out =
-                                               ApplicationHelper.capture3("javac", "-cp", classpath, file,
-                                                                          *Dir.glob("#{build_dir}/*.java"),
-                                                                          chdir: build_dir.to_s,
-                                                                          timeout: Grader::DEFAULT_COMPILE_TIMEOUT)
-              details.write("Compiling #{file}: (exit status #{comp_status})\n")
-              details.write(comp_out)
-              if timed_out
-                details.write("Compiling #{file}: Compilation timed out after #{Grader::DEFAULT_COMPILE_TIMEOUT} seconds\n")
-              end
-              if timed_out || !comp_status&.success?
-                details.write("Errors building student code:\n")
-                details.write(comp_err)
-                Audit.log("#{prefix}: #{file} failed with compilation errors; see details.log")
-                any_problems = true
-              end
-            end
-
-            # details.write "Contents of temp directory are:\n"
-            # output, status = Open3.capture2("ls", "-R", build_dir.to_s)
-            # details.write output
-
-            Audit.log("#{prefix}: Running Checker with timeout of #{Grader::DEFAULT_GRADING_TIMEOUT}")
-            test_out, test_err, test_status, timed_out =
-                                             ApplicationHelper.capture3("java", "-XX:MaxJavaStackTraceDepth=1000000",
-                                                                        "-cp", classpath, "tester.Main",
-                                                                        "-secmon", "-tap", "-enforceTimeouts",
-                                                                        "-defaultTimeout", self.test_timeout.to_s,
-                                                                        self.test_class,
-                                                                        chdir: build_dir.to_s,
-                                                                        timeout: Grader::DEFAULT_GRADING_TIMEOUT)
-            details.write("Checker output: (exit status #{test_status})\n")
-            details.write(test_out)
-            if timed_out
-              details.write("Running tests timed out after #{Grader::DEFAULT_GRADING_TIMEOUT} seconds")
-            end
-            if timed_out || !test_status&.success?
-              details.write("Checker errors:\n")
-              details.write(test_err)
-              Audit.log("#{prefix}: Checker failed with errors; see details.log")
-              any_problems = true
-            end
-
+    Dir.mktmpdir("grade-#{sub.id}-#{g.id}_") do |build_dir|
+      @build_dir = build_dir
+      begin
+        Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER, autopick: true) do
+          run_build_produce_problems assignment, sub do |prefix, any_problems, details|
             if any_problems
               g.grading_output_path = details.path
               g.score = 0
               g.out_of = self.avail_score
-
               g.updated_at = DateTime.now
               g.available = true
               g.save!
-
-              Audit.log("#{prefix}: Errors prevented grading; giving a 0")
-              return 0
             else
-              begin
-                checker.write(test_out)
-                g.grading_output_path = checker.path
-
-                tap = TapParser.new(test_out)
-                g.score = tap.points_earned
-                g.out_of = tap.points_available
-                g.updated_at = DateTime.now
-                g.available = true
-                g.save!
-
-                Audit.log("#{prefix}: Checker gives raw score of #{g.score} / #{g.out_of}")
-                return self.avail_score.to_f * (tap.points_earned.to_f / tap.points_available.to_f)
-              rescue Exception
-                g.grading_output_path = details.path
-                g.score = 0
-                g.out_of = self.avail_score
-                g.updated_at = DateTime.now
-                g.available = true
-                g.save!
-                Audit.log("#{prefix}: Errors prevented grading; giving a 0")
-                return 0
+              timeout = Grader::DEFAULT_GRADING_TIMEOUT
+              # If the professor supplied a per-test timeout, then we can relax our overall timeout a bit
+              if self.test_timeout then timeout = timeout * 5 end
+              run_command_produce_tap assignment, sub, timeout: timeout do |prefix, err, g, tap|
+                if tap
+                  g.score = tap.points_earned
+                  g.out_of = tap.points_available
+                  g.updated_at = DateTime.now
+                  g.available = true
+                  g.save!
+                  Audit.log("#{prefix}: Tests give raw score of #{g.score} / #{g.out_of}")
+                else
+                  if err[:output]
+                    details.write("Test output: (exit status #{err[:status] || 'unknown'})\n")
+                    details.write(err[:output])
+                  end
+                  if err[:timed_out]
+                    details.write("Running tests timed out after #{self.test_timeout} seconds")
+                  end
+                  Audit.log("#{prefix}: Errors prevented grading; giving a 0")
+                  g.grading_output_path = details.path
+                  g.score = 0
+                  g.out_of = self.avail_score
+                  g.updated_at = DateTime.now
+                  g.available = true
+                  g.save!
+                end
               end
             end
           end
         end
+      rescue Exception => e
+        Audit.log("Assignment #{assignment.id}, submission #{sub.id}: Errors prevented grading; giving a 0: #{e}")
+        g.score = 0
+        g.out_of = self.avail_score
+        g.updated_at = DateTime.now
+        g.available = true
+        g.save!
       end
     end
-    return 0
+  end
+
+  def get_extraction_arguments(assignment, sub)
+    [
+      @build_dir,
+      self.upload.extracted_path,
+      sub.upload.extracted_path,
+      [
+        Rails.root.join("lib/assets/tester-3.0.jar"),
+        Rails.root.join("lib/assets/javalib.jar")
+      ]
+    ]
+  end
+
+  def get_build_arguments(assignment, sub)
+    files = Dir.glob("#{@build_dir}/**/*.java").reject do |f|
+      Pathname.new(f).ascend.any?{|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE"}
+    end
+    [
+      "details.log",
+      {},
+      files.map do |f| ["javac", "-cp", "tester-3.0.jar:javalib.jar:.:./*", f, *files] end,
+      {},
+      @build_dir
+    ]
+  end
+
+  def get_command_arguments(assignment, sub)
+    [
+      "checker.tap",
+      {},
+      ["java", "-XX:MaxJavaStackTraceDepth=1000000",
+       "-cp", "tester-3.0.jar:javalib.jar:.:./*", "tester.Main",
+       "-secmon", "-tap", "-enforceTimeouts",
+       "-defaultTimeout", self.test_timeout.to_s,
+       self.test_class],
+      {},
+      @build_dir
+    ]
   end
 
   def recompute_grades
