@@ -94,7 +94,7 @@ function getGrades($table) {
   return ret;
 }  
 
-$(function() {
+(function() {
   // Select students wtihin a section
   var prevSection = "";
   $("#sections").change(function(e) {
@@ -103,7 +103,7 @@ $(function() {
   });
 
   // Handle the modal dialogs
-  $("button.trigger").click(function() {
+  $("#grades-table button.trigger").click(function() {
     var $target = $("#enter_grades");
     var $row = $(this).closest("tr");
     var name = $(this).data("name");
@@ -208,4 +208,4 @@ $(function() {
                <% end %>
              }
   });
-});
+})();

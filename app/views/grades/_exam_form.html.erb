@@ -9,6 +9,7 @@
   <% @course.sections.each do |s| %>
   #grades-table.show_one .sec_<%= s.crn %> { display: none; }
   #grades-table.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  #grades-table.show_one.sec_<%= s.crn %>.hide-dropped tr.sec_<%= s.crn %>.dropped { display: none; }
   <% end %>
   #grades-table td { vertical-align: middle; }
 </style>

@@ -274,6 +274,8 @@ module ApplicationHelper
       "application/rtf"
     when ".mp3"
       "audio/mpeg"
+    when ".csv"
+      "text/csv"
     else
       case File.basename(full_path.to_s).downcase
       when "makefile"
@@ -307,7 +309,8 @@ module ApplicationHelper
          "text/css",
          "text/x-latex",
          "text/plain",
-         "text/x-makefile"
+         "text/x-makefile",
+         "text/csv"
       false
     when "application/java-vm",
          "image/gif",

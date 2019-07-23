@@ -307,6 +307,11 @@ class Grader < ApplicationRecord
     fail NotImplementedError, "Each grader should implement this"
   end
 
+  def import_data_schema
+    # Describe the format for import_data
+    fail NotImplementedError, "Each grader should implement this"
+  end
+
   protected
 
   def save_uploads

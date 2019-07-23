@@ -78,6 +78,7 @@ Bottlenose::Application.routes.draw do
       end
       resources :graders, only: [] do
         member do
+          get 'all_grades' => 'grades#tarball'
           get 'bulk' => 'grades#bulk_edit'
           post 'bulk' => 'grades#bulk_update'
           get 'bulk_curve' => 'grades#bulk_edit_curve'

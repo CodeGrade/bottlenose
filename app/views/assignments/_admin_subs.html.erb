@@ -144,15 +144,37 @@
         <th>Status</th>
         <% @gradesheet.grades[:graders].each do |c| %>
         <th class="text-right">
-          <% if c.autograde? && cur_reg&.professor? %>
-          <%= link_to rerun_grader_course_assignment_submissions_path(@course, @gradesheet.assignment, c),
-              class: "btn btn-default no-resort",
-              title: "Rerun #{c.display_type} for all used submissions",
-              method: :post do %><i class="glyphicon glyphicon-refresh"></i><% end %>
-          <% elsif !c.autograde? && cur_reg && (cur_reg.professor? || cur_reg.assistant?) %>
-          <%= link_to course_assignment_grader_allocations_path(@course, @gradesheet.assignment, c),
-              class: "btn btn-default no-resort",
-              title: "Assign graders" do %><i class="glyphicon glyphicon-list-alt"></i><% end %>
+          <% unless c.is_a? ExamGrader %>
+          <div class="dropdown no-resort" style="display: inline-block;">
+            <button class="btn btn-default dropdown-toggle" type="button" data-toggle="dropdown"
+                    title="Grader tasks">
+              <i class="glyphicon glyphicon-tasks"></i>
+            </button>
+            <ul class="dropdown-menu">
+              <li>
+                <%= link_to bulk_course_assignment_grader_path(@course, @gradesheet.assignment, c) do %>
+                <i class="glyphicon glyphicon-edit"></i> Bulk-upload grades for this grader
+                <% end %>
+              </li>
+              <% if c.autograde? && cur_reg&.professor? %>
+              <li>
+                <%= link_to rerun_grader_course_assignment_submissions_path(@course, @gradesheet.assignment, c),
+                    title: "Rerun #{c.display_type} for all used submissions",
+                    data: {confirm: "Are you sure you want to rerun the autograder for all submissions?"},
+                    method: :post do %>
+                <i class="glyphicon glyphicon-refresh"></i> Rerun autograder
+                <% end %>
+              </li>
+              <% elsif !c.autograde? && cur_reg && (cur_reg.professor? || cur_reg.assistant?) %>
+              <li>
+                <%= link_to course_assignment_grader_allocations_path(@course, @gradesheet.assignment, c),
+                    title: "Assign staff to grade submissions" do %>
+                <i class="glyphicon glyphicon-list-alt"></i> Assign graders
+                <% end %>
+              </li>
+              <% end %>
+            </ul>
+          </div>
           <% end %>
           <% if c.extra_credit %>
           <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>

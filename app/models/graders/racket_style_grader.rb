@@ -27,6 +27,32 @@ class RacketStyleGrader < Grader
     super
     set_style_params
   end
+
+  def export_data
+    tb = SubTarball.new(self.assignment)
+    tb.update_with!(
+      self.assignment.used_submissions.includes(:users, :grades).where("grades.grader_id": self.id).map do |s|
+        g = s.grades.first.grading_output_path
+        ["#{s.id}#{File.extname(g)}", g]
+      end.to_h
+    )
+    tb
+  end
+  def export_data_schema
+    <<-schema
+An archive containing:
+  <submissionId>.tap: the current TAP output for each submission
+     OR
+  <submissionId>.log: the current log file if there is no TAP output
+schema
+  end
+  def import_data_schema
+    <<-schema
+An archive containing:
+  <submissionId>.tap: the updated TAP output for each submission
+                      or the string "DELETE" to erase the grade
+schema
+  end
   
   protected
   
@@ -72,4 +98,5 @@ class RacketStyleGrader < Grader
     # nothing to do:
     # we already compute the score here based on the TAP output
   end
+
 end
