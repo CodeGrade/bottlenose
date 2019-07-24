@@ -21,7 +21,7 @@
         <% if export_schema.html_safe? %>
         <div><%= export_schema %></div>
         <% else %>
-        <pre class="bg-info"><%= @grader.export_data_schema %></pre>
+        <%= render export_schema %>
         <% end %>
         <%= link_to "Download existing grades",
             all_grades_course_assignment_grader_path(@course, @assignment, @grader),
@@ -36,7 +36,7 @@
         <% if import_schema.html_safe? %>
         <div><%= import_schema %></div>
         <% else %>
-        <pre class="bg-info"><%= @grader.import_data_schema %></pre>
+        <%= render import_schema %>
         <% end %>
         <%= form_for [@course, @assignment.becomes(Assignment), @grader.becomes(Grader)],
                      url: {action: "bulk_update", controller: "grades"}, method: :post do |f| %>

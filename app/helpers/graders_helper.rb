@@ -189,4 +189,104 @@ module GradersHelper
     end
   end
 
+  def export_tap_data
+    tb = SubTarball.new(self.assignment)
+    tb.update_with!(
+      self.assignment.used_submissions.includes(:users, :grades).where("grades.grader_id": self.id).map do |s|
+        upload_path = Upload.upload_path_for(s.upload.extracted_path)
+        g = s.grades.first.grading_output_path
+        if File.exists? g
+          ["#{s.id}#{File.extname(g)}", File.read(g).gsub("#{upload_path}/", "")]
+        else
+          ["#{s.id}.missing", ""]
+        end
+      end.to_h
+    )
+    tb
+  end
+
+  def import_tap_data(who_grades, file)
+    ans = {created: 0, updated: 0, errors: []}
+    Dir.mktmpdir("regrade-#{self.id}_") do |tmpdir|
+      ArchiveUtils.extract(file.path, file.content_type, tmpdir, force_readable: true)
+      if Dir.exists?("#{tmpdir}/assignment_#{self.assignment_id}")
+        entries = Dir.glob("#{tmpdir}/assignment_#{self.assignment_id}/*")
+      elsif Dir.glob("#{tmpdir}/assignment_*").length > 0
+        ans[:errors] << "Found a directory that appears to be for a different assignment; is this the wrong upload?"
+        entries = []
+      else
+        entries = Dir.glob("#{tmpdir}/*")
+      end
+      entries = entries.select{|f| File.file? f}.group_by{|f| File.basename(f, ".*")}
+      subs = Submission.where(id: entries.keys.map(&:to_i), assignment_id: self.assignment_id).map{|s| [s.id, s]}.to_h
+      entries.each do |sub_id, files|
+        if files.length > 1
+          ans[:errors] << "Submission #{sub_id} has multiple files in this archive; ignoring: #{files.map{|f| File.basename(f)}}"
+          next
+        elsif subs[sub_id.to_i].nil?
+          ans[:errors] << "No such submission with id #{sub_id}"
+          next
+        else
+          sub = subs[sub_id.to_i]
+          sub_extracted_path = Upload.upload_path_for(sub.upload.extracted_path)
+          file = files.first
+          begin
+            g = self.grade_for sub
+            new_record = g.new_record?
+            grader_dir = sub.upload.grader_path(g)
+            grader_dir.mkpath
+            if File.extname(file) == ".tap"
+              raw_tap = File.read(file)
+              if raw_tap == "DELETE"
+                InlineComment.transaction do
+                  InlineComment.where(submission: sub, grade: g).destroy_all
+                  g.grading_output = nil
+                  g.score = 0
+                  g.available = false
+                  g.out_of = self.avail_score
+                  g.save!
+                end
+              else
+                raw_tap = raw_tap.gsub(/(\s+filename:\s+\")/, "\\1#{sub_extracted_path}/")
+                tap = TapParser.new(raw_tap)
+                
+                File.open(grader_dir.join(File.basename(file)), "w") do |tap_out|
+                  tap_out.write raw_tap
+                  g.grading_output = tap_out.path
+                end
+                record_tap_as_comments(g, tap, sub)
+              end
+            else
+              File.open(grader_dir.join(File.basename(file)), "w") do |out|
+                out.write File.read(file)
+                g.grading_output = out.path
+              end
+              record_compile_error(sub, g)
+            end
+            if new_record
+              ans[:created] += 1
+            else
+              ans[:updated] += 1
+            end
+          rescue Exception => e
+            ans[:errors] << "Error processing submission #{sub_id}: #{e} at #{e.backtrace}"
+          end
+        end
+      end
+    end
+    {notice:
+       if ans[:created] > 0 || ans[:updated] > 0
+         "Created #{ans[:created]} #{"new grade".pluralize(ans[:created])}, and updated #{ans[:updated]} #{"existing grade".pluralize(ans[:updated])}"
+       else
+         nil
+       end,
+     errors:
+       if ans[:errors].empty?
+         nil
+       else
+         ("<p>#{"Problem".pluralize(ans[:errors].length)} updating #{"grade".pluralize(ans[:errors].length)}:</p>" +
+          "<ul>" + ans[:errors].map{|msg| "<li>#{msg}</li>"}.join("\n") + "</ul>").html_safe
+       end
+    }
+  end
 end

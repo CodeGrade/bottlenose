@@ -49,7 +49,7 @@ class ExamGrader < Grader
   def export_data
     out = Rails.root.join("private", "assignment_#{self.assignment_id}.csv")
     CSV.open(out, "wb") do |csv|
-      csv << ["NUID", "Last name", "First name", "Status",
+      csv << ["NUID", "Last name", "First name", "Status", "Action",
               *self.assignment.flattened_questions.map{|q| q["name"]},
               "Curved"]
       subs = self.assignment.used_submissions.includes(:users).map{|u| [u.user_id, u]}.to_h
@@ -63,7 +63,7 @@ class ExamGrader < Grader
           if sub.nil?
             csv << [s.nuid, s.last_name, s.first_name, "Missing"]
           else
-            csv << [s.nuid, s.last_name, s.first_name, "", *comments[sub.id].sort_by(&:line).map(&:weight)]
+            csv << [s.nuid, s.last_name, s.first_name, "", "", *comments[sub.id].sort_by(&:line).map(&:weight)]
           end
         end
       end
@@ -71,27 +71,11 @@ class ExamGrader < Grader
     out.to_s
   end
   def export_data_schema
-    <<-schema
-<div class="panel panel-info">
-<div class="panel-heading">
-A CSV file with the following columns:
-<pre>
-NUID | Last name | First name | Status | Grades of each question... | Curved grade
-</pre>
-<ul>
-<li>The downloaded file will have column headers as its first row</li>
-<li><b class="text-danger">NOTE: Any students who are missing NUIDs cannot have their grades uploaded</b></li>
-<li>The Status column may either be blank, "Missing", or "Dropped"</li>
-<li>The Curved grade column may be blank</li>
-</ul>
-</div>
-</div>
-schema
-    .html_safe
+    "exam_export_schema.html"
   end
   def import_data(who_grades, file)
     csv = CSV.parse(file.read, headers: true, converters: :numeric)
-    expected_headers = ["NUID", "Last name", "First name", "Action",
+    expected_headers = ["NUID", "Last name", "First name", "Status", "Action",
                         *self.assignment.flattened_questions.map{|q| q["name"]},
                         "Curved"]
     if csv.headers != expected_headers
@@ -106,8 +90,8 @@ schema
         errors << "Cannot handle grades for #{row_hash["First name"]} #{row_hash["Last name"]} without an NUID"
       else
         if row_hash["Action"] == "Update"
-          # Column 4 is first column of grades
-          students_with_grades[row_hash["NUID"]] = row.to_a.slice(4..-1).map(&:second)
+          # Column 5 is first column of grades (counting from 0)
+          students_with_grades[row_hash["NUID"]] = row.to_a.slice(5..-1).map(&:second)
         elsif row_hash["Action"] == "Delete"
           @sub = Submission.find_by(assignment: self.assignment, user: User.find_by(nuid: row_hash["NUID"]))
           @sub&.destroy!
@@ -132,30 +116,7 @@ schema
     }
   end
   def import_data_schema
-    <<-schema
-<div class="panel panel-info">
-<div class="panel-heading">
-A CSV file with the following columns:
-<pre>
-NUID | Last name | First name | Action | Grades of each question... | Curved grade
-</pre>
-<ul>
-<li>The uploaded file must have column headers as its first row</li>
-<li><b class="text-danger">NOTE: Any students who are missing NUIDs cannot have their grades uploaded</b></li>
-<li>The Last name and First name columns are ignored upon import</li>
-<li>The Action column may be one of <code>Ignore</code>, <code>Update</code> or <code>Delete</code>
-  <ul>
-  <li><code>Ignore</code> will not update the scores for this student</li>
-  <li><code>Update</code> will update the scores for this student</li>
-  <li><code>Delete</code> will delete the grades for this student</li>
-  </ul>
-</li>
-<li>The Curved grade column may be left blank, to clear any curved grade for this student</li>
-</ul>
-</div>
-</div>
-schema
-      .html_safe
+    "exam_import_schema.html"
   end
 
   def apply_all_exam_grades(who_grades, students_with_grades, key)

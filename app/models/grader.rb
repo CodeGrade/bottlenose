@@ -299,6 +299,7 @@ class Grader < ApplicationRecord
 
   def export_data_schema
     # Describe the format for export_data
+    # Return either and html_safe? string, or the name of a partial
     fail NotImplementedError, "Each grader should implement this"
   end
 
@@ -309,6 +310,7 @@ class Grader < ApplicationRecord
 
   def import_data_schema
     # Describe the format for import_data
+    # Return either and html_safe? string, or the name of a partial
     fail NotImplementedError, "Each grader should implement this"
   end
 

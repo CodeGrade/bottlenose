@@ -1,0 +1,32 @@
+<div class="panel panel-info">
+<div class="panel-heading">
+<p>An archive (<code>.tgz</code>) containing:</p>
+<pre>
+assignment_<%= @assignment.id %>/
+  &lt;submissionId&gt;.tap: the current TAP output for each submission
+     OR
+  &lt;submissionId&gt;.log: the current error log file if there is no TAP output
+</pre>
+<p>Each TAP file is of the form:</p>
+<pre>
+TAP version 13
+1..<i><b>Number of comments</b></i>
+# Time: <i><b>Amount of time taken to run the grader, in seconds</b></i>
+# TOTAL POINTS: <i><b>Total available points</b></i>
+# Tests run: <i><b>Number of comments</b></i>, Failures: <i><b>Number of comments</b></i>
+not ok <i><b>Comment number</b></i>      <i><b>Short (1-2 words) description of error</b></i>
+# More information
+  ---
+  message: "<i><b>Description of error</b></i>"
+  filename: "<i><b>relative path to file</b></i>"
+  line: <i><b>line number of error</b></i>
+  category: <i><b>Category of error, e.g. "formatting", "documentation"</b></i>
+  severity: <i><b>Severity of error, i.e. "Error", "Warning", "Info"</b></i>
+  weight: <i><b>How many points to deduct for this error</b></i>
+  suppressed: <i><b>Should this penalty be ignored? (true or false)</b></i>
+  ...
+<i><b>More comments here</b></i>
+</pre>
+<p>Lines beginning with <code>#</code> are comments. The <code>---</code> and <code>...</code> are literal text, not placeholders.</p>
+</div>
+</div>

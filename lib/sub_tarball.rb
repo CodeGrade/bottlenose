@@ -51,7 +51,11 @@ class SubTarball
       files.each do |dest, src|
         dd = dirs.join(dest)
         FileUtils.mkdir_p(dd.dirname)
-        FileUtils.cp(src, dd)
+        if src.is_a? Pathname
+          FileUtils.cp(src, dd)
+        else
+          File.open(dd, "w") do |out| out.write src end
+        end
       end
     end
   end

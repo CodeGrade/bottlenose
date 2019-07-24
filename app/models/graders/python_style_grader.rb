@@ -30,29 +30,13 @@ class PythonStyleGrader < Grader
   end
 
   def export_data
-    tb = SubTarball.new(self.assignment)
-    tb.update_with!(
-      self.assignment.used_submissions.includes(:users, :grades).where("grades.grader_id": self.id).map do |s|
-        g = s.grades.first.grading_output_path
-        ["#{s.id}#{File.extname(g)}", g]
-      end.to_h
-    )
-    tb
+    export_tap_data
   end
   def export_data_schema
-    <<-schema
-An archive containing:
-  <submissionId>.tap: the current TAP output for each submission
-     OR
-  <submissionId>.log: the current log file if there is no TAP output
-schema
+    "tap_style_export_schema.html"
   end
   def import_data_schema
-    <<-schema
-An archive containing:
-  <submissionId>.tap: the updated TAP output for each submission
-                      or the string "DELETE" to erase the grade
-schema
+    "tap_style_import_schema.html"
   end
   
   protected
