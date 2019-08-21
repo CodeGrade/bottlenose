@@ -32,6 +32,20 @@ class JunitGrader < Grader
   def export_data_schema
     "junit_export_schema.html"
   end
+  def import_data(who_grades, file)
+    import_tap_data(who_grades, file) do |g, raw_tap, sub|
+      if File.extname(g.grading_output_path) == ".tap"
+        tap = TapParser.new(raw_tap)
+        g.score = tap.points_earned
+        g.out_of = tap.points_available
+      else
+        g.score = 0
+        g.out_of = self.avail_score
+      end
+      g.updated_at = DateTime.now
+      g.available = true
+    end
+  end
   def import_data_schema
     "junit_import_schema.html"
   end

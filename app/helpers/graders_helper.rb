@@ -1,3 +1,5 @@
+require 'sub_tarball'
+
 module GradersHelper
   protected 
   def run_command_produce_tap(assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT)
@@ -124,7 +126,6 @@ module GradersHelper
 
       InlineComment.where(submission: sub, grade: g).destroy_all
       ics = tap.tests.map do |t|
-        puts "Severity is #{t[:info]}"
         InlineComment.new(
           submission: sub,
           title: t[:comment],
@@ -192,7 +193,8 @@ module GradersHelper
   def export_tap_data
     tb = SubTarball.new(self.assignment)
     tb.update_with!(
-      self.assignment.used_submissions.includes(:users, :grades).where("grades.grader_id": self.id).map do |s|
+      self.assignment.used_submissions.includes(:users, :grades, upload: [:course, :assignment])
+        .where("grades.grader_id": self.id).map do |s|
         upload_path = Upload.upload_path_for(s.upload.extracted_path)
         g = s.grades.first.grading_output_path
         if File.exists? g
@@ -247,21 +249,35 @@ module GradersHelper
                   g.save!
                 end
               else
-                raw_tap = raw_tap.gsub(/(\s+filename:\s+\")/, "\\1#{sub_extracted_path}/")
-                tap = TapParser.new(raw_tap)
-                
-                File.open(grader_dir.join(File.basename(file)), "w") do |tap_out|
-                  tap_out.write raw_tap
-                  g.grading_output = tap_out.path
+                if block_given?
+                  yield(g, raw_tap, sub)
+                  File.open(grader_dir.join(File.basename(file)), "w") do |tap_out|
+                    tap_out.write raw_tap
+                    g.grading_output_path = tap_out.path
+                  end
+                  g.save!
+                else
+                  raw_tap = raw_tap.gsub(/(\s+filename:\s+\")/, "\\1#{sub_extracted_path}/")
+                  tap = TapParser.new(raw_tap)
+                  
+                  File.open(grader_dir.join(File.basename(file)), "w") do |tap_out|
+                    tap_out.write raw_tap
+                    g.grading_output_path = tap_out.path
+                  end
+                  record_tap_as_comments(g, tap, sub)
                 end
-                record_tap_as_comments(g, tap, sub)
               end
             else
+              contents = File.read(file)
               File.open(grader_dir.join(File.basename(file)), "w") do |out|
-                out.write File.read(file)
-                g.grading_output = out.path
+                out.write contents
+                g.grading_output_path = out.path
               end
-              record_compile_error(sub, g)
+              if block_given?
+                yield(g, contents, sub)
+              else
+                record_compile_error(sub, g)
+              end
             end
             if new_record
               ans[:created] += 1

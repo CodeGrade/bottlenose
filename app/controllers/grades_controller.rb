@@ -315,19 +315,10 @@ class GradesController < ApplicationController
   end
   def bulk_edit_ManualGrader
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade editing for manual graders is not supported"
-  end
-  def bulk_edit_Files
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade editing for that assignment type is not supported"
-  end
-  def bulk_edit_Questions
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade editing for that assignment type is not supported"
-  end
-  def bulk_edit_Codereview
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade editing for that assignment type is not supported"
+                  alert: "Bulk comment editing for manual graders is not yet supported"
+    # require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+    #                            : course_assignment_path(@course, @assignment))
+    # render "edit_tap_comment_grades"
   end
   
   def bulk_edit_curve_Files
@@ -517,19 +508,7 @@ class GradesController < ApplicationController
     end
     redirect_to course_assignment_path(@course, @assignment), notice: notice
   end
-  
-  def bulk_update_Files
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade updating for that assignment type is not supported"
-  end
-  def bulk_update_Questions
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade updating for that assignment type is not supported"
-  end
-  def bulk_update_Codereview
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade updating for that assignment type is not supported"
-  end
+
   def bulk_update_curve_Files
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade updating for that assignment type is not supported"
