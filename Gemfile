@@ -65,6 +65,7 @@ group :development do
   gem "listen"
   gem "ruby-debug-ide"
   gem "debase"
+  gem "bundler-audit"
 end
 
 group :development, :test do
