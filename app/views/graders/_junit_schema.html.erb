@@ -28,23 +28,35 @@
               <li>There must be a Java file with the same name, and
                 containing a public class of the same name, as specified
                 in the grader.</li>
+              <li>You may specify multiple test classes on the
+                command-line, to make it easier to organize the test
+                cases.  Additionally, you may specify
+                <code>weight</code>s to multiply all existing test
+                weights within the test classes, to easily manage
+                regression testing.  For example:
+                <code>ClassA -weight 2 ClassB ClassC -weight 0.5 ClassD</code>
+                would give <code>ClassA</code> a
+                default weight of 1, classes <code>ClassB</code>
+                and <code>ClassC</code> a weight of 2,
+                and <code>ClassD</code> a weight of 0.5
+              </li>
             </ul>
             <p>Here is a example JUnit grader test file layout:</p>
             <pre>JUnitGrading.zip
-├── starter/
-│   ├── src/
-│   │   └── cs3500/
-│   │       └── marblesolitaire/
-│   │           └── model/
-│   │               └── hw02/
-│   │                   └── MarbleSolitaireModel.java
-│   └── test/
-│       └── Hw02TypeChecks.java
-└── testing/
-    ├── src/
-    │   └── .ignore
-    └── test/
-        ├── Grade02.java</pre>
+├── starter/
+│   ├── src/
+│   │   └── cs3500/
+│   │       └── marblesolitaire/
+│   │           └── model/
+│   │               └── hw02/
+│   │                   └── MarbleSolitaireModel.java
+│   └── test/
+│       └── Hw02TypeChecks.java
+└── testing/
+    ├── src/
+    │   └── .ignore
+    └── test/
+        └── Grade02.java</pre>
           </div>
         </div>
       </div>

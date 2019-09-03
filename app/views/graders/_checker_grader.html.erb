@@ -10,9 +10,19 @@
   <%= render "graders/grader_file_picker", f: f, id: f.object.id.to_s,
       label: "Reference tests:", schema: "checker-schema" %>
   <tr class="form-group">
-    <td class="col-sm-2"><%= f.label "test_class", "Test class:" %></td>
+    <td class="col-sm-2"><%= f.label "test_class", "Test class(es):" %></td>
     <td class="col-sm-4"><%= f.text_field "test_class" %></td>
-    <td></td>
+    <td style="position: relative;">
+      <span class="btn btn-info btn-sm" data-toggle="collapse"
+            data-target="#cmdline_info_<%= f.object.id %>"><i class="glyphicon glyphicon-question-sign"></i></span>
+      <p id="cmdline_info_<%= f.object.id %>" class="collapse alert alert-info" style="position: absolute;">
+        You may specify the names of multiple test classes, separated
+        by spaces.  Additionally, you may use <code>-weight ##</code>
+        to scale all the test weights for subsequent classes by a
+        given factor (you may use this flag multiple times).  The
+        default class weight is 1.0.
+      </p>
+    </td>
   </tr>
   <tr class="form-group">
     <td class="col-sm-2">

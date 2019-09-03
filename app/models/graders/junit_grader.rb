@@ -149,7 +149,7 @@ class JunitGrader < Grader
       "junit.tap",
       {},
       ["java", "-cp", "junit-4.12.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
-       "edu.neu.TAPRunner", self.test_class,
+       "edu.neu.TAPRunner", *(self.test_class.split(" ")),
        "-timeout", self.test_timeout.to_s],
       {},
       @build_dir

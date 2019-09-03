@@ -153,7 +153,7 @@ class CheckerGrader < Grader
        "-cp", "tester-3.0.jar:javalib.jar:.:./*", "tester.Main",
        "-secmon", "-tap", "-enforceTimeouts",
        "-defaultTimeout", self.test_timeout.to_s,
-       self.test_class],
+       *(self.test_class.split(" "))],
       {},
       @build_dir
     ]
