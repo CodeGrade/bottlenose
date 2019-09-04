@@ -224,7 +224,7 @@ module ApplicationHelper
       "pyret"
     when ".rkt", ".ss"
       "scheme"
-    when ".ml", ".mli"
+    when ".sml", ".ml", ".mli"
       "mllike"
     when ".md"
       "text/markdown"
