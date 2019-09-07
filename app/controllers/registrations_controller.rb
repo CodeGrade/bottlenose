@@ -6,7 +6,7 @@ class RegistrationsController < ApplicationController
   before_action :find_course
   before_action :find_registration, except: [:index, :new, :create, :bulk_enter, :bulk_update, :bulk_edit]
   before_action :require_current_user, except: [:public]
-  before_action :require_registered_user, except: [:public, :index, :new, :create]
+  before_action :require_registered_user, except: [:public, :new, :create]
   before_action :require_admin_or_assistant
 
   def index
