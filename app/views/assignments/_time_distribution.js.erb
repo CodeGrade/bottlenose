@@ -1,17 +1,20 @@
 <%
   @times = {}
-  def processTimes(times, base_time, key)
+  def processTimes(times, start_date, due_date, key)
     times.each do |t|
-      timechunk = ((t - base_time) / 1.hour).floor
+    next if (start_date < due_date) && (t < start_date)
+      timechunk = ((t - due_date) / 1.hour).floor
       @times[timechunk] ||= {time: t.at_beginning_of_hour.iso8601}
       @times[timechunk][key] = @times[timechunk][key].to_i + 1
     end
   end
-  processTimes(allSubs.pluck(:created_at), assn.due_date, :all)
-  processTimes(usedSubs.pluck(:created_at), assn.due_date, :used)
-  (@times.keys.min..@times.keys.max).each do |chunk|
-    @times[chunk] ||= {time: (assn.due_date - chunk.hours).at_beginning_of_hour.iso8601,
-                       all: nil, used: nil}
+  processTimes(allSubs.pluck(:created_at), assn.available, assn.due_date, :all)
+  processTimes(usedSubs.pluck(:created_at), assn.available, assn.due_date, :used)
+  if !(@times.empty?)
+    (@times.keys.min..[@times.keys.max, 0].max).each do |chunk|
+      @times[chunk] ||= {time: (assn.due_date + chunk.hours).at_beginning_of_hour.iso8601,
+                         all: nil, used: nil}
+    end
   end
   @times = @times.to_a.sort_by(&:first).to_h
 %>
@@ -22,7 +25,7 @@ GoogleCharts.load('corechart', function() {
   var dataKeys = Object.keys(allTimes);
   dataKeys.sort((a, b) => Number.parseInt(a) - Number.parseInt(b));
   var minTime = Number.parseInt(dataKeys[0]);
-  var maxTime = Number.parseInt(dataKeys[dataKeys.length - 1]);
+  var maxTime = Math.max(0, Number.parseInt(dataKeys[dataKeys.length - 1]));
   var data = [[{label: "Time", type: 'number'}, "All", "Used"]]
       .concat(dataKeys.map((t) => [{v: Number.parseInt(t), f: makeFriendlyDate(allTimes[t].time, true)},
                                    allTimes[t].all, allTimes[t].used]));
