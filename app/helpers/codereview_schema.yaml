@@ -109,6 +109,8 @@ QuestionPart:
   one_of:
     - TextPart
     - RequiredText
+    - CodeTag
+    - CodeTags
 TextPart:
   object:
     - key: "text"
@@ -117,6 +119,16 @@ TextPart:
 RequiredText:
   object:
     - key: "requiredText"
+      value: String
+      commit: true
+CodeTag:
+  object:
+    - key: "codeTag"
+      value: String
+      commit: true
+CodeTags:
+  object:
+    - key: "codeTags"
       value: String
       commit: true
 Rubric:

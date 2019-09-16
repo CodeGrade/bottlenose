@@ -1,5 +1,6 @@
 require 'yaml'
 require 'active_support/inflector'
+require 'nokogiri'
 
 class SchemaChecker
   def check(yaml)
@@ -46,6 +47,7 @@ class SchemaChecker
         end},
       convert: lambda {|val| val}
     }
+    @checker["HTML"] = @checker["String"] # NOTE: This is temporary, and doesn't actually do any HTML validation
     @checker["Boolean"] = {
       check: lambda {|val, parent, refinement=nil|
         if (val == true || val == false)
@@ -289,6 +291,7 @@ class SchemaChecker
               end
             in_path named do
               val.each do |k, v|
+                k = k.to_s if k.is_a? Symbol
                 if checkers[k]
                   @commit = make_path if checkers[k][:commit]
                   in_path ["#{k}"] do
