@@ -61,13 +61,19 @@ class RegistrationsController < ApplicationController
       @registration = Registration.new(reg_params)
     end
 
-    Registration.transaction do
+    success = Registration.transaction do
       if @registration && @registration.save && @registration.save_sections
-        redirect_to course_registrations_path(@course),
-          notice: 'Registration was successfully created.'
+        true
       else
-        render action: :new, status: 400
+        raise ActiveRecord::Rollback, "Saving registration failed"
       end
+    end
+    puts "Success is #{success}"
+    if success
+      redirect_to course_registrations_path(@course),
+                  notice: 'Registration was successfully created.'
+    else
+      render action: :new, status: 400
     end
   end
 
@@ -152,7 +158,14 @@ class RegistrationsController < ApplicationController
                              username: row[0], role: "student")
       end
 
-      if (r.save && r.save_sections)
+      success = Registration.transaction do
+        if r.save && r.save_sections
+          true
+        else
+          raise ActiveRecord::Rollback, "Saving registration failed"
+        end
+      end
+      if success
         num_added += 1
       else
         failed << "#{row[0]} (#{r.errors.full_messages.to_sentence})"
