@@ -322,11 +322,11 @@ class GradesController < ApplicationController
   end
   def bulk_edit_QuestionsGrader
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk curved grade editing for that assignment type is not supported"
+                  alert: "Bulk grade editing for that assignment type is not supported"
   end
   def bulk_edit_CodereviewGrader
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk curved grade editing for that assignment type is not supported"
+                  alert: "Bulk grade editing for that assignment type is not supported"
   end
   
   def bulk_edit_curve_Files
