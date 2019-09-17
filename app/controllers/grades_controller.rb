@@ -320,6 +320,14 @@ class GradesController < ApplicationController
     #                            : course_assignment_path(@course, @assignment))
     # render "edit_tap_comment_grades"
   end
+  def bulk_edit_curve_QuestionsGrader
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk curved grade editing for that assignment type is not supported"
+  end
+  def bulk_edit_curve_CodereviewGrader
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk curved grade editing for that assignment type is not supported"
+  end
   
   def bulk_edit_curve_Files
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
