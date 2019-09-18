@@ -2,7 +2,12 @@ Bottlenose::Application.routes.draw do
   resources :sandboxes
 
   # Using devise for user auth.
-  devise_for :users, :skip => [:registrations, :passwords]
+  devise_for :users, :skip => [:registrations, :passwords, :sessions]
+  devise_scope :user do
+    get "/login" => "devise/sessions#new", :as => :new_user_session
+    post "/login" => "devise/sessions#create", :as => :user_session
+    delete "/logout" => "devise/sessions#destroy", :as => :destroy_user_session
+  end
 
   root to: "main#home"
   get "about" => "main#about"
@@ -73,6 +78,7 @@ Bottlenose::Application.routes.draw do
       end
       resources :graders, only: [] do
         member do
+          get 'all_grades' => 'grades#tarball'
           get 'bulk' => 'grades#bulk_edit'
           post 'bulk' => 'grades#bulk_update'
           get 'bulk_curve' => 'grades#bulk_edit_curve'

@@ -68,7 +68,7 @@ class TapParser
   end
 
   def parse_test
-    mm = @lines[0].match(/^(not )?ok\b\s*(\d+)?([^#]*)(#.*)?$/)
+    mm = @lines[0].match(/^(not\s+)?ok\b\s*(\d+)?\s*([^#]*)(#.*)?$/)
     if mm
       next_line
       passed = mm[1].nil?

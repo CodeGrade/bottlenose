@@ -19,12 +19,31 @@ class JavaStyleGrader < Grader
     end
   end
 
+  def export_data
+    export_tap_data
+  end
+  def export_data_schema
+    "tap_style_export_schema.html"
+  end
+  def import_data(who_grades, file)
+    import_tap_data(who_grades, file)
+  end
+  def import_data_schema
+    "tap_style_import_schema.html"
+  end
+
   validate :proper_configuration
   
   protected
   
   def do_grading(assignment, sub)
-    run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT
+    run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT do |prefix, err, g, tap|
+      if err
+        record_compile_error(sub, g)
+      else
+        record_tap_as_comments(g, tap, sub)
+      end
+    end
   end
   def get_command_arguments(assignment, sub)
     files_dir = sub.upload.extracted_path
@@ -37,7 +56,7 @@ class JavaStyleGrader < Grader
        "+pmdAddClasspath", Rails.root.join("lib/assets/hamcrest-core-1.3.jar").to_s,
        "+pmdAddClasspath", Rails.root.join("lib/assets/annotations.jar").to_s,
        "+pmdAddClasspath", Rails.root.join("lib/assets/mockito-core-2.0.7-beta.jar").to_s,
-       "+pmdAddClasspath", Rails.root.join("lib/assets/tester-2.jar").to_s,
+       "+pmdAddClasspath", Rails.root.join("lib/assets/tester-3.0.jar").to_s,
        "+pmdAddClasspath", Rails.root.join("lib/assets/javalib.jar").to_s,
        "-maxPoints", self.avail_score.to_s],
       [[files_dir.to_s, Upload.upload_path_for(files_dir.to_s)]].to_h

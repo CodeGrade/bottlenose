@@ -28,19 +28,31 @@
               <li>There must be a Java that contains a package-scoped
               class with the same name as specified in the
                 grader.</li>
+              <li>You may specify multiple test classes on the
+                command-line, to make it easier to organize the test
+                cases.  Additionally, you may specify
+                <code>weight</code>s to multiply all existing test
+                weights within the test classes, to easily manage
+                regression testing.  For example:
+                <code>ClassA -weight 2 ClassB ClassC -weight 0.5 ClassD</code>
+                would give <code>ClassA</code> a
+                default weight of 1, classes <code>ClassB</code>
+                and <code>ClassC</code> a weight of 2,
+                and <code>ClassD</code> a weight of 0.5
+              </li>
             </ul>
             <p>Here is a short example Checker grader test file layout:</p>
             <pre>CheckerGrading.zip
-├── starter
-│   ├── src
-│   │   └── .ignore
-│   └── test
-│       └── .ignore
-└── testing
-    ├── src
-    │   └── bouncing.jar
-    └── test
-        └── hw1acc-p5-tests.java</pre>
+├── starter
+│   ├── src
+│   │   └── .ignore
+│   └── test
+│       └── .ignore
+└── testing
+    ├── src
+    │   └── bouncing.jar
+    └── test
+        └── hw1acc-p5-tests.java</pre>
           </div>
         </div>
       </div>

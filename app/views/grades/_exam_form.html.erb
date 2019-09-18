@@ -3,12 +3,14 @@
 <% col_count = flat_questions.count %>
 <% any_parts = (questions.count != col_count) %>
 <% total_score = questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
+<% cur_reg_staff = current_user.course_staff?(@course) %>
 
 <% if @student_info.length > 1 %>
 <style>
   <% @course.sections.each do |s| %>
   #grades-table.show_one .sec_<%= s.crn %> { display: none; }
   #grades-table.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+  #grades-table.show_one.sec_<%= s.crn %>.hide-dropped tr.sec_<%= s.crn %>.dropped { display: none; }
   <% end %>
   #grades-table td { vertical-align: middle; }
 </style>
@@ -93,7 +95,7 @@
       </td>
       <td><%= u.first_name %></td>
       <!-- grades display -->
-      <% sub = used_subs[u.id].first if used_subs[u.id] %>
+      <% sub = used_subs[u.id]&.first %>
       <% grades = @grade_comments[sub.id] if sub %>
       <% grades = (0..col_count).map do |i|
            grades&.dig(i) || {weight: nil}
@@ -104,7 +106,7 @@
         <input form="grade_<%= u.id %>" type="hidden" name="student[<%= u.id %>][<%= i %>]" />
         <span><% if (grades[i] && grades[i]["weight"]) %>
         <% score += grades[i]["weight"] %>
-        <%= show_score(grades[i]["weight"]) %>
+        <%= show_score(grades[i]["weight"], nil, cur_reg_staff) %>
         <% end %></span>
       </td>
       <% end %>
@@ -115,9 +117,9 @@
          end %>
       <td class="curved">
         <input form="grade_<%= u.id %>" type="hidden" name="student[<%= u.id %>][<%= col_count %>]" />
-        <span><%= show_score(curved) if curved %></span>
+        <span><%= show_score(curved, nil, cur_reg_staff) if curved %></span>
       </td>
-      <td class="final"><%= show_score(score) if sub %></td>
+      <td class="final"><%= show_score(score, nil, cur_reg_staff) if sub %></td>
       <!-- edit grades -->      
       <td>
         <button type="button" class="btn btn-info trigger"
@@ -175,7 +177,7 @@
                 <%= spinner_tag "question[#{i}]", "",
                     min: 0, max: flat_questions[i]["weight"], delta: 0.5,
                     wrapper: {style: "float: right;"} %></td>
-              <td>/ <%= show_score(q["weight"]) %></td>
+              <td>/ <%= show_score(q["weight"], nil, cur_reg_staff) %></td>
               <% end %>
             </tr>
             <% if q["parts"] %>
@@ -186,7 +188,7 @@
                 <%= spinner_tag "question[#{i}]", "",
                     min: 0, max: flat_questions[i]["weight"], delta: 0.5,
                     wrapper: {style: "float: right;"} %></td>
-              <td>/ <%= show_score(p["weight"]) %></td>
+              <td>/ <%= show_score(p["weight"], nil, cur_reg_staff) %></td>
             </tr>
             <% i += 1 %>
             <% end %>
@@ -197,18 +199,18 @@
             <tr>
               <td><h4>Raw score:</h4></td>
               <td class="text-right"><h4 class="raw_score"></h4></td>
-              <td><h4>/ <%= show_score(total_score) %></h4></td>
+              <td><h4>/ <%= show_score(total_score, nil, cur_reg_staff) %></h4></td>
             </tr>
             <tr>
               <td><h4>Curved score:</h4></td>
               <td><%= spinner_tag "question[#{i}]", "",
                       min: 0, max: total_score, delta: 0.5, wrapper: {style: "float: right;"} %></td>
-              <td><h4>/ <%= show_score(total_score) %></h4></td>
+              <td><h4>/ <%= show_score(total_score, nil, cur_reg_staff) %></h4></td>
             </tr>
             <tr>
               <td><h4>Final score:</h4></td>
               <td class="text-right"><h4 class="final_score"></h4></td>
-              <td><h4>/ <%= show_score(total_score) %></h4></td>
+              <td><h4>/ <%= show_score(total_score, nil, cur_reg_staff) %></h4></td>
             </tr>
           </tbody>
         </table>

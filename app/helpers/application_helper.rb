@@ -184,6 +184,9 @@ module ApplicationHelper
   end
 
   def self.capture3(*cmd, stdin_data: '', binmode: false, timeout: nil, signal: :TERM, **opts)
+    if opts[:chdir].nil?
+      opts.delete :chdir
+    end
     Open3.popen3(*cmd, opts) do |i, o, e, t|
       if binmode
         i.binmode
@@ -221,7 +224,7 @@ module ApplicationHelper
       "pyret"
     when ".rkt", ".ss"
       "scheme"
-    when ".ml", ".mli"
+    when ".sml", ".ml", ".mli"
       "mllike"
     when ".md"
       "text/markdown"
@@ -259,6 +262,10 @@ module ApplicationHelper
       "text/html"
     when ".css"
       "text/css"
+    when ".tex", ".sty"
+      "text/x-latex"
+    when ".bib"
+      "text/plain"
     when ".tap", ".txt", ".text"
       "text/plain"
     when ".pdf"
@@ -267,6 +274,8 @@ module ApplicationHelper
       "application/rtf"
     when ".mp3"
       "audio/mpeg"
+    when ".csv"
+      "text/csv"
     else
       case File.basename(full_path.to_s).downcase
       when "makefile"
@@ -298,8 +307,10 @@ module ApplicationHelper
          "text/x-yaml",
          "text/html",
          "text/css",
+         "text/x-latex",
          "text/plain",
-         "text/x-makefile"
+         "text/x-makefile",
+         "text/csv"
       false
     when "application/java-vm",
          "image/gif",

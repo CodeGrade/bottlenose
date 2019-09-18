@@ -1,4 +1,5 @@
 require 'clamp'
+require 'sub_tarball'
 class ManualGrader < Grader
   def autograde!(assignment, sub, prio = 0)
     g = self.grade_for sub
@@ -28,7 +29,42 @@ class ManualGrader < Grader
                        "min(inline_comments.user_id) as user_id").group("submission_id")
     return comments.map{|c| [c.submission_id, c.user_id]}.to_h
   end
-      
+
+  def export_data
+    used = self.assignment.used_submissions.includes(:users, upload: [:course, :assignment]).map{|s| [s.id, s]}.to_h
+    grades = self.grades.where(submission_id: used.keys).includes(inline_comments: [:user])
+    tb = SubTarball.new(self.assignment)
+    tb.update_with!(
+      grades.map do |g|
+        upload_path = Upload.upload_path_for(used[g.submission_id].upload.extracted_path)
+        comments = g.inline_comments.map do |c|
+          {
+            file: c.upload_filename.gsub("#{upload_path}/", ""),
+            line: c.line,
+            author_id: c.user_id,
+            author: c.user&.name || "",
+            title: c.title,
+            label: c.label,
+            severity: c.severity,
+            comment: c.comment,
+            deduction: c.weight,
+            suppressed: c.suppressed,
+            info: c.info
+          }.stringify_keys
+        end
+        ["#{g.submission_id}.json", JSON.pretty_generate(comments)]
+      end.to_h
+    )
+    tb
+  end
+  def export_data_schema
+    "TBD".html_safe
+  end
+  def import_data
+  end
+  def import_data_schema
+    "TBD".html_safe
+  end
 
   protected
 

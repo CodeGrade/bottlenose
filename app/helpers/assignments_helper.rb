@@ -29,6 +29,15 @@ module AssignmentsHelper
   end
 
   def check_questions_schema
+    check_schema(Rails.root.join("app/helpers/questions_schema.yaml"))
+  end
+
+  def check_codereview_schema
+    check_schema(Rails.root.join("app/helpers/codereview_schema.yaml"))
+  end
+
+  private
+  def check_schema(schema_file)
     upload = @assignment_file_data
     begin
       case [upload.nil?, self.assignment_upload.nil?]
@@ -52,7 +61,7 @@ module AssignmentsHelper
       self.errors.add(:base, "Could not parse the supplied file: #{e}")
       return false
     end
-    sc = SchemaChecker.new(Rails.root.join("app/helpers/questions_schema.yaml"))
+    sc = SchemaChecker.new(schema_file)
     sc.check(@questions).each{|e| self.errors.add(:base, e)}      
     return false if self.errors.count > 0
     @questions = sc.convert(@questions)

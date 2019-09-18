@@ -36,6 +36,7 @@
 //= require codemirror/mode/scheme/scheme
 //= require codemirror/mode/python/python
 //= require codemirror/mode/css/css
+//= require codemirror/mode/stex/stex
 //= require codemirror/mode/xml/xml
 //= require codemirror/mode/yaml/yaml
 //= require codemirror/mode/htmlmixed/htmlmixed
@@ -167,6 +168,22 @@ function makeFriendlyDate(str, showTime) {
     else
       return (dd.format("MMM D, YYYY"));
   }
+}
+
+function activate_file_picker($e) {
+  $e.find(".custom-file").change(function() {
+    var label = $(this).val().replace(/\\/g, '/').replace(/.*\//, '');
+    $e.find(".current_file").text("New file: " + label);
+    $e.find(".remove-custom-file").prop('disabled', false).removeClass("btn-default").addClass("btn-warning");
+    $e.find("input.remove-custom-file").val('');
+  });
+  $e.find(".remove-custom-file").click(function() {
+    $e.find("input.custom-file").replaceWith(
+      $e.find("input.custom-file").clone(true));
+    $(this).prop('disabled', true).addClass("btn-default").removeClass("btn-warning");
+    $e.find(".current_file").text("New file: <nothing>");
+    $e.find("input.remove-custom-file").val('remove');
+  });
 }
 
 $(function() {

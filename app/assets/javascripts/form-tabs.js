@@ -53,7 +53,8 @@ window.form_tabs_init = function (tabs_div) {
 
     // Match height before we hide anything.
     var panes = top.find('.tab-pane');
-    panes.matchHeight({byRow: false, property: 'height'});
+  if (!top.hasClass("no-match-height")) {
+      panes.matchHeight({byRow: false, property: 'height'});
     // matchHeight will trigger on onload and on window-resize
     // so be sure to refill and unhide all the inert tabs before trying to
     // recompute their heights
@@ -76,6 +77,7 @@ window.form_tabs_init = function (tabs_div) {
         show_tab($(div).data('tab'));
       });
     }
+  }
 
     panes.addClass("active");
     top.find(".nav-tabs a").each(function(_ii, lnk) {

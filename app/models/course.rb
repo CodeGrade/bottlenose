@@ -19,6 +19,23 @@ class Course < ApplicationRecord
   validates :name, length: { minimum: 2 }, uniqueness: { scope: :term_id }
   validate  :has_sections
 
+  validates_associated :sections
+
+  validate :unique_section_crns
+
+  def unique_section_crns
+    counts = self.sections.group_by{|s| s.crn}.map{|k, v| [k, v.size]}.select{|k, v| v > 1}
+    if counts.empty?
+      true
+    else
+      counts.each do |crn, count|
+        self.errors.add(:base, "CRN #{crn} is used #{count} times")
+      end
+      false
+    end
+  end
+    
+
   accepts_nested_attributes_for :sections, allow_destroy: true
   accepts_nested_attributes_for :lateness_config
 

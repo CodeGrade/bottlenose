@@ -4,9 +4,9 @@ require 'audit'
 class GradesController < ApplicationController
   before_action :find_course
   before_action :find_assignment
-  before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
-  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
-  before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve]
+  before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
+  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
+  before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
   before_action :require_current_user
   before_action -> {
     require_admin_or_staff(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
@@ -42,21 +42,38 @@ class GradesController < ApplicationController
   end
 
   def bulk_edit
-    self.send("bulk_edit_#{@assignment.type.capitalize}")
+    self.send("bulk_edit_#{@grader.type}")
   end
 
   def bulk_update
-    self.send("bulk_update_#{@assignment.type.capitalize}")
+    self.send("bulk_update_#{@grader.type}")
   end
 
   def bulk_edit_curve
-    self.send("bulk_edit_curve_#{@assignment.type.capitalize}")
+    self.send("bulk_edit_curve_#{@grader.type}")
   end
 
   def bulk_update_curve
-    self.send("bulk_update_curve_#{@assignment.type.capitalize}")
+    self.send("bulk_update_curve_#{@grader.type}")
   end
 
+  def tarball
+    export = @grader.export_data
+    if export.is_a? SubTarball
+      send_data File.read(export.full_path),
+                filename: File.basename(export.full_path),
+                disposition: "attachment",
+                type: "application/x-gzip"
+      FileUtils.rm_rf(export.full_path)
+    else
+      send_data File.read(export),
+                filename: File.basename(export),
+                disposition: "attachment",
+                type: ApplicationHelper.mime_type(export)
+      FileUtils.rm_rf(export)
+    end
+  end
+  
   def update
     if current_user_site_admin? || current_user_staff_for?(@course)
       self.send("update_#{@assignment.type.capitalize}")
@@ -266,20 +283,48 @@ class GradesController < ApplicationController
   ###################################
   # Per-assignment-type actions, by action
   # Bulk editing of grades
-  def bulk_edit_Exam
+  def bulk_edit_ExamGrader
     edit_exam_grades_for(@course.students_with_drop_info)
     
     render "edit_#{@assignment.type.underscore}_grades"
   end
-  def bulk_edit_Files
+  def bulk_edit_RacketStyleGrader
+    require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                               : course_assignment_path(@course, @assignment))
+    render "edit_tap_comment_grades"
+  end
+  def bulk_edit_JavaStyleGrader
+    require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                               : course_assignment_path(@course, @assignment))
+    render "edit_tap_comment_grades"
+  end
+  def bulk_edit_PythonStyleGrader
+    require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                               : course_assignment_path(@course, @assignment))
+    render "edit_tap_comment_grades"
+  end
+  def bulk_edit_CheckerGrader
+    require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                               : course_assignment_path(@course, @assignment))
+    render "edit_tap_comment_grades"
+  end
+  def bulk_edit_JunitGrader
+    require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                               : course_assignment_path(@course, @assignment))
+    render "edit_tap_comment_grades"
+  end
+  def bulk_edit_ManualGrader
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk comment editing for manual graders is not yet supported"
+    # require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+    #                            : course_assignment_path(@course, @assignment))
+    # render "edit_tap_comment_grades"
+  end
+  def bulk_edit_QuestionsGrader
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade editing for that assignment type is not supported"
   end
-  def bulk_edit_Questions
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade editing for that assignment type is not supported"
-  end
-  def bulk_edit_Codereview
+  def bulk_edit_CodereviewGrader
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade editing for that assignment type is not supported"
   end
@@ -296,10 +341,35 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk curved grade editing for that assignment type is not supported"
   end
-  
+
   # Bulk updates of grades
-  def bulk_update_Exam
+  def bulk_update_JavaStyleGrader
+    require_admin_or_prof(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                          : course_assignment_path(@course, @assignment))
+    ans = @grader.import_data(current_user, params[:grader][:upload_file])
+    if ans.is_a? String
+      redirect_back fallback_location: bulk_course_assignment_grader_path(@course, @assignment, @grader),
+                    alert: ans
+    else
+      redirect_back fallback_location: bulk_course_assignment_grader_path(@course, @assignment, @grader),
+                    notice: ans[:notice], alert: ans[:errors]
+    end
+  end
+
+  def bulk_update_ExamGrader
     respond_to do |f|
+      f.html {
+        require_admin_or_prof(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
+                              : course_assignment_path(@course, @assignment))
+        ans = @grader.import_data(current_user, params[:grader][:upload_file])
+        if ans.is_a? String
+          redirect_back fallback_location: bulk_course_assignment_grader_path(@course, @assignment, @grader),
+                        alert: ans
+        else
+          redirect_back fallback_location: bulk_course_assignment_grader_path(@course, @assignment, @grader),
+                        notice: ans[:notice], alert: ans[:errors]
+        end
+      }
       f.json {
         case params[:grade_action]
         when "getGrades"
@@ -339,12 +409,12 @@ class GradesController < ApplicationController
     end
   end
 
-  def bulk_edit_curve_Exam
+  def bulk_edit_curve_ExamGrader
     edit_exam_grades_for(@course.students_with_drop_info)
     
     render "edit_#{@assignment.type.underscore}_curved_grades"
   end
-  def bulk_update_curve_Exam
+  def bulk_update_curve_ExamGrader
     unless ["Points", "Percent"].member?(curve_params[:gradeUnit])
       redirect_back fallback_location: course_assignment_path(@course, @assignment),
                     alert: "Unknown grade unit #{curve_params[:gradeUnit]} for curve"
@@ -446,19 +516,7 @@ class GradesController < ApplicationController
     end
     redirect_to course_assignment_path(@course, @assignment), notice: notice
   end
-  
-  def bulk_update_Files
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade updating for that assignment type is not supported"
-  end
-  def bulk_update_Questions
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade updating for that assignment type is not supported"
-  end
-  def bulk_update_Codereview
-    redirect_back fallback_location: course_assignment_path(@course, @assignment),
-                  alert: "Bulk grade updating for that assignment type is not supported"
-  end
+
   def bulk_update_curve_Files
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade updating for that assignment type is not supported"
@@ -895,34 +953,8 @@ HEADER
   def update_exam_grades
     students_with_grades = params[:student].to_unsafe_h.reject do |k, v|
       v.values.join("") == ""
-    end
-    all_grades = array_from_hash(students_with_grades)
-    @student_info = @course.students.select(:username, :last_name, :first_name, :id).where(id: students_with_grades.keys)
-    @grader = @assignment.graders.first # and only config
-    # @used_subs = @assignment.used_submissions
-    # @grade_comments = InlineComment.where(submission_id: @used_subs.map(&:id)).group_by(&:user_id)
-
-    @student_info.each do |student|
-      @sub = @assignment.used_sub_for(student)
-      if @sub.nil?
-        @sub = Submission.create!(assignment: @assignment,
-                                  user: student,
-                                  type: "ExamSub",
-                                  created_at: @assignment.due_date - 1.minute)
-      end
-      @sub.set_used_sub!
-      @grade = Grade.find_or_create_by(grader_id: @grader.id, submission_id: @sub.id)
-      if @grade.new_record?
-        @grade.out_of = @grader.avail_score
-      end
-      grades = all_grades[student.id]
-      flattened = @assignment.flattened_questions
-      grades.each_with_index do |g, q_num|
-        @sub.grade_question!(current_user, q_num, g)
-      end
-      @grader.expect_num_questions(flattened.count)
-      @grader.grade(@assignment, @sub)
-    end
+    end.map{|k, v| [k.to_i, array_from_hash(v)]}.to_h
+    @grader.apply_all_exam_grades(current_user, students_with_grades, :id)
   end
 
 end

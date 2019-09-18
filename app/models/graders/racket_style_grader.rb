@@ -27,6 +27,19 @@ class RacketStyleGrader < Grader
     super
     set_style_params
   end
+
+  def export_data
+    export_tap_data
+  end
+  def export_data_schema
+    "tap_style_export_schema.html"
+  end
+  def import_data(who_grades, file)
+    import_tap_data(who_grades, file)
+  end
+  def import_data_schema
+    "tap_style_import_schema.html"
+  end
   
   protected
   
@@ -36,7 +49,13 @@ class RacketStyleGrader < Grader
       @tmpdir = tmpdir
       sub.upload.extract_contents_to!(nil, Pathname.new(tmpdir))
       Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER, autopick: true) do
-        run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT
+        run_command_produce_tap assignment, sub, timeout: Grader::DEFAULT_GRADING_TIMEOUT do |prefix, err, g, tap|
+          if err
+            record_compile_error(sub, g)
+          else
+            record_tap_as_comments(g, tap, sub)
+          end
+        end
       end
     end
   end
@@ -66,4 +85,5 @@ class RacketStyleGrader < Grader
     # nothing to do:
     # we already compute the score here based on the TAP output
   end
+
 end

@@ -30,7 +30,7 @@ gem 'cocoon' # used for dynamically generating nested forms
 gem 'rubyzip' # used for reading submitted zip files
 
 gem 'bootstrap-sass', '>= 3.4.1'
-gem 'sass-rails', '>= 3.2'
+gem 'sassc-rails'
 gem 'bootstrap-sass-extras'
 gem 'bootstrap3-datetimepicker-rails' # for the datetime widget
 gem 'bootstrap-toggle-rails' # for toggle buttons instead of checkboxes
@@ -63,6 +63,9 @@ group :development do
   gem "better_errors"
   gem "binding_of_caller"
   gem "listen"
+  gem "ruby-debug-ide"
+  gem "debase"
+  gem "bundler-audit"
 end
 
 group :development, :test do
@@ -77,8 +80,7 @@ group :test do
   gem 'database_cleaner'
   gem 'capybara'
   gem 'capybara-webkit' # Needs qt5-default qt5-qmake libqt5webkit5-dev
-  gem 'selenium-webdriver'
-  gem 'webdrivers'
+  gem 'webdrivers', '~> 4.0'
   gem 'launchy'
   gem 'factory_bot_rails'
   gem 'rails-controller-testing'

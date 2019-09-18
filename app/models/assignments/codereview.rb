@@ -67,7 +67,7 @@ class Codereview < Assignment
     end
   end
   def set_questions_graders
-    return false unless check_questions_schema
+    return false unless check_codereview_schema
     grader = self.graders.first
     if grader.nil?
       grader = Grader.new(type: "CodereviewGrader", assignment: self)

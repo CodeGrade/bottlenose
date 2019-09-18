@@ -1,0 +1,45 @@
+<% @page_title = @grader.display_type %>
+
+<h1>Bulk update <%= @grader.display_type %> grades</h1>
+<div class="well" id="bulk-entry">
+  <h1>Download existing data</h1>
+  <h4>Schema for existing data:</h4>
+  <% export_schema = @grader.export_data_schema %>
+  <% if export_schema.html_safe? %>
+  <div><%= export_schema %></div>
+  <% else %>
+  <%= render export_schema %>
+  <% end %>
+  <%= link_to "Download existing grades",
+      all_grades_course_assignment_grader_path(@course, @assignment, @grader),
+      class: "btn btn-info" %>
+
+  <h3 class="middle-separator">OR</h3>
+
+  
+  <h1>Upload new data</h1>
+  <h4>Schema for uploaded data:</h4>
+  <% import_schema = @grader.import_data_schema %>
+  <% if import_schema.html_safe? %>
+  <div><%= import_schema %></div>
+  <% else %>
+  <%= render import_schema %>
+  <% end %>
+  <%= form_for [@course, @assignment.becomes(Assignment), @grader.becomes(Grader)],
+               url: {action: "bulk_update", controller: "grades"}, method: :post do |f| %>
+  <% f.object = @grader.becomes(@grader.class) %>
+  <%= render "grades/grades_file_picker", f: f, id: f.object.id.to_s,
+              label: "New grades CSV file:" %>
+  <%= f.submit "Upload new grades", class: "btn btn-md btn-success" %>
+  <% end %>
+  
+</div>
+<script>
+  $(".file-picker").each(function(index) { activate_file_picker($(this)); });
+  $("#bulk-entry form").submit(function() {
+    if ($("input[type='file']")[0].files.length == 0) {
+      alert("No grades file selected");
+      return false;
+    }
+  });
+</script>

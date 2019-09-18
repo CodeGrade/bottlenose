@@ -1,0 +1,11 @@
+      <p class="form-inline file-picker" id="<%= id %>">
+        <label class="btn btn-default btn-file">
+          Browse <%= f.file_field "upload_file", class: "custom-file", style: "display: none;" %>
+        </label>
+        <%= f.hidden_field :removefile, class: "remove-custom-file", value: '' %>
+        <span class="current_file" style="margin: 6px 12px;">Current file: nothing</span>
+        <button type="button"
+                disabled  class="btn btn-default pull-right remove-custom-file">
+          Clear grades file
+        </button>
+      </p>

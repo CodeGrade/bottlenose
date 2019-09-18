@@ -71,7 +71,14 @@ class RegRequestsController < ApplicationController
   def accept_help(request)
     begin
       reg = request.create_registration
-      if reg && reg.save && reg.save_sections
+      success = Registration.transaction do
+        if reg && reg.save && reg.save_sections
+          true
+        else
+          raise ActiveRecord::Rollback, "Saving registration failed"
+        end
+      end
+      if success
         request.destroy
       end
       nil
