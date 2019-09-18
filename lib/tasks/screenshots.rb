@@ -1051,7 +1051,12 @@ class Screenshots
     def grading
       sign_in(@fred)
       visit course_assignment_path(@course, @assignments[3])
-      assign_graders = page.find(:xpath, ".//a[@title='Assign graders']")
+      grader_actions = page.find(:xpath, "(.//button[@title='Grader tasks'])[2]")
+      highlight_area("grader_actions", bbox(grader_actions))
+      yield
+      remove_highlight "grader_actions"
+      grader_actions.click
+      assign_graders = page.find(:xpath, ".//a[@title='Assign staff to grade submissions']")
       highlight_area("assign_graders", bbox(assign_graders))
       yield
       remove_highlight "assign_graders"
