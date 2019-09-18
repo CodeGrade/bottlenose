@@ -59,6 +59,7 @@ module Utilities
   canvas.width = width;
   canvas.height = height;
   canvas.id = "hilite_" + id;
+  canvas.style.zIndex = 1000;
   var $canvas = $(canvas);
   var ctx = canvas.getContext("2d");
   var n = 15;
@@ -76,7 +77,7 @@ module Utilities
       ctx.lineTo(inX, inY);
       ctx.lineTo(outX, outY);
     }
-    ctx.closePath(); 
+    ctx.closePath();
     ctx.save();
       ctx.scale(width / 2, height / 2);
       var gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1, 1);
@@ -102,7 +103,7 @@ JAVASCRIPT
     page.execute_script("$('#hilite_" + id + "').remove()")
   end
 
-  
+
   def bbox(*elems)
     elems = elems.map do |e|
       if e.is_a? Capybara::Result
@@ -114,7 +115,7 @@ JAVASCRIPT
     page.evaluate_script(<<-JAVASCRIPT, *elems)
 (function() {
   var dimen = {
-    top: Number.MAX_VALUE, left: Number.MAX_VALUE, 
+    top: Number.MAX_VALUE, left: Number.MAX_VALUE,
     right: -Number.MAX_VALUE, bot: -Number.MAX_VALUE
   };
   for (var i = 0; i < arguments.length; i++) {
@@ -156,7 +157,7 @@ JAVASCRIPT
     box["right"] *= scaleX if box["right"]
     box["bot"] *= scaleY if box["bot"]
   end
-  
+
   def inflate_box_pct(box, marginPctX, marginPctY)
     width = box["width"] || (box["right"] - box["left"])
     height = box["height"] || (box["bot"] - box["top"])
@@ -182,6 +183,12 @@ JAVASCRIPT
     box["width"] += (left + right) if box["width"]
     box["height"] += (top + bottom) if box["height"]
     box
+  end
+
+  def random_number_of_length(len)
+    base = 10 ** (len - 1)
+    base += Random.rand(base * 10 - base)
+    base
   end
 
   MALE_FIRST_NAMES = [
@@ -217,7 +224,7 @@ JAVASCRIPT
       prof.gsub!(File.dirname(prof).to_s, Upload.base_upload_dir.to_s)
     end
   end
-    
+
   LAST_NAMES.each do |ln|
     [[MALE_FIRST_NAMES, MALE_PROFILES], [FEMALE_FIRST_NAMES, FEMALE_PROFILES]].each do |fns, profs|
       fns.each do |fn|
@@ -300,7 +307,7 @@ class Screenshots
     Capybara.save_path = path
     Headless.ly do
       DatabaseCleaner.clean_with :truncation
-      
+
       ss = Screenshots.new
       ss.extend(ScreenshotScripts)
       # Set desired dimensions
@@ -312,7 +319,7 @@ class Screenshots
 
       dpi = ss.get_dpi
       puts "DPI is #{dpi}"
-      
+
       HOOKS[:before_all].each do |m| ss.send(m) end
       ScreenshotScripts.instance_methods(false).each do |method|
         HOOKS[:before_each].each do |m| ss.send(m) end
@@ -355,7 +362,7 @@ class Screenshots
         HOOKS[:after_each].each do |m| ss.send(m) end
       end
       HOOKS[:after_all].each do |m| ss.send(m) end
-      
+
       dir = Upload.base_upload_dir.to_s
       if Rails.env.test? && dir =~ /test/
         puts "Cleaning up #{dir}"
@@ -378,7 +385,7 @@ class Screenshots
   def reset_db
     DatabaseCleaner.clean
   end
-  
+
   def create_students
     print "Creating #{RANDOM_PEOPLE.count} students..."
     User.transaction do
@@ -388,11 +395,21 @@ class Screenshots
     end
     puts "Done."
   end
-  
-  def create_course
-    print "Creating default course..."
+
+  def create_courses
+    print "Creating default courses..."
     @fred = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher",
-                   nickname: "Fred", profile: profile(true))
+                   nickname: "Fred", profile: profile(true), username: "fred")
+    @george = create(:user, name: "George McGrader", first_name: "George", last_name: "McGrader",
+                     nickname: "George", profile: profile(true), username: "george")
+    @henry = create(:user, name: "Henry McAssistant", first_name: "Henry", last_name: "McAssistant",
+                    nickname: "Henry", profile: profile(true), username: "henry")
+    @brian = create(:user, name: "Brian Johnson", first_name: "Brian", last_name: "Johnson",
+                    nickname: "Brian", profile: profile(true), username: "brian")
+    @chris = create(:user, name: "Chris Franklin", first_name: "Chris", last_name: "Franklin",
+                    nickname: "Chris", profile: profile(true), username: "chris")
+    @joe = create(:user, name: "Joe Jones", first_name: "Joe", last_name: "Jones",
+                  nickname: "Joe", profile: profile(true), username: "joe")
     @term = Term.create(semester: Term.semesters[:fall], year: Date.today.year, archived: false)
     @late_per_day = LatePerDayConfig.create(days_per_assignment: 1, percent_off: 50,
                                             frequency: 1, max_penalty: 100)
@@ -404,14 +421,51 @@ class Screenshots
     @course.save
     @fred_reg = Registration.create(course: @course, user: @fred, role: Registration::roles[:professor],
                                     show_in_lists: false, new_sections: @sections)
+                                    @fred_reg.save_sections
     @fred_reg.save_sections
-
+    @george_reg = Registration.create(course: @course, user: @george, role: Registration::roles[:grader],
+                                      show_in_lists: false, new_sections: @sections)
+    @george_reg.save_sections
+    @henry_reg = Registration.create(course: @course, user: @henry, role: Registration::roles[:assistant],
+                                     show_in_lists: false, new_sections: @sections)
+    @henry_reg.save_sections
+    @brian_reg = Registration.create(course: @course, user: @brian, role: Registration::roles[:grader],
+                                     show_in_lists: false, new_sections: @sections)
+    @brian_reg.save_sections
+    @chris_reg = Registration.create(course: @course, user: @chris, role: Registration::roles[:grader],
+                                     show_in_lists: false, new_sections: @sections)
+    @chris_reg.save_sections
+    @joe_reg = Registration.create(course: @course, user: @joe, role: Registration::roles[:grader],
+                                   show_in_lists: false, new_sections: @sections)
+    @joe_reg.save_sections
     @students.sample(60).each do |student|
       reg = Registration.create(course: @course, user: student,
                                 role: Registration::roles[:student], show_in_lists: true,
                                 new_sections: [@sections.sample])
       reg.save_sections
     end
+
+    @alice = create(:user, name: "Alice Andrews", first_name: "Alice", last_name: "Andrews",
+                    nickname: "Alice", profile: profile(true), username: "alice")
+    @course2 = Course.new(name: "Fundamentals of Computer Science 1", term: @term, lateness_config: @late_per_day)
+    @sections2 = (1..2).map do |_|
+      build(:section, course: @course2, instructor: @alice)
+    end
+    @course2.sections = @sections2
+    @course2.save
+    @alice_reg = Registration.create(course: @course2, user: @alice, role: Registration::roles[:professor],
+                                     show_in_lists: false, new_sections: @sections2)
+    @alice_reg.save_sections
+
+    @course3 = Course.new(name: "Fundamentals of Computer Science 2", term: @term, lateness_config: @late_per_day)
+    @sections3 = (1..2).map do |_|
+      build(:section, course: @course3, instructor: @alice)
+    end
+    @course3.sections = @sections3
+    @course3.save
+    @alice_reg2 = Registration.create(course: @course3, user: @alice, role: Registration::roles[:professor],
+                                     show_in_lists: false, new_sections: @sections3)
+    @alice_reg2.save_sections
     puts "Done."
 
     @assignments = []
@@ -456,8 +510,8 @@ class Screenshots
     # This assignment is fully graded, but unpublished
     assn.submissions.each do |s| grade_sub(s, assn.graders.to_a, false) end
     puts "Done."
-    
-    
+
+
     # ASSIGNMENT 3
     print "Creating Assignment 3..."
     ts = Teamset.create(course: @course, name: "Teamset 3")
@@ -504,7 +558,7 @@ class Screenshots
     graders = assn.graders.to_a.sort_by(&:order)
     assn.submissions.each do |s| grade_sub(s, graders[0...-1], false) end
     puts "Done."
-    
+
 
     # ASSIGNMENT 1 Self-eval
     print "Creating Assigmment 1 Self-eval..."
@@ -536,7 +590,7 @@ class Screenshots
     assn.save!
     @assignments << assn
     puts "Done."
-    
+
     # ASSIGNMENTS 5--7
     (5..7).each do |i|
       print "Creating Assignment #{i}..."
@@ -549,6 +603,21 @@ class Screenshots
       @assignments << assn
       puts "Done."
     end
+
+    print "Creating Assignment Test..."
+    ts = Teamset.create(course: @course, name: "Teamset 8")
+    assn = Files.create(name: "Assignment Test", blame: @fred, teamset: ts, lateness_config: @late_per_day,
+                        course: @course, available: Time.now - 15.days, due_date: Time.now - 10.days,
+                        points_available: 2.5)
+    assn.graders << RacketStyleGrader.new(assignment: assn, params: "80", avail_score: 30, order: 1)
+    assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 2)
+    assn.save!
+    @assignments << assn
+    # These take a while, because they each launch DrRacket to render the file...
+    # This assignment is fully graded, and published
+    create_submission(@course, @course.students, assn, "sample.rkt", 15)
+      .each do |s| grade_sub(s, assn.graders.to_a, true) end
+    puts "Done."
   end
 
   def create_submission(course, students, assn, file, count = 1)
@@ -573,7 +642,7 @@ class Screenshots
     end
     sub.compute_grade! if complete
   end
-  
+
   def set_default_size
     set_window_size(@width, @height + @chrome_height)
   end
@@ -584,7 +653,7 @@ class Screenshots
 
   before_all :reset_db
   before_all :create_students
-  before_all :create_course
+  before_all :create_courses
   before_each :set_default_size
   after_all :reset_db
 
@@ -595,10 +664,18 @@ class Screenshots
       yield
       yield options: bbox(page.find_all("input.form-control"), page.find_all("label"))
     end
+
     def homepage
       sign_in(@fred)
       visit("/")
       yield
+      courses_menu = page.find("li.dropdown")
+      bb = bbox(courses_menu)
+      navbar = page.find("div.navbar")
+      yield options: bbox(navbar)
+      hilite = highlight_area("courses", bb)
+      yield options: bbox(navbar, hilite)
+      remove_highlight "courses"
     end
 
     def initial_profile
@@ -610,9 +687,10 @@ class Screenshots
       find("input.btn[name='commit']").click
       yield
     end
+
     def course_page
       sign_in(@fred)
-      
+
       visit(course_path(@course))
       yield
       assignments, missing, abnormal, unpublished, current_teams, pending = page.find_all("div.panel").to_a
@@ -636,11 +714,76 @@ class Screenshots
       highlight_area("assignments", box)
       yield
     end
+
+    def new_course_page
+      sign_in(@fred)
+      visit(courses_path())
+      course_container = page.find_all("div.container")[2]
+      course_bbox = bbox(course_container)
+      yield options: course_bbox
+
+      find(:xpath, ".//a[text()='New Course']").click
+      page.find("#course_name").set("CS3500 - Object-Oriented Design")
+      name = page.find(:xpath, ".//div[./input[@id='course_name']]")
+      term = page.find(:xpath, ".//div[./select[@id='course_term_id']]")
+      name_term_bbox = bbox(name, term)
+      yield options: inflate_box(name_term_bbox, 5, 5, 5, 5)
+
+      page.find("a.add_fields").click
+      page.find_all("input[id^='course_sections_attributes_'][id$='_crn']").each do |el|
+        el.set(random_number_of_length(5))
+      end
+      page.find_all("input[id^='course_sections_attributes_'][id$='_prof_name']").each_with_index do |el, i|
+        if i == 0
+          el.set(@fred.username)
+        else
+          el.set(@alice.username)
+        end
+      end
+      page.find_all("input[id^='course_sections_attributes_'][id$='_meeting_time']").each_with_index do |el, i|
+        if i == 0
+          el.set("MWR 10:30-11:35am (CG 094)")
+        else
+          el.set("T 9:50-11:30am (WVH 210)")
+        end
+      end
+      page.find_all("select[id^='course_sections_attributes_'][id$='_type']").each_with_index do |el, i|
+        if i == 1
+          el.find("option[value='lab']").select_option
+        end
+      end
+      sections = page.find(:xpath, ".//div[./table[@id='sections']]")
+      sections_bbox = bbox(sections)
+      yield options: inflate_box(sections_bbox, 5, 5, 5, 5)
+
+      late_penalty = page.find(:xpath, ".//div[./div[@data-init-tab='LatePerDayConfig']]")
+      late_penalty_bbox = bbox(late_penalty)
+      yield options: inflate_box(late_penalty_bbox, 5, 5, 5, 5)
+
+      set_full_page
+      course_wide_footer = page.find(:xpath, ".//div[textarea[@id='course_footer']]")
+      max_submission_size = page.find(:xpath, ".//div[label[@for='course_sub_max_size']]")
+      public_access = page.find(:xpath, ".//div[input[@id='course_public']]")
+      create_course = page.find(:xpath, ".//div[input[@value='Create Course']]")
+      create_course_box = bbox(course_wide_footer, max_submission_size, public_access, create_course)
+      yield options: inflate_box(create_course_box, 10, 10, 10, 10)
+      set_default_size
+    end
+
     def assignments_page
       sign_in(@fred)
       visit(course_assignments_path(@course))
       #page.click_link("Assignments") # was used when we were on course_path(@course)
       yield
+
+      navbar = page.find("div.navbar")
+      export = page.find(:xpath, ".//div[a[text()='Export... ']]")
+      export_link = export.find("a")
+      export_link.click
+      export_items = export.find("ul")
+      yield options: inflate_box(bbox(navbar, export_items), 0, 0, 0, 10)
+      export_link.click
+
       set_full_page
       page.find_all(".panel").each do |panel|
         yield options: clip(bbox(panel), nil, 400)
@@ -650,6 +793,364 @@ class Screenshots
       row = page.find("tr", text: student[:s].display_name)
       row.click
       yield options: bbox(row)
+    end
+
+    def new_assignment_page
+      sign_in(@fred)
+      visit(course_assignments_path(@course))
+
+      page.find(:xpath, ".//a[text()='New']").click
+      yield
+    end
+
+    def new_file_assignment_page
+      sign_in(@fred)
+      visit(course_assignments_path(@course))
+      set_full_page
+
+      page.find(:xpath, ".//a[text()='New']").click
+      file_div = page.find(:xpath, ".//div[@id='type-files']")
+      name = file_div.find(:xpath, ".//input[@id='assignment_name']")
+      name.set("Assignment 10")
+      assignment_text = file_div.find(:xpath, ".//textarea[@id='assignment_assignment']")
+      assignment_text.set("<a href=\"https://course.ccs.neu.edu/cs2500/ps1.html\">Assignment 1</a>: Please submit <b>ONE</b> .rkt file with all your work for this assignment")
+      title = page.find(:xpath, ".//strong[text()='Create New Assignment']")
+      yield options: bbox(name, title, assignment_text)
+
+      file_upload = file_div.find(:xpath, ".//input[@id='assignment_assignment_file']", :visible => false)
+      file_upload.set(File.expand_path('../../../test/fixtures/files/Assignment 1/sample.rkt',  __FILE__))
+      file_upload_div = file_div.find(:xpath, ".//div[./p[@id='files']]")
+      yield options: inflate_box(bbox(file_upload_div), 5, 5, 5, 5)
+
+      file_div.find(:xpath, ".//input[@id='assignment_points_available']").set("0.5")
+      points_available = file_div.find(:xpath, ".//div[label[@for='assignment_points_available']]")
+      yield options: inflate_box(bbox(points_available), 5, 5, 5, 5)
+
+      file_div.find(:xpath, ".//label[text()='Regular']").click
+      # sleep so the toggle will complete
+      sleep(0.5)
+      yield options: inflate_box(bbox(points_available), 5, 5, 5, 5)
+
+      due_date = file_div.find(:xpath, ".//div[label[@for='assignment_due_date']]")
+      available_date = file_div.find(:xpath, ".//div[label[@for='assignment_available_date']]")
+      yield options: inflate_box(bbox(due_date, available_date), 5, 5, 5, 5)
+
+      team_submissions = file_div.find(:xpath, ".//div[label[text()='Team Submissions']]")
+      yield options: inflate_box(bbox(team_submissions), 5, 5, 5, 5)
+
+      time_taken_label = file_div.find(:xpath, ".//label[@for='assignment_request_time_taken']")
+      time_taken_p = file_div.find(:xpath, ".//p[contains(., 'If selected, ask students on each submission how long')]")
+      time_taken_toggle = file_div.find(:xpath, ".//div[input[@id='assignment_request_time_taken']]")
+      yield options: inflate_box(bbox(time_taken_label, time_taken_p, time_taken_toggle), 5, 5, 5, 5)
+
+      interlock_label = file_div.find(:xpath, ".//p[strong[text()='Interlocks']]")
+      interlock_p = file_div.find(:xpath, ".//p[contains(., 'Restrict submissions to this assignment based on activity')]")
+      interlock_button = file_div.find(:xpath, ".//a[@data-association='interlock']")
+      hilite = highlight_area("interlock-button", bbox(interlock_button))
+      yield options: inflate_box(bbox(interlock_label, interlock_p, hilite), 5, 5, 5, 5)
+      remove_highlight "interlock-buton"
+
+      default_late_penalty = file_div.find(:xpath, ".//div[./p[./strong[text()='Late Penalty']]]")
+      yield options: inflate_box(bbox(default_late_penalty), 5, 5, 5, 5)
+
+      graders = file_div.find(:xpath, ".//div[./ol[@id='files-graders']]")
+      add_grader_button = graders.find("a")
+      hilite = highlight_area("grader-button", bbox(add_grader_button))
+      create_files = file_div.find(:xpath, ".//div[./input[@value='Create Files']]")
+      yield options: inflate_box(bbox(graders, hilite, create_files), 5, 5, 5, 5)
+      remove_highlight "grader-button"
+
+      set_default_size
+      # Remove the file so it doesn't throw an error when saving
+      file_div.find(:xpath, ".//button[text()='Clear assignment file']").click
+      add_grader_button.click
+      create_files.find("input").click
+      yield
+    end
+
+    def new_question_assignment_page
+      sign_in(@fred)
+      visit(course_assignments_path(@course))
+      set_full_page
+
+      page.find(:xpath, ".//a[text()='New']").click
+      page.find(:xpath, ".//a[text()='Questions']").click
+      questions_div = page.find(:xpath, ".//div[@id='type-questions']")
+      name = questions_div.find(:xpath, ".//input[@id='assignment_name']")
+      name.set("Course Contract")
+      assignment_text = questions_div.find(:xpath, ".//textarea[@id='assignment_assignment']")
+      assignment_text.set("Please read the <a href=\"https://course.ccs.neu.edu/cs2500/contract.html\">Course Contract</a> before submitting to this assignment.")
+      title = page.find(:xpath, ".//strong[text()='Create New Assignment']")
+      yield options: inflate_box(bbox(name, title, assignment_text), 5, 5, 5, 5)
+
+      file_upload = questions_div.find(:xpath, ".//input[@id='assignment_assignment_file']", :visible => false)
+      file_upload.set(File.expand_path('../../../test/fixtures/files/test-questions.yaml',  __FILE__))
+      file_upload_div = questions_div.find(:xpath, ".//div[./p[@id='questions']]")
+      yield options: inflate_box(bbox(file_upload_div), 5, 5, 5, 5)
+      set_default_size
+    end
+
+    def new_code_review_assignment_page
+      sign_in(@fred)
+      visit(course_assignments_path(@course))
+      set_full_page
+
+      page.find(:xpath, ".//a[text()='New']").click
+      page.find(:xpath, ".//a[text()='Code Review']").click
+      code_review_div = page.find(:xpath, ".//div[@id='type-codereview']")
+      name = code_review_div.find(:xpath, ".//input[@id='assignment_name']")
+      name.set("Course Review of Assignment 1")
+      assignment_text = code_review_div.find(:xpath, ".//textarea[@id='assignment_assignment']")
+      assignment_text.set("Code review of <a href=\"https://course.ccs.neu.edu/cs2500/ps1.html\">assignment 1 </a>.")
+      title = page.find(:xpath, ".//strong[text()='Create New Assignment']")
+      yield options: inflate_box(bbox(name, title, assignment_text), 5, 5, 5, 5)
+
+      code_review_div.find(:xpath, ".//select[@id='assignment_graders_attributes_0_review_target']").find("option[value='peer']").select_option
+      who_to_review = code_review_div.find(:xpath, ".//div[./label[@for='assignment_graders_attributes_0_review_target']]")
+      how_many_reviews = code_review_div.find(:xpath, ".//div[./label[@for='assignment_graders_attributes_0_review_count']]")
+      yield options: inflate_box(bbox(who_to_review, how_many_reviews), 0, 5, 0, 0)
+
+      review_quality_threshold = code_review_div.find(:xpath, ".//div[./label[@for='assignment_graders_attributes_0_review_threshold']]")
+      yield options: inflate_box(bbox(review_quality_threshold), 0, 5, 0, 0)
+
+      related_assignment = code_review_div.find(:xpath, ".//div[./label[@for='assignment_related_assignment_id']]")
+      related_assignment_dropdown = code_review_div.find(:xpath, ".//select[@id='assignment_related_assignment_id']")
+      hilite = highlight_area("related_assignment_dropdown", inflate_box(bbox(related_assignment_dropdown), 5, 5, 5, 5))
+      #TODO: Fix dropdown disappearing when screenshotting (and remove hilite)
+      #related_assignment_dropdown.click
+      yield options: inflate_box(bbox(related_assignment, hilite), 5, 5, 5, 5)
+      remove_highlight "related_assignment_dropdown"
+
+      related_assignment_dropdown.find("option[value='1']").select_option
+      related_assignment.find(:xpath, ".//label[contains(concat(' ',normalize-space(@class),' '),' active ')]").click
+      # sleep so the toggle will complete
+      sleep(0.5)
+      yield options: inflate_box(bbox(related_assignment), 5, 5, 5, 5)
+
+      set_default_size
+    end
+
+    def new_exam_assignment_page
+      sign_in(@fred)
+      visit(course_assignments_path(@course))
+      set_full_page
+
+      page.find(:xpath, ".//a[text()='New']").click
+      page.find(:xpath, ".//a[text()='Exam']").click
+      exam_div = page.find(:xpath, ".//div[@id='type-exam']")
+      name = exam_div.find(:xpath, ".//input[@id='assignment_name']")
+      name.set("Midterm exam")
+      assignment_text = exam_div.find(:xpath, ".//textarea[@id='assignment_assignment']")
+      assignment_text.set("To learn more about the exam please see the <a href=\"https://course.ccs.neu.edu/cs2500/\">course web page</a>.")
+      title = page.find(:xpath, ".//strong[text()='Create New Assignment']")
+      yield options: inflate_box(bbox(name, title, assignment_text), 5, 5, 5, 5)
+
+      set_default_size
+    end
+
+    def style_graders
+      sign_in(@fred)
+      visit(course_assignments_path(@course))
+
+      page.find(:xpath, ".//a[text()='New']").click
+      set_full_page
+      file_div = page.find(:xpath, ".//div[@id='type-files']")
+      graders = file_div.find(:xpath, ".//div[./ol[@id='files-graders']]")
+      graders.find("a").click
+      points_available_label = file_div.find(:xpath, ".//td[.//label[text()='Points available:']]")
+      points_available_value = file_div.find(:xpath, ".//td[.//input[contains(@id, 'avail_score')]]")
+      yield options: inflate_box(bbox(points_available_label, points_available_value), 5, 5, 0, 5)
+
+      file_div.find(:xpath, ".//a[text()='Racket Style']").click
+      max_line_length_label = file_div.find(:xpath, ".//td[.//label[text()='Maximum line length:']]")
+      max_line_length_value = file_div.find(:xpath, ".//td[.//input[contains(@id, 'line_length')]]")
+      yield options: inflate_box(bbox(max_line_length_label, max_line_length_value), 5, 5, 0, 5)
+
+      file_div.find(:xpath, ".//a[text()='Checker Tests']").click
+      checker_test_table = file_div.find(:xpath, ".//table")
+      yield options: bbox(checker_test_table)
+
+      set_default_size
+    end
+
+    def edit_assignment
+      sign_in(@fred)
+      visit course_assignment_path(@course, @assignments[@assignments.length - 1])
+      page.find(:xpath, ".//a[text()='Edit Assignment']").click
+      graders = page.find(:xpath, ".//div[./ol[@id='files-graders']]")
+      add_grader_button = graders.find(:xpath, ".//a[text()='Add Grader']")
+      add_grader_button.click
+      set_full_page
+      update_files = page.find(:xpath, ".//div[./input[@value='Update Files']]")
+      yield options: inflate_box(bbox(graders, add_grader_button, update_files), 5, 5, 5, 5)
+      set_default_size
+
+      page.find(:xpath, ".//input[@value='Update Files']").click
+      yield
+    end
+
+    def registrations
+      sign_in(@fred)
+      visit(course_assignments_path(@course))
+      registrations_button = page.find(:xpath, ".//a[text()='Registrations']")
+      hilite = highlight_area("registrations_button", bbox(registrations_button))
+      yield
+      remove_highlight "registrations_button"
+
+      registrations_button.click
+      # TODO add registration request here
+      # request = create(:reg_request, user: @students[0], course: @course, "#{@sections[0].type}_sections": @sections[0].crn.to_s)
+      yield
+
+      page.find(:xpath, ".//a[text()='Edit student registrations']").click
+      title = page.find(:xpath, ".//h2[text()='Edit registrations']")
+      student = page.all(:xpath, ".//tr[.//form[contains(@id, 'reg_lecture')]]")[0]
+      section_dropdown = page.all(:xpath, ".//select[@id='role']")[0]
+      section_dropdown.click
+      section_dropdown.find("option[value='grader']").select_option
+      section_dropdown.find("option[value='student']").select_option
+      save_button = page.all(:xpath, ".//input[contains(@id, 'submit_lecture')]")[0]
+      hilite = highlight_area("save_button", bbox(save_button))
+      yield options: inflate_box(bbox(title, student), 5, 5, 5, 5)
+      remove_highlight "save_button"
+
+      visit(course_assignments_path(@course))
+      page.find(:xpath, ".//a[text()='Registrations']").click
+      impersonate = page.all(:xpath, ".//a[text()='Impersonate']")[0]
+      hilite = highlight_area("impersonate", inflate_box(bbox(impersonate), 5, 5, 5, 5))
+      row = page.all(:xpath, ".//tr[.//a[text()='Impersonate']]")[2]
+      title = page.find(:xpath, ".//h3[./span[contains(text(), 'Students')]]")
+      yield options: inflate_box(bbox(title, row, hilite), 0, 10, 0, 0)
+      remove_highlight "impersonate"
+
+      impersonate.click
+      yield
+      visit(course_path(@course))
+
+      withdraw = page.find(:xpath, ".//button[contains(text(), 'Withdraw from this course')]")
+      hilite = highlight_area("withdraw", bbox(withdraw))
+      set_full_page
+      yield
+      remove_highlight "withdraw"
+      set_default_size
+
+      withdraw.click
+      content = page.find(:xpath, ".//div[@class='modal-content']")
+      set_full_page
+      yield options: bbox(content)
+      set_default_size
+      page.find(:xpath, ".//a[contains(@href, 'withdraw')]").click
+      set_full_page
+      yield
+      page.find(:xpath, ".//a[text()='Stop Impersonating']").click
+      set_full_page
+      yield
+      set_default_size
+    end
+    
+    def grading
+      sign_in(@fred)
+      visit course_assignment_path(@course, @assignments[3])
+      assign_graders = page.find(:xpath, ".//a[@title='Assign graders']")
+      highlight_area("assign_graders", bbox(assign_graders))
+      yield
+      remove_highlight "assign_graders"
+      assign_graders.click
+      
+      grader_allocation = page.find(:xpath, ".//a[contains(@href, 'grader_allocations')]")
+      highlight_area("grader_allocation", bbox(grader_allocation))
+      yield
+      remove_highlight "grader_allocation"
+      
+      grader_allocation.click
+      page.first('#submission_id option').select_option
+      page.select('Joe Jones', from: 'who_grades_id')
+      assign_grader = page.find(:xpath, ".//input[@value='Assign grader']")
+      highlight_area("assign_grader", bbox(assign_grader))
+      header = page.find(:xpath, ".//h3[contains(text(), 'single grader')]")
+      form = page.find(:xpath, ".//select[@id='who_grades_id']")
+      set_full_page
+      yield options: inflate_box(bbox(header, form), 10, 10, 10, 10)
+      remove_highlight "assign_grader"
+      set_default_size
+      assign_grader.click
+      
+      header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
+      footer = page.find(:xpath, ".//footer")
+      set_full_page
+      yield options: bbox(header, footer)
+      set_default_size
+      
+      joe_span = page.find(:xpath, ".//span[./span[text()='Joe Jones']]")
+      joe_input = joe_span.find(:xpath, ".//input[contains(@id, '_weight')]")
+      joe_input.set(2)
+      assign_graders = page.find(:xpath, ".//input[@value='Assign graders']")
+      highlight_area("assign_graders", bbox(assign_graders))
+      header = page.find(:xpath, ".//h3[contains(text(), 'Bulk grading')]")
+      or_header = page.find(:xpath, ".//h3[@class='middle-separator']")
+      set_full_page
+      yield options: inflate_box(bbox(header, or_header), 10, 10, 10, 10)
+      remove_highlight "assign_graders"
+      set_default_size
+      assign_graders.click
+      
+      header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
+      footer = page.find(:xpath, ".//footer")
+      set_full_page
+      yield options: bbox(header, footer)
+      set_default_size
+      
+      joe_header = page.find(:xpath, ".//h4[contains(text(), 'Joe Jones')]")
+      abandon_all = joe_header.find(:xpath, ".//a[text() = 'Abandon all']")
+      accept_alert do
+        abandon_all.click
+      end
+      header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
+      footer = page.find(:xpath, ".//footer")
+      set_full_page
+      yield options: bbox(header, footer)
+      set_default_size
+    end
+    
+    def reviewing_grader_feedback
+      sign_in(@fred)
+      visit course_assignment_path(@course, @assignments[1])
+      
+      view_button = page.find_all(:xpath, ".//a[text() = 'View']")[0]
+      highlight_area("view", bbox(view_button))
+      yield
+      remove_highlight "view"
+      view_button.click
+      
+      manual_feedback_row = page.find(:xpath, ".//tr[./td[contains(text(), 'Manual Feedback')]]")
+      grader_output = manual_feedback_row.find(:xpath, ".//a[text() = 'Grader output']")
+      header = page.find(:xpath, ".//h1[text() = 'Submission']")
+      highlight_area("grader_output", bbox(grader_output))
+      set_full_page
+      yield options: inflate_box(bbox(header, grader_output), 10, 10, 10, 10)
+      set_default_size
+      remove_highlight "grader_output"
+    end
+    
+    def grader_statistics
+      sign_in(@fred)
+      visit(course_path(@course))
+
+      grader_info = page.find(:xpath, ".//a[text() = 'Grader info']")
+      highlight_area("grader_info", bbox(grader_info))
+      yield
+      remove_highlight "grader_info"
+    end
+    
+    def downloading_teams
+      sign_in(@fred)
+      visit(course_path(@course))
+      
+      page.find(:xpath, ".//a[contains(text(), 'Export')]").click
+      export_teamsets = page.find(:xpath, ".//a[contains(text(), 'Teamsets')]")
+      highlight_area("export_teamsets", bbox(export_teamsets))
+      yield
+      remove_highlight "export_teamsets"
     end
 
     def facebook_page
@@ -790,7 +1291,7 @@ puts "SEED=#{RANDOM_SEED}"
 
 FactoryBot.find_definitions
 Utilities.redefine_factories
-Capybara.default_driver = :selenium_chrome_headless
+Capybara.default_driver = :selenium_chrome_headless #:selenium_chrome
 DatabaseCleaner.strategy = :deletion
 DatabaseCleaner.start
 
