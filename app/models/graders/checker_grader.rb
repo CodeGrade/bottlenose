@@ -197,7 +197,7 @@ class CheckerGrader < Grader
         end
         if ok
           self.test_class.split.each do |tc|
-            next if (tc.starts_with? "-" || (Float(tc) rescue false))
+            next if (tc.starts_with?("-") || (Float(tc) rescue false))
             if !entries["testing"]["test"]["#{tc}.java"]
               add_error("There is no #{tc}.java file to match the specified test class")
             end
@@ -211,7 +211,7 @@ class CheckerGrader < Grader
         end
         if ok
           self.test_class.split.each do |tc|
-            next if (tc.starts_with? "-" || (Float(tc) rescue false))
+            next if (tc.starts_with?("-") || (Float(tc) rescue false))
             if !entries["test"]["#{tc}.java"]
               add_error("There is no #{tc}.java file to match the specified test class")
             end
