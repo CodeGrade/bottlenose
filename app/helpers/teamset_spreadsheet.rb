@@ -7,7 +7,8 @@ class TeamsetSpreadsheet < Spreadsheet
     @sheets = []
 
     sheet = Sheet.new("Student information")
-    create_name_columns(course, sheet)
+    labels, weight, users = create_name_columns(course, sheet)
+    sheet.freeze_panes(sheet.header_rows.length + 1, 0)
     @sheets.push(sheet)
 
     @teams = course.teams.includes(:users).order(end_date: :desc, id: :asc).group_by(&:teamset_id)
@@ -19,6 +20,7 @@ class TeamsetSpreadsheet < Spreadsheet
       sheet.columns.push(Col.new("Start date"))
       sheet.columns.push(Col.new("End date"))
       sheet.columns.push(Col.new("Users (name <email>)", "String"))
+      sheet.freeze_panes(1, 0)
       (@teams[a.teamset_id] || []).each do |team|
         row = [team.id,
                (team.active? ? "Yes" : "No"),
