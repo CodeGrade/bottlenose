@@ -53,31 +53,45 @@ module GradersHelper
     details_out, env, cmds, replacements, build_dir = get_build_arguments(assignment, sub)
     any_problems = false
     File.open(grader_dir.join(details_out), "w") do |details|
-      details.write "Contents of temp directory are:\n"
-      ls_output, status = Open3.capture2("ls", "-R", build_dir.to_s)
-      details.write ls_output
+      start_time = Time.now
+      details.puts("#{prefix}: Build began at #{start_time}")
+      details.puts("#{prefix}: Contents of temp directory are:")
+      ls_output, status = Open3.capture2("tree", build_dir.to_s)
+      details.puts ls_output
       cmds.each do |cmd|
-        details.write("#{prefix}: Compiling `#{cmd.join(' ')}\n")
-        Audit.log "#{prefix}: Compiling `#{cmd.join(' ')}`"
+        if (cmd.is_a? Hash)
+          if cmd[:skip].call
+            cmd = cmd[:cmd]
+            details.puts("#{prefix}: Skipping `#{cmd.join(' ')}`, because it's already compiled")
+            next
+          else
+            cmd = cmd[:cmd]
+          end
+        end
+        details.puts("#{prefix}: Running `#{cmd.join(' ')}`")
+        Audit.log "#{prefix}: Running `#{cmd.join(' ')}`"
         comp_out, comp_err, comp_status, timed_out =
                                          ApplicationHelper.capture3(*cmd,
                                                                     chdir: build_dir.to_s,
                                                                     timeout: timeout)
-        details.write("#{prefix}: (exit status #{comp_status})\n")
-        details.write(comp_out)
+        details.puts("#{prefix}: (exit status #{comp_status})")
+        details.puts(comp_out)
         if timed_out
-          details.write("#{prefix}: Compilation timed out after #{timeout} seconds")
+          details.puts("#{prefix}: Compilation timed out after #{timeout} seconds")
         end
         if timed_out || !comp_status&.success?
-          details.write("Errors building #{cmd.join(' ')}:\n")
-          details.write(comp_err)
+          details.puts("#{prefix}: Errors building #{cmd.join(' ')}:")
+          details.puts(comp_err)
           Audit.log("#{prefix}: failed with compilation errors; see #{details_out}")
           any_problems = true
         end
       end
-      details.write "Contents of temp directory are now:\n"
-      ls_output, status = Open3.capture2("ls", "-R", build_dir.to_s)
-      details.write ls_output
+      details.puts("Contents of temp directory are now:")
+      ls_output, status = Open3.capture2("tree", build_dir.to_s)
+      details.puts(ls_output)
+      end_time = Time.now
+      details.puts("Build ended at #{end_time}")
+      details.puts("Total build time: #{end_time - start_time} seconds")
       yield prefix, any_problems, details
     end
   end

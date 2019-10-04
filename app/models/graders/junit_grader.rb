@@ -132,13 +132,22 @@ class JunitGrader < Grader
   end
 
   def get_build_arguments(assignment, sub)
-    files = Dir.glob("#{@build_dir}/**/*.java").reject do |f|
+    test_classes = self.test_class.gsub(".", "/").split(" ").map{|f| ["#{@build_dir}/#{f}.java", true]}.to_h
+    test_files, student_files = Dir.glob("#{@build_dir}/**/*.java").reject do |f|
       Pathname.new(f).ascend.any?{|c| c.basename.to_s == "__MACOSX" || c.basename.to_s == ".DS_STORE"}
+    end.partition{|f| test_classes[f]}
+    files = test_files + student_files
+    File.open("#{@build_dir}/compile_list.txt", "w") do |compile_list|
+      files.each do |f| compile_list.puts(f.gsub("#{@build_dir}/", "")) end
     end
     [
       "details.log",
       {},
-      files.map do |f| ["javac", "-cp", "junit-4.12.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*", f] end,
+      [
+        ["cat", "compile_list.txt"],
+        ["javac", "-cp", "junit-4.12.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
+         "@compile_list.txt"]
+      ],
       {},
       @build_dir
     ]
