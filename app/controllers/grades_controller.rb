@@ -687,7 +687,6 @@ HEADER
           @grading_output = tap
           @tests = tap.tests
         rescue Exception
-          @grading_output = "Could not read the grading output file"
           @tests = []
         end
       rescue Errno::ENOENT
