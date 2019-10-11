@@ -33,7 +33,9 @@ class Grade < ApplicationRecord
   end
 
   def full_log
-    self.grading_output&.sub(/makefile\.tap$/, "details.log")
+    return nil if self.grading_output.nil?
+    go = Pathname.new(self.grading_output)
+    self.grading_output&.sub(/#{go.basename}$/, "details.log")
   end
 
   def grading_output_path

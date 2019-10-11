@@ -2,7 +2,7 @@ class FilesController < ApplicationController
   def upload
     if File.file?(Upload.base_upload_dir.join(params[:path]))
       case File.extname(params[:path]).downcase
-      when ".jpg", ".jpeg", ".png", ".gif", ".tap"
+      when ".jpg", ".jpeg", ".png", ".gif", ".tap", ".log"
         disp = "inline"
       when ".pdf"
         disp = nil

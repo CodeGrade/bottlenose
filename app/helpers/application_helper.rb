@@ -266,7 +266,7 @@ module ApplicationHelper
       "text/x-latex"
     when ".bib"
       "text/plain"
-    when ".tap", ".txt", ".text"
+    when ".log", ".tap", ".txt", ".text"
       "text/plain"
     when ".pdf"
       "application/pdf"
