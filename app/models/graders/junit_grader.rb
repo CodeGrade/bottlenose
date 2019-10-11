@@ -107,7 +107,7 @@ class JunitGrader < Grader
           end
         end
       rescue Exception => e
-        Audit.log("Assignment #{assignment.id}, submission #{sub.id}: Errors prevented grading; giving a 0: #{e}")
+        Audit.log("Assignment #{assignment.id}, submission #{sub.id}: Errors prevented grading; giving a 0: #{e} at #{e.backtrace.join("\n")}")
         g.score = 0
         g.out_of = self.avail_score
         g.updated_at = DateTime.now

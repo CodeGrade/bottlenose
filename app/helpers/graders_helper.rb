@@ -321,8 +321,8 @@ module GradersHelper
   end
 
   def dir_tree(path)
-    tree = get_dir_tree(path)
-    print_root("", tree.first[0], tree.first[1], [tree.first[0]]).join("\n")
+    tree = get_dir_tree(Pathname.new(path.to_s))
+    print_root("", tree.first[0], tree.first[1], [path.to_s]).join("\n")
   end
   def get_dir_tree(path)
     if path.file?
