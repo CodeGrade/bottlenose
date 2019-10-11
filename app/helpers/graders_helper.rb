@@ -56,8 +56,8 @@ module GradersHelper
       start_time = Time.now
       details.puts("#{prefix}: Build began at #{start_time}")
       details.puts("#{prefix}: Contents of temp directory are:")
-      ls_output, status = Open3.capture2("tree", build_dir.to_s)
-      details.puts ls_output
+      tree_output = dir_tree(build_dir)
+      details.puts tree_output
       cmds.each do |cmd|
         if (cmd.is_a? Hash)
           if cmd[:skip].call
@@ -87,8 +87,8 @@ module GradersHelper
         end
       end
       details.puts("Contents of temp directory are now:")
-      ls_output, status = Open3.capture2("tree", build_dir.to_s)
-      details.puts(ls_output)
+      tree_output = dir_tree(build_dir)
+      details.puts(tree_output)
       end_time = Time.now
       details.puts("Build ended at #{end_time}")
       details.puts("Total build time: #{end_time - start_time} seconds")
@@ -318,5 +318,49 @@ module GradersHelper
           "<ul>" + ans[:errors].map{|msg| "<li>#{msg}</li>"}.join("\n") + "</ul>").html_safe
        end
     }
+  end
+
+  def dir_tree(path)
+    tree = get_dir_tree(path)
+    print_root("", tree.first[0], tree.first[1], [tree.first[0]]).join("\n")
+  end
+  def get_dir_tree(path)
+    if path.file?
+      [[path.basename.to_s, true]].to_h
+    elsif path.directory?
+      [[path.basename.to_s, path.children.map{|kid| get_dir_tree(kid)}.compact]].to_h
+    else
+      nil
+    end
+  end
+
+  def print_root(indent, name, kids, lines)
+    end_prefix = "└── "
+    mid_prefix = "├── "
+    end_spacer = "    "
+    mid_spacer = "│   "
+    if kids.is_a? Array
+      kids.each_with_index do |kid, idx|
+        is_last = (idx == kids.size - 1)
+        if is_last
+          kid.each do |name, kids|
+            lines.push(indent + end_prefix + name)
+            if kids.is_a? Array
+              print_root(indent + end_spacer, name, kids, lines)
+            end
+          end
+        else
+          kid.each do |name, kids|
+            lines.push(indent + mid_prefix + name)
+            if kids.is_a? Array
+              print_root(indent + mid_spacer, name, kids, lines)
+            end
+          end
+        end
+      end
+    else
+      lines.push(indent + name)
+    end
+    lines
   end
 end
