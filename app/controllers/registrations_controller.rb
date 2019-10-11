@@ -68,7 +68,6 @@ class RegistrationsController < ApplicationController
         raise ActiveRecord::Rollback, "Saving registration failed"
       end
     end
-    puts "Success is #{success}"
     if success
       redirect_to course_registrations_path(@course),
                   notice: 'Registration was successfully created.'
