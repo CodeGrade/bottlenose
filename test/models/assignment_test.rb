@@ -270,7 +270,7 @@ YAML
 ...
 YAML
 
-    sc = SchemaChecker.new(Rails.root.join("app/helpers/questions_schema.yaml"))
+    sc = SchemaChecker.new(Rails.root.join("app/helpers/codereview_schema.yaml"))
     inputs.each_with_index do |input, n|
       assert_not_equal [], sc.check(YAML.load(input))
     end

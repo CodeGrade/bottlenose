@@ -110,7 +110,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     teamset_count = Teamset.count
     upload_file = fixture_file_upload(
-      "files/peer-eval.yaml",'application/octet-stream')
+      "files/questions.yaml",'application/octet-stream')
     assert_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
