@@ -226,6 +226,10 @@ module ApplicationHelper
       "scheme"
     when ".sml", ".ml", ".mli"
       "mllike"
+    when ".hs"
+      "text/haskell"
+    when ".lhs"
+      "text/x-literate-haskell"
     when ".md"
       "text/markdown"
     when ".mly"
@@ -297,6 +301,8 @@ module ApplicationHelper
          "pyret",
          "scheme",
          "mllike",
+         "text/haskell",
+         "text/x-literate-haskell",
          "text/markdown",
          "text/x-ebnf",
          "text/x-csrc",

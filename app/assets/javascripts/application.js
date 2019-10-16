@@ -30,6 +30,8 @@
 //= require codemirror/addon/selection/active-line
 //= require codemirror/mode/clike/clike
 //= require codemirror/mode/mllike/mllike
+//= require codemirror/mode/haskell/haskell
+//= require codemirror/mode/haskell-literate/haskell-literate
 //= require codemirror/mode/ebnf/ebnf
 //= require codemirror/mode/javascript/javascript
 //= require codemirror/mode/markdown/markdown
