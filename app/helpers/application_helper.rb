@@ -227,7 +227,7 @@ module ApplicationHelper
     when ".sml", ".ml", ".mli"
       "mllike"
     when ".hs"
-      "text/haskell"
+      "text/x-haskell"
     when ".lhs"
       "text/x-literate-haskell"
     when ".md"
@@ -301,7 +301,7 @@ module ApplicationHelper
          "pyret",
          "scheme",
          "mllike",
-         "text/haskell",
+         "text/x-haskell",
          "text/x-literate-haskell",
          "text/markdown",
          "text/x-ebnf",
