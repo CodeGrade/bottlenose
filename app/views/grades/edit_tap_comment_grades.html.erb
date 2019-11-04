@@ -1,5 +1,8 @@
 <% @page_title = @grader.display_type %>
 
+<p>
+  <%= link_to "< Back to Assignment: #{@assignment.name}", course_assignment_path(@course, @assignment) %>
+</p>
 <h1>Bulk update <%= @grader.display_type %> grades</h1>
 <div class="well" id="bulk-entry">
   <h1>Download existing data</h1>

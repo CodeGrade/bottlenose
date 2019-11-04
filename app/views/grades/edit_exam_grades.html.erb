@@ -1,6 +1,9 @@
 <% @page_title = @grader.display_type %>
 <% cur_reg = current_user.registration_for(@course) %>
 <% if cur_reg&.professor? %>
+<p>
+  <%= link_to "< Back to Assignment: #{@assignment.name}", course_assignment_path(@course, @assignment) %>
+</p>
 <div class="form-tabs no-match-height" data-init-tab="manual-entry">
   <ul class="nav nav-tabs">
     <li><a href="#" data-tab="manual-entry">Manual entry</a></li>
