@@ -26,6 +26,7 @@
   table#team-requests.show_one tr.sec_<%= s.crn %> { display: none; }
   table#team-requests.show_one.sec_<%= s.crn %> tr.sec_<%= s.crn %> { display: table-row; }
   <% end %>
+  table#teams > tbody > tr.staff-team { display: none; }
 </style>
 <div class="row">
   <% if @teamset.errors.any? %>
@@ -358,6 +359,19 @@
   </div>
   <div class="col-md-6">
     <h3 class="user-headers">Active Teams
+      <div id="toggle-staff" class="btn-xs btn btn-default">Show staff teams</div>
+      <script>
+        $("#toggle-staff").on("click", function(e) {
+          $("#teams").toggleClass("hide_staff");
+          if ($("#teams").hasClass("hide_staff")) {
+            $(this).text("Show staff teams");
+          } else {
+            $(this).text("Hide staff teams");
+          }
+          e.stopPropagation();
+          e.preventDefault();
+        });
+      </script>
       <%= link_to "Dissolve all",
           dissolve_all_course_teamset_path(@course, @teamset),
           class: "btn btn-danger pull-right show_all", 
@@ -371,7 +385,7 @@
     </h3>
 
     <div class="long-table">
-    <table id="teams" class="table table-striped">
+    <table id="teams" class="table table-striped hide-staff">
       <thead>
         <tr>
           <th>Members</th>
