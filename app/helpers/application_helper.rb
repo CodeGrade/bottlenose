@@ -132,6 +132,10 @@ module ApplicationHelper
   end
   def maybe_link_team(show_team, show_users, team, highlights={})
     content_tag(:span, [
+                  if show_team || show_users
+                    all_emails = team.users.map{|uu| "#{uu.name} <#{uu.email}>"}
+                    mail_to all_emails.join(","), "@", title: "Email team members"
+                  end,
                   if show_team
                     link_to("Team #{team.id}", course_teamset_team_path(@course, team.teamset, team))
                   else

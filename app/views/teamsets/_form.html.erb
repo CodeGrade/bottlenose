@@ -380,8 +380,9 @@
       </thead>
       <tbody>
         <% @teams.each do |team| %>
-        <% sections, hazards = @team_info[team.id]
-           classes = sections.map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
+        <% sections, hazards, row_warnings = @team_info[team.id]
+           sec_classes = sections.map{|crn, _| "sec_#{crn}"}
+           classes = [sec_classes, row_warnings].flatten.uniq.compact.join(" ") %>
         <tr class="<%= classes %>">
           <td>
             <% hazards.each do |hazard, warning| %>

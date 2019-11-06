@@ -21,6 +21,7 @@ class TeamsetsController < ApplicationController
   def index
     if current_user_site_admin? || current_user_staff_for?(@course)
       @teams = @course.teams.includes(:users).order(end_date: :desc, id: :asc)
+      @regs_by_user = @course.registrations.map{|reg| [reg.user_id, reg]}.to_h
       @sections_by_user = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
       @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
       @section_types = @course.sections.map{|sec| [sec.id, sec.type]}.to_h
@@ -33,10 +34,23 @@ class TeamsetsController < ApplicationController
             [@section_crns[sec.section_id], @section_types[sec.section_id]]
           end
         end.flatten(1).uniq.compact
+        team_types = team.users.map{|u| @regs_by_user[u.id].role}.uniq.compact
+        row_warnings = []
         hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
           ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
         end
-        [team.id, [sections, hazards]]
+        if team_types.size != 1
+          hazards.push(["mixed-team", "Members of this team do not have same role in course"])
+          row_warnings.push("error", "mixed-team")
+        elsif !team_types.member?("student")
+          hazards.push(["staff-team", "Members of this team are not students"])
+          row_warnings.push("warning", "staff-team")
+        elsif team.active?
+          row_warnings.push("success")
+        else
+          row_warnings.push("inactive")
+        end
+        [team.id, [sections, hazards, row_warnings]]
       end.to_h
     else
       @teams = current_user.teams.where(course: @course).includes(:users).order(end_date: :desc, id: :asc)
@@ -336,6 +350,7 @@ class TeamsetsController < ApplicationController
     @users_by_username = @users.map do |_, s|
       [s.username, s]
     end.to_h
+    @regs_by_user = @course.registrations.map{|reg| [reg.user_id, reg]}.to_h
     @sections_by_user = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
     @others_by_section_ids = {}
     @others.each do |user|
@@ -414,10 +429,23 @@ class TeamsetsController < ApplicationController
           [@section_crns[sec.section_id], @section_types[sec.section_id]]
         end
       end.flatten(1).uniq.compact
+      team_types = team.users.map{|u| @regs_by_user[u.id].role}.uniq.compact
+      row_warnings = []
       hazards = sections.group_by(&:second).keep_if{|t, secs| secs.count != 1}.map do |t, secs|
         ["multi_#{t}", "This team spans #{t.pluralize(secs.count)} #{secs.map(&:first).sort.to_sentence}"]
       end
-      [team.id, [sections, hazards]]
+      if team_types.size != 1
+        hazards.push(["mixed-team", "Members of this team do not have same role in course"])
+        row_warnings.push("error", "mixed-team")
+      elsif !team_types.member?("student")
+        hazards.push(["staff-team", "Members of this team are not students"])
+        row_warnings.push("warning", "staff-team")
+      elsif team.active?
+        row_warnings.push("success")
+      else
+        row_warnings.push("inactive")
+      end
+      [team.id, [sections, hazards, row_warnings]]
     end.to_h
   end
 end

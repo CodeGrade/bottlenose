@@ -26,12 +26,25 @@
   <% if admin && @team_info %>
   <div class="col-md-12 text-center">
     <h4>
-      Filter team requests by section: <select class="sections" data-target="table#assn_<%= a.id %>_<%= a.teamset_id %>">
+      Filter teams by section: <select class="sections" data-target="table#assn_<%= a.id %>_<%= a.teamset_id %>">
         <option value="show_all">Show all sections</option>
         <% course.sections.each do |s| %>
         <option value="show_one show_<%= s.type %> sec_<%= s.crn %>">Section <%= s.to_s %></option>
         <% end %>
       </select>
+      <div id="toggle-staff" class="btn btn-default">Show staff teams</div>
+      <script>
+        $("#toggle-staff").on("click", function(e) {
+          $("#assn_<%= a.id %>_<%= a.teamset_id %>").toggleClass("hide_staff");
+          if ($("#assn_<%= a.id %>_<%= a.teamset_id %>").hasClass("hide_staff")) {
+            $(this).text("Show staff teams");
+          } else {
+            $(this).text("Hide staff teams");
+          }
+          e.stopPropagation();
+          e.preventDefault();
+        });
+      </script>
     </h4>
   </div>
   <% end %>

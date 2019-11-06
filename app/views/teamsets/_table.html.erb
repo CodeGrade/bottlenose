@@ -1,4 +1,7 @@
-<table class="table teamset-table" id="<%= id %>">
+<% cur_reg = current_user.registration_for(@course) %>
+<% cur_reg_staff = cur_reg&.staff? %>
+<% show_all_users = current_user.site_admin? || current_user.professor_ever? %>
+<table class="table teamset-table hide_staff" id="<%= id %>">
   <thead>
     <tr>
       <th style="width: 2.1em;"></th>
@@ -10,26 +13,21 @@
   </thead>
   <tbody>
     <% teams.each do |team| %>
-      <% sections, hazards = @team_info&.dig(team.id)
-         classes = (sections || []).map{|crn, _| "sec_#{crn}"}.uniq.compact.join(" ") %>
-      <% if team.active? %>
-      <tr class="<%= classes %> success">
+      <% sections, hazards, row_warnings = @team_info&.dig(team.id)
+         sec_classes = (sections || []).map{|crn, _| "sec_#{crn}"}
+         classes = [sec_classes, row_warnings].flatten.uniq.compact.join(" ") %>
+      <tr class="<%= classes %>">
         <td>
           <% hazards&.each do |hazard, warning| %>
           <span class="glyphicon glyphicon-alert <%= hazard %>" title="<%= warning %>"></span>
           <% end %>
         </td>
-        <td><span class="glyphicon glyphicon-chevron-right" title="Active team"></span></td>
-      <% else %>
-      <tr class="<%= classes %> inactive">
         <td>
-          <% hazards&.each do |hazard, warning| %>
-          <span class="glyphicon glyphicon-alert <%= hazard %>" title="<%= warning %>"></span>
+          <% if team.active? %>
+          <span class="glyphicon glyphicon-chevron-right" title="Active team"></span>
           <% end %>
         </td>
-        <td></td>
-      <% end %>
-        <td><%= team %></td>
+        <td><%= maybe_link_team(cur_reg_staff, show_all_users || [current_user.id], team) %></td>
         <td><%= team.start_date %></td>
         <td><%= team.end_date || "∞" %></td>
       </tr>

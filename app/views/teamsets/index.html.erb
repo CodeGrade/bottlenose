@@ -25,6 +25,7 @@
   table[id^="assn_"].show_one tr.sec_<%= s.crn %> { display: none; }
   table[id^="assn_"].show_one.sec_<%= s.crn %> tr.sec_<%= s.crn %> { display: table-row; }
   <% end %>
+  table[id^="assn_"].hide_staff > tbody > tr.staff-team { display: none; }
 </style>
 <% if cur_reg&.staff? %>
 <%= link_to "Investigate Partners",

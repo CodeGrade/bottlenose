@@ -17,7 +17,12 @@
 <h4>Status</h4>
 <p><%= @team.active? ? "Active" : "Inactive" %></p>
 
-<h4>Members</h4>
+<h4>
+  <%=
+    all_emails = @team.users.map{|uu| "#{uu.name} <#{uu.email}>"}
+    mail_to all_emails.join(","), "@", title: "Email team members"
+    %> Members
+</h4>
 <ul>
     <% @team.users.each do |uu| %>
         <li><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || current_user.id == uu.id, uu) %></li>
