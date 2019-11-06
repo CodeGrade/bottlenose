@@ -26,7 +26,7 @@
   table#team-requests.show_one tr.sec_<%= s.crn %> { display: none; }
   table#team-requests.show_one.sec_<%= s.crn %> tr.sec_<%= s.crn %> { display: table-row; }
   <% end %>
-  table#teams > tbody > tr.staff-team { display: none; }
+  table#teams.hide_staff > tbody > tr.staff-team { display: none; }
 </style>
 <div class="row">
   <% if @teamset.errors.any? %>
@@ -385,7 +385,7 @@
     </h3>
 
     <div class="long-table">
-    <table id="teams" class="table table-striped hide-staff">
+    <table id="teams" class="table table-striped hide_staff">
       <thead>
         <tr>
           <th>Members</th>
