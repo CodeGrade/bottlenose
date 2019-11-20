@@ -261,9 +261,23 @@ function activateSpinner(obj, options) {
     if (e.key === "ArrowUp") { increment(); return; }
     if (e.key === "ArrowDown") { decrement(); return; }
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") { return; }
-    if (e.key === "Backspace" || e.key === "Delete") { return; }
     var curVal = $(this).val();
-    var newVal = curVal.slice(0, this.selectionStart) + e.key + curVal.slice(this.selectionEnd, curVal.length);
+    var newVal;
+    if (e.key === "Backspace") {
+      if (this.selectionStart == this.selectionEnd) {
+        newVal = curVal.slice(0, this.selectionStart - 1) + curVal.slice(this.selectionEnd, curVal.length);
+      } else {
+        newVal = curVal.slice(0, this.selectionStart) + curVal.slice(this.selectionEnd, curVal.length);
+      }
+    } else if (e.key === "Delete") {
+      if (this.selectionStart == this.selectionEnd) {
+        newVal = curVal.slice(0, this.selectionStart) + curVal.slice(this.selectionEnd + 1, curVal.length);
+      } else {
+        newVal = curVal.slice(0, this.selectionStart) + curVal.slice(this.selectionEnd, curVal.length);
+      }
+    } else {
+      newVal = curVal.slice(0, this.selectionStart) + e.key + curVal.slice(this.selectionEnd, curVal.length);
+    }    
     newVal = parseFloat(newVal, 10);
     if (max !== undefined && newVal > max) { e.preventDefault(); }
     if (min !== undefined && newVal < min) { e.preventDefault(); }
