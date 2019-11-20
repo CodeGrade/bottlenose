@@ -196,7 +196,7 @@ class SubmissionsController < ApplicationController
 
     @max_points = @assignment.graders.map(&:avail_score).sum
     guilty_students.each do |id, penalty|
-      penaltyPct = (100.0 * penalty.to_f) / @max_score.to_f
+      penaltyPct = (100.0 * penalty.to_f) / @max_points.to_f
       student = guilty_users[id]
       sub = split_sub(@submission, student, [@submission.score.to_f - penaltyPct, 0].max)
       # Add the penalty comment
