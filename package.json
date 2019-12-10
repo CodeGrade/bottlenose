@@ -4,14 +4,14 @@
   "description": "Course hand-in server",
   "main": "index.js",
   "dependencies": {
-    "codemirror": "^5.48.4",
+    "codemirror": "^5.49.2",
     "dompurify": "^2.0.7",
-    "pdfjs-dist": "^2.1.266",
+    "pdfjs-dist": "^2.2.228",
     "pyret-codemirror-mode": "git://github.com/brownplt/pyret-codemirror-mode.git#master"
   },
   "devDependencies": {
     "babel-preset-es2015": "^6.24.1",
-    "webpack": "^4.0.0"
+    "webpack": "^4.41.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
