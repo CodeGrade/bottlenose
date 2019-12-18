@@ -13,6 +13,7 @@ class CoursesController < ApplicationController
 
   def index
     @courses_by_term = Course.order(:name).includes(:term).group_by(&:term)
+                         .sort_by{|t, cs| t.canonical_name}.reverse.to_h
 
     # We can't use the course layout if we don't have a @course.
     render layout: 'application'
