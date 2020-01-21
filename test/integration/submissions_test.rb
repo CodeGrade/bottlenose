@@ -161,10 +161,10 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @as3.reload # needed for the lateness config
     @summary = clean(@cs101.score_summary(@john))
     assert_equal(@summary[@john.id],
-                 {dropped: nil, min: 7.5, cur: 75.0, max: 97.5,
+                 {dropped: nil, min: 7.5, cur: 75.0, max: 102.5,
                   pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
                   remaining: 90.0},
-                "After creating an extra credit assignment, but not submitting, nothing should change in the grades")
+                "After creating an extra credit assignment, but not submitting, max goes up by the available e.c.")
 
     @sub3 = create(:submission, user: @john, assignment: @as3, created_at: Time.now - 2.days)
     @sub3.set_used_sub!

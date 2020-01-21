@@ -205,6 +205,7 @@ class Course < ApplicationRecord
           if sub.score.nil?
             if assns[sub.assignment_id].extra_credit
               extra_adjust += assns[sub.assignment_id].points_available
+              extra_avail  -= assns[sub.assignment_id].points_available # Don't double-count
             else
               adjust += assns[sub.assignment_id].points_available
             end
@@ -223,10 +224,10 @@ class Course < ApplicationRecord
           unsubs += o.points_available
         end
       end
-      max = min + remaining + extra_adjust + adjust + unsubs
+      max = min + remaining + extra_adjust + adjust + unsubs + extra_avail
       {s: s, dropped: dropped,
        min: min * (100.0 / total_points), cur: cur * (100.0 / total_points), max: max * (100.0 / total_points),
-       pending: adjust + extra_adjust, pending_names: pending_names,
+       pending: adjust + extra_adjust + extra_avail, pending_names: pending_names,
        unsub: unsubs, unsub_names: unsub_names,
        remaining: remaining, used: used}
     end
