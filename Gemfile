@@ -36,6 +36,7 @@ gem 'bootstrap3-datetimepicker-rails' # for the datetime widget
 gem 'bootstrap-toggle-rails' # for toggle buttons instead of checkboxes
 
 gem 'momentjs-rails', '>= 2.9.0' # needed for human-friendly textual dates
+gem 'moment_timezone-rails'
 gem 'font-awesome-rails'
 
 gem 'addressable'

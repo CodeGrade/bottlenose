@@ -140,7 +140,8 @@
   function init_datetime() {
     $('.datetime-picker').datetimepicker({
       sideBySide: true,
-      format: "YYYY/MM/DD h:mm A",
+      format: "YYYY/MM/DD h:mm A z",
+      timeZone: moment.tz.guess(),
       defaultDate: undefined
     });
   }
@@ -240,6 +241,7 @@
           return false;
         }
       }
+      makeDatesIso8601($(".datetime-picker"));
       return true;
     });
 

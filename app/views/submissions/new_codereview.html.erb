@@ -180,7 +180,11 @@
     warning.find("h3").removeClass("hidden");
   }, Math.max(deadline - now, 0));
   $("form").submit(function(e) {
-    return ensureValidNumericInputOnSubmit(e, "input.numeric:not([disabled])");
+    var num = ensureValidNumericInputOnSubmit(e, "input.numeric:not([disabled])");
+    if (num) {
+      makeDatesIso8601($(".datetime-picker"));
+    }
+    return num;
   });
 </script>
 <% end %><%# content-for %>

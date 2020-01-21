@@ -21,6 +21,7 @@
 //= require jquery.keyDecoder
 //= require cocoon
 //= require moment
+//= require moment-timezone-with-data
 //= require bootstrap-sprockets
 //= require bootstrap-datetimepicker
 //= require bootstrap.treeview
@@ -171,6 +172,24 @@ function makeFriendlyDate(str, showTime) {
       return (dd.format("MMM D, YYYY"));
   }
 }
+
+// convert human-readable datetimes to ISO8601 times, including timezone
+function makeDatesIso8601($dates) {
+  var savedDates = [];
+  $dates.each(function(index, dtp) {
+    var $dtp = $(dtp);
+    savedDates[index] = $dtp.val();
+    $dtp.val($dtp.data("DateTimePicker").date().format());
+  });
+  return savedDates;
+}
+
+function restoreDatesFromIso8601($dates, savedDates) {
+  $dates.each(function(index, dtp) {
+    $(dtp).val(savedDates[index]);
+  });
+}
+
 
 function activate_file_picker($e) {
   $e.find(".custom-file").change(function() {

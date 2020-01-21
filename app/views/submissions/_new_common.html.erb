@@ -57,7 +57,7 @@
         <div class="col-sm-6">
           <p>If lateness is not ignored, this <%= type[:noun] %> should claim to
             have been submitted at:</p>
-          <%= f.text_field :created_at, class: 'form-control', disabled: "disabled" %>
+          <%= f.text_field :created_at, class: 'form-control datetime-picker', disabled: "disabled" %>
         </div>
         <% end %>
         <div class="col-sm-6" style="padding-top: 1em;">
@@ -70,7 +70,8 @@
           $(function () {
             $('#submission_created_at').datetimepicker({
               sideBySide: true,
-              format: "YYYY/MM/DD h:mm A",
+              format: "YYYY/MM/DD h:mm A z",
+              timeZone: moment.tz.guess(),
               minDate: "<%= @course.created_at.beginning_of_day.iso8601 %>",
               <% if @course.created_at < DateTime.current %>
               defaultDate: "<%= DateTime.current.iso8601 %>"
