@@ -187,47 +187,59 @@ class Course < ApplicationRecord
       .group_by(&:user_id)
     assns = assns.map{|a| [a.id, a]}.to_h
     extras, regulars = assns.values.partition(&:extra_credit)
-    avail = regulars.sum(&:points_available)
-    extra_avail = extras.sum(&:points_available)
     total_points = self.assignments.reject(&:extra_credit).sum(&:points_available)
     # assume a default of 100 points, but there might be extra credit assignments that push the total above 100
     total_points = [100.0, total_points].max
-    remaining = total_points - avail
     ans = self.users_with_drop_info(for_students).sort_by(&:sort_name).map do |s|
       dropped = s.dropped_date
       used = (subs_by_user[s.id] || []).map{|u| [u.assignment_id, u]}.to_h
-      adjust = 0
-      extra_adjust = 0
-      pending_names = []
-      min = 0
-      used.values.each do |sub| 
-        if (assns[sub.assignment_id].points_available != 0)
-          if sub.score.nil?
-            if assns[sub.assignment_id].extra_credit
-              extra_adjust += assns[sub.assignment_id].points_available
+      # This is customized per student, because each student might have their own extensions
+      due_in_future = (effective_due_dates[s.id] || {})
+               .select{|_, (_, _, a, due)| due > DateTime.current}
+               .map{|_, (_, _, a, _)| [a.id, a]}.to_h
+      reg = {done: {earned: 0.0, avail: 0.0}, pending: {avail: 0.0, names: []}, unsub: {avail: 0.0, names: []}}
+      extra = {done: {earned: 0.0, avail: 0.0}, pending: {avail: 0.0, names: []}, unsub: {avail: 0.0, names: []}}
+      assns.each do |aid, a|
+        if a.points_available != 0
+          sub = used[aid]
+          if !a.extra_credit
+            if sub&.score
+              reg[:done][:earned] += sub.score * a.points_available / 100.0
+              reg[:done][:avail] += a.points_available
+            elsif sub
+              reg[:pending][:avail] += a.points_available
+              reg[:pending][:names].push a.name
+            elsif due_in_future[aid]
+              reg[:unsub][:avail] += a.points_available
+              reg[:unsub][:names].push a.name
             else
-              adjust += assns[sub.assignment_id].points_available
+              reg[:done][:avail] += a.points_available
             end
-            pending_names.push assns[sub.assignment_id].name
+          else
+            if sub&.score
+              extra[:done][:earned] += sub.score * a.points_available / 100.0
+              extra[:done][:avail] += a.points_available
+            elsif sub
+              extra[:pending][:avail] += a.points_available
+              extra[:pending][:names].push a.name
+            elsif due_in_future[aid]
+              extra[:unsub][:avail] += a.points_available
+              extra[:unsub][:names].push a.name
+            else
+              extra[:done][:avail] += a.points_available
+            end
           end
-          min += ((sub.score || 0) * assns[sub.assignment_id].points_available / 100.0) 
         end
       end
-      cur = (100.0 * min) / (avail - adjust)
-      open = effective_due_dates[s.id]&.select{|_, (_, _, a, due)| due > DateTime.current}&.values&.map(&:third) || []
-      unsub_names = []
-      unsubs = 0
-      open.each do |o|
-        if used[o.id].nil?
-          unsub_names.push o.name
-          unsubs += o.points_available
-        end
-      end
-      max = min + remaining + extra_adjust + adjust + unsubs
-      {s: s, dropped: dropped,
-       min: min * (100.0 / total_points), cur: cur * (100.0 / total_points), max: max * (100.0 / total_points),
-       pending: adjust + extra_adjust, pending_names: pending_names,
-       unsub: unsubs, unsub_names: unsub_names,
+      min = reg[:done][:earned] * (100.0 / total_points) + extra[:done][:earned]
+      cur = (100.0 * min / (reg[:done][:avail] + reg[:unsub][:avail])) * (100.0 / total_points)
+      remaining = total_points - reg[:done][:avail] - reg[:pending][:avail] - reg[:unsub][:avail]
+      max = min + remaining + reg[:pending][:avail] + reg[:unsub][:avail] + extra[:pending][:avail] + extra[:unsub][:avail]
+      {s: s, dropped: dropped, min: min, cur: cur, max: max,
+       pending: reg[:pending][:avail] + extra[:pending][:avail],
+       pending_names: reg[:pending][:names] + extra[:pending][:names],
+       unsub: reg[:unsub][:avail] + extra[:unsub][:avail],
+       unsub_names: reg[:unsub][:names] + extra[:unsub][:names],
        remaining: remaining, used: used}
     end
     ans
