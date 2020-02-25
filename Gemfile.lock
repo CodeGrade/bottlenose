@@ -172,7 +172,7 @@ GEM
       railties (>= 3.1)
     net-ldap (0.16.2)
     nio4r (2.5.2)
-    nokogiri (1.10.7)
+    nokogiri (1.10.8)
       mini_portile2 (~> 2.4.0)
     orm_adapter (0.5.0)
     passenger (6.0.4)
