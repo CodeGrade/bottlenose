@@ -89,7 +89,7 @@
                           q["options"][q["correctAnswer"].to_i]
                         else
                           q["correctAnswer"].to_s
-                        end)
+                        end, allow_code: type == "Code")
                         %></p>      
       <% end %>
       <% if q["rubric"] %>

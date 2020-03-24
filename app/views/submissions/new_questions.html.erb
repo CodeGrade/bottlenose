@@ -29,8 +29,9 @@
   $(function() {
   $("textarea.sourceCode").each(function(index, code) {
     if ($(code).data("lang")) {
+      var editable = $(code).data("editable");
       var cm = CodeMirror.fromTextArea(code, {
-        readOnly: true, indentUnit: 2,
+        readOnly: !editable, indentUnit: 2,
         mode: $(code).data("lang"),
         theme: 'mdn-like', viewportMargin: Infinity,
         lineNumbers: true, lineWrapping: false,

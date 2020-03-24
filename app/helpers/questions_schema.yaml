@@ -10,11 +10,28 @@ Questions:
   array: Question
 Question:
   tagged_one_of:
+    - Code
     - YesNo
     - TrueFalse
     - Numeric
     - MultipleChoice
     - Text
+Code:
+  object:
+    - key: "weight"
+      value: Float
+    - key: "prompt"
+      value: String
+      optional: true
+    - key: "lang"
+      value: String
+    - key: "initial"
+      value: String
+      optional: true
+    - key: "correctAnswer"
+      value: String
+    - key: "rubric"
+      value: Rubric
 YesNo:
   object:
     - key: "name"

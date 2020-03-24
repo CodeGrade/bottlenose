@@ -68,7 +68,7 @@
                           q["options"][q["correctAnswer"].to_i]
                         else
                           q["correctAnswer"].to_s
-                        end)
+                        end, allow_code: type == "Code")
                         %></p>      
       <% end %>
       <% if q["rubric"] %>
@@ -91,7 +91,7 @@
 <% end %>
 <script>
   $(function() {
-    $("textarea.sourceCode").each(function(index, code) {
+  $("textarea.sourceCode").each(function(index, code) {
       if ($(code).data("lang")) {
         var cm = CodeMirror.fromTextArea(code, {
           readOnly: true, indentUnit: 2,
