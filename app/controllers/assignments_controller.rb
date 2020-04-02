@@ -19,7 +19,7 @@ class AssignmentsController < ApplicationController
         (Grade.where(submission: submissions, grader: @assignment.graders).count ==
          submissions.count * @assignment.graders.count)
       @all_complete = no_missing_grades && (Grade.where(submission: submissions, score: nil).count == 0)
-    elsif @assignment.nil? or @assignment.available > DateTime.now
+    elsif @assignment.nil? || (@assignment.available > DateTime.now)
       redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
       return
     else

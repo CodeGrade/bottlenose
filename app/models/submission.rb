@@ -57,7 +57,7 @@ class Submission < ApplicationRecord
       end
       team.users.each do |u|
         used = UsedSub.find_or_initialize_by(user_id: u.id, assignment_id: assignment.id)
-        if @same_team and used.submission_id
+        if @same_team && used.submission_id
           alloc = GraderAllocation.find_by(
             assignment_id: assignment_id,
             submission_id: used.submission_id)
@@ -412,7 +412,7 @@ class Submission < ApplicationRecord
             comments.reduce(nil) do |sum, (gradeId, commentsByGradeId)|
               if commentsByGradeId.is_a? String
                 sum
-              elsif @show_deductions.is_a? Integer and @show_deductions != gradeId
+              elsif (@show_deductions.is_a? Integer) && (@show_deductions != gradeId)
                 sum
               else
                 commentsByGradeId.reduce(sum) do |sum, (line, comments)|

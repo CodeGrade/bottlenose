@@ -7,7 +7,7 @@ class SubmissionsController < ApplicationController
   before_action :find_course
   before_action :find_assignment
   before_action -> { find_submission(params[:id]) }, except: [:index, :new, :create, :rerun_grader]
-  before_action :require_current_user, only: [:show, :index, :new, :create, :details]
+  before_action :require_registered_user, only: [:show, :index, :new, :create, :details]
   before_action -> { require_admin_or_staff(course_assignment_path(@course, @assignment)) },
                 only: [:rerun_grader]
   before_action -> { require_admin_or_staff(course_assignment_submission_path(@course, @assignment, @submission)) },
@@ -38,6 +38,12 @@ class SubmissionsController < ApplicationController
   end
 
   def new
+    admin_view = current_user_site_admin? || current_user_staff_for?(@course) || prof_override?
+    if !admin_view && (@assignment.available > DateTime.now)
+      redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
+      return
+    end
+
     @submission = Submission.new(type: @assignment.type + "Sub")
     @submission.assignment_id = @assignment.id
     @submission.user_id = current_user.id
@@ -77,6 +83,12 @@ class SubmissionsController < ApplicationController
   end
   
   def create
+    admin_view = current_user_site_admin? || current_user_staff_for?(@course) || prof_override?
+    if !admin_view && (@assignment.available > DateTime.now)
+      redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
+      return
+    end
+
     asgn_type = @assignment.type
     sub_type = submission_params[:type]
     case [asgn_type, sub_type]

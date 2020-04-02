@@ -7,11 +7,11 @@ class GradesController < ApplicationController
   before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
   before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
   before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
-  before_action :require_current_user
+  before_action :require_registered_user
   before_action -> {
     require_admin_or_staff(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
                            : course_assignment_path(@course, @assignment))
-  }, except: [:show, :update, :details, :bulk_edit_curve, :bulk_update_curve]
+  }, except: [:show, :details, :bulk_edit_curve, :bulk_update_curve]
   before_action -> {
     require_admin_or_assistant(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
                                : course_assignment_path(@course, @assignment))
@@ -139,16 +139,12 @@ class GradesController < ApplicationController
   def find_grade
     @grade = Grade.find_by(id: params[:id])
     if @grade.nil?
-      redirect_to fallback_location: course_assignment_submission_path(params[:course_id],
-                                                                        params[:assignment_id],
-                                                                        params[:submission_id]),
-                  alert: "No such grader"
+      redirect_to course_assignment_submission_path(params[:course_id], params[:assignment_id], params[:submission_id]),
+                  alert: "No such grade"
       return
     elsif @submission && (@grade.submission_id != @submission.id)
-      redirect_to fallback_location: course_assignment_submission_path(params[:course_id],
-                                                                       params[:assignment_id],
-                                                                       params[:submission_id]),
-                  alert: "No such grader for that submission"
+      redirect_to course_assignment_submission_path(params[:course_id], params[:assignment_id], params[:submission_id]),
+                  alert: "No such grade for that submission"
     end
     @grader = @grade.grader
   end

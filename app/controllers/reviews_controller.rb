@@ -1,7 +1,7 @@
 class ReviewsController < ApplicationController
   layout 'course'
   
-  before_action :require_current_user
+  before_action :require_registered_user
   before_action :find_course
   before_action :find_assignment
   before_action :find_submission

@@ -7,7 +7,7 @@ class QuestionsSub < Submission
   def check_time_taken
     if self.assignment.request_time_taken && @time_taken.empty?
       self.errors.add(:base, "Please specify how long you have worked on this assignment")
-    elsif @time_taken and !(Float(@time_taken) rescue false)
+    elsif @time_taken && !(Float(@time_taken) rescue false)
       self.errors.add(:base, "Please specify a valid number for how long you have worked on this assignment")
     end
     return self.errors.count == 0
