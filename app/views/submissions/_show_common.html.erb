@@ -52,7 +52,12 @@
   <tr>
     <td><strong>Student Notes</strong></td>
     <td>
-      <div class="prose"><%= @submission.student_notes %></div>
+      <% if @submission.student_notes && cur_reg_staff
+          notes_alert = 'alert alert-info'
+         else
+           notes_alert = ''
+         end %>
+      <div class="prose <%= notes_alert %>"><%= @submission.student_notes %></div>
     </td>
   </tr>
 </table>

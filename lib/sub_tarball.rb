@@ -20,6 +20,11 @@ class SubTarball
         FileUtils.mkdir_p(dd)
         
         FileUtils.cp(sub.file_full_path, dd)
+        unless sub.student_notes.blank?
+          File.open(dd.join("student_notes.txt"), "w") do |out|
+            out.write sub.student_notes
+          end
+        end
       end
     end
   end
