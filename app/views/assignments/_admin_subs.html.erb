@@ -211,13 +211,15 @@
         <td><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
         <% scores = grade[:staff_scores] %>
         <td><%= status_image(sub, 100.0 * scores[:raw_score] / @gradesheet.max_score) %></td>
-        <% scores[:scores].each do |s| %>
+        <% scores[:scores].zip(grade[:grade_times]).each do |s, t| %>
         <td class="text-right">
+          <span data-toggle="tooltip" data-placement="top" class="local-time-title" title="<%= t %>">
           <% if s.kind_of?(Array) %>
           <%= show_score(s[0], @gradesheet.assignment, true) %>&nbsp;/&nbsp;<%= to_fixed(s[1])%>
           <% else %>
           <%= s %>
           <% end %>
+          </span>
         </td>
         <% end %>
         <% if scores[:raw_score] && sub.score %>

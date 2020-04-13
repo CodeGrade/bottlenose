@@ -189,6 +189,12 @@ function activate_file_picker($e) {
 }
 
 $(function() {
+  $('.local-time').each(function(_) {
+    $(this).text(makeFriendlyDate($(this).text(), true));
+  });
+  $(".local-time-title").each(function(_) {
+    $(this).attr("title", makeFriendlyDate($(this).attr("title"), true));
+  });
   $('[data-toggle="tooltip"]').each(function(elt) {
     $(this).tooltip({
       animated: 'fade',
@@ -197,9 +203,6 @@ $(function() {
     });
   });
 
-  $('.local-time').each(function(_) {
-    $(this).text(makeFriendlyDate($(this).text(), true));
-  });
 
   $("input.numeric").on("keydown", validateNumericInput);
 });

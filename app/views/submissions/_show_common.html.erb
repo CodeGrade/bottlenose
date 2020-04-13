@@ -52,7 +52,7 @@
   <tr>
     <td><strong>Student Notes</strong></td>
     <td>
-      <% if @submission.student_notes && cur_reg_staff
+      <% if !@submission.student_notes.blank? && cur_reg_staff
           notes_alert = 'alert alert-info'
          else
            notes_alert = ''

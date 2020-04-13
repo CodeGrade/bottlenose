@@ -44,10 +44,11 @@ class Gradesheet
                   .group_by(&:submission_id)
     end
     @submissions.each do |s|
+      grade_times = []
       s_scores = {raw_score: 0.0, scores: []}
       b_scores = {raw_score: 0.0, scores: []}
       q_scores = []
-      res = {sub: s, staff_scores: s_scores, blind_scores: b_scores, q_scores: q_scores}
+      res = {sub: s, staff_scores: s_scores, blind_scores: b_scores, q_scores: q_scores, grade_times: grade_times}
       @graders.each do |c|
         g = @raw_grades.dig(s.id, c.id)
         if (c.is_a? ExamGrader)
@@ -78,6 +79,7 @@ class Gradesheet
           q_scores << q_grades
         end
         if g
+          grade_times.push g.updated_at.iso8601
           if g.out_of.to_f.zero?
             scaled = g.score
           else
@@ -98,6 +100,7 @@ class Gradesheet
             b_scores[:scores].push "not ready"
           end
         else
+          grade_times.push nil
           s_scores[:scores].push "Missing"
           b_scores[:scores].push "Missing"
           @missing_grades = true
