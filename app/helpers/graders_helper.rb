@@ -224,7 +224,11 @@ module GradersHelper
   def import_tap_data(who_grades, file)
     ans = {created: 0, updated: 0, errors: []}
     Dir.mktmpdir("regrade-#{self.id}_") do |tmpdir|
-      ArchiveUtils.extract(file.path, file.content_type, tmpdir, force_readable: true)
+      saved = Pathname.new(tmpdir).join(file.original_filename).to_s
+      File.open(saved, "wb") do |f|
+        f.write(file.read)
+      end
+      ArchiveUtils.extract(saved, file.content_type, tmpdir, force_readable: true)
       if Dir.exists?("#{tmpdir}/assignment_#{self.assignment_id}")
         entries = Dir.glob("#{tmpdir}/assignment_#{self.assignment_id}/*")
       elsif Dir.glob("#{tmpdir}/assignment_*").length > 0
