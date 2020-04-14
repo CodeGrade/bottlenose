@@ -252,6 +252,7 @@ module GradersHelper
           file = files.first
           begin
             g = self.grade_for sub
+            old_score = g.score
             new_record = g.new_record?
             grader_dir = sub.upload.grader_path(g)
             grader_dir.mkpath
@@ -301,6 +302,9 @@ module GradersHelper
               ans[:created] += 1
             else
               ans[:updated] += 1
+            end
+            if g.score != old_score
+              sub.update(score: nil) # wipe out score until it's republished
             end
           rescue Exception => e
             ans[:errors] << "Error processing submission #{sub_id}: #{e} at #{e.backtrace}"
