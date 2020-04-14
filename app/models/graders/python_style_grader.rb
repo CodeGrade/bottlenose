@@ -35,6 +35,9 @@ class PythonStyleGrader < Grader
   def export_data_schema
     "tap_style_export_schema.html"
   end
+  def import_data(who_grades, file)
+    import_tap_data(who_grades, file)
+  end
   def import_data_schema
     "tap_style_import_schema.html"
   end

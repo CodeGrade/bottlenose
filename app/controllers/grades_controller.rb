@@ -339,7 +339,8 @@ class GradesController < ApplicationController
   end
 
   # Bulk updates of grades
-  def bulk_update_JavaStyleGrader
+  private
+  def bulk_update_tap_grader
     require_admin_or_prof(@submission ? course_assignment_submission_path(@course, @assignment, @submission)
                           : course_assignment_path(@course, @assignment))
     ans = @grader.import_data(current_user, params[:grader][:upload_file])
@@ -350,6 +351,41 @@ class GradesController < ApplicationController
       redirect_back fallback_location: bulk_course_assignment_grader_path(@course, @assignment, @grader),
                     notice: ans[:notice], alert: ans[:errors]
     end
+  end
+  public
+  def bulk_update_RacketStyleGrader
+    bulk_update_tap_grader
+  end
+
+  def bulk_update_JavaStyleGrader
+    bulk_update_tap_grader
+  end
+  
+  def bulk_update_PythonStyleGrader
+    bulk_update_tap_grader
+  end
+  
+  def bulk_update_JunitGrader
+    bulk_update_tap_grader
+  end
+
+  def bulk_update_CheckerGrader
+    bulk_update_tap_grader
+  end
+
+  def bulk_update_ManualGrader
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk comment editing for manual graders is not yet supported"
+  end
+
+  def bulk_update_QuestionsGrader
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk editing for questions graders is not yet supported"
+  end
+
+  def bulk_update_CodereviewGrader
+    redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                  alert: "Bulk editing for codereview graders is not yet supported"
   end
 
   def bulk_update_ExamGrader
