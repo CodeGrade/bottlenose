@@ -19,7 +19,7 @@ class Course < ApplicationRecord
   validates :name, length: { minimum: 2 }, uniqueness: { scope: :term_id }
   validate  :has_sections
 
-  validates_associated :sections
+  validates_associated :sections, message: "are invalid and prevented this course from being edited"
 
   validate :unique_section_crns
 

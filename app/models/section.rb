@@ -13,7 +13,7 @@ class Section < ApplicationRecord
 
   has_many :submission_enabled_toggles
 
-  validates :crn, presence: true
+  validates :crn, presence: true, uniqueness: { scope: :course_id, message: "%{value} already exists for this course" }
   validates :instructor, presence: true
   validates :meeting_time, length: { minimum: 3 }
 

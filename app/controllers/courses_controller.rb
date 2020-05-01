@@ -83,11 +83,18 @@ class CoursesController < ApplicationController
   end
 
   def update
-    @course.assign_attributes(course_params)
-
-    if @course.save
-      redirect_to course_path(@course), notice: 'Course was successfully updated.'
-    else
+    begin
+      ActiveRecord::Base.transaction do
+        @course.assign_attributes(course_params)
+        
+        if @course.save
+          redirect_to course_path(@course), notice: 'Course was successfully updated.'
+        else
+          render :edit, status: 400
+        end
+      end
+    rescue ActiveRecord::RecordNotUnique => e
+      @course.errors.add(:base, e)
       render :edit, status: 400
     end
   end
