@@ -174,9 +174,11 @@ class RegistrationsController < ApplicationController
       uu = user_info[row[0]]
       unless uu.nil?
         r = Registration.find_by(course_id: @course, user_id: uu.id)
-        if r
-          r.assign_attributes(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
-                                                                                 crn: row[1..-1]),
+        prev_reg_sections = r&.registration_sections&.to_a
+        if r          
+          r.assign_attributes(course_id: @course.id,
+                              new_sections: Section.where(course_id: @course.id,
+                                                          crn: row[1..-1]),
                               username: row[0], role: "student")
         else
           # Create @registration object for errors.
@@ -186,7 +188,7 @@ class RegistrationsController < ApplicationController
         end
 
         success = Registration.transaction do
-          if r.save && r.save_sections
+          if prev_reg_sections&.map(&:destroy) && r.save && r.save_sections
             true
           else
             raise ActiveRecord::Rollback, "Saving registration failed"
