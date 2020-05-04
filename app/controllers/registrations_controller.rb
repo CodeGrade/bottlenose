@@ -139,35 +139,65 @@ class RegistrationsController < ApplicationController
 
   def bulk_enter
     num_added = 0
+    num_failed = 0
     failed = []
 
-    CSV.parse(params[:usernames]) do |row|
-      uu = User.find_by(username: row[0])
-      if uu
-        r = Registration.find_by(course_id: @course, user_id: uu.id)
-      end
-      if r
-        r.assign_attributes(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
-                                                                               crn: row[1..-1]),
-                            username: row[0], role: "student")
-      else
-        # Create @registration object for errors.
-        r = Registration.new(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
-                                                                                crn: row[1..-1]),
-                             username: row[0], role: "student")
-      end
+    row_data = CSV.parse(params[:usernames])
+    user_info = User.where(username: row_data.map(&:first)).map{|u| [u.username, u]}.to_h
+    unknown_users = row_data.select{|r| user_info[r[0]].nil?}.map(&:first)
+    try_by_email = User.where("email LIKE ANY (array[?])", unknown_users.map{|u| "#{u}%"}).to_a
+    unknown_users = unknown_users.map do |un|
+      [un, try_by_email.find_all{|u| u.email.starts_with? un}.to_a]
+    end.to_h
 
-      success = Registration.transaction do
-        if r.save && r.save_sections
-          true
-        else
-          raise ActiveRecord::Rollback, "Saving registration failed"
-        end
-      end
-      if success
-        num_added += 1
+    
+    not_found = []
+    suggestions = []
+    unknown_users.each do |u, by_email|
+      if by_email.blank? # nil or empty array
+        not_found << u
       else
-        failed << "#{row[0]} (#{r.errors.full_messages.to_sentence})"
+        found = by_email.map{|u| "#{u.username} (#{u.display_name})"}.to_sentence(last_word_connector: " or ")
+        failed << "No user found with username #{u}; perhaps you meant #{found}?"
+        num_failed += 1
+      end
+    end
+
+    if not_found.length > 1
+      failed << "No users found with usernames #{not_found.to_sentence(last_word_connector: ' or ')}"
+    elsif not_found.length == 1
+      failed << "No users found with username #{not_found[0]}"
+    end
+    num_failed += not_found.length
+
+    row_data.each do |row|
+      uu = user_info[row[0]]
+      unless uu.nil?
+        r = Registration.find_by(course_id: @course, user_id: uu.id)
+        if r
+          r.assign_attributes(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
+                                                                                 crn: row[1..-1]),
+                              username: row[0], role: "student")
+        else
+          # Create @registration object for errors.
+          r = Registration.new(course_id: @course.id, new_sections: Section.where(course_id: @course.id,
+                                                                                  crn: row[1..-1]),
+                               username: row[0], role: "student")
+        end
+
+        success = Registration.transaction do
+          if r.save && r.save_sections
+            true
+          else
+            raise ActiveRecord::Rollback, "Saving registration failed"
+          end
+        end
+        if success
+          num_added += 1
+        else
+          failed << "#{row[0]} (#{r.errors.full_messages.to_sentence})"
+          num_failed += 1
+        end
       end
     end
 
@@ -175,10 +205,14 @@ class RegistrationsController < ApplicationController
       redirect_to course_registrations_path(@course),
                   notice: "Added #{pluralize(num_added, 'student')}."
     else
-      failed.each do |f| @course.errors.add(:base, f) end
+      alert = "Could not add #{pluralize(num_failed, 'student')}: #{failed.to_sentence}"
+      if alert.length > 1900 # Not quite 2000, since there's a 4KB limit on encrypted cookies, which turns into ~2K characters
+        alert = "Too many errors to display; message is truncated: #{alert[0..1900]}"
+      end
+      
       redirect_to course_registrations_path(@course),
                   notice: "Added #{pluralize(num_added, 'student')}.",
-                  alert: "Could not add #{pluralize(failed.count, 'student')}: #{failed.to_sentence}"
+                  alert: "#{alert}"
     end
   end
 
