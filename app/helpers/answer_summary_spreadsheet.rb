@@ -23,11 +23,7 @@ class AnswerSummarySpreadsheet < Spreadsheet
                else
                  "String"
                end
-        if q["name"]
-          labels.push(Cell.new(q["name"]))
-        else
-          labels.push(Cell.new("Question #{i + 1}"))
-        end
+        labels.push(Cell.new(q["name"] || q["prompt"] || "Question #{i + 1}"))
         weight.push(Cell.new(q["weight"]))
       end
     end
@@ -38,6 +34,11 @@ class AnswerSummarySpreadsheet < Spreadsheet
       sub = subs_by_user[u.id]
       next if sub.nil?
       answers = YAML.load(File.open(sub.upload.submission_path))
+      # Codereviews are hashes from the submission-id-being-reviewed to the answers
+      # While Questions are simply arrays of answers
+      if answers.is_a? Array
+        answers = [[sub.id.to_s, answers]].to_h
+      end
       answers.each do |_, answers|
         questions.zip(answers).each_with_index do |(q, a), qnum|
           response = case q["type"]
