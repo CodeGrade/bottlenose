@@ -38,7 +38,7 @@ class AnswerSummarySpreadsheet < Spreadsheet
       sub = subs_by_user[u.id]
       next if sub.nil?
       answers = YAML.load(File.open(sub.upload.submission_path))
-      sub.answers.each do |_, answers|
+      answers.each do |_, answers|
         questions.zip(answers).each_with_index do |(q, a), qnum|
           response = case q["type"]
           when "Numeric"
