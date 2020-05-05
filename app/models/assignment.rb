@@ -67,7 +67,14 @@ class Assignment < ApplicationRecord
       self.graders.any?{|g| g.new_record? || g.changed? || g.marked_for_destruction?}
   end
 
+  def can_summarize?
+    false
+  end
+  def summary_spreadsheet
+    raise ArgumentError, "This assignment cannot be summarized"
+  end
 
+  
   def submission_prohibited(submission, staff_override)
     return false if staff_override
 

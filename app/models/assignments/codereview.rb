@@ -1,3 +1,5 @@
+require 'answer_summary_spreadsheet'
+
 class Codereview < Assignment
   include AssignmentsHelper
   validate :set_questions_graders
@@ -32,6 +34,13 @@ class Codereview < Assignment
     return @questions if @questions
     @questions = YAML.load(File.read(self.assignment_upload.submission_path))
     @questions
+  end
+
+  def can_summarize?
+    true
+  end
+  def summary_spreadsheet
+    AnswerSummarySpreadsheet.new(self)
   end
 
   def flattened_questions

@@ -9,7 +9,7 @@ class AssignmentsController < ApplicationController
   before_action -> { require_admin_or_prof(course_assignments_path) },
                 only: [:edit, :edit_weights, :update, :update_weights,
                        :new, :create, :destroy, :recreate_grades]
-  before_action :require_admin_or_assistant, only: [:update_section_toggles, :tarball, :publish]
+  before_action :require_admin_or_assistant, only: [:update_section_toggles, :tarball, :publish, :summarysheet]
 
   def show
     admin_view = current_user_site_admin? || current_user_staff_for?(@course)
@@ -248,6 +248,13 @@ class AssignmentsController < ApplicationController
     render "show_user_#{assignment.type.underscore}"
   end
 
+  def summarysheet
+    respond_to do |format|
+      format.xlsx { send_data @assignment.summary_spreadsheet.to_xlsx,
+                              type: "application/xlsx", filename: "summary.xlsx" }
+    end
+  end
+  
   def tarball
     tb = SubTarball.new(params[:id])
     if params[:moss]

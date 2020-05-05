@@ -32,6 +32,11 @@
          <span class="sr-only">Toggle Dropdown</span>
        </button><% #
        %><ul class="dropdown-menu">
+         <% if @gradesheet.assignment.can_summarize? %>
+         <li><%= link_to "Download summary spreadsheeet", 
+                 course_assignment_summarysheet_path(@course, @gradesheet.assignment, format: "xlsx"),
+                 class: "dropdown-item" %></li>
+         <% end %>
          <li><%= link_to "Download zips", 
                  course_assignment_tarball_path(@course, @gradesheet.assignment),
                  class: "dropdown-item" %></li>

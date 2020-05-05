@@ -1,7 +1,16 @@
+require 'answer_summary_spreadsheet'
+
 class Questions < Assignment
   include AssignmentsHelper
   validates :related_assignment_id, :absence => true
   validate :set_questions_graders
+
+  def can_summarize?
+    true
+  end
+  def summary_spreadsheet
+    AnswerSummarySpreadsheet.new(self)
+  end
 
   def set_questions_graders
     return false unless check_questions_schema
