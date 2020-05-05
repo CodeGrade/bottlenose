@@ -32,12 +32,12 @@ class AnswerSummarySpreadsheet < Spreadsheet
       end
     end
 
-    subs_for_grading = UsedSub.where(assignment: assn).includes(:submission).to_a
+    subs_for_grading = UsedSub.where(assignment: assn).includes(submission: [:upload]).to_a
     subs_by_user = subs_for_grading.map{|sfg| [sfg.user_id, sfg.submission]}.to_h
     @users.each_with_index do |u, i|
       sub = subs_by_user[u.id]
       next if sub.nil?
-      sub.load_answers_related_files
+      answers = YAML.load(File.open(sub.upload.submission_path))
       sub.answers.each do |_, answers|
         questions.zip(answers).each_with_index do |(q, a), qnum|
           response = case q["type"]
