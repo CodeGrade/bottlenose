@@ -9,7 +9,7 @@ class AnswerSummarySpreadsheet < Spreadsheet
     @assn = assn
 
     sheet = Sheet.new("Answers")
-    labels, weight, @users = create_name_columns(@course, sheet)
+    labels, parts, weight, @users = create_name_columns(@course, sheet)
     sheet.freeze_panes(sheet.header_rows.length + 1, 0)
     @sheets.push(sheet)
 
@@ -25,6 +25,20 @@ class AnswerSummarySpreadsheet < Spreadsheet
                end
         labels.push(Cell.new(q["name"] || q["prompt"] || "Question #{i + 1}"))
         weight.push(Cell.new(q["weight"]))
+        parts.push(Cell.new("{main}"))
+        q["parts"]&.each do |p|
+          if p["codeTag"]
+            parts.push(Cell.new(p["codeTag"]))
+          elsif p["codeTags"]
+            parts.push(Cell.new(p["codeTags"]))
+          elsif p["text"]
+            parts.push(Cell.new(p["text"]))
+          elsif p["requiredText"]
+            parts.push(Cell.new(p["requiredText"]))
+          end
+          labels.push(Cell.new(""))
+          weight.push(Cell.new(""))
+        end
       end
     end
 
@@ -42,18 +56,40 @@ class AnswerSummarySpreadsheet < Spreadsheet
       answers.each do |_, answers|
         questions.zip(answers).each_with_index do |(q, a), qnum|
           response = case q["type"]
-          when "Numeric"
-            q["main"].to_f
-          when "MultipleChoice"
-            if (q["options"][a["main"].to_i] == "other")
-              a["detail"]
-            else
-              q["options"][a["main"].to_i]
-            end
-          else
-            a["main"]
-          end
+                     when "Numeric"
+                       q["main"].to_f
+                     when "MultipleChoice"
+                       if (q["options"][a["main"].to_i] == "other")
+                         a["detail"]
+                       else
+                         q["options"][a["main"].to_i]
+                       end
+                     else
+                       a["main"]
+                     end
           sheet.push_row(i, Cell.new(response))
+          q["parts"]&.zip(a["parts"])&.each do |part, ans|
+            response = if part["codeTag"]
+                         if ans["file"] && ans["line"]
+                           "File #{Upload.full_path_for(ans['file']).sub(/.*extracted\//, '')}, line #{ans['line']}"
+                         else
+                           ans['file']
+                         end
+                       elsif part["codeTags"]
+                         ans.map do |tag|
+                           if tag["file"] && tag["line"]
+                             "File #{Upload.full_path_for(tag['file']).sub(/.*extracted\//, '')}, line #{tag['line']}"
+                           else
+                             tag['file']
+                           end
+                         end.to_sentence
+                       elsif part["text"]
+                         ans["info"]
+                       elsif part["requiredText"]
+                         ans["info"]
+                       end
+            sheet.push_row(i, Cell.new(response))
+          end
         end
       end
     end
@@ -74,6 +110,7 @@ class AnswerSummarySpreadsheet < Spreadsheet
     end
     sheet.columns.push(Col.new("Withdrawn?", "DateTime"), Col.new(""), Col.new(""))
     labels = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
+    parts = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
     weight = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
 
     users = course.students.order(:last_name, :first_name).to_a
@@ -101,6 +138,6 @@ class AnswerSummarySpreadsheet < Spreadsheet
       sheet.push_row(nil, row)
     end
 
-    return labels, weight, users
+    return labels, parts, weight, users
   end
 end
