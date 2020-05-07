@@ -86,6 +86,18 @@ class Assignment < ApplicationRecord
            false # no other reasons to reject the submission
   end
 
+  def interlocks_hiding_description_for(user)
+    locks = self.interlocks.group_by(&:constraint)
+    unsubs = locks["hide_description_unless_submitted"]&.select do |lock|
+      lock.related_assignment.submissions_for(user).empty?
+    end
+    if unsubs.blank?
+      false
+    else
+      unsubs
+    end
+  end
+
   def legal_teamset_actions
     # Returns the set of actions on teamsets that are legal as of the saved values in the database
     # Any unsaved changes do not impact this decision, so that validations can check that any action

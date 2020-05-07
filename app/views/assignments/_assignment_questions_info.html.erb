@@ -48,7 +48,15 @@
       </div>
       <div class="panel-body">
         <div class="prose">
+          <% if @hide_description %>
+          The description for this assignment is hidden until you have
+          submitted to
+          <%= @hide_description.map do |lock|
+               link_to lock.related_assignment.name, course_assignment_path(@course, lock.related_assignment)
+             end.to_sentence.html_safe %>.
+          <% else %>
           <%= raw gradesheet.assignment.assignment %>
+          <% end %>
         </div>
       </div>
     </div>

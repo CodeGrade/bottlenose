@@ -38,10 +38,12 @@ class AssignmentsController < ApplicationController
 
     self.send("show_#{@assignment.type.capitalize}")
     if admin_view
+      @hide_description = false
       render "show_#{@assignment.type.underscore}"
     else
       @user = current_user
       @team = @user.active_team_for(@course, @assignment)
+      @hide_description = @assignment.interlocks_hiding_description_for(@user)
       render "show_user_#{@assignment.type.underscore}"
     end
   end

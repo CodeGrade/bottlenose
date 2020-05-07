@@ -4,7 +4,8 @@ class Interlock < ApplicationRecord
   has_many :submission_enabled_toggles, dependent: :destroy
   enum constraint: [:no_submission_unless_submitted,
                     :no_submission_after_viewing,
-                    :check_section_toggles]
+                    :check_section_toggles,
+                    :hide_description_unless_submitted]
   before_validation :fill_in_sections
 
   def to_s
@@ -16,7 +17,8 @@ class Interlock < ApplicationRecord
   end
   
   def self.constraint_to_s(con)
-    {no_submission_unless_submitted: "Prohibit submission unless submitted to",
+    {hide_description_unless_submitted: "Hide assignment description unless submitted to",
+     no_submission_unless_submitted: "Prohibit submission unless submitted to",
      no_submission_after_viewing: "Submissions are prohibited after viewing",
      check_section_toggles: "Submissions are locked down by section"}[con.to_sym]
   end
