@@ -76,11 +76,15 @@ class CodereviewGrader < Grader
 
   def do_grading(assignment, sub)
     g = self.grade_for sub
-    responses = YAML.load(File.read(g.grading_output_path))
-    responses.delete("grader")
-    questions = assignment.flattened_questions
-    score = responses.values.flatten.zip(questions * assignment.review_count).reduce(0) do |sum, (r, q)|
-      sum + (r["score"].to_f.clamp(0, 1) * q["weight"])
+    if g.grading_output_path.nil?
+      score = 0
+    else
+      responses = YAML.load(File.read(g.grading_output_path))
+      responses.delete("grader")
+      questions = assignment.flattened_questions
+      score = responses.values.flatten.zip(questions * assignment.review_count).reduce(0) do |sum, (r, q)|
+        sum + (r["score"].to_f.clamp(0, 1) * q["weight"])
+      end
     end
 
     g.out_of = self.avail_score
