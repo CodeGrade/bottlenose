@@ -4,6 +4,10 @@ Bottlenose::Application.routes.draw do
     controllers :applications => 'doorkeeper_applications'
   end
 
+  namespace :api do
+    resources :courses, only: [:index, :show]
+  end
+
   resources :sandboxes
 
   # Using devise for user auth.
