@@ -1,4 +1,5 @@
 Bottlenose::Application.routes.draw do
+  use_doorkeeper
   resources :sandboxes
 
   # Using devise for user auth.
