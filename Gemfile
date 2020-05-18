@@ -58,6 +58,8 @@ gem 'whenever', :require => false
 
 gem 'pretender'
 
+gem 'doorkeeper'
+
 group :development do
   #gem "flatten_migrations"
   gem "better_errors"
