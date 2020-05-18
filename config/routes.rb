@@ -169,10 +169,6 @@ Bottlenose::Application.routes.draw do
   get   'status' => 'main#status', as: 'server_status'
   patch 'clear_queue' => 'main#clear_queue', as: 'clear_queue'
 
-  Bottlenose::Application.routes.draw do
-  resources :sandboxes
-
-    match "/500", :to => "errors#internal_server_error", :via => :all
-    get "*any", via: :all, to: "errors#not_found"
-  end
+  match "/500", :to => "errors#internal_server_error", :via => :all
+  get "*any", via: :all, to: "errors#not_found"
 end
