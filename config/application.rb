@@ -35,5 +35,16 @@ module Bottlenose
     config.exceptions_app = self.routes
 
     config.action_controller.per_form_csrf_tokens = true
+
+    config.to_prepare do
+      # Only Applications list
+      Doorkeeper::ApplicationsController.layout 'application'
+
+      # Only Authorization endpoint
+      Doorkeeper::AuthorizationsController.layout 'application'
+
+      # Only Authorized Applications
+      Doorkeeper::AuthorizedApplicationsController.layout 'application'
+    end
   end
 end

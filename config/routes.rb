@@ -1,5 +1,9 @@
 Bottlenose::Application.routes.draw do
-  use_doorkeeper
+  use_doorkeeper do
+    # it accepts :authorizations, :tokens, :token_info, :applications and :authorized_applications
+    controllers :applications => 'doorkeeper_applications'
+  end
+
   resources :sandboxes
 
   # Using devise for user auth.
