@@ -42,14 +42,14 @@ module Api
         id: course.id,
         name: course.name,
         students: course.students.map { |s| serialize_student(s) },
-        staff: course.staff.map { |s| serialize_staff(s, course) },
+        staff: course.sorted_staff.group_by(&:role).map { |k, v| [Registration::roles.invert[k], v.map { |u| serialize_user(u) }] }.to_h,
         sections: course.sections.map { |s| serialize_section(s) },
         registrations: serialize_regs(course.registrations)
       }
     end
 
     def serialize_student(student)
-      student.username
+      serialize_user(student)
     end
 
     def serialize_staff(staff_member, course)
@@ -60,7 +60,7 @@ module Api
     end
 
     def serialize_section(section)
-      section.slice(:crn, :meeting_time, :type)
+      section.slice(:crn, :meeting_time, :type, :prof_name)
     end
 
     def serialize_regs(regs)
