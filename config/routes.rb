@@ -1,10 +1,12 @@
 Bottlenose::Application.routes.draw do
   use_doorkeeper do
     # it accepts :authorizations, :tokens, :token_info, :applications and :authorized_applications
-    controllers :applications => 'doorkeeper_applications'
+    controllers applications: 'oauth/applications'
+    controllers authorizations: 'oauth/authorizations'
   end
 
   namespace :api do
+    get '/me' => 'credentials#me'
     resources :courses, only: [:index, :show]
   end
 
