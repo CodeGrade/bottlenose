@@ -195,7 +195,6 @@ ActiveRecord::Schema.define(version: 2020_05_18_205250) do
     t.string "name", null: false
     t.string "uid", null: false
     t.string "secret", null: false
-    t.boolean "trusted", default: false, null: false
     t.text "redirect_uri", null: false
     t.string "scopes", default: "", null: false
     t.boolean "confidential", default: true, null: false
