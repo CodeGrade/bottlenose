@@ -43,7 +43,8 @@ module Api
         name: course.name,
         students: course.students.map { |s| serialize_student(s) },
         staff: course.staff.map { |s| serialize_staff(s, course) },
-        sections: course.sections.map { |s| serialize_section(s) }
+        sections: course.sections.map { |s| serialize_section(s) },
+        registrations: serialize_regs(course.registrations)
       }
     end
 
@@ -60,6 +61,16 @@ module Api
 
     def serialize_section(section)
       section.slice(:crn, :meeting_time, :type)
+    end
+
+    def serialize_regs(regs)
+      mapped = regs.map { |r| serialize_reg(r) }
+      mapped.to_h
+    end
+
+    def serialize_reg(reg)
+      sections = reg.registration_sections.map { |rs| rs.section.id }
+      [reg.user.username, sections]
     end
   end
 end
