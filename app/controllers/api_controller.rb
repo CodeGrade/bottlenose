@@ -26,4 +26,17 @@ class ApiController < ApplicationController
   def current_user
     User.find(doorkeeper_token.resource_owner_id) if doorkeeper_token
   end
+
+  private
+
+  def serialize_user(user)
+    {
+      username: user.username,
+      display_name: user.display_name,
+      nuid: user.nuid,
+      email: user.email,
+      prof: user.professor_ever?,
+      image_url: user.profile
+    }
+  end
 end
