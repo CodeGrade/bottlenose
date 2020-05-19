@@ -6,6 +6,8 @@ class CreateDoorkeeperTables < ActiveRecord::Migration[5.2]
       t.string  :name,    null: false
       t.string  :uid,     null: false
       t.string  :secret,  null: false
+      t.integer :owner_id, null: false
+      t.string :owner_type, null: true
 
       # Remove `null: false` if you are planning to use grant flows
       # that doesn't require redirect URI to be used during authorization
@@ -17,6 +19,7 @@ class CreateDoorkeeperTables < ActiveRecord::Migration[5.2]
     end
 
     add_index :oauth_applications, :uid, unique: true
+    add_index :oauth_applications, [:owner_id, :owner_type]
 
     create_table :oauth_access_grants do |t|
       t.references :resource_owner,  null: false
@@ -84,5 +87,6 @@ class CreateDoorkeeperTables < ActiveRecord::Migration[5.2]
     # Uncomment below to ensure a valid reference to the resource owner's table
     add_foreign_key :oauth_access_grants, :users, column: :resource_owner_id
     add_foreign_key :oauth_access_tokens, :users, column: :resource_owner_id
+    add_foreign_key :oauth_applications, :users, column: :owner_id
   end
 end
