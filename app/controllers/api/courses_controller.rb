@@ -5,24 +5,10 @@ module Api
     before_action :require_admin_or_prof_ever, only: [:index]
 
     def show
-      # {
-      #   sections: [],
-      #   staff: [{ username, role }],
-      #   students: [user],
-      #   registrations: {
-      #     [username]: [sectionId]
-      #   },
-      # }
       render json: serialize_course(@course)
     end
 
     def index
-      # [
-      #   {
-      #     term: { ... },
-      #     courses: [ { ... } ],
-      #   }
-      # ] sorted chronologically
       render json: serialize_active_courses(current_user.active_courses)
     end
 
