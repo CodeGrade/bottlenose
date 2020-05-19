@@ -40,7 +40,20 @@ module Api
     def serialize_course(course)
       {
         id: course.id,
-        name: course.name
+        name: course.name,
+        students: course.students.map { |s| serialize_student(s) },
+        staff: course.staff.map { |s| serialize_staff(s, course) }
+      }
+    end
+
+    def serialize_student(student)
+      student.username
+    end
+
+    def serialize_staff(staff_member, course)
+      {
+        username: staff_member.username,
+        role: staff_member.registration_for(course).role
       }
     end
   end
