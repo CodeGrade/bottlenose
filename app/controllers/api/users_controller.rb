@@ -3,7 +3,7 @@ module Api
     before_action :require_admin, except: [:me]
 
     def me
-      render json: serialize_user(current_api_user)
+      render json: serialize_user(current_user)
     end
 
     def show
