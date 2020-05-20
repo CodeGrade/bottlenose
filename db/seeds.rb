@@ -71,6 +71,35 @@ when "development"
 
   fundies.save!
 
+  kyle = User.create(
+    name: 'Kyle',
+    first_name: 'Kyle',
+    last_name: 'Sferrazza',
+    nickname: 'kyle!',
+    email: 'kyle@localhost.localdomain',
+    site_admin: false,
+    username: 'kyle',
+    nuid: 999,
+    encrypted_password: Devise::Encryptor.digest(User, 'kyle')
+  ).save!
+
+  kyle_reg = Registration.create(
+    course: fundies,
+    user: kyle,
+    role: 'student',
+    show_in_lists: true
+  ).save!
+
+  RegistrationSection.create(
+    registration: kyle_reg,
+    section: lec
+  ).save!
+  RegistrationSection.create(
+    registration: kyle_reg,
+    section: lab
+  ).save!
+  kyle.save!
+
   for i in 0..39
     lab = i < 20 ? lab1 : lab2
     num = i.to_s.rjust(2, "0")

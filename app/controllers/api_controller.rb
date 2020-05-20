@@ -27,6 +27,18 @@ class ApiController < ApplicationController
     User.find(doorkeeper_token.resource_owner_id) if doorkeeper_token
   end
 
+  def require_registered_user
+    find_course
+    return if current_user_site_admin?
+
+    @registration = current_user.registration_for(@course)
+    if @registration.nil?
+      head :forbidden
+    elsif @registration.dropped_date
+      head :forbidden
+    end
+  end
+
   private
 
   def serialize_user(user)
