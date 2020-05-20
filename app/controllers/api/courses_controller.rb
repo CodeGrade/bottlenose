@@ -1,11 +1,15 @@
 module Api
   class CoursesController < ApiController
     before_action -> { find_course(params[:id]) }, only: [:show]
-    before_action :require_admin_or_prof, only: [:show]
+    before_action :require_registered_user, only: [:show]
     before_action :require_admin_or_prof_ever, only: [:index]
 
     def show
-      render json: serialize_course(@course)
+      if current_user_site_admin? || current_user_prof_for?(@course)
+        render json: serialize_course(@course)
+      else
+        render json: @course.slice(:id, :name)
+      end
     end
 
     def index
