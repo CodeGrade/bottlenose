@@ -77,7 +77,7 @@
         <% else %>
         This review is not yet available.
         <% end %>
-      <% elsif (review.score / review.out_of) * 100 >= review.review_submission.assignment.review_threshold %>
+      <% elsif (review.score.to_f / review.out_of.to_f) * 100 >= review.review_submission.assignment.review_threshold %>
       <%= link_to "Review feedback",
           course_assignment_submission_review_path(@course, @assignment, @submission, review) %>
       <% else %>

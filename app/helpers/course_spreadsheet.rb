@@ -140,7 +140,7 @@ class CourseSpreadsheet < Spreadsheet
           end
           sheet.push_row(i, curved)
           if sub[:sub].score
-            sheet.push_row(i, sub[:sub].score / 100.0)
+            sheet.push_row(i, sub[:sub].score.to_f / 100.0)
           else
             sheet.push_row(i, 0)
           end
@@ -388,7 +388,7 @@ class CourseSpreadsheet < Spreadsheet
 
           sheet.push_row(i, Cell.new(nil, sum_grade))
           if sub[:sub].score
-            sheet.push_row(i, sub[:sub].score / 100.0)
+            sheet.push_row(i, sub[:sub].score.to_f / 100.0)
           else
             sheet.push_row(i, 0)
           end
