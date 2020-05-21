@@ -62,7 +62,7 @@ ERROR
 
   def require_site_admin
     if current_user.nil?
-      redirect_to root_path(next: request.fullpath), alert: "You need to log in first."
+      redirect_to new_user_session_path, alert: "You need to log in first."
       return
     end
     unless current_user_site_admin?
