@@ -75,7 +75,8 @@ ERROR
   # logged in.
   def require_current_user
     if current_user.nil?
-      redirect_to root_path(next: request.fullpath), alert: "You need to log in first."
+      store_user_location! if storable_location?
+      redirect_to new_user_session_path, alert: "You need to log in first."
       return
     end
   end
@@ -121,7 +122,7 @@ ERROR
   end
 
   def after_sign_in_path_for(resource)
-    params[:next] || super
+    stored_location_for(resource) || super
   end
 
   def array_from_hash(h)
@@ -229,4 +230,21 @@ ERROR
   def pluralize(count, word, plural = nil)
     ActionController::Base.helpers.pluralize(count, word, plural)
   end
+
+  private
+
+  # Its important that the location is NOT stored if:
+  # - The request method is not GET (non idempotent)
+  # - The request is handled by a Devise controller such as Devise::SessionsController as that could cause an
+  #    infinite redirect loop.
+  # - The request is an Ajax request as this can lead to very unexpected behaviour.
+  def storable_location?
+    request.get? && is_navigational_format? && !devise_controller? && !request.xhr?
+  end
+
+  def store_user_location!
+    # :user is the scope we are authenticating
+    store_location_for(:user, request.fullpath)
+  end
+
 end
