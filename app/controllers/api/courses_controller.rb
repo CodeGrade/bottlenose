@@ -30,7 +30,8 @@ module Api
     def serialize_course(course)
       {
         id: course.id,
-        name: course.name
+        name: course.name,
+        role: current_user.registration_for(course).role
         # students: course.students.map { |s| serialize_student(s) },
         # staff: course.sorted_staff.group_by(&:role).map { |k, v| [Registration::roles.invert[k], v.map { |u| serialize_user(u) }] }.to_h,
         # sections: course.sections.map { |s| serialize_section(s) },
