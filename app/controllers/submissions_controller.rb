@@ -108,6 +108,7 @@ class SubmissionsController < ApplicationController
     end
 
     @submission = Submission.new(submission_params)
+    @submission.created_at = DateTime.current
     @submission.user ||= current_user
     @submission.assignment = @assignment
     @submission.team = @team
