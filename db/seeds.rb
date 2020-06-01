@@ -81,14 +81,16 @@ when "development"
     username: 'kyle',
     nuid: 999,
     encrypted_password: Devise::Encryptor.digest(User, 'kyle')
-  ).save!
+  )
+  kyle.save!
 
   kyle_reg = Registration.create(
     course: fundies,
     user: kyle,
     role: 'student',
     show_in_lists: true
-  ).save!
+  )
+  kyle_reg.save!
 
   RegistrationSection.create(
     registration: kyle_reg,
@@ -96,7 +98,7 @@ when "development"
   ).save!
   RegistrationSection.create(
     registration: kyle_reg,
-    section: lab
+    section: lab1
   ).save!
   kyle.save!
 
