@@ -14,15 +14,15 @@ when "development"
   admin.save!
 
   prof = User.create(
-    name: "Doctor Professor",
-    first_name: "Doctor",
+    name: "CS2500 Professor",
+    first_name: "CS2500",
     last_name: "Professor",
-    nickname: "Dr. P",
-    email: "prof@example.com",
+    nickname: "cs2500 prof",
+    email: "cs2500prof@localhost.localdomain",
     site_admin: false,
-    username: "prof",
+    username: "cs2500prof",
     nuid: 2345678,
-    encrypted_password: Devise::Encryptor.digest(User, "prof")
+    encrypted_password: Devise::Encryptor.digest(User, "cs2500prof")
   )
   prof.save!
 
