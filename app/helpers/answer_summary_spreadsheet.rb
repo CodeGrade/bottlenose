@@ -47,7 +47,7 @@ class AnswerSummarySpreadsheet < Spreadsheet
     @users.each_with_index do |u, i|
       sub = subs_by_user[u.id]
       next if sub.nil?
-      answers = YAML.load(File.open(sub.upload.submission_path))
+      answers = ApplicationHelper.make_yaml_safe(YAML.load(File.open(sub.upload.submission_path)))
       # Codereviews are hashes from the submission-id-being-reviewed to the answers
       # While Questions are simply arrays of answers
       if answers.is_a? Array

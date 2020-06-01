@@ -340,4 +340,26 @@ module ApplicationHelper
       true
     end
   end
+
+    
+  def self.make_yaml_safe(val)
+    if val.is_a? String
+      if val.dup.force_encoding(Encoding::CP1252).valid_encoding?
+        val = val.encode(Encoding::UTF_8, Encoding::CP1252)
+      else
+        val = val.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: '?')
+      end
+      val.scrub do |bytes|
+        "\u27e6#{bytes.unpack("H*")[0]}\u27e7" # square double brackets for invalid chars
+      end.gsub(/[^\p{print}\p{space}]/) do |match|
+        "\u27ea#{match.unpack("H*")[0]}\u27eb" # angled double brackets for unprintable chars
+      end
+    elsif val.is_a? Array
+      val.map do |v| make_yaml_safe(v) end
+    elsif val.is_a? Hash
+      val.map do |k, v| [make_yaml_safe(k), make_yaml_safe(v)] end.to_h
+    else
+      val
+    end
+  end
 end

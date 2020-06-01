@@ -824,7 +824,7 @@ HEADER
   end
   def setup_QuestionsGrader
     @questions = @assignment.questions
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = make_yaml_safe(YAML.load(File.open(@submission.upload.submission_path)))
     @answers = [[@submission.id.to_s, @answers]].to_h
 
     if @assignment.related_assignment
@@ -864,7 +864,7 @@ HEADER
   def setup_CodereviewGrader
     @questions = @assignment.questions
     @num_questions = @assignment.flattened_questions.count
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = make_yaml_safe(YAML.load(File.open(@submission.upload.submission_path)))
 
     @related_subs = @submission.review_feedbacks.map(&:submission)
     @answers_are_newer = []
@@ -988,5 +988,4 @@ HEADER
     end.map{|k, v| [k.to_i, array_from_hash(v)]}.to_h
     @grader.apply_all_exam_grades(current_user, students_with_grades, :id)
   end
-
 end

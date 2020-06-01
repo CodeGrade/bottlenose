@@ -507,7 +507,7 @@ class SubmissionsController < ApplicationController
   def show_Questions
     @gradesheet = Gradesheet.new(@assignment, [@submission])
     @questions = @assignment.questions
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = ApplicationHelper.make_yaml_safe(YAML.load(File.open(@submission.upload.submission_path)))
     if @assignment.related_assignment
       @related_sub = @assignment.related_assignment.used_sub_for(@submission.user)
       if @related_sub.nil?
@@ -538,7 +538,7 @@ class SubmissionsController < ApplicationController
     @gradesheet = Gradesheet.new(@assignment, [@submission])
     comments = @submission.grade_submission_comments(true) || {}
     comments = comments[@submission.upload.extracted_path.to_s] || []
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = ApplicationHelper.make_yaml_safe(YAML.load(File.open(@submission.upload.submission_path)))
     @related_subs = @submission.review_feedbacks.map(&:submission)
     @submission.related_files = {}
     @related_subs.each do |sub|
@@ -572,7 +572,7 @@ class SubmissionsController < ApplicationController
   end
   def details_Questions
     @questions = @assignment.questions
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = ApplicationHelper.make_yaml_safe(YAML.load(File.open(@submission.upload.submission_path)))
     @answers = [[@submission.id.to_s, @answers]].to_h
     if current_user_site_admin? || current_user_staff_for?(@course)
       @grades = @submission.inline_comments
@@ -610,10 +610,10 @@ class SubmissionsController < ApplicationController
   def details_Codereview
     @questions = @assignment.questions
     @num_questions = @assignment.flattened_questions.count
-    @answers = YAML.load(File.open(@submission.upload.submission_path))
+    @answers = ApplicationHelper.make_yaml_safe(YAML.load(File.open(@submission.upload.submission_path)))
     if current_user_site_admin? || current_user_staff_for?(@course) || @submission.grades.first.available?
       if @submission.grades.first.grading_output
-        @grades = YAML.load(File.open(@submission.grades.first.grading_output_path))
+        @grades = ApplicationHelper.make_yaml_safe(YAML.load(File.open(@submission.grades.first.grading_output_path)))
         @grades["grader"] = User.find(@grades["grader"]).name
       else
         @grades = {}

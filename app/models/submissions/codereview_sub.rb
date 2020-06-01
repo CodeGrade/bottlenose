@@ -34,7 +34,7 @@ class CodereviewSub < Submission
   before_validation :load_answers_related_files
   def load_answers_related_files(get_line_comments = false)
     return if @answers
-    @answers ||= YAML.load(File.read(self.upload.submission_path))
+    @answers ||= ApplicationHelper.make_yaml_safe(YAML.load(File.read(self.upload.submission_path)))
     @related_files = {}
     @related_subs = self.review_feedbacks.map(&:submission)
     @related_subs.each do |s|
