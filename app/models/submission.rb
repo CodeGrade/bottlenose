@@ -370,11 +370,7 @@ class Submission < ApplicationRecord
           str
         else
           begin
-            if str.dup.force_encoding(Encoding::CP1252).valid_encoding?
-              str.encode(Encoding::UTF_8, Encoding::CP1252)
-            else
-              str.encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: '?')
-            end
+            String.new(str).encode(Encoding::UTF_8, invalid: :replace, undef: :replace, replace: '?')
           rescue Exception => e
             str
           end
