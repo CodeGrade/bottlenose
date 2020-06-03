@@ -5,7 +5,7 @@ module Api
     before_action :require_admin_or_prof_ever
 
     def index
-      registrations_by_section = @course.sections.map do |sec|
+      registrations_by_section = @course.sections.includes(users: [:registrations]).map do |sec|
         [
           sec.id,
           {
