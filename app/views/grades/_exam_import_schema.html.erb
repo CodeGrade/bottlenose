@@ -2,7 +2,7 @@
 <div class="panel-heading">
   <p>A CSV file with the following columns:</p>
 <pre>
-NUID | Last name | First name | Status | Action | <%= @assignment.flattened_questions.map{|q| q["name"]}.join(" | ") %> | Curved grade
+NUID | Last name | First name | Status | Action | <%= @assignment.flattened_questions.map{|q| q["name"]}.join(" | ") %> | Curved
 </pre>
 <ul>
 <li>The uploaded file must have column headers as its first row</li>

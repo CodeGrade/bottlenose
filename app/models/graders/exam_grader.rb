@@ -74,12 +74,16 @@ class ExamGrader < Grader
     "exam_export_schema.html"
   end
   def import_data(who_grades, file)
-    csv = CSV.parse(file.read, headers: true, converters: :numeric)
+    contents = file.read
+    if contents.starts_with?("\xEF\xBB\xBF")
+      contents = contents.sub!("\xEF\xBB\xBF", '')
+    end
+    csv = CSV.parse(contents, headers: true, converters: :numeric)
     expected_headers = ["NUID", "Last name", "First name", "Status", "Action",
                         *self.assignment.flattened_questions.map{|q| q["name"]},
                         "Curved"]
     if csv.headers != expected_headers
-      return {message: nil, alert: "Invalid headers for CSV file: expected #{expected_headers} but got #{csv.headers}"}
+      return {message: nil, errors: "Invalid headers for CSV file: expected #{expected_headers} but got #{csv.headers}"}
     end
     students_with_grades = {}
     errors = []
