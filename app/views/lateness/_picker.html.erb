@@ -78,8 +78,8 @@
     </div>
 
     <div class="tab-pane" data-tab="LatePerHourConfig">
-      <%= f.fields_for :lateness_config do |lph| %>
-        <div class="form-group">
+      <div class="form-group">
+        <%= f.fields_for :lateness_config do |lph| %>
           <%  cfg = lph.object %>
           <%= lph.hidden_field :id, value: (within_course && @course&.lateness_config_id == cfg.id) ? nil : cfg.id %>
           <%= lph.hidden_field :type, value: "LatePerHourConfig" %>
@@ -97,13 +97,13 @@
             <%= lph.spinner "days_per_assignment", cfg.days_per_assignment, min: 0, max: 100 %>
             days.
           </div>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     </div>
 
     <div class="tab-pane" data-tab="FixedDaysConfig">
-      <%= f.fields_for :lateness_config do |fd| %>
-        <div class="form-group">
+      <div class="form-group">
+        <%= f.fields_for :lateness_config do |fd| %>
           <%  cfg = fd.object %>
           <%= fd.hidden_field :id, value: (within_course && @course&.lateness_config_id == cfg.id) ? nil : cfg.id %>
           <%= fd.hidden_field :type, value: "FixedDaysConfig" %>
@@ -121,8 +121,8 @@
             <%= fd.spinner "max_penalty", cfg.max_penalty || 100, min: 1, max: 100 %> late assignments,
             whichever is lower.
           </div>
-        </div>
-      <% end %>
+        <% end %>
+      </div>
     </div>
 
     <% if within_course %>
