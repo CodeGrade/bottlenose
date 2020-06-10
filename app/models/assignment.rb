@@ -53,6 +53,7 @@ class Assignment < ApplicationRecord
   validates :course_id, :presence => true
   validates :due_date,  :presence => true
   validates :available, :presence => true
+  validate :due_after_available
   validates :blame_id,  :presence => true
   validates :points_available, :numericality => true
   validates :lateness_config, :presence => true
@@ -590,6 +591,12 @@ class Assignment < ApplicationRecord
   def valid_interlocks
     if self.interlocks.select {|i| i.constraint == "check_section_toggles"}.size > 1
       self.errors.add(:base, "Can only have one section-based interlock")
+    end
+  end
+
+  def due_after_available
+    if due_date < available
+      self.errors.add(:base, "Due date #{due_date} must be after available date #{available}")
     end
   end
 end

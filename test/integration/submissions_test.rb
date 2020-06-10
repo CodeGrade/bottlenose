@@ -22,6 +22,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
 
   test "extensions should work with teams even when they are dissolved" do
     @as1 = create(:assignment, course: @cs101, teamset: @ts1, team_subs: true,
+                  available: Date.current - 1.days,
                   due_date: Date.current - 1.days + 12.hours,
                   points_available: 5)
     @as1.reload # needed for the lateness config
@@ -91,7 +92,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
   
   test "course summaries should handle all submission transitions correctly" do
-    @as1 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now - 1.days, points_available: 5)
+    @as1 = create(:assignment, course: @cs101, teamset: @ts1,
+                  available: Time.now - 2.days,
+                  due_date: Time.now - 1.days, points_available: 5)
     @as1.reload # needed for the lateness config
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 0.0, cur: 0.0, max: 95.0,
@@ -120,7 +123,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  @summary[@john.id],
                  "After grading (at 50% quality), cur = 50%, min = 2.5, max = 97.5, remaining = 95")
 
-    @as2 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now + 1.days, points_available: 5)
+    @as2 = create(:assignment, course: @cs101, teamset: @ts1,
+                  available: Time.now - 2.days,
+                  due_date: Time.now + 1.days, points_available: 5)
     @as2.reload # needed for the lateness config
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 2.5, cur: 25.0, max: 97.5,
@@ -156,7 +161,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  @summary[@john.id],
                  "After grading (at 100% quality), cur = 7.5/10, pending = 0, remaining = 90, max = min + remaining + pending")
 
-    @as3 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now + 1.days, points_available: 5,
+    @as3 = create(:assignment, course: @cs101, teamset: @ts1,
+                  available: Time.now - 2.days,
+                  due_date: Time.now + 1.days, points_available: 5,
                   extra_credit: true)
     @as3.reload # needed for the lateness config
     @summary = clean(@cs101.score_summary(@john))
@@ -196,7 +203,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Can handle extra credit in manual grading" do
-    @as4 = create(:assignment, course: @cs101, teamset: @ts1, due_date: Time.now - 1.days, points_available: 5)
+    @as4 = create(:assignment, course: @cs101, teamset: @ts1,
+                  available: Time.now - 2.days,
+                  due_date: Time.now - 1.days, points_available: 5)
     @as4.reload # needed for the lateness config
     @regGrader = @as4.graders.first
     @regGrader.update(avail_score: 50)
@@ -415,14 +424,14 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     begin
       @as11.save!
     rescue  
-      assert_equal(@as11.errors.full_messages, ["Could not parse the supplied file"], "Checking that an error if the exam file is malformed") 
+      assert_equal(["Could not parse the supplied file"], @as11.errors.full_messages, "Checking that an error if the exam file is malformed") 
     end
     @as11.assignment_file = assign_upload_obj("Exam-EC", "exam.yaml")
     @as11.save!
     @as11.reload
     @as11.assignment_file = assign_upload_obj("Exam", "exam-incorrect-format.yaml")
     @as11.save!
-    assert_equal(@as11.errors.full_messages, ["Could not parse the supplied file"], "Checking that an error if the exam file is malformed after update")
+    assert_equal(["Could not parse the supplied file"], @as11.errors.full_messages, "Checking that an error if the exam file is malformed after update")
  
   end
   
