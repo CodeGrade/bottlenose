@@ -14,11 +14,14 @@ module Api
             students: sec.students.map do |s|
               serialize_user(s)
             end,
-            staff: sec.staff.map do |s|
-              {
-                user: serialize_user(s),
-                ta: s.course_assistant?(@course)
-              }
+            graders: sec.graders.map do |g|
+              serialize_user(g)
+            end,
+            assistants: sec.assistants.map do |a|
+              serialize_user(a)
+            end,
+            professors: sec.professors.map do |p|
+              serialize_user(p)
             end
           }
         ]

@@ -135,6 +135,10 @@ class Course < ApplicationRecord
     users.where("registrations.role": Registration::roles["professor"])
   end
 
+  def assistants
+    users.where("registrations.role": Registration::roles["assistant"])
+  end
+
   def graders
     users.where("registrations.role": Registration::roles["grader"])
   end
