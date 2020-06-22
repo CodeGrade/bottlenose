@@ -87,7 +87,7 @@ when "development"
   kyle_reg = Registration.create(
     course: fundies,
     user: kyle,
-    role: 'student',
+    role: 'assistant',
     show_in_lists: true
   )
   kyle_reg.save!

@@ -13,6 +13,12 @@ module Api
             meeting_time: sec.meeting_time,
             students: sec.students.map do |s|
               serialize_user(s)
+            end,
+            staff: sec.staff.map do |s|
+              {
+                user: serialize_user(s),
+                ta: s.course_assistant?(@course)
+              }
             end
           }
         ]
