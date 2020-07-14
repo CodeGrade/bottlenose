@@ -9,6 +9,7 @@ module Api
           sec.id,
           {
             type: sec.type,
+            crn: sec.crn,
             meeting_time: sec.meeting_time,
             students: sec.students.map do |s|
               serialize_user(s)
