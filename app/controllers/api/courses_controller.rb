@@ -1,8 +1,6 @@
 module Api
   class CoursesController < ApiController
-    before_action -> { find_course(params[:id]) }, only: [:show]
-    before_action :require_registered_user, only: [:show]
-    before_action :require_admin_or_prof_ever, only: [:index]
+    before_action :require_admin_or_prof_ever
 
     def index
       render json: serialize_active_courses(current_user.active_courses)
