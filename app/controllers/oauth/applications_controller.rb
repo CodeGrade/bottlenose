@@ -1,6 +1,8 @@
 module Oauth
   class ApplicationsController < Doorkeeper::ApplicationsController
+    # Allow an admin to impersonate anyone to audit their OAuth apps
     impersonates :user
+
     def index
       @applications =
         if current_user.site_admin?
@@ -10,7 +12,6 @@ module Oauth
         end
     end
 
-    # only needed if each application must have some owner
     def create
       @application = Doorkeeper::Application.new(application_params)
       @application.owner = current_user if Doorkeeper.configuration.confirm_application_owner?
