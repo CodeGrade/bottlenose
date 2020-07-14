@@ -7,7 +7,6 @@ Bottlenose::Application.routes.draw do
 
   namespace :api do
     get '/me' => 'users#me'
-    resources :users, only: [:show]
     resources :courses, only: [:index] do
       resources :registrations, only: [:index]
     end
