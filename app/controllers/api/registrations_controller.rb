@@ -1,8 +1,7 @@
 module Api
   class RegistrationsController < ApiController
     before_action :find_course
-    before_action :require_registered_user
-    before_action :require_admin_or_prof_ever
+    before_action :require_admin_or_prof
 
     def index
       registrations_by_section = @course.sections.includes(users: [:registrations]).map do |sec|
