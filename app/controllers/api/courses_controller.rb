@@ -1,7 +1,5 @@
 module Api
   class CoursesController < ApiController
-    before_action :require_admin_or_prof_ever
-
     def index
       render json: serialize_active_courses(current_user.active_courses)
     end
