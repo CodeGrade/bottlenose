@@ -39,6 +39,7 @@ module Api
       end
 
       @exam.name = body[:name]
+      @exam.exam_disposal = 'delete'
 
       Tempfile.open('exam.yaml', Rails.root.join('tmp')) do |f|
         f.write(summary.to_yaml)
@@ -57,8 +58,15 @@ module Api
           }, status: :bad_request
         end
       end
+
+      students_with_grades = grades.map do |k, v|
+        [k, v.flatten]
+      end.to_h
+      res = @exam.graders.first.apply_all_exam_grades(current_user, students_with_grades, :username)
+
       render json: {
-        id: @exam.id
+        id: @exam.id,
+        stats: res
       }
     end
   end

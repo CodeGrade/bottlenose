@@ -5,6 +5,8 @@ class Exam < Assignment
   before_update :update_submissions_if_needed
   before_update :update_exam_submission_times
 
+  attr_accessor :exam_disposal
+
   def assign_attributes(attrs)
     @exam_disposal = attrs.delete(:exam_disposal)
     super(attrs)
