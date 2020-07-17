@@ -9,7 +9,11 @@ Bottlenose::Application.routes.draw do
     get '/me' => 'users#me'
     resources :courses, only: [:index] do
       resources :registrations, only: [:index]
-      resources :assignments, only: [:create]
+      resources :assignments, only: [] do
+        collection do
+          post :create_or_update
+        end
+      end
     end
   end
 
