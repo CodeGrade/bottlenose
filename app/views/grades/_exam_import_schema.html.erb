@@ -5,19 +5,21 @@
 NUID | Last name | First name | Status | Action | <%= @assignment.flattened_questions.map{|q| q["name"]}.join(" | ") %> | Curved
 </pre>
 <ul>
-<li>The uploaded file must have column headers as its first row</li>
-<li><b class="text-danger">NOTE: Any students who are missing NUIDs cannot have their grades uploaded</b></li>
-<li>The Last name, First name, and Status columns are ignored upon import</li>
-<li>The Action column may be one of <code>Ignore</code>, <code>Update</code> or <code>Delete</code>
+<li>The uploaded file must have column headers as its first row<./li>
+<li>Each column header must be quoted, separated by commas, and there
+  must not be spaces between the column headers.</li>
+<li><b class="text-danger">NOTE: Any students who are missing NUIDs cannot have their grades uploaded.</b></li>
+<li>The Last name, First name, and Status columns are ignored upon import.</li>
+<li>The Action column may be one of <code>Ignore</code>, <code>Update</code> or <code>Delete</code>:
   <ul>
-  <li><code>Ignore</code> will not update the scores for this student</li>
-  <li><code>Update</code> will update the scores for this student</li>
-  <li><code>Delete</code> will delete the grades for this student</li>
+  <li><code>Ignore</code> will not update the scores for this student.</li>
+  <li><code>Update</code> will update the scores for this student.</li>
+  <li><code>Delete</code> will delete the grades for this student.</li>
   </ul>
 </li>
 <li>Columns 6 through <%= @assignment.flattened_questions.count + 5 %>
-  are the grades of individual question parts</li>
-<li>The Curved grade column may be left blank, to clear any curved grade for this student</li>
+  are the grades of individual question parts.</li>
+<li>The Curved grade column may be left blank, to clear any curved grade for this student.</li>
 </ul>
 </div>
 </div>

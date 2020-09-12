@@ -5,12 +5,14 @@
 NUID | Last name | First name | Status | Action | <%= @assignment.flattened_questions.map{|q| q["name"]}.join(" | ") %> | Curved
 </pre>
 <ul>
-<li>The downloaded file will have column headers as its first row</li>
-<li><b class="text-danger">NOTE: Any students who are missing NUIDs cannot have their grades uploaded</b></li>
-<li>The Status column may either be blank, <code>Missing</code>, or <code>Dropped</code></li>
+<li>The downloaded file will have column headers as its first row.</li>
+<li>Each column header must be quoted, separated by commas, and there
+  must not be spaces between the column headers.</li>
+<li><b class="text-danger">NOTE: Any students who are missing NUIDs cannot have their grades uploaded.</b></li>
+<li>The Status column may either be blank, <code>Missing</code>, or <code>Dropped</code>.</li>
 <li>Columns 6 through <%= @assignment.flattened_questions.count + 5 %>
-  are the grades of individual question parts</li>
-<li>The Curved grade column may be blank</li>
+  are the grades of individual question parts.</li>
+<li>The Curved grade column may be blank.</li>
 </ul>
 </div>
 </div>
