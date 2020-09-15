@@ -10,6 +10,13 @@ class TeamsetSpreadsheet < Spreadsheet
     labels, weight, users = create_name_columns(course, sheet)
     sheet.freeze_panes(sheet.header_rows.length + 1, 0)
     @sheets.push(sheet)
+    @sections_by_user = RegistrationSection.where(registration: course.registrations).group_by(&:registration_id)
+    @section_crns = course.sections.map{|sec| [sec.id, sec.crn]}.to_h
+    @section_types = course.sections.map{|sec| [sec.id, sec.type]}.to_h
+    @relevant_section_types = @section_types.values.to_set
+    @users = course.users
+               .select("users.*", "registrations.dropped_date", "registrations.id as reg_id")
+               .map{|s| [s.id, s]}.to_h
 
     @teams = course.teams.includes(:users).order(end_date: :desc, id: :asc).group_by(&:teamset_id)
     course.assignments_sorted.each do |a|
@@ -19,13 +26,24 @@ class TeamsetSpreadsheet < Spreadsheet
       sheet.columns.push(Col.new("Active"))
       sheet.columns.push(Col.new("Start date"))
       sheet.columns.push(Col.new("End date"))
+      @relevant_section_types.each do |t|
+        sheet.columns.push(Col.new("#{t.humanize} section(s)", "String"))
+      end
       sheet.columns.push(Col.new("Users (name <email>)", "String"))
       sheet.freeze_panes(1, 0)
       (@teams[a.teamset_id] || []).each do |team|
+        sections = team.users.map do |user|
+          (@sections_by_user[@users[user.id]&.reg_id] || []).map do |sec|
+            [@section_crns[sec.section_id], @section_types[sec.section_id]]
+          end
+        end.flatten(1).uniq.compact.group_by(&:second)
         row = [team.id,
                (team.active? ? "Yes" : "No"),
                team.start_date&.iso8601,
                team.end_date&.iso8601 || "-----",
+               *@relevant_section_types.map do |t|
+                 sections[t]&.map(&:first)&.join(", ") || ""
+               end,
                *team.users.map do |u|
                  "#{u.display_name} <#{u.email}>"
                end]
