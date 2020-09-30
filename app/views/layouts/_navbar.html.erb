@@ -53,7 +53,7 @@
           </li>
         <% end %>
 
-        <% if true_user != current_user %>
+        <% if defined?(true_user) && true_user != current_user %>
           <li><%= link_to "Stop Impersonating", stop_impersonating_users_path, method: :post %></li>
         <% end %>
         <% if current_user %>
