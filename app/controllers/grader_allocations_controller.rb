@@ -191,7 +191,13 @@ class GraderAllocationsController < ApplicationController
       .used_submissions
       .joins("INNER JOIN registrations ON used_subs.user_id = registrations.user_id")
       .where("registrations.role": Registration::roles["student"])
-    @invert_used_subs = UsedSub.where(assignment: @assignment).includes(:user).group_by(&:submission_id)
+    any_missing_grades = @used_subs.any? { |sub| @grades[sub.id].nil? }
+    if any_missing_grades
+      redirect_back fallback_location: course_assignment_path(@course, @assignment),
+                    alert: "Not all submissions have associated grades; create missing grades first"
+      return
+    end
+
     @who_grades = {}
     # @who_grades =
     #   GraderAllocation
