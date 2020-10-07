@@ -260,7 +260,7 @@ class CourseSpreadsheet < Spreadsheet
 
     @users.each do |u|
       reg = @regs[u.id]
-      lecture = reg[Section::types["lecture"]]
+      lecture = reg[Section::types["lecture"]] || reg[Section::types["online"]]
       row = [ sanitize(u.last_name || u.name || "<anonymous>"),
               sanitize(u.first_name || ""),
               sanitize(lecture&.dig(:section)&.instructor&.last_name || "<no instructor>"),
