@@ -111,7 +111,7 @@ $(function (){
       }
     });
     var footerHeight = $(".footer").outerHeight() + 4; // adds a bit of padding
-    var divSurround = $(".CodeMirror").first().closest(".tab-pane");
+    var divSurround = $(".CodeMirror, .pdfDisplay").first().closest(".tab-pane");
     var parentBulk = $(divSurround).outerHeight() - $(divSurround).height();
     var toggleComments = $("#toggle-comments");
     var toggleCommentsHeight = 0;

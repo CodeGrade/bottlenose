@@ -14,7 +14,7 @@ $(function() {
       ////////////////////////////////////////
       //////////////////// Rendering
       ////////////////////////////////////////
-      pdfjsLib.getDocument(encodePath($div.data("rendered"))).then(createPages);
+      pdfjsLib.getDocument(encodePath($div.data("rendered"))).promise.then(createPages);
       function createPages(pdf) {
         // Page numbers are 1-based
         $pages.data("pdf", pdf);
@@ -118,7 +118,7 @@ $(function() {
         // Creating the page view with default parameters.
         var width;
         var fontSize = Number.parseFloat($pages.css('font-size'));
-        var viewport = pdfPage.getViewport(1);
+        var viewport = pdfPage.getViewport({scale: 1});
         var containerHScale, containerVScale;
         if ($pages.is(":visible")) {
           containerHScale = ($pages.width() - 3 * fontSize) / viewport.width;
