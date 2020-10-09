@@ -1,6 +1,7 @@
 $(function() {
   pdfjsLib.GlobalWorkerOptions.workerSrc = "<%= asset_path('pdfjs-dist/build/pdf.worker.min.js') %>";
   var CSS_UNITS = 96/72;
+  var eventBus = new pdfjsViewer.EventBus();
   $(document.body).prepend($("#selectionWrapperWrapper").detach());
   function encodePath(str) {
     return str.split('/').map(encodeURIComponent).join('/');
@@ -156,6 +157,7 @@ $(function() {
           scale: width,
           defaultViewport: viewport,
           renderer: 'canvas',
+          eventBus: eventBus,
           // // We can enable text/annotations layers, if needed
           // textLayerFactory: new pdfjsViewer.DefaultTextLayerFactory(),
           // annotationLayerFactory: new pdfjsViewer.DefaultAnnotationLayerFactory(),
