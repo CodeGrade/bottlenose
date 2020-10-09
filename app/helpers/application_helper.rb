@@ -228,6 +228,8 @@ module ApplicationHelper
       "pyret"
     when ".rkt", ".ss"
       "scheme"
+    when ".lisp"
+      "text/x-common-lisp"
     when ".sml", ".ml", ".mli"
       "mllike"
     when ".hs"
@@ -304,6 +306,7 @@ module ApplicationHelper
          "text/javascript",
          "pyret",
          "scheme",
+         "text/x-common-lisp",
          "mllike",
          "text/x-haskell",
          "text/x-literate-haskell",
