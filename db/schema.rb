@@ -285,8 +285,8 @@ ActiveRecord::Schema.define(version: 2020_10_07_115016) do
     t.integer "user_id", null: false
     t.integer "team_id"
     t.integer "assignment_id", null: false
-    t.datetime "created_at", default: "2020-10-07 11:53:25", null: false
-    t.datetime "updated_at", default: "2020-10-07 11:53:25", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "submissions", id: :serial, force: :cascade do |t|
