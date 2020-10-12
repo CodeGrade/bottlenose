@@ -62,6 +62,8 @@ class SubmissionsController < ApplicationController
 
     if current_user.id == true_user&.id
       @submission_view = SubmissionView.find_or_initialize_by(user: current_user, assignment: @assignment, team: @team)
+      @submission_view.updated_at = DateTime.now
+      @submission_view.created_at = @submission_view.updated_at unless @submission_view.created_at
       @submission_view_new = @submission_view.new_record?
       @submission_view.save
     end
