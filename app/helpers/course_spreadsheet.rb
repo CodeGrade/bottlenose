@@ -346,12 +346,16 @@ class CourseSpreadsheet < Spreadsheet
           #sheet.push_row(i, sub[:staff_scores][:raw_score])
           sheet.push_row(i, Cell.new(nil, sum_grade))
 
-          sum_grade = Formula.new(sub[:sub].score, "/",
-                                  CellRef.new(nil,
-                                              Spreadsheet.col_name(weight.count - 4), true,
-                                              i + sheet.header_rows.length + 2, false,
-                                              nil),
-                                  CellRef.new(nil, Spreadsheet.col_name(weight.count - 4), true, 3, true, nil))
+          maxpointsCell = CellRef.new(nil, Spreadsheet.col_name(weight.count - 4), true, 3, true, nil)
+          sum_grade = Formula.new(nil, "IF",
+                                  Formula.new(nil, "=", maxpointsCell, 0),
+                                  0,
+                                  Formula.new(sub[:sub].score, "/",
+                                              CellRef.new(nil,
+                                                          Spreadsheet.col_name(weight.count - 4), true,
+                                                          i + sheet.header_rows.length + 2, false,
+                                                          nil),
+                                              maxpointsCell))
 
           if sub[:sub].ignore_late_penalty
             sheet.push_row(i, "<ignore>")
@@ -359,10 +363,6 @@ class CourseSpreadsheet < Spreadsheet
             penalty = plagiarism_status.pluck(:weight).sum
             sheet.push_row(i, "Plagiarized (-#{penalty} pts)")
             # (SumGrade - PlagiarismPenalty) / MaxPoints
-            maxpointsCell = CellRef.new(nil,
-                                        Spreadsheet.col_name(weight.count - 4), true,
-                                        3, true,
-                                        nil)
             sum_grade = Formula.new(nil, "MAX", 0,
                                     Formula.new(nil, "IF",
                                                 Formula.new(nil, "=", maxpointsCell, 0),
