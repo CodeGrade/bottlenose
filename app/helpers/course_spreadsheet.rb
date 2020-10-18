@@ -359,18 +359,22 @@ class CourseSpreadsheet < Spreadsheet
             penalty = plagiarism_status.pluck(:weight).sum
             sheet.push_row(i, "Plagiarized (-#{penalty} pts)")
             # (SumGrade - PlagiarismPenalty) / MaxPoints
+            maxpointsCell = CellRef.new(nil,
+                                        Spreadsheet.col_name(weight.count - 4), true,
+                                        3, true,
+                                        nil)
             sum_grade = Formula.new(nil, "MAX", 0,
-                                    Formula.new(sub[:sub].score, "/",
-                                                Formula.new(nil, "-",
-                                                            CellRef.new(nil,
-                                                                        Spreadsheet.col_name(weight.count - 4), true,
-                                                                        i + sheet.header_rows.length + 2, false,
-                                                                        nil),
-                                                            penalty),
-                                                CellRef.new(nil,
-                                                            Spreadsheet.col_name(weight.count - 4), true,
-                                                            3, true,
-                                                            nil)))
+                                    Formula.new(nil, "IF",
+                                                Formula.new(nil, "=", maxpointsCell, 0),
+                                                0,
+                                                Formula.new(sub[:sub].score, "/",
+                                                            Formula.new(nil, "-",
+                                                                        CellRef.new(nil,
+                                                                                    Spreadsheet.col_name(weight.count - 4), true,
+                                                                                    i + sheet.header_rows.length + 2, false,
+                                                                                    nil),
+                                                                        penalty),
+                                                            maxpointsCell)))
           else
             lc = assn.lateness_config
             penalty = lc.late_penalty(assn, sub[:sub]) / 100.0
