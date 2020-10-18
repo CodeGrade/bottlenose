@@ -135,6 +135,10 @@ class TeamsetsController < ApplicationController
     csv = CSV.parse(params[:bulk_teams])
     seen = [].to_set
     csv.each do |row|
+      if row.any(&:nil?)
+        @failure.push "Found nil value on line #{ri + 1}: do you have a trailing comma?"
+        next
+      end
       row.map(&:strip!)
       row_set = row.to_set
       overlap = seen & row_set
