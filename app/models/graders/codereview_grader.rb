@@ -56,7 +56,7 @@ class CodereviewGrader < Grader
       @responses ||= YAML.load(File.read(g.grading_output_path))
       questions = assignment.flattened_questions
       score = @responses[sub_id.to_s].zip(questions).reduce(0) do |sum, (a, q)|
-        sum + (q["weight"].to_f.clamp(0, 1) * a["score"].to_f)
+        sum + (q["weight"].to_f * a["score"].to_f.clamp(0, 1))
       end
       total = questions.reduce(0){|sum, q| sum + q["weight"].to_f}
       return score, total
