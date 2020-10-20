@@ -327,12 +327,16 @@ class Submission < ApplicationRecord
       log += "Plagiarism penalty => #{penalty}"
       score -= penalty
     end
-    self.score = (100.0 * score.to_f) / max_score.to_f
-    if self.ignore_late_penalty
-      log += "Ignoring late penalty, "
+    if (max_score.to_f == 0)
+      self.score = 0
     else
-      max_pct = 100.0 * (max_score_with_ec.to_f / max_score.to_f)
-      self.score = assignment.lateness_config.penalize(self.score, assignment, self, 100.0, max_pct)
+      self.score = (100.0 * score.to_f) / max_score.to_f
+      if self.ignore_late_penalty
+        log += "Ignoring late penalty, "
+      else
+        max_pct = 100.0 * (max_score_with_ec.to_f / max_score.to_f)
+        self.score = assignment.lateness_config.penalize(self.score, assignment, self, 100.0, max_pct)
+      end
     end
     log += "Final score: #{self.score}%"
 
