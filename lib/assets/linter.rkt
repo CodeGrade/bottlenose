@@ -7,7 +7,8 @@
          racket/list racket/set
          racket/string
          racket/contract
-         racket/format)
+         racket/format
+         syntax/modread)
 (require "render-racket.rkt" "retab.rkt")
 
 
@@ -57,23 +58,22 @@
   (send t-orig insert str)
   t-orig)
 
-(define text-balanced? 
-  (lambda (text [start 0] [in-end #f])
-    (parameterize [(read-accept-reader #t)
-                   (read-accept-lang #t)]
-      (let* ([end (or in-end (send text last-position))]
-             [port (open-input-text-editor text start end)])
-        (with-handlers ([exn:fail:read:eof? (λ (x) x)]
-                        [exn:fail:read? (λ (x) x)]) ;; Change #t --> x
-          (let ([first (read port)])
-            (cond
-              [(eof-object? first) #t] ;;; Change #f --> x
-              [else
-               (let loop ()
-                 (let ([s (read port)])
-                   (cond
-                     [(eof-object? s) #t]
-                     [else (loop)])))])))))))
+(define (text-balanced? text [start 0] [in-end #f])
+  (parameterize [(read-accept-reader #t)
+                 (read-accept-lang #t)]
+    (let* ([end (or in-end (send text last-position))]
+           [port (open-input-text-editor text start end)])
+      (with-handlers ([exn:fail:read:eof? (λ (x) x)]
+                      [exn:fail:read? (λ (x) x)]) ;; Change #t --> x
+        (let ([first (read port)])
+          (cond
+            [(eof-object? first) #t] ;;; Change #f --> x
+            [else
+             (let loop ()
+               (let ([s (read port)])
+                 (cond
+                   [(eof-object? s) #t]
+                   [else (loop)])))]))))))
 
 (define (parse-errors source)
   (parse-errors-text (load-file source)))
@@ -84,6 +84,8 @@
         (list (exn-message err)
               (+ 1 (send t position-line
                          (srcloc-position (first (exn:fail:read-srclocs err)))))))))
+
+
 
 #;(module+ test
     (check-equal? (correct-parse? "(+ 1 2)") #t)
@@ -140,8 +142,8 @@
              (equal? s-line l-line) ; line is unchanged in lambda indentation, or
              (regexp-match #px"^\\s*$" s-line)) ; ignore whitespace-only lines
          acc
-         (let ((indents (map (λ(l) (- (string-length l)
-                                      (string-length (string-trim l #:right? #f))))
+         (let ((indents (map (λ (l) (- (string-length l)
+                                       (string-length (string-trim l #:right? #f))))
                              (list s-line t-line l-line))))
            (cons (list i s-line (first indents) (list->set (rest indents))) acc))))))
 #;(module+ test

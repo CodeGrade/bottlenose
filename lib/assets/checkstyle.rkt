@@ -1,8 +1,7 @@
 #lang racket/base
 
-(require "linter.rkt")
+(require "linter.rkt" "check-spacing.rkt")
 (require racket/string
-         racket/match
          racket/list racket/set
          racket/cmdline
          racket/path)
@@ -34,8 +33,7 @@
           (format "  severity: Error")
           (format "  weight: ~a" penalty)
           (format "  suppressed: false")
-          (format "  ...")
-          )
+          (format "  ..."))
          messages)))
 
 (define (process filename width)
@@ -59,8 +57,7 @@
                    #:message (format
                               (string-append "This line must be no longer than ~a characters.  "
                                              "Please reformat the code.\n")
-                              width)))
-            )
+                              width))))
           (for [(line-info (bad-indentation-text t))]
             (define-values (line before orig-indent correct-indents) (apply values line-info))
             (define correct-indent
@@ -83,8 +80,14 @@
                                            "it should have ~a spaces of indentation."
                                            "~a  Please reformat the code.")
                             correct-indent
-                            tab-warning)
-                 ))))))
+                            tab-warning)))
+          (for [(line-info (missing-spaces filename))]
+            (define-values (message line) (apply values line-info))
+            (tap #:problem "Whitespace"
+                 #:filename filename
+                 #:line line
+                 #:penalty 1
+                 #:message message))))))
 (define (print-output)
   (begin
     (displayln "TAP version 13")
@@ -92,35 +95,34 @@
     (displayln (format "# Time: ~a" (exact->inexact (/ (current-process-milliseconds) 1000))))
     (displayln (format "# TOTAL POINTS: ~a" (total-points)))
     (displayln (format "# Tests run: ~a, Failures: ~a" (length messages) (length messages)))
-    (for-each displayln (flatten (reverse messages)))
-    ))
+    (for-each displayln (flatten (reverse messages)))))
   
 (define (process-files start width)
   (begin
     (set! messages '())
     (cond
-     [(and (file-exists? start)
-           (or (bytes=? (path-get-extension start) #".rkt")
-               (bytes=? (path-get-extension start) #".ss")))
-      (process start width)]
-     [(directory-exists? start)
-      (define found #f)
-      (for ([p (in-directory start)])
-        (when (and (file-exists? p)
-                   (or (equal? (path-get-extension p) #".rkt")
-                       (equal? (path-get-extension p) #".ss")))
-          (set! found #t)
-          (process (format "~a" p) width)))
-      (if found (void)
-          (tap #:problem "NoFiles"
-               #:filename start
-               #:line 0
-               #:penalty (total-points)
-               #:message "No files found in this submission"))]
-     [else
-      (void)])
+      [(and (file-exists? start)
+            (or (bytes=? (path-get-extension start) #".rkt")
+                (bytes=? (path-get-extension start) #".ss")))
+       (process start width)]
+      [(directory-exists? start)
+       (define found #f)
+       (for ([p (in-directory start)])
+         (when (and (file-exists? p)
+                    (or (equal? (path-get-extension p) #".rkt")
+                        (equal? (path-get-extension p) #".ss")))
+           (set! found #t)
+           (process (format "~a" p) width)))
+       (if found (void)
+           (tap #:problem "NoFiles"
+                #:filename start
+                #:line 0
+                #:penalty (total-points)
+                #:message "No files found in this submission"))]
+      [else
+       (void)])
     (print-output)))
-  
+
 (module+ main
 
   (define file-to-compile
@@ -143,6 +145,5 @@
 
   (if (output-filename)
       (with-output-to-file (output-filename) #:exists 'replace
-        (λ() (process-files file-to-compile (line-width))))
-      (process-files file-to-compile (line-width)))
-  )
+        (λ () (process-files file-to-compile (line-width))))
+      (process-files file-to-compile (line-width))))
