@@ -815,7 +815,7 @@ class Screenshots
       assignment_text = file_div.find(:xpath, ".//textarea[@id='assignment_assignment']")
       assignment_text.set("<a href=\"https://course.ccs.neu.edu/cs2500/ps1.html\">Assignment 1</a>: Please submit <b>ONE</b> .rkt file with all your work for this assignment")
       title = page.find(:xpath, ".//strong[text()='Create New Assignment']")
-      yield options: bbox(name, title, assignment_text)
+      yield options: inflate_box(bbox(name, title, assignment_text), 5, 5, 5, 5)
 
       file_upload = file_div.find(:xpath, ".//input[@id='assignment_assignment_file']", :visible => false)
       file_upload.set(File.expand_path('../../../test/fixtures/files/Assignment 1/sample.rkt',  __FILE__))
@@ -1178,6 +1178,7 @@ class Screenshots
       accept_alert do
         page.find("a[data-confirm]").click
       end
+      page.find(".alert.alert-success")
       yield # fully graded and published
 
       # puts Grade.count
@@ -1201,6 +1202,7 @@ class Screenshots
       accept_alert do
         create_missing.click
       end
+      page.find(".alert.alert-success")
       yield
       visit course_assignment_path(@course, @assignments[3])
       yield
@@ -1213,13 +1215,15 @@ class Screenshots
       histograms.click
 
       grades = page.find("div#grade-histograms")
-      left = grades.find(".left.carousel-control")
-      right = grades.find(".right.carousel-control")
-      highlight_area("left", bbox(left.find(".glyphicon")))
-      highlight_area("right", bbox(right.find(".glyphicon")))
+      left = grades.find(".left.carousel-control").find(".glyphicon")
+      right = grades.find(".right.carousel-control").find(".glyphicon")
+      highlight_area("left", bbox(left))
+      highlight_area("right", bbox(right))
       yield options: bbox(grades, left, right)
       remove_highlight("left")
       remove_highlight("right")
+      right.click
+      yield options: bbox(grades, left, right)
       right.click
       yield options: bbox(grades, left, right)
       right.click
@@ -1297,6 +1301,7 @@ puts "SEED=#{RANDOM_SEED}"
 FactoryBot.find_definitions
 Utilities.redefine_factories
 Capybara.default_driver = :selenium_chrome_headless #:selenium_chrome
+Capybara.disable_animation = true
 DatabaseCleaner.strategy = :deletion
 DatabaseCleaner.start
 
