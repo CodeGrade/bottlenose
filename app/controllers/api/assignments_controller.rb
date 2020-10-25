@@ -5,7 +5,7 @@ module Api
 
     def create_or_update
       body = params.permit!.to_h
-      summary = body[:exam_summary]
+      summary = body[:exam_summary].to_hash
       grades = body[:exam_grades]
       finish_datetime = DateTime.parse(params[:finish_time])
 
