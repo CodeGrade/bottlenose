@@ -165,7 +165,10 @@
 (define (describe d)
   (cond
     [(member d '(cond if define define-struct if big-bang check-expect)) "keyword"]
-    [(symbol? d) "identifier"]
+    [(symbol? d)
+     (if (member d '(.. ... .... ..... ......))
+         "placeholder"
+         "identifier")]
     [else "expression"]))
 
 (define (render-msg vals)
