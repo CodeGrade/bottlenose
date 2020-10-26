@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_10_07_115016) do
+ActiveRecord::Schema.define(version: 2020_10_26_221030) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -143,6 +143,7 @@ ActiveRecord::Schema.define(version: 2020_10_07_115016) do
     t.index ["severity"], name: "index_inline_comments_on_severity"
     t.index ["submission_id", "grade_id", "line"], name: "index_inline_comments_on_submission_id_and_grade_id_and_line"
     t.index ["submission_id"], name: "index_inline_comments_on_submission_id"
+    t.index ["user_id"], name: "index_inline_comments_on_user_id"
   end
 
   create_table "interlocks", force: :cascade do |t|
