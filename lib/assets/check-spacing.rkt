@@ -38,7 +38,7 @@
   (let loop ()
     (define-values (line col pos) (port-next-location port))
     (hash-set! ht pos (cons line col))
-    (define c (read-char port))
+    (define c (read-char-or-special port))
     (unless (eof-object? c)
       (loop)))
   ht)
@@ -135,7 +135,7 @@
      (λ ()
        (let-values ([(dir filename _) (split-path file)])
          (call-with-naive-reader
-          dir file wxme-port->text-port
+          dir file wxme-port->port
           pos->line/col)))))
   (define comment-toks
     (hash-ref!
@@ -143,7 +143,7 @@
      (λ ()
        (let-values ([(dir filename _) (split-path file)])
          (call-with-naive-reader
-          dir file wxme-port->text-port
+          dir file wxme-port->port
           pos->comment-dict)))))
   (values syntax line-info comment-toks))
 (define (read-stx-text text)
@@ -187,16 +187,17 @@
                               (+ (syntax-position stx) (syntax-span stx))))
        (define linecol-at-start (and start-pos (hash-ref line-info start-pos)))
        (define linecol-at-final (and final-pos (hash-ref line-info (sub1 final-pos))))
-       (if (and (not (preceeded-by-comment? (sub1 final-pos)))
-                linecol-at-start linecol-at-final
-                (not (and (= (car linecol-at-start) (car linecol-at-final))
-                          (= (cdr linecol-at-start) (sub1 (cdr linecol-at-final))))))
-           (list (list (fix-lines (syntax-source stx) (car linecol-at-final))
-                       (cdr linecol-at-final)
-                       "should not"
-                       "before"
-                       "parenthesis"))
-           '())]
+       (cond
+         [(and (not (preceeded-by-comment? (sub1 final-pos)))
+               linecol-at-start linecol-at-final
+               (not (and (= (car linecol-at-start) (car linecol-at-final))
+                         (= (cdr linecol-at-start) (sub1 (cdr linecol-at-final))))))
+          (list (list (fix-lines (syntax-source stx) (car linecol-at-final))
+                      (cdr linecol-at-final)
+                      "should not"
+                      "before"
+                      "parenthesis"))]
+         [else '()])]
       [(cons? lst)
        (define last-stx (last lst))
        (define last-pos (if (and (syntax-position last-stx) (syntax-span last-stx))
