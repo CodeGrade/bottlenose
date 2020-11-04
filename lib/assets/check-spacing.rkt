@@ -10,7 +10,8 @@
          racket/contract
          racket/format
          syntax/modread
-         syntax-color/module-lexer)
+         syntax-color/module-lexer
+         (only-in mrlib/image-core image?))
 (provide
  (contract-out
   ;; Return the line numbers of lines that are too long
@@ -252,6 +253,7 @@
      (if (member d '(.. ... .... ..... ......))
          "placeholder"
          "identifier")]
+    [(image? d) "image"]
     [else "expression"]))
 
 (define (describe-paren paren-shape side default)
