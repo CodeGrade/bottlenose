@@ -48,7 +48,7 @@
     (define-values (text tok delim start-pos end-pos _ new-mode) (module-lexer port 0 mode))
     (cond
       [(symbol=? tok 'eof) (list (list tok start-pos end-pos))]
-      [else (cons (list tok start-pos end-pos) (loop new-mode))])))
+      [else (cons (list (or delim tok) start-pos end-pos) (loop new-mode))])))
 
 (define-struct comment-tok [start end sexp?] #:transparent)
 (define-struct xref [prev-is-comment? prev-start prev-comment-start] #:transparent)
@@ -177,7 +177,9 @@
               (syntax-column stx)
               (if (symbol=? space 'yes) "should" "should not")
               "before"
-              (describe (syntax->datum stx))))]
+              (if (or (syntax-property stx 'paren-shape) lst)
+                  (describe-paren (syntax-property stx 'paren-shape) "left" "parenthesis")
+                  (describe (syntax->datum stx)))))]
       [else '()]))
   (define spacing-end-errors
     (cond
@@ -196,7 +198,7 @@
                       (cdr linecol-at-final)
                       "should not"
                       "before"
-                      "parenthesis"))]
+                      (describe-paren (syntax-property stx 'paren-shape) "right" "parenthesis")))]
          [else '()])]
       [(cons? lst)
        (define last-stx (last lst))
@@ -218,7 +220,7 @@
                       (cdr linecol-at-paren)
                       "should not"
                       "before"
-                      "parenthesis"))]
+                      (describe-paren (syntax-property stx 'paren-shape) "right" "parenthesis")))]
          [else '()])]
       [else '()]))
   (define stx-errors (append spacing-start-errors spacing-end-errors))
@@ -251,6 +253,12 @@
          "placeholder"
          "identifier")]
     [else "expression"]))
+
+(define (describe-paren paren-shape side default)
+  (cond [(equal? paren-shape #\() (string-append side "-parenthesis")]
+        [(equal? paren-shape #\[) (string-append side "-bracket")]
+        [(equal? paren-shape #\{) (string-append side "-brace")]
+        [else (string-append side "-" default)]))
 
 (define (render-msg vals)
   (let-values (((line col want-space where type) (apply values vals)))
