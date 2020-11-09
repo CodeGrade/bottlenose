@@ -120,6 +120,37 @@
             (port-count-lines! port)
             (thunk port)))))))
 
+(define (read-port-from-editor wxme-port)
+  (let ([t (new text%)])
+    (send t insert-port wxme-port 'standard)
+    (expand-collapsed t #f (send t find-first-snip))
+    (open-input-text-editor t 0 'end values (object-name wxme-port) #t)))
+
+(define (expand-collapsed text prev snip)
+  (define snip-name (and snip (send (send snip get-snipclass) get-classname)))
+  (define next (and snip (send snip next)))
+  (cond
+    [(not snip) (void)]
+    [(equal? snip-name (format "~s" '((lib "collapsed-snipclass.ss" "framework")
+                                      (lib "collapsed-snipclass-wxme.ss" "framework"))))
+     (expand-from text snip)
+     (if (not prev)
+         (expand-collapsed text prev (send text find-first-snip))
+         (expand-collapsed text prev (send prev next)))]
+    [else (expand-collapsed text snip next)]))
+
+;; copied from gui-lib/framework/private/racket.rkt:expand-from
+(define (expand-from text snip)
+  (let ([snips (send snip get-saved-snips)])
+    (send text begin-edit-sequence)
+    (let ([pos (send text get-snip-position snip)])
+      (send text delete pos (+ pos 1))
+      (let loop ([snips (reverse snips)])
+        (cond
+          [(null? snips) (void)]
+          [else (send text insert (send (car snips) copy) pos pos)
+                (loop (cdr snips))])))
+    (send text end-edit-sequence)))
 
 (define (read-stx file)
   (define syntax
@@ -128,7 +159,7 @@
      (λ ()
        (let-values ([(dir filename _) (split-path file)])
          (call-with-naive-reader
-          dir file wxme-port->port
+          dir file read-port-from-editor
           (λ (port) (read-syntax file port)))))))
   (define line-info
     (hash-ref!
@@ -136,7 +167,7 @@
      (λ ()
        (let-values ([(dir filename _) (split-path file)])
          (call-with-naive-reader
-          dir file wxme-port->port
+          dir file read-port-from-editor
           pos->line/col)))))
   (define comment-toks
     (hash-ref!
@@ -144,7 +175,7 @@
      (λ ()
        (let-values ([(dir filename _) (split-path file)])
          (call-with-naive-reader
-          dir file wxme-port->port
+          dir file read-port-from-editor
           pos->comment-dict)))))
   (values syntax line-info comment-toks))
 (define (read-stx-text text)
