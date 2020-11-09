@@ -123,21 +123,20 @@
 (define (read-port-from-editor wxme-port)
   (let ([t (new text%)])
     (send t insert-port wxme-port 'standard)
-    (expand-collapsed t #f (send t find-first-snip))
+    (expand-collapsed t (send t find-first-snip))
     (open-input-text-editor t 0 'end values (object-name wxme-port) #t)))
 
-(define (expand-collapsed text prev snip)
+(define (expand-collapsed text snip)
   (define snip-name (and snip (send (send snip get-snipclass) get-classname)))
   (define next (and snip (send snip next)))
   (cond
     [(not snip) (void)]
     [(equal? snip-name (format "~s" '((lib "collapsed-snipclass.ss" "framework")
                                       (lib "collapsed-snipclass-wxme.ss" "framework"))))
+     (define snip-pos (send text get-snip-position snip))
      (expand-from text snip)
-     (if (not prev)
-         (expand-collapsed text prev (send text find-first-snip))
-         (expand-collapsed text prev (send prev next)))]
-    [else (expand-collapsed text snip next)]))
+     (expand-collapsed text (send text find-snip snip-pos 'before))]
+    [else (expand-collapsed text next)]))
 
 ;; copied from gui-lib/framework/private/racket.rkt:expand-from
 (define (expand-from text snip)
