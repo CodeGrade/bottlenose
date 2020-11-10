@@ -79,7 +79,7 @@
         [else
          ((add-patch "image-data") (base64-encode contents ""))]))))
 
-(define (display-all snip out #:verbose? [verbose? #t])
+(define (display-all snip out #:verbose? [verbose? #t] #:inline-numbers? [inline-numbers? #f])
   (if (not snip)
       out
       (let ((snip-name (send (send snip get-snipclass) get-classname)))
@@ -96,7 +96,8 @@
            (display (add-comment (get-output-string comment)) out)]
           [(equal? snip-name
                    "(lib \"number-snip.ss\" \"drscheme\" \"private\")")
-           (display (add-number (number->string (send snip get-number))) out)]
+           (define val (number->string (send snip get-number)))
+           (display (if inline-numbers? val (add-number val)) out)]
           [(or (is-a? snip xml-snip<%>)
                (equal? snip-name "(lib \"xml-snipclass.ss\" \"xml\")")
                (equal? snip-name "(lib \"xml-snipclass.rkt\" \"xml\")")
@@ -162,7 +163,7 @@
            (display (format ">?>~a<?<" snip-name) out)
            (display (format ">>>~a<<<" snip) out)]
           )
-        (display-all (send snip next) out #:verbose? verbose?))))
+        (display-all (send snip next) out #:verbose? verbose? #:inline-numbers? inline-numbers?))))
 (define (drop-header lines)
   (if (and (cons? lines)
            (regexp-match
@@ -170,14 +171,14 @@
             (first lines)))
       (drop lines 3)
       lines))
-(define (render file #:verbose? [verbose? #t])
+(define (render file #:verbose? [verbose? #t] #:inline-numbers? [inline-numbers? #f])
   (set! count 0)
   (set! patches '())
   (define dummy (new text%))
   (send dummy load-file file)
   (define first (send dummy find-first-snip))
   (define out (open-output-bytes))
-  (define contents (display-all first out #:verbose? verbose?))
+  (define contents (display-all first out #:verbose? verbose? #:inline-numbers? inline-numbers?))
   (when (and verbose? (cons? patches))
     (displayln "~~~~~EMBEDS~~~~~" out))
   (when verbose? (map (λ(p) (displayln p out)) (reverse patches)))

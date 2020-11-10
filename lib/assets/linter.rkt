@@ -48,7 +48,7 @@
   (require rackunit))
 
 (define (load-file source)
-  (string->text (bytes->string/utf-8 (render source #:verbose? #f))))
+  (string->text (bytes->string/utf-8 (render source #:verbose? #f #:inline-numbers? #t))))
 
 (define (string->text str)
   (define f-orig (new frame% [label ""]))
