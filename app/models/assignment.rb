@@ -328,6 +328,10 @@ class Assignment < ApplicationRecord
     self.lateness_config.days_late(self, sub, raw)
   end
 
+  def sub_hours_late(sub, raw = false)
+    self.lateness_config.hours_late(self, sub, raw)
+  end
+
   def sub_late_penalty(sub)
     self.lateness_config.late_penalty(self, sub)
   end
