@@ -30,6 +30,14 @@ class LatenessConfig < ApplicationRecord
     late_days.ceil
   end
 
+  def hours_late(assignment, submission, raw = false)
+    return 0 unless raw or late?(assignment, submission)
+    due_on = assignment.effective_due_date(submission.user, submission.team)
+    sub_on = submission.created_at || DateTime.current
+    late_hours = (sub_on.to_time - due_on.to_time) / 1.hour
+    late_hours.ceil
+  end
+
   def penalize(score, assignment, submission, max_pct = 100.0, max_pct_with_ec = 100.0)
     # score is [0, max_pct]
     penalty = late_penalty(assignment, submission) # compute penalty in [0, 100]
