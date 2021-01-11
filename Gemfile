@@ -18,6 +18,7 @@ gem 'therubyracer'
 gem 'yaml_db' # used to dump database to YAML
 
 gem 'activerecord-import' # used for bulk import of multiple InlineComments
+gem 'sprockets', '~>3.7'
 
 gem 'coffee-rails'
 gem 'coffee-rails-source-maps'
