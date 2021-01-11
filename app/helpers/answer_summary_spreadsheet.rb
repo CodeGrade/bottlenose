@@ -42,12 +42,13 @@ class AnswerSummarySpreadsheet < Spreadsheet
       end
     end
 
-    subs_for_grading = UsedSub.where(assignment: assn).includes(submission: [:upload]).to_a
+    subs_for_grading = UsedSub.where(assignment: assn).includes(submission: [upload: [:course, :assignment]]).to_a
     subs_by_user = subs_for_grading.map{|sfg| [sfg.user_id, sfg.submission]}.to_h
     @users.each_with_index do |u, i|
       sub = subs_by_user[u.id]
       next if sub.nil?
       answers = ApplicationHelper.make_yaml_safe(YAML.load(File.open(sub.upload.submission_path)))
+      
       # Codereviews are hashes from the submission-id-being-reviewed to the answers
       # While Questions are simply arrays of answers
       if answers.is_a? Array
