@@ -239,7 +239,8 @@
        (define linecol-at-start (and start-pos (hash-ref line-info start-pos)))
        (define linecol-at-final (and final-pos (hash-ref line-info (sub1 final-pos))))
        (cond
-         [(and (not (preceeded-by-comment? (sub1 final-pos)))
+         [(and final-pos
+               (not (preceeded-by-comment? (sub1 final-pos)))
                linecol-at-start linecol-at-final
                (not (and (= (car linecol-at-start) (car linecol-at-final))
                          (= (cdr linecol-at-start) (sub1 (cdr linecol-at-final))))))
