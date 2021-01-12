@@ -4,7 +4,8 @@
 (require racket/string
          racket/list racket/set
          racket/cmdline
-         racket/path)
+         racket/path
+         racket/class)
 
 (define output-filename (make-parameter #f))
 (define total-points (make-parameter 50))
@@ -47,7 +48,29 @@
              #:line (second parse-error)
              #:penalty (total-points)
              #:message (format "Syntax error: ~a" (first parse-error)))
-        (begin
+        (with-handlers ([exn:fail:read:rethrow?
+                         (λ(err)
+                           (define msg (exn-message err))
+                           (define srclocs (exn:fail:read-srclocs err))
+                           (define srcloc (if (cons? srclocs) (first srclocs) srclocs))
+                           (define line (srcloc-line srcloc))
+                           (tap #:problem "CleanParse"
+                                #:filename filename
+                                #:line line
+                                #:penalty (total-points)
+                                #:message (format "Syntax error: ~a" msg)))]
+                        [exn:fail:read?
+                         (λ(err)
+                           (define msg (exn-message err))
+                           (define srclocs (exn:fail:read-srclocs err))
+                           (define srcloc (if (cons? srclocs) (first srclocs) srclocs))
+                           (define line
+                             (+ 1 (send t position-line (srcloc-position srcloc))))
+                           (tap #:problem "CleanParse"
+                                #:filename filename
+                                #:line line
+                                #:penalty (total-points)
+                                #:message (format "Syntax error: ~a" msg)))])
           (for [(line-info (bad-widths-text t #:width width))]
             (let-values (((line-num length contents) (apply values line-info)))
               (tap #:problem "LineLength"

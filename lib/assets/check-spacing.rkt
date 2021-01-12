@@ -13,6 +13,7 @@
          syntax-color/module-lexer
          (only-in mrlib/image-core image?))
 (provide
+ exn:fail:read:rethrow?
  (contract-out
   ;; Return the line numbers of lines that are too long
   [missing-spaces (->* [string?]
@@ -20,6 +21,8 @@
                         [list/c
                          string?                          ;; message
                          (and/c integer? (>=/c 0))]])]))  ;; line#
+
+(define-struct (exn:fail:read:rethrow exn:fail:read) ())
 
 (define (missing-spaces source)
   (let-values ([(all line-info comment-info) (read-stx source)])
@@ -159,7 +162,22 @@
        (let-values ([(dir filename _) (split-path file)])
          (call-with-naive-reader
           dir file read-port-from-editor
-          (λ (port) (read-syntax file port)))))))
+          (λ (port)
+            (with-handlers
+                ([exn:fail:read?
+                  ;; If read-syntax fails, it might give an error nestled somewhere deep in a
+                  ;; snip, rather than using the current location of the port.  Fortunately,
+                  ;; port-next-location stays up to date with the current partial state of reading,
+                  ;; and we can access it in the exception handler to "fix" the reported location.
+                  (λ(x)
+                    (define-values (line col pos) (port-next-location port))
+                    (raise (exn:fail:read:rethrow
+                            (exn-message x)
+                            (exn-continuation-marks x)
+                            (list (make-srcloc file (fix-lines file line) col
+                                               ;; position and span information are irrelevant
+                                               #f #f)))))])
+            (read-syntax file port))))))))
   (define line-info
     (hash-ref!
      known-lines file
