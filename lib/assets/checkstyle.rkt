@@ -52,7 +52,7 @@
             #:message (format "Syntax error: ~a" (first parse-error)))]
       [(list? mod-error)
        (let-values (((msg line-num) (apply values mod-error)))
-              (tap #:problem "LineLength"
+              (tap #:problem "CleanParse"
                    #:filename filename
                    #:line line-num
                    #:penalty (total-points)
