@@ -4,7 +4,8 @@ class Registration < ApplicationRecord
   # Professors have extra privileges over assistants.
   enum role: [:student, :grader, :assistant, :professor]
 
-  validates_presence_of :course_id, :user_id
+  validates_presence_of :course_id
+  validates_presence_of :user_id, :unless => -> { !@username.nil? }
   validates_inclusion_of :show_in_lists, in: [false, true]
   
   # A registration is join model between a user and a course.
@@ -48,6 +49,9 @@ class Registration < ApplicationRecord
         rescue => e
           self.errors.add(:base, "Could not find user with username #{username}: #{e}")
         end
+      end
+      if uu.nil?
+        self.errors.add(:base, "Could not find user with username `#{username}`")
       end
       self.user_id = uu&.id
     end
