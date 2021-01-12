@@ -16,6 +16,7 @@
  (contract-out
   [parse-errors (-> string? (or/c boolean? [list/c string? (and/c integer? (>=/c 0))]))]
   [parse-errors-text (-> (is-a?/c text%) (or/c boolean? [list/c string? (and/c integer? (>=/c 0))]))]
+  [module-errors (-> string? (or/c boolean? [list/c string? (and/c integer? (>=/c 0))]))]
   [load-file (-> string? (is-a?/c text%))]
   ;; Return the line numbers of lines that are too long
   [bad-widths (->* [string?] [#:width (and/c integer? positive?)]
@@ -84,6 +85,33 @@
         (list (exn-message err)
               (+ 1 (send t position-line
                          (srcloc-position (first (exn:fail:read-srclocs err)))))))))
+
+(define (module-errors source)
+  ;; Stifle reading errors, since they'll get caught elsewhere as syntax errors
+  (with-handlers ([exn:fail? (λ (x) #f)])  
+    (let ([first (parameterize ([read-accept-reader #t]
+                                [read-accept-lang #t])
+                   (call-with-input-file source
+                     (λ(port)
+                       (port-count-lines! port)
+                       (define first-byte (peek-byte port))
+                       (define stx-first (read-syntax source port))
+                       (cond
+                         [(syntax? stx-first) stx-first]
+                         [else first-byte]))))])
+      (cond
+        [(eof-object? first)
+         (list "File is completely empty" 1)] ;;; No content at all
+        [(byte? first)
+         (list (string-append "File does not declare any language: "
+                              "make sure you've set your language correctly")
+               1)] ;; there was some kind of comment
+        [else
+         (if (check-module-form first 'ignored #f)
+             #f
+             (list (string-append "File does not declare any language: "
+                                  "make sure you've set your language correctly")
+                   (syntax-line first)))]))))
 
 
 

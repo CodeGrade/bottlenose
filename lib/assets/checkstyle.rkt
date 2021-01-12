@@ -42,75 +42,85 @@
     (displayln filename (current-error-port))
     (define t (load-file filename))
     (define parse-error (parse-errors-text t))
-    (if (list? parse-error)
-        (tap #:problem "CleanParse"
-             #:filename filename
-             #:line (second parse-error)
-             #:penalty (total-points)
-             #:message (format "Syntax error: ~a" (first parse-error)))
-        (with-handlers ([exn:fail:read:rethrow?
-                         (λ(err)
-                           (define msg (exn-message err))
-                           (define srclocs (exn:fail:read-srclocs err))
-                           (define srcloc (if (cons? srclocs) (first srclocs) srclocs))
-                           (define line (srcloc-line srcloc))
-                           (tap #:problem "CleanParse"
-                                #:filename filename
-                                #:line line
-                                #:penalty (total-points)
-                                #:message (format "Syntax error: ~a" msg)))]
-                        [exn:fail:read?
-                         (λ(err)
-                           (define msg (exn-message err))
-                           (define srclocs (exn:fail:read-srclocs err))
-                           (define srcloc (if (cons? srclocs) (first srclocs) srclocs))
-                           (define line
-                             (+ 1 (send t position-line (srcloc-position srcloc))))
-                           (tap #:problem "CleanParse"
-                                #:filename filename
-                                #:line line
-                                #:penalty (total-points)
-                                #:message (format "Syntax error: ~a" msg)))])
-          (for [(line-info (bad-widths-text t #:width width))]
-            (let-values (((line-num length contents) (apply values line-info)))
+    (define mod-error (and (not (list? parse-error)) (module-errors filename)))
+    (cond
+      [(list? parse-error)
+       (tap #:problem "CleanParse"
+            #:filename filename
+            #:line (second parse-error)
+            #:penalty (total-points)
+            #:message (format "Syntax error: ~a" (first parse-error)))]
+      [(list? mod-error)
+       (let-values (((msg line-num) (apply values mod-error)))
               (tap #:problem "LineLength"
                    #:filename filename
                    #:line line-num
-                   #:penalty 1
-                   #:message (format
-                              (string-append "This line must be no longer than ~a characters.  "
-                                             "Please reformat the code.\n")
-                              width))))
-          (for [(line-info (bad-indentation-text t))]
-            (define-values (line before orig-indent correct-indents) (apply values line-info))
-            (define correct-indent
-              (if (= 1 (set-count correct-indents))
-                  (set-first correct-indents)
-                  (string-join (map number->string (sort (set->list correct-indents) <))
-                               ", "
-                               #:before-first "either "
-                               #:before-last " or ")))
-            (define tab-warning
-              (if (string-contains? before "\t")
-                  "  (Reminder: you should not have any tab characters in your code!"
-                  ""))
-            (tap #:problem "Indentation"
-                 #:filename filename
-                 #:line line
-                 #:penalty 1
-                 #:message (format
-                            (string-append "This line is not properly indented: "
-                                           "it should have ~a spaces of indentation."
-                                           "~a  Please reformat the code.")
-                            correct-indent
-                            tab-warning)))
-          (for [(line-info (missing-spaces filename))]
-            (define-values (message line) (apply values line-info))
-            (tap #:problem "Whitespace"
-                 #:filename filename
-                 #:line line
-                 #:penalty 1
-                 #:message message))))))
+                   #:penalty (total-points)
+                   #:message msg))]
+      [else
+       (with-handlers ([exn:fail:read:rethrow?
+                        (λ(err)
+                          (define msg (exn-message err))
+                          (define srclocs (exn:fail:read-srclocs err))
+                          (define srcloc (if (cons? srclocs) (first srclocs) srclocs))
+                          (define line (srcloc-line srcloc))
+                          (tap #:problem "CleanParse"
+                               #:filename filename
+                               #:line line
+                               #:penalty (total-points)
+                               #:message (format "Syntax error: ~a" msg)))]
+                       [exn:fail:read?
+                        (λ(err)
+                          (define msg (exn-message err))
+                          (define srclocs (exn:fail:read-srclocs err))
+                          (define srcloc (if (cons? srclocs) (first srclocs) srclocs))
+                          (define line
+                            (+ 1 (send t position-line (srcloc-position srcloc))))
+                          (tap #:problem "CleanParse"
+                               #:filename filename
+                               #:line line
+                               #:penalty (total-points)
+                               #:message (format "Syntax error: ~a" msg)))])
+         (for [(line-info (bad-widths-text t #:width width))]
+           (let-values (((line-num length contents) (apply values line-info)))
+             (tap #:problem "LineLength"
+                  #:filename filename
+                  #:line line-num
+                  #:penalty 1
+                  #:message (format
+                             (string-append "This line must be no longer than ~a characters.  "
+                                            "Please reformat the code.\n")
+                             width))))
+         (for [(line-info (bad-indentation-text t))]
+           (define-values (line before orig-indent correct-indents) (apply values line-info))
+           (define correct-indent
+             (if (= 1 (set-count correct-indents))
+                 (set-first correct-indents)
+                 (string-join (map number->string (sort (set->list correct-indents) <))
+                              ", "
+                              #:before-first "either "
+                              #:before-last " or ")))
+           (define tab-warning
+             (if (string-contains? before "\t")
+                 "  (Reminder: you should not have any tab characters in your code!"
+                 ""))
+           (tap #:problem "Indentation"
+                #:filename filename
+                #:line line
+                #:penalty 1
+                #:message (format
+                           (string-append "This line is not properly indented: "
+                                          "it should have ~a spaces of indentation."
+                                          "~a  Please reformat the code.")
+                           correct-indent
+                           tab-warning)))
+         (for [(line-info (missing-spaces filename))]
+           (define-values (message line) (apply values line-info))
+           (tap #:problem "Whitespace"
+                #:filename filename
+                #:line line
+                #:penalty 1
+                #:message message)))])))
 (define (print-output)
   (begin
     (displayln "TAP version 13")
