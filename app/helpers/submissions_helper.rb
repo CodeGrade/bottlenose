@@ -85,6 +85,9 @@ module SubmissionsHelper
                   # nothing
                   else
                     file = related_files&.dig(sub_id.to_i)&.find{|f| f[:link] == ap["file"].to_s}
+                    if file && file[:contents].include?("\r")
+                      file[:contents].encode!(file[:contents].encoding, universal_newline: true)
+                    end
                     line_num = (Integer(ap["line"]) rescue nil)
                     if file.nil? || line_num.nil?
                       self.errors.add(:base, "#{prefix}, part #{j + 1} has an invalid code-tag")
