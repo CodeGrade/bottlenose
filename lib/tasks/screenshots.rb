@@ -118,14 +118,18 @@ JAVASCRIPT
     top: Number.MAX_VALUE, left: Number.MAX_VALUE,
     right: -Number.MAX_VALUE, bot: -Number.MAX_VALUE
   };
+  var bodyRect = document.body.getBoundingClientRect();
   for (var i = 0; i < arguments.length; i++) {
-    var $e = $(arguments[i]);
-    var off = $e.offset();
-    dimen.left  = Math.min(off.left, dimen.left);
-    dimen.top   = Math.min(off.top,  dimen.top);
-    dimen.right = Math.max(off.left + $e.outerWidth(), dimen.right);
-    dimen.bot   = Math.max(off.top + $e.outerHeight(), dimen.bot);
+    var off = arguments[i].getBoundingClientRect();
+    dimen.left = Math.min(off.left + window.scrollX, dimen.left);
+    dimen.right = Math.max(off.right + window.scrollX, dimen.right);
+    dimen.top = Math.min(off.top + window.scrollY, dimen.top);
+    dimen.bot = Math.max(off.bottom + window.scrollY, dimen.bot);
   }
+  dimen.left -= bodyRect.left;
+  dimen.top -= bodyRect.top;
+  dimen.right -= bodyRect.left;
+  dimen.bot -= bodyRect.top;
   return dimen;
 }).apply(this, arguments)
 JAVASCRIPT
@@ -997,10 +1001,14 @@ class Screenshots
       yield
       remove_highlight "registrations_button"
 
-      registrations_button.click
       # TODO add registration request here
+      reg_reqs = @students.shuffle.first(5).map do |s|
+        create(:reg_request, user: s, course: @course, "#{@sections[0].type}_sections": @sections[0].crn.to_s)
+      end
       # request = create(:reg_request, user: @students[0], course: @course, "#{@sections[0].type}_sections": @sections[0].crn.to_s)
+      registrations_button.click
       yield
+      reg_reqs.each(&:destroy)
 
       page.find(:xpath, ".//a[text()='Edit student registrations']").click
       title = page.find(:xpath, ".//h2[text()='Edit registrations']")
@@ -1047,7 +1055,7 @@ class Screenshots
       yield
       set_default_size
     end
-    
+
     def grading
       sign_in(@fred)
       visit course_assignment_path(@course, @assignments[3])
@@ -1068,23 +1076,20 @@ class Screenshots
       remove_highlight "grader_allocation"
       
       grader_allocation.click
+      set_full_page
       page.first('#submission_id option').select_option
       page.select('Joe Jones', from: 'who_grades_id')
       assign_grader = page.find(:xpath, ".//input[@value='Assign grader']")
-      highlight_area("assign_grader", bbox(assign_grader))
+      highlight_area("assign_grader", bbox(assign_grader)) # TODO: wrong bbox?
       header = page.find(:xpath, ".//h3[contains(text(), 'single grader')]")
       form = page.find(:xpath, ".//select[@id='who_grades_id']")
-      set_full_page
       yield options: inflate_box(bbox(header, form), 10, 10, 10, 10)
       remove_highlight "assign_grader"
-      set_default_size
       assign_grader.click
       
       header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
       footer = page.find(:xpath, ".//footer")
-      set_full_page
       yield options: bbox(header, footer)
-      set_default_size
       
       joe_span = page.find(:xpath, ".//span[./span[text()='Joe Jones']]")
       joe_input = joe_span.find(:xpath, ".//input[contains(@id, '_weight')]")
@@ -1093,17 +1098,13 @@ class Screenshots
       highlight_area("assign_graders", bbox(assign_graders))
       header = page.find(:xpath, ".//h3[contains(text(), 'Bulk grading')]")
       or_header = page.find(:xpath, ".//h3[@class='middle-separator']")
-      set_full_page
       yield options: inflate_box(bbox(header, or_header), 10, 10, 10, 10)
       remove_highlight "assign_graders"
-      set_default_size
       assign_graders.click
       
       header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
       footer = page.find(:xpath, ".//footer")
-      set_full_page
       yield options: bbox(header, footer)
-      set_default_size
       
       joe_header = page.find(:xpath, ".//h4[contains(text(), 'Joe Jones')]")
       abandon_all = joe_header.find(:xpath, ".//a[text() = 'Abandon all']")
@@ -1112,7 +1113,6 @@ class Screenshots
       end
       header = page.find(:xpath, ".//h3[contains(text(), 'Existing')]")
       footer = page.find(:xpath, ".//footer")
-      set_full_page
       yield options: bbox(header, footer)
       set_default_size
     end
@@ -1125,13 +1125,13 @@ class Screenshots
       highlight_area("view", bbox(view_button))
       yield
       remove_highlight "view"
+      set_full_page
       view_button.click
       
       manual_feedback_row = page.find(:xpath, ".//tr[./td[contains(text(), 'Manual Feedback')]]")
       grader_output = manual_feedback_row.find(:xpath, ".//a[text() = 'Grader output']")
       header = page.find(:xpath, ".//h1[text() = 'Submission']")
       highlight_area("grader_output", bbox(grader_output))
-      set_full_page
       yield options: inflate_box(bbox(header, grader_output), 10, 10, 10, 10)
       set_default_size
       remove_highlight "grader_output"
@@ -1147,6 +1147,17 @@ class Screenshots
       remove_highlight "grader_info"
     end
     
+    def downloading_grades
+      sign_in(@fred)
+      visit(course_path(@course))
+      
+      page.find(:xpath, ".//a[contains(text(), 'Export')]").click
+      export_gradesheet = page.find(:xpath, ".//a[contains(text(), 'Gradesheet')]")
+      highlight_area("export_gradesheet", bbox(export_gradesheet))
+      yield
+      remove_highlight "export_gradesheet"
+    end
+
     def downloading_teams
       sign_in(@fred)
       visit(course_path(@course))
