@@ -63,7 +63,7 @@
           <% if cur_reg_staff %>
           <span class="pull-right">Weight: <%= t[:info]["weight"] %></span>
           <% end %>
-          <b>Passed:</b> <%= t[:info]['message'] %>
+          <b>Passed:</b> <%= t[:info]['testName'] ? "#{t[:info]['testName']} — #{t[:info]['message']}" : t[:info]['message'] %>
           <% if t[:info]["actual"] %>
           <% unless t[:comment].strip.empty? %>
           (using <code><%= t[:comment].strip %></code><% if t[:info]["tolerance"] %>
@@ -81,7 +81,7 @@
           <% if cur_reg_staff %>
           <span class="pull-right">Weight: <%= t[:info]["weight"] %></span>
           <% end %>
-          <b>Failed:</b> <%= t[:info]['message'] %>
+          <b>Failed:</b> <%= t[:info]['testName'] ? "#{t[:info]['testName']} — #{t[:info]['message']}" : t[:info]['message'] %>
           <% if t[:info]["actual"] %>
           <% unless t[:comment].strip.empty? %>
           (using <code><%= t[:comment].strip %></code><% if t[:info]["tolerance"] %>
