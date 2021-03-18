@@ -57,21 +57,25 @@
     going to show you any hints.</h4>
   <% end %>
   <% @tests&.each do |t| %>
+    <% showTestComment = t[:info]['timeout'] || t[:info]['stack'] || (!t[:comment].strip.empty? && !t[:comment].strip.starts_with?("check")) %>
     <% if t[:passed] %>
       <div class="alert alert-success">
         <p>
           <% if cur_reg_staff %>
           <span class="pull-right">Weight: <%= t[:info]["weight"] %></span>
           <% end %>
-          <b>Passed:</b> <%= t[:info]['testName'] ? "#{t[:info]['testName']} — #{t[:info]['message']}" : t[:info]['message'] %>
           <% if t[:info]["actual"] %>
+          <b>Passed:</b> <%= t[:info]['message'] %>
           <% unless t[:comment].strip.empty? %>
           (using <code><%= t[:comment].strip %></code><% if t[:info]["tolerance"] %>
           with tolerance <code><%= t[:info]["tolerance"] %></code><% end %>)
           <% end %>
+          <% elsif showTestComment %>
+          <b>Passed:</b> <%= t[:comment] %> (<%= t[:info]['message'] %>)
+          <% showTestComment = false %>
           <% end %>
         </p>
-        <% if t[:info]["timeout"] || t[:info]["stack"] %>
+        <% if showTestComment %>
         <p><b>Test:</b> <%= t[:comment] %></p>
         <% end %>
       </div>
@@ -81,7 +85,7 @@
           <% if cur_reg_staff %>
           <span class="pull-right">Weight: <%= t[:info]["weight"] %></span>
           <% end %>
-          <b>Failed:</b> <%= t[:info]['testName'] ? "#{t[:info]['testName']} — #{t[:info]['message']}" : t[:info]['message'] %>
+          <b>Failed:</b> <%= t[:info]['message'] %>
           <% if t[:info]["actual"] %>
           <% unless t[:comment].strip.empty? %>
           (using <code><%= t[:comment].strip %></code><% if t[:info]["tolerance"] %>
@@ -89,7 +93,7 @@
           <% end %>
           <% end %>
         </p>
-        <% if t[:info]["timeout"] || t[:info]["stack"] %>
+        <% if showTestComment %>
         <p><b>Test:</b> <%= t[:comment] %></p>
         <% end %>
         <% if t[:info]["methodName"] %>
