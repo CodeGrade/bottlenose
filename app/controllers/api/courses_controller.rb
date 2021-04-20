@@ -19,7 +19,8 @@ module Api
       {
         id: course.id,
         name: course.name,
-        prof: current_user.course_professor?(course)
+        prof: current_user.course_professor?(course),
+        last_reg_update: course.last_reg_update.iso8601,
       }
     end
   end
