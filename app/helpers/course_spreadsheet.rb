@@ -249,14 +249,15 @@ class CourseSpreadsheet < Spreadsheet
   def create_name_columns(sheet)
     sheet.columns.push(
       Col.new("LastName", "String"), Col.new("FirstName", "String"), Col.new("Instructor", "String"),
-      Col.new("NUID", "String"), Col.new("Username", "String"), Col.new("Email", "String"))
+      Col.new("NUID", "String"), Col.new("Username", "String"), Col.new("Email", "String"),
+      Col.new("Term code", "String"))
     course_section_types = @sections_by_type.keys
     course_section_types.each do |type|
       sheet.columns.push(Col.new("#{type.humanize} section", "Number"))
     end
     sheet.columns.push(Col.new("Withdrawn?", "DateTime"), Col.new(""), Col.new(""))
-    labels = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
-    weight = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
+    labels = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
+    weight = sheet.push_header_row(nil, ["", "", "", "", "", "", "", "", "", ""].push(*course_section_types.count.times.map{|| ""}))
 
     @users.each do |u|
       reg = @regs[u.id]
@@ -264,9 +265,10 @@ class CourseSpreadsheet < Spreadsheet
       row = [ sanitize(u.last_name || u.name || "<anonymous>"),
               sanitize(u.first_name || ""),
               sanitize(lecture&.dig(:section)&.instructor&.last_name || "<no instructor>"),
-              u.nuid || "<###>",
+              u.nuid.to_s.rjust(9, "0") || "<###>",
               sanitize(u.username || "<no username>"),
-              sanitize(u.email || "<no email>")]
+              sanitize(u.email || "<no email>"),
+              @course.term.query_code.to_s]
       course_section_types.each do |type|
         section = reg[Section::types[type]]&.fetch(:section)
         row.push(section&.crn || "<no CRN>")
