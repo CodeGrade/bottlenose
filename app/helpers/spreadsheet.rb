@@ -187,7 +187,7 @@ class Spreadsheet
     def pad_to_coords(num_rows, num_cols, value="")
       (0...num_rows).each do |r|
         @rows[r] = [] unless @rows[r]
-        (@rows.size..num_cols).each do |c|
+        (@rows[r].size...num_cols).each do |c|
           @rows[r].push Cell.new(value)
         end
       end
