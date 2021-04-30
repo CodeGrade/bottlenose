@@ -182,9 +182,9 @@ class CourseSpreadsheet < Spreadsheet
                                         sheet.header_rows.length + 2, true,
                                         Spreadsheet.col_name(first_question_col + idx), true,
                                         @users.count + sheet.header_rows.length + 1, true)
-            sections_values = Range.new(Spreadsheet.col_name(6 + sec_type_idx), true,
+            sections_values = Range.new(Spreadsheet.col_name(7 + sec_type_idx), true,
                                         sheet.header_rows.length + 2, true,
-                                        Spreadsheet.col_name(6 + sec_type_idx), true,
+                                        Spreadsheet.col_name(7 + sec_type_idx), true,
                                         @users.count + sheet.header_rows.length + 1, true)
 
             min_row << Cell.new(nil, Formula.new(nil, "MIN",
@@ -436,9 +436,9 @@ class CourseSpreadsheet < Spreadsheet
                                       sheet.header_rows.length + 2, true,
                                       Spreadsheet.col_name(first_grader_col + idx), true,
                                       @users.count + sheet.header_rows.length + 1, true)
-            sections_values = Range.new(Spreadsheet.col_name(6 + sec_type_idx), true,
+            sections_values = Range.new(Spreadsheet.col_name(7 + sec_type_idx), true,
                                         sheet.header_rows.length + 2, true,
-                                        Spreadsheet.col_name(6 + sec_type_idx), true,
+                                        Spreadsheet.col_name(7 + sec_type_idx), true,
                                         @users.count + sheet.header_rows.length + 1, true)
 
             min_row << Cell.new(nil, Formula.new(nil, "MIN",
@@ -575,7 +575,7 @@ class CourseSpreadsheet < Spreadsheet
 
     #################################
     # Create grade histogram
-    sheet.pad_to_coords([@grades.length + 3, @breaks.length + 1].max, sheet.rows[0].size)
+    sheet.pad_to_coords([@grades.length + 3, @breaks.length + 1].max, sheet.rows[0]&.size.to_i)
     sheet.push_row(0, ["", "", "", "W"])
     @breaks.zip(@grades).each_with_index do |(b, g), i|
       sheet.push_row(i + 1, ["", "", b, g])
