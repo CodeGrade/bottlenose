@@ -18,3 +18,11 @@ input.badAnswer {
 input.goodAnswer {
    box-shadow: 0 0 1.5em #d3eed7;
 }
+
+.responses li.question:not(:last-child) {
+  margin-bottom: 2em;
+}
+
+.responses li.question:hover {
+  background-color: #eeeeee;
+}

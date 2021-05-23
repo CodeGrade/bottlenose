@@ -50,7 +50,7 @@
       <ol start="<%= count + 1 %>">
         <% qs.each_with_index do |question, i| %>
           <% question.each do |type, q| %>
-            <li>
+            <li class="question">
               <p>
                 <%= sanitize_question(q["prompt"], allow_code: true) %>
                 <small>(<%= pluralize(q["weight"], "point") %>)</small>
