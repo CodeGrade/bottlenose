@@ -59,13 +59,13 @@ class AssignmentsController < ApplicationController
     @submission_views = @assignment.submission_views.map{|sv| [sv.user_id, sv]}.to_h
     if @assignment.team_subs?
       @subs_by_team = @assignment.submissions.order(created_at: :asc).group_by(&:team_id)
-      @teams_by_student = @assignment.teamset.teams.includes(:team_users).map do |t|
+      @teams_by_student = multi_group_by(@assignment.teamset.teams.includes(:team_users).map do |t|
         t.team_users.map do |tu|
           [tu.user_id, tu.team_id]
         end
-      end.flatten(1).group_by(&:first).to_h
+      end.flatten(1), [:first], false).map {|sid, teams| [sid, teams.map(&:second)]}.to_h
       @submissions = @students.map do |s|
-        subs = @teams_by_student[s.id]&.map{|t| @subs_by_team[t]}&.flatten
+        subs = @teams_by_student[s.id]&.map{|t| @subs_by_team[t]}&.flatten&.compact&.sort_by(&:created_at)
         [s.id, [subs&.first, subs&.last]]
       end.to_h
     else
