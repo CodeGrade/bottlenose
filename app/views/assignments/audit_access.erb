@@ -1,0 +1,117 @@
+<% @page_title = "#{@course.name} / #{@assignment.name} / Audit student access" %>
+
+<h3>Audit student submission access for
+  <%= link_to @assignment.name, course_assignment_path(@course, @assignment) %></h3>
+
+<h4>Due date: <span class="local-time"><%= @assignment.due_date.iso8601 %></span></h4>
+
+
+<style>
+  <% @course.sections.each do |s| %>
+  #submissions.show_one .sec_<%= s.crn %> { display: none; }
+  #submissions.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: table-row; }
+
+  #number-submissions.show_one .sec_<%= s.crn %> { display: none; }
+  #number-submissions.show_one.sec_<%= s.crn %> .sec_<%= s.crn %> { display: block; }
+  #number-submissions.show_all .sec_<%= s.crn %> { display: none; }
+  <% end %>
+  #number-submissions.show_one .all { display: none; }
+  #number-submissions { display: inline-block; margin-left: 2em; }
+  #select-sections select { font-size: 80%; }
+  .submitter { font-weight: bold; }
+</style>
+<div style="display: flex; flex-direction: row; align-items: baseline; justify-content: space-between;">
+  <table id="submissions" class="table table-striped row-vcenter">
+    <thead>
+      <tr>
+        <th>
+          Student
+          <%= toggle_usernames_button("show_username", "submissions") %>
+        </th>
+        <th>Earliest access date</th>
+        <th>Earliest submission</th>
+        <th>Most recent access date</th>
+        <th>Most recent submission</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @students.sort_by(&:display_name).each do |s| %>
+      <tr>
+        <td><%= show_user(s) %></td>
+        <td>
+          <% if @submission_views[s.id] %>
+          <span class="local-time"><%= @submission_views[s.id].created_at.iso8601 %></span>
+          <% else %>
+          <i>None</i>
+          <% end %>
+        </td>
+        <td>
+          <% if @submissions[s.id]&.first %>
+          <span data-toggle="tooltip" data-placement="top" class="local-time-title" 
+                title="<%= @submissions[s.id].first.created_at.iso8601 %>">
+            <%= link_to "First submission", 
+                course_assignment_submission_path(@course, @assignment, @submissions[s.id].first) %>
+          </span>
+          <% else %>
+          <i>No submission</i>
+          <% end %>
+        </td>
+        <td>
+          <% if @submission_views[s.id] %>
+          <span class="local-time"><%= @submission_views[s.id].updated_at.iso8601 %></span>
+          <% else %>
+          <i>None</i>
+          <% end %>
+        </td>
+        <td>
+          <% if @submissions[s.id]&.last %>
+          <span data-toggle="tooltip" data-placement="top" class="local-time-title" 
+                title="<%= @submissions[s.id].last.created_at.iso8601 %>">
+            <%= link_to "Latest submission", 
+                course_assignment_submission_path(@course, @assignment, @submissions[s.id].last) %>
+          </span>
+          <% else %>
+          <i>No submission</i>
+          <% end %>
+        </td>
+      </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <script>
+    $(function() {
+      $.tablesorter.themes.bootstrap = {
+        caption      : 'caption',
+        sortNone     : '',
+        sortAsc      : '',
+        sortDesc     : '',
+        active       : '', // applied when column is sorted
+        hover        : '', // custom css required - a defined bootstrap style may not override other classes
+        // icon class names
+        icons        : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+        iconSortAsc  : 'glyphicon glyphicon-chevron-up', // class name added to icon when column has ascending sort
+        iconSortDesc : 'glyphicon glyphicon-chevron-down', // class name added to icon when column has descending sort
+        filterRow    : '', // filter row class; use widgetOptions.filter_cssFilter for the input/select element
+        footerRow    : '',
+        footerCells  : '',
+        even         : '', // even row zebra striping
+        odd          : ''  // odd row zebra striping
+      };
+      $("#submissions").tablesorter({
+        headerTemplate: "{content} {icon}",
+        theme: "bootstrap",
+        widgets: ['uitheme']
+      });
+      $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
+      enableShowUsernames("#show_username");
+    });
+    $(function() {
+      var prevSection = "show_all";
+      $("#sections").change(function(e) {
+        $("#number-submissions").removeClass(prevSection).addClass($(this).val());
+        $("#submissions").removeClass(prevSection).addClass($(this).val());
+        prevSection = $(this).val();
+      });
+    });
+  </script>
+</div>

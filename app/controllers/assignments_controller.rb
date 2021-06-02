@@ -8,7 +8,7 @@ class AssignmentsController < ApplicationController
   before_action :require_registered_user
   before_action -> { require_admin_or_prof(course_assignments_path) },
                 only: [:edit, :edit_weights, :update, :update_weights,
-                       :new, :create, :destroy, :recreate_grades]
+                       :new, :create, :destroy, :recreate_grades, :audit_access]
   before_action :require_admin_or_assistant, only: [:update_section_toggles, :tarball, :publish, :summarysheet]
 
   def show
@@ -45,6 +45,34 @@ class AssignmentsController < ApplicationController
       @team = @user.active_team_for(@course, @assignment)
       @hide_description = @assignment.interlocks_hiding_description_for(@user)
       render "show_user_#{@assignment.type.underscore}"
+    end
+  end
+
+  def audit_access
+    @students = @course.students.to_a
+    @sections_by_student = RegistrationSection.where(registration: @course.registrations).group_by(&:registration_id)
+    @section_crns = @course.sections.map{|sec| [sec.id, sec.crn]}.to_h
+
+    @toggles = @assignment.submission_enabled_toggles.includes(:section)
+               .map{|t| [t.section, t]}.group_by{|k, _| k.type}.map{|k, v| [k, v.to_h]}.to_h
+
+    @submission_views = @assignment.submission_views.map{|sv| [sv.user_id, sv]}.to_h
+    if @assignment.team_subs?
+      @subs_by_team = @assignment.submissions.order(created_at: :asc).group_by(&:team_id)
+      @teams_by_student = @assignment.teamset.teams.includes(:team_users).map do |t|
+        t.team_users.map do |tu|
+          [tu.user_id, tu.team_id]
+        end
+      end.flatten(1).group_by(&:first).to_h
+      @submissions = @students.map do |s|
+        subs = @teams_by_student[s.id]&.map{|t| @subs_by_team[t]}&.flatten
+        [s.id, [subs&.first, subs&.last]]
+      end.to_h
+    else
+      @submissions = @assignment.submissions
+                       .order(created_at: :asc)
+                       .group_by(&:user_id)
+                       .map {|uid, subs| [uid, [subs&.first, subs&.last]]}.to_h
     end
   end
 
@@ -254,6 +282,8 @@ class AssignmentsController < ApplicationController
     respond_to do |format|
       format.xlsx { send_data @assignment.summary_spreadsheet.to_xlsx,
                               type: "application/xlsx", filename: "summary.xlsx" }
+      format.json { send_data @assignment.summary_spreadsheet.to_json,
+                              type: "application/json", filename: "summary.json" }
     end
   end
   

@@ -82,6 +82,7 @@ Bottlenose::Application.routes.draw do
         post 'weights' => 'assignments#update_weights'
       end
       member do
+        get 'audit_access' => 'assignments#audit_access'
         post 'create_missing_grades' => 'assignments#recreate_grades'
       end
       resources :grader_allocations, only: [] do
