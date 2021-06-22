@@ -809,7 +809,7 @@ class AssignmentsControllerTest < ActionController::TestCase
       post :update_weights, params: {
              course_id: @cs101.id,
             }
-    assert_redirected_to [@cs101, "assignments"]
+    assert_redirected_to [@cs101, :assignments]
   end
 
   ##################################################

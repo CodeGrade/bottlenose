@@ -59,7 +59,7 @@ gem 'whenever', :require => false
 
 gem 'pretender'
 
-gem 'doorkeeper'
+gem 'doorkeeper', "5.4.0"
 
 group :development do
   #gem "flatten_migrations"
