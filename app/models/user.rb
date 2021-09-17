@@ -330,6 +330,6 @@ class User < ApplicationRecord
     self.courses.includes(:term).where('terms.archived': false)
       .map{|c| [c.term, c]}.group_by(&:first).to_a
       .sort{|(t1, c1s), (t2, c2s)| t2.canonical_name <=> t1.canonical_name}
-      .map{|t, cs| [t.name, cs.map(&:second).sort_by(&:name)]}.to_h
+      .map{|t, cs| [t, cs.map(&:second).sort_by(&:name)]}.to_h
   end
 end
