@@ -7,8 +7,7 @@ module Api
     private
 
     def serialize_active_courses(active_courses)
-      active_courses.map do |sem, courses|
-        term = courses.first.term
+      active_courses.map do |term, courses|
         {
           term: {
             semester: term.semester,
