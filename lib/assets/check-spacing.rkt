@@ -91,7 +91,9 @@
       (read/recursive port #\space)]
      [(char port src line col pos)
       (define ans (read-syntax/recursive src port #\space))
-      (datum->syntax ans (make-special-comment (syntax->datum ans)) ans ans ans)])))
+      (cond
+        [(syntax? ans) (datum->syntax ans (make-special-comment (syntax->datum ans)) ans ans ans)]
+        [else ans])])))
 
 (define (call-with-naive-reader dir file handle-wxme thunk)
   (with-module-reading-parameterization
