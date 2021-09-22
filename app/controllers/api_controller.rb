@@ -47,7 +47,7 @@ class ApiController < ApplicationController
       display_name: user.display_name,
       nuid: user.nuid,
       email: user.email,
-      image_url: user.profile
+      image_url: Upload.upload_path_for(user.profile)
     }
   end
 end
