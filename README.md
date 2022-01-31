@@ -37,7 +37,7 @@ Some packages are generally good to have, and needed by many future steps in
 the setup process.
 
 ```sh
-sudo apt-get install build-essential git postgresql libpq-dev beanstalkd imagemagick
+sudo apt-get install build-essential git postgresql libpq-dev beanstalkd imagemagick libqt4-dev libqtwebkit-dev pngquant chromium-browser
 ```
 
 After installing beanstalkd, double check that "telnet [server] 11300" doesn't
