@@ -42,22 +42,19 @@ class Submission < ApplicationRecord
       UserSubmission.find_or_create_by!(user: user, submission: self)
     end
   end
-
-  def set_used_sub!
+  
+  # Update the used submission for this submission/student OR submission/team
+  # pair and update grader allocation if applicable.
+  def set_used_everyone!
+    # If team
     if team
-      @same_team = true
-      team.users.each do |u|
-        used = UsedSub.find_by(user_id: u.id, assignment_id: assignment.id)
-        if used
-          old_team = used.submission.team
-          if old_team.nil? || (old_team.id != team.id)
-            @same_team = false
-          end
-        end
-      end
+      @same_team = self.same_team_as_old_used_sub
+      # NOTE: If not all members of this team currently use the same submission,
+      # leave existing grader allocations alone so they continue to be graded.
       team.users.each do |u|
         used = UsedSub.find_or_initialize_by(user_id: u.id, assignment_id: assignment.id)
         if @same_team && used.submission_id
+          # TODO: Move grader allocation update to method?
           alloc = GraderAllocation.find_by(
             assignment_id: assignment_id,
             submission_id: used.submission_id)
@@ -82,6 +79,29 @@ class Submission < ApplicationRecord
       end
       used.submission = self
       used.save!
+    end
+  end
+
+  # Update the used submission for this student/submission pair
+  # and update grader allocation if applicable
+  def set_used_student!(user_id)
+    # TODO: In the team case, is there any situation in which there would
+    # be a grader allocation to update?
+    if team && user_id_in_sub_team(user_id) or user && user.id == user_id
+      used = UsedSub.find_or_initialize_by(user_id: user_id, assignment_id: assignment_id)
+      if used.submission_id
+        alloc = GraderAllocation.find_by(
+          assignment_id: assignment_id,
+          submission_id: used.submission_id)
+        if alloc
+          alloc.submission_id = self.id
+          alloc.save
+        end
+      end
+      used.submission = self
+      used.save!
+    else
+      raise UserIDNotAssociated.new
     end
   end
 
@@ -540,5 +560,39 @@ class Submission < ApplicationRecord
         errors.add(:base, "Assignment requires individual subs. Team should not be set.")
       end
     end
+  end
+
+  private
+
+  def same_team_as_old_used_sub
+    team.users.each do |u|
+      used = UsedSub.find_by(user_id: u.id, assignment_id: assignment.id)
+      if used
+        old_team = used.submission.team
+        if old_team.nil? || (old_team.id != team.id)
+          return false
+        end
+      end
+    end
+    return true
+  end
+
+  # TODO: Should this be a method in team, or
+  # is there potentially a way to do this without?
+  def user_id_in_sub_team(user_id)
+    team.users.each do |u|
+      if u.id == user_id
+        return true
+      end
+    end
+    return false
+  end
+
+
+end
+
+class UserIDNotAssociated < StandardError
+  def initialize(msg="The given user ID is not associated with this submission.")
+    super(msg)
   end
 end

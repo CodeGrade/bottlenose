@@ -1,5 +1,6 @@
 require 'tempfile'
 require 'audit'
+require '../models/submission.rb'
 
 class SubmissionsController < ApplicationController
   layout 'course'
@@ -173,6 +174,27 @@ class SubmissionsController < ApplicationController
   end
 
   def use_for_grading
+    @submission.set_used_sub!
+    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
+  end
+
+  # TODO: Set up routes for new controller methods.
+
+  # Use submission for a student. No ID necessary if student not part
+  # of a team (aka single student submission).
+  def use_for_student(user_id)
+    begin
+      @submission.set_used_student!(user_id)
+    rescue UserIDNotAssociated
+      redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "The given user ID was not associated with this submission."
+    end
+    redirect_to course_assignment_submission_path(@course, @assignment, @submission),
+                notice: "Successfully set submission to be used in grading this student."
+  end
+
+  # Use submission for all members of a team.
+  def use_for_everyone
     @submission.set_used_sub!
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
