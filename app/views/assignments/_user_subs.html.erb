@@ -109,14 +109,23 @@
                     aria-haspopup="true" aria-expanded="false">
               <span class="caret"></span>
               <span class="sr-only">Toggle Dropdown</span>
-            </button><% #
-            %><ul class="dropdown-menu dropdown-menu-right">
+            </button>
+              <ul class="dropdown-menu dropdown-menu-right">
               <li><%= link_to "View", 
                       course_assignment_submission_path(course, gradesheet.assignment, sub), 
                       class: "dropdown-item" %></li>
-              <li><%= link_to "Use for grading", 
+              <% if sub.team %>
+                <li><%= link_to "Use for everyone", 
                       use_course_assignment_submission_path(course, gradesheet.assignment, sub),
                       class: "dropdown-item" %></li>
+                <li><%= link_to "Use for this student",
+                        use_course_assignment_submission_path(course, gradesheet.assignment, sub),
+                        class: "dropdown-item" %></li>
+              <% else %>
+                <li><%= link_to "Use for grading",
+                        use_course_assignment_submission_path(course, gradesheet.assignment, sub),
+                        class: "dropdown-item"%></li>
+              <% end %>
             </ul>
           </div>
         </form>
