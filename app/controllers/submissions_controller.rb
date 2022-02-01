@@ -1,6 +1,5 @@
 require 'tempfile'
 require 'audit'
-require '../models/submission.rb'
 
 class SubmissionsController < ApplicationController
   layout 'course'
@@ -12,7 +11,7 @@ class SubmissionsController < ApplicationController
   before_action -> { require_admin_or_staff(course_assignment_path(@course, @assignment)) },
                 only: [:rerun_grader]
   before_action -> { require_admin_or_staff(course_assignment_submission_path(@course, @assignment, @submission)) },
-                only: [:recreate_grade, :use_for_grading, :publish]
+                only: [:recreate_grade, :use_for_student, :use_for_everyone, :publish]
   before_action -> { require_admin_or_prof(course_assignment_submission_path(@course, @assignment, @submission)) },
                 only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
   def show
@@ -179,10 +178,6 @@ class SubmissionsController < ApplicationController
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 
-  # TODO: Set up routes for new controller methods.
-
-  # Use submission for a student. No ID necessary if student not part
-  # of a team (aka single student submission).
   def use_for_student(user_id)
     begin
       @submission.set_used_student!(user_id)
@@ -194,7 +189,6 @@ class SubmissionsController < ApplicationController
     end
   end
 
-  # Use submission for all members of a team.
   def use_for_everyone
     @submission.set_used_everyone!
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
@@ -350,7 +344,7 @@ class SubmissionsController < ApplicationController
     sub.score = score || orig_sub.score
     sub.team = team
     sub.save!
-    sub.set_used_sub!
+    sub.set_used_everyone!
     # Copy any grades
     orig_sub.grades.each do |g|
       new_g = g.dup
@@ -449,7 +443,7 @@ class SubmissionsController < ApplicationController
     end
 
     if (@submission.save_upload(prof_overrides) && @submission.save)
-      @submission.set_used_sub!
+      @submission.set_used_everyone!
       @submission.create_grades!
       @submission.autograde!(true)
       path = course_assignment_submission_path(@course, @assignment, @submission)
@@ -472,7 +466,7 @@ class SubmissionsController < ApplicationController
     end
 
     if @submission.save_upload(prof_overrides) && @submission.save
-      @submission.set_used_sub!
+      @submission.set_used_everyone!
       @submission.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)
       redirect_to(path, notice: 'Response was successfully created.')
@@ -505,7 +499,7 @@ class SubmissionsController < ApplicationController
     end
 
     if @submission.save_upload(prof_overrides) && @submission.save
-      @submission.set_used_sub!
+      @submission.set_used_everyone!
       @submission.autograde!
       path = course_assignment_submission_path(@course, @assignment, @submission)
       redirect_to(path, notice: 'Response was successfully created.')

@@ -154,7 +154,7 @@ class ExamGrader < Grader
       else
         ans[:updated] += 1
       end
-      @sub.set_used_sub!
+      @sub.set_used_everyone!
       @grade = Grade.find_or_create_by(grader_id: self.id, submission_id: @sub.id)
       if @grade.new_record?
         @grade.out_of = self.avail_score

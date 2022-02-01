@@ -8,7 +8,7 @@ class ShowHideUsernameTest < ActionDispatch::IntegrationTest
     @pset = build(:assignment, course: @cs101, name: "Assignment 1", teamset: @ts1, blame: @fred)
     @pset.save!
     @sub = make_submission(@john, @pset, "sample.rkt")
-    @sub.set_used_sub!
+    @sub.set_used_everyone!
   end
 
   test "professor checking if show and hide of username works on assignments page" do

@@ -31,7 +31,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @team1.save
 
     @sub1 = create(:submission, user: @john, assignment: @as1, team: @team1, created_at: @as1.due_date + 1.hours)
-    @sub1.set_used_sub!
+    @sub1.set_used_everyone!
 
     assert_equal(@as1.sub_late?(@sub1), true, "Submitting late should be marked late")
     assert_equal(@as1.effective_due_date(@john, @team1), @as1.due_date,
@@ -104,7 +104,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  "Create an assignment that's due in the past.  Before sub1 is created, max = 95, pending = 0")
 
     @sub1 = create(:submission, user: @john, assignment: @as1, created_at: Time.now - 2.days)
-    @sub1.set_used_sub!
+    @sub1.set_used_student!(@john)
     @summary = clean(@cs101.score_summary(@john))
     assert (@summary[@john.id].delete(:cur).nan?)
     assert_equal({dropped: nil, min: 0.0, max: 100.0,
@@ -143,7 +143,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  "After making the assignment overdue, max drops to 92.5, and unsub should now be zero")
 
     @sub2 = create(:submission, user: @john, assignment: @as2, created_at: Time.now - 2.days)
-    @sub2.set_used_sub!
+    @sub2.set_used_everyone!
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 2.5, cur: 50.0, max: 97.5,
                   pending: 5.0, pending_names: [@as2.name], unsub: 0.0, unsub_names: [],
@@ -183,7 +183,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
 
 
     @sub3 = create(:submission, user: @john, assignment: @as3, created_at: Time.now - 2.days)
-    @sub3.set_used_sub!
+    @sub3.set_used_everyone!
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 7.5, cur: 75.0, max: 102.5,
                   pending: 5.0, pending_names: [@as3.name], unsub: 0.0, unsub_names: [],
@@ -215,7 +215,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @as4.graders << @ecGrader
     @as4.save
     @sub4 = create(:submission, user: @john, assignment: @as4, created_at: Time.now - 2.days)
-    @sub4.set_used_sub!
+    @sub4.set_used_everyone!
     @sub4.create_grades!
     @sub4.grades.find_by(grader: @regGrader).update(score: 25)
     @sub4.grades.find_by(grader: @ecGrader).update(score: 0)
@@ -239,7 +239,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
 
     @sub5 = ExamSub.new(user: @john, assignment: @as5, created_at: @as5.due_date - 1.minute)
     @sub5.save!
-    @sub5.set_used_sub!
+    @sub5.set_used_everyone!
     @sub5.create_grades!
     @as5.flattened_questions.each_with_index do |q, i|
       if q["extra"]
@@ -266,7 +266,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @as6.reload
     @sub6 = ExamSub.new(user: @john, assignment: @as6, created_at: @as6.due_date - 1.minute)
     @sub6.save!
-    @sub6.set_used_sub!
+    @sub6.set_used_everyone!
     @sub6.create_grades!
     @as6.flattened_questions.each_with_index do |q, i|
       @sub6.grade_question!(@fred, i, q["weight"])
@@ -295,7 +295,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @as7.reload
     @sub7 = ExamSub.new(user: @john, assignment: @as7, created_at: @as7.due_date - 1.minute)
     @sub7.save!
-    @sub7.set_used_sub!
+    @sub7.set_used_everyone!
     @sub7.create_grades!
     @as7.flattened_questions.each_with_index do |q, i|
       @sub7.grade_question!(@fred, i, q["weight"])
@@ -330,7 +330,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @as8.reload
     @sub8 = ExamSub.new(user: @john, assignment: @as8, created_at: @as8.due_date - 1.minute)
     @sub8.save!
-    @sub8.set_used_sub!
+    @sub8.set_used_everyone!
     @sub8.create_grades!
     @as8.flattened_questions.each_with_index do |q, i|
       @sub8.grade_question!(@fred, i, q["weight"])
@@ -365,7 +365,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @as9.reload
     @sub9 = ExamSub.new(user: @john, assignment: @as9, created_at: @as9.due_date - 1.minute)
     @sub9.save!
-    @sub9.set_used_sub!
+    @sub9.set_used_everyone!
     @sub9.create_grades!
     @as9.flattened_questions.each_with_index do |q, i|
       @sub9.grade_question!(@fred, i, q["weight"])
@@ -395,7 +395,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @as10.reload
     @sub10 = ExamSub.new(user: @john, assignment: @as10, created_at: @as10.due_date - 1.minute)
     @sub10.save!
-    @sub10.set_used_sub!
+    @sub10.set_used_everyone!
     @sub10.create_grades!
     @as10.flattened_questions.each_with_index do |q, i|
       @sub10.grade_question!(@fred, i, q["weight"])
