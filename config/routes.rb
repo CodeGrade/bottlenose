@@ -131,7 +131,9 @@ Bottlenose::Application.routes.draw do
         end
         member do
           get :details
-          get :use, to: 'submissions#use_for_grading', as: 'use'
+          post :team_use, to: 'submissions#use_for_everyone', as: 'team_use'
+          post 'user_use/:user_id', to: 'submissions#use_for_student', as: 'user_use'
+          # user/:user_id 
           patch :publish, to: 'submissions#publish', as: 'publish'
           patch :rescind_lateness, to: 'submissions#rescind_lateness', as: 'rescind_lateness'
           post 'recreate/:grader_id', to: 'submissions#recreate_grade', as: 'recreate_grade'
