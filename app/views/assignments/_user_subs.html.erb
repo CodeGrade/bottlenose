@@ -116,14 +116,14 @@
                       class: "dropdown-item" %></li>
               <% if sub.team %>
                 <li><%= link_to "Use for everyone", 
-                      use_course_assignment_submission_path(course, gradesheet.assignment, sub),
+                      team_use_course_assignment_submission_path(course, gradesheet.assignment, sub),
                       class: "dropdown-item" %></li>
                 <li><%= link_to "Use for this student",
-                        use_course_assignment_submission_path(course, gradesheet.assignment, sub),
+                        user_use_course_assignment_submission_path(course, gradesheet.assignment, sub, user),
                         class: "dropdown-item" %></li>
               <% else %>
                 <li><%= link_to "Use for grading",
-                        use_course_assignment_submission_path(course, gradesheet.assignment, sub),
+                        user_use_course_assignment_submission_path(course, gradesheet.assignment, sub, user),
                         class: "dropdown-item"%></li>
               <% end %>
             </ul>

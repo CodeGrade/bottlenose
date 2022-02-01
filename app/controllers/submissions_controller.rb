@@ -174,6 +174,7 @@ class SubmissionsController < ApplicationController
   end
 
   def use_for_grading
+    raise "How did you get here?"
     @submission.set_used_sub!
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
@@ -185,17 +186,17 @@ class SubmissionsController < ApplicationController
   def use_for_student(user_id)
     begin
       @submission.set_used_student!(user_id)
+      redirect_to course_assignment_submission_path(@course, @assignment, @submission),
+                  notice: "Successfully set submission to be used in grading this student."
     rescue UserIDNotAssociated
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "The given user ID was not associated with this submission."
     end
-    redirect_to course_assignment_submission_path(@course, @assignment, @submission),
-                notice: "Successfully set submission to be used in grading this student."
   end
 
   # Use submission for all members of a team.
   def use_for_everyone
-    @submission.set_used_sub!
+    @submission.set_used_everyone!
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 

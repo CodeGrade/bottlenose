@@ -87,7 +87,7 @@ class Submission < ApplicationRecord
   def set_used_student!(user_id)
     # TODO: In the team case, is there any situation in which there would
     # be a grader allocation to update?
-    if team && user_id_in_sub_team(user_id) or user && user.id == user_id
+    if team&.user_ids.includes(user_id) || (user&.id == user_id)
       used = UsedSub.find_or_initialize_by(user_id: user_id, assignment_id: assignment_id)
       if used.submission_id
         alloc = GraderAllocation.find_by(
@@ -565,16 +565,8 @@ class Submission < ApplicationRecord
   private
 
   def same_team_as_old_used_sub
-    team.users.each do |u|
-      used = UsedSub.find_by(user_id: u.id, assignment_id: assignment.id)
-      if used
-        old_team = used.submission.team
-        if old_team.nil? || (old_team.id != team.id)
-          return false
-        end
-      end
-    end
-    return true
+    used_subs_for_team_users = UsedSub.where(assignment: assignment, user: team.users).includes(:submission)
+    return used_subs_for_team_users.all? { |u| u.submission.team_id == team.id } 
   end
 
   # TODO: Should this be a method in team, or
