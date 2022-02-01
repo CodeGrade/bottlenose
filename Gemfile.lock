@@ -62,6 +62,8 @@ GEM
       rack (>= 0.9.0)
     binding_of_caller (1.0.0)
       debug_inspector (>= 0.0.1)
+    bootsnap (1.10.2)
+      msgpack (~> 1.2)
     bootstrap-sass (3.4.1)
       autoprefixer-rails (>= 5.2.1)
       sassc (>= 2.0.0)
@@ -176,6 +178,7 @@ GEM
       ruby-progressbar
     momentjs-rails (2.20.1)
       railties (>= 3.1)
+    msgpack (1.4.4)
     net-ldap (0.17.0)
     nio4r (2.5.8)
     nokogiri (1.12.4)
@@ -311,6 +314,7 @@ DEPENDENCIES
   beaneater
   better_errors
   binding_of_caller
+  bootsnap (>= 1.1.0)
   bootstrap-sass (>= 3.4.1)
   bootstrap-sass-extras
   bootstrap-toggle-rails

@@ -1,4 +1,4 @@
-Bottlenose::Application.routes.draw do
+Rails.application.routes.draw do
   use_doorkeeper do
     # it accepts :authorizations, :tokens, :token_info, :applications and :authorized_applications
     controllers applications: 'oauth/applications'
