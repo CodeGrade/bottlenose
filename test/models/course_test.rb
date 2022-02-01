@@ -85,7 +85,7 @@ class CourseTest < ActiveSupport::TestCase
                                             "application/octet-stream")
       sub.save_upload
       sub.save!
-      sub.set_used_sub!
+      sub.set_used_everyone!
       sub
     end
   end

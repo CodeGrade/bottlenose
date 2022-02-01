@@ -42,6 +42,10 @@ class Submission < ApplicationRecord
       UserSubmission.find_or_create_by!(user: user, submission: self)
     end
   end
+
+  def set_used_sub!
+    raise "Oh god how did you get here?"
+  end
   
   # Update the used submission for this submission/student OR submission/team
   # pair and update grader allocation if applicable.
@@ -87,7 +91,10 @@ class Submission < ApplicationRecord
   def set_used_student!(user_id)
     # TODO: In the team case, is there any situation in which there would
     # be a grader allocation to update?
-    if team&.user_ids.includes(user_id) || (user&.id == user_id)
+    puts user == user_id
+    puts user_id.id == user&.id
+    puts user.id == user_id
+    if team&.user_ids&.includes(user_id) || user&.id == user_id
       used = UsedSub.find_or_initialize_by(user_id: user_id, assignment_id: assignment_id)
       if used.submission_id
         alloc = GraderAllocation.find_by(
@@ -567,6 +574,9 @@ class Submission < ApplicationRecord
   def same_team_as_old_used_sub
     used_subs_for_team_users = UsedSub.where(assignment: assignment, user: team.users).includes(:submission)
     return used_subs_for_team_users.all? { |u| u.submission.team_id == team.id } 
+  end
+
+  def update_grader_allocation
   end
 
   # TODO: Should this be a method in team, or

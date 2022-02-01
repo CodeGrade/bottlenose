@@ -25,7 +25,7 @@ class SubmissionTest < ActiveSupport::TestCase
     assert_equal false, assns[0].submission_prohibited(sub0, false) # 1 day == ok
     sub0.save_upload
     sub0.save
-    sub0.set_used_sub!
+    sub0.set_used_everyone!
 
 
     sub1 = build(:submission, user: @john, assignment: assns[1], created_at: assns[1].due_date + 6.days)
@@ -34,7 +34,7 @@ class SubmissionTest < ActiveSupport::TestCase
     assert_equal false, assns[1].submission_prohibited(sub1, false) # 1 day == ok
     sub1.save_upload
     sub1.save
-    sub1.set_used_sub!
+    sub1.set_used_everyone!
 
     
     sub2 = build(:submission, user: @john, assignment: assns[2], created_at: assns[2].due_date + 6.days)

@@ -14,7 +14,7 @@ class UploadTest < ActiveSupport::TestCase
                        created_at: assn.due_date - 1.days)
     sub.save_upload
     sub.save
-    sub.set_used_sub!
+    sub.set_used_everyone!
 
     upload = sub.upload
 
