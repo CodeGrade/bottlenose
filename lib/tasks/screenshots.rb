@@ -1050,12 +1050,10 @@ class Screenshots
       yield options: bbox(content)
       set_default_size
       page.find(:xpath, ".//a[contains(@href, 'withdraw')]").click
-      # Withdrawal confirmation (success message and updated course info) are 
-      # the first two containers from the body tag.
-      withdraw_confirmation_container = 
-        page.find(:xpath, "//body/div[@class='container'][1]")
-      course_info_container = page.find(:xpath, "//body/div[@class='container'][2]")
-      yield options: inflate_box(bbox(withdraw_confirmation_container, course_info_container), 
+      withdraw_success_alert = 
+        page.find(:xpath, ".//div[contains(text(), 'You have successfully withdrawn from')]/../..")
+      course_info_container = page.find(:xpath, ".//h2[text()='Your courses']/..")
+      yield options: inflate_box(bbox(withdraw_success_alert, course_info_container), 
                                  5, 5, 5, 5)
       page.find(:xpath, ".//a[text()='Stop Impersonating']").click
       set_full_page
