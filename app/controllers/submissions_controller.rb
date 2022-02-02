@@ -11,7 +11,7 @@ class SubmissionsController < ApplicationController
   before_action -> { require_admin_or_staff(course_assignment_path(@course, @assignment)) },
                 only: [:rerun_grader]
   before_action -> { require_admin_or_staff(course_assignment_submission_path(@course, @assignment, @submission)) },
-                only: [:recreate_grade, :use_for_student, :use_for_everyone, :publish]
+                only: [:recreate_grade, :use_for_user, :use_for_everyone, :publish]
   before_action -> { require_admin_or_prof(course_assignment_submission_path(@course, @assignment, @submission)) },
                 only: [:rescind_lateness, :edit_plagiarism, :update_plagiarism, :split_submission]
   def show
@@ -178,9 +178,9 @@ class SubmissionsController < ApplicationController
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 
-  def use_for_student(user_id)
+  def use_for_user(user_id)
     begin
-      @submission.set_used_student!(user_id)
+      @submission.set_used_user!(user_id)
       redirect_to course_assignment_submission_path(@course, @assignment, @submission),
                   notice: "Successfully set submission to be used in grading this student."
     rescue UserIDNotAssociated
