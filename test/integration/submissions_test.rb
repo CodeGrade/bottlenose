@@ -104,7 +104,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  "Create an assignment that's due in the past.  Before sub1 is created, max = 95, pending = 0")
 
     @sub1 = create(:submission, user: @john, assignment: @as1, created_at: Time.now - 2.days)
-    @sub1.set_used_student!(@john)
+    @sub1.set_used_user!(@john.id)
     @summary = clean(@cs101.score_summary(@john))
     assert (@summary[@john.id].delete(:cur).nan?)
     assert_equal({dropped: nil, min: 0.0, max: 100.0,
