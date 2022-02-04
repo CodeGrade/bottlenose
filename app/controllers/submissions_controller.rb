@@ -172,15 +172,9 @@ class SubmissionsController < ApplicationController
                   notice: "Regraded #{@grader.display_type} for #{pluralize(count, 'submission')}"
   end
 
-  def use_for_grading
-    raise "How did you get here?"
-    @submission.set_used_sub!
-    redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
-  end
-
-  def use_for_user(user_id)
+  def use_for_user
     begin
-      @submission.set_used_user!(user_id)
+      @submission.set_used_user!(params[:user_id])
       redirect_to course_assignment_submission_path(@course, @assignment, @submission),
                   notice: "Successfully set submission to be used in grading this student."
     rescue UserIDNotAssociated
