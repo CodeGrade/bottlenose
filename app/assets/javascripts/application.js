@@ -189,8 +189,22 @@ function activate_file_picker($e) {
   });
 }
 
+$.tablesorter.addParser({
+  id: 'dates',
+  is: function(_) {
+    return false;
+  },
+  format: function(_, _, cell, _) {
+    return $(cell).data("iso-date");
+  },
+  parsed: false,
+  type: "text"
+});
+
 $(function() {
   $('.local-time').each(function(_) {
+    $(this).data("iso-date", $(this).text());
+    console.log("Data: "+ $(this).data("iso-date"));
     $(this).text(makeFriendlyDate($(this).text(), true));
   });
   $(".local-time-title").each(function(_) {
@@ -203,7 +217,6 @@ $(function() {
       html: true
     });
   });
-
 
   $("input.numeric").on("keydown", validateNumericInput);
 });
