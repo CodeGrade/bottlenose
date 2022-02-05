@@ -204,7 +204,6 @@ $.tablesorter.addParser({
 $(function() {
   $('.local-time').each(function(_) {
     $(this).data("iso-date", $(this).text());
-    console.log("Data: "+ $(this).data("iso-date"));
     $(this).text(makeFriendlyDate($(this).text(), true));
   });
   $(".local-time-title").each(function(_) {
