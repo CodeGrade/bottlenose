@@ -195,7 +195,7 @@ $.tablesorter.addParser({
     return false;
   },
   format: function(_, _, cell, _) {
-    return $(cell).data("iso-date");
+    return $(cell).find("span.local-time").data("iso-date");
   },
   parsed: false,
   type: "text"

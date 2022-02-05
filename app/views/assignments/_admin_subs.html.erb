@@ -213,7 +213,7 @@
         <td><%= maybe_link_user(current_user.site_admin? || cur_user_prof_ever || current_user.id == sub.user.id,
                                 sub.user) %></td>
         <% end %>
-        <td class="local-time"><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
+        <td><span class="local-time"><%= sub.created_at.iso8601 %></span></td>
         <% scores = grade[:staff_scores] %>
         <td><%= status_image(sub, 100.0 * scores[:raw_score] / @gradesheet.max_score) %></td>
         <% scores[:scores].zip(grade[:grade_times]).each do |s, t| %>
