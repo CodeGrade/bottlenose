@@ -77,4 +77,18 @@ class TeamsetsControllerTest < ActionController::TestCase
     @ts2.reload
     assert_equal 5, @ts2.teams.count
   end
+
+  test "shouldn't update team with same start and end date" do 
+    sign_in @fred
+
+    assert_no_difference('Team.count') do
+      patch :update, params: {
+              course_id: @team.course,
+              id: @team.teamset_id,
+              single: { start_date: Date.today, end_date: Date.today },
+              users: [ @mark.id, @jane.id, @greg.id ] }
+    end
+
+    assert_response :redirect
+  end
 end
