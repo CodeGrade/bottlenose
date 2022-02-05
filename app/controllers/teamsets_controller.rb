@@ -72,7 +72,7 @@ class TeamsetsController < ApplicationController
   def update
     
     if team_params[:end_date] && 
-    team_params[:start_date] <= team_params[:end_date]
+    (team_params[:start_date] <= team_params[:end_date])
       redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                     alert: "Cannot create a team with the end date today or before today."
       return 
