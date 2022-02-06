@@ -300,10 +300,14 @@ class User < ApplicationRecord
 
   def disconnect(course = nil)
     # Dissolve any teams, if this person is a student in the course
+    # Active teams are teams without an end date or on that is "in the futue",
+    # aka tomorrow or onwards.
+    future_range = (Date.today + 1.day)..Date::Infinity.new
+    active_teams = teams.where(end_date: nil).or(teams.where(end_date: future_range))
     if course
-      to_dissolve = teams.where(course_id: course.id, end_date: nil)
+      to_dissolve = teams.where(course_id: course.id).merge(active_teams)
     else
-      to_dissolve = teams.where(end_date: nil)
+      to_dissolve = active_teams
     end
     to_dissolve.each do |t| t.dissolve(DateTime.current) end
     # Abandon any grading, if this person is a grader for the course
