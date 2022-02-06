@@ -59,7 +59,7 @@
   <div class="col-md-4">
     <div class="form-group">
       <%= label_tag :end_date %><br>
-      <div class='input-group date'>
+      <div class='input-group date' data-default="<%= DateTime.now.tomorrow.iso8601 %>" >
         <%= text_field_tag :end_date, "", class: 'form-control', include_blank: true %>
         <span class="input-group-addon">
           <span class="glyphicon glyphicon-calendar"></span>
@@ -78,6 +78,13 @@
             allowInputToggle: true
           });
         });
+
+        // According to Bootstrap DateTimePicker docs,
+        // you can access any of the fields (e.g., minDate)
+        // through the data function.
+        $('#end_date').data("DateTimePicker")
+          .minDate("<%= DateTime.now.tomorrow.iso8601%>");
+
         var start = $("#start_date").parent();
         var end = $("#end_date").parent();
         start.on("dp.change", function(e) {
