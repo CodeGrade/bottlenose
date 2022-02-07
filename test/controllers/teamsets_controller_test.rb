@@ -89,4 +89,16 @@ class TeamsetsControllerTest < ActionController::TestCase
     end
     assert_response :redirect
   end
+
+  test "shouldn't update team with end date before start date" do 
+    sign_in @fred
+    assert_no_difference('Team.count') do
+      patch :update, params: {
+              course_id: @team.course,
+              id: @team.teamset_id,
+              single: { start_date: Date.today, end_date: Date.yesterday },
+              users: [ @mark.id, @jane.id, @greg.id ] }
+    end
+    assert_response :redirect
+  end
 end
