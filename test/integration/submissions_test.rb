@@ -596,4 +596,52 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       assert_not_includes(targets, tid, "Team #{tid} should not review itself")
     end
   end
+
+  test "should be able to use a different individiual submission for user with use_for_user" do
+    @as12 = create(:assignment, course: @cs101, teamset: @ts1, team_subs: false,
+      available: Date.current,
+      due_date: Date.current + 1.day,
+      points_available: 5)
+    
+    @sub12 = create(:submission, user: @john, assignment: @a12, created_at: @as12.available + 1.hours)
+    @sub13 = create(:submission, user: @john, assignment: @as12, created_at: @as12.available + 1.hours)
+
+    @sub13.set_used_user!(@john.id)
+
+    @sub12.set_used_user!(@john.id)
+    
+  end
+
+  test "should be able to use a different submission for entire team (use_for_everyone)" do
+    @as13 = create(:assignment, course: @cs101, teamset: @ts1, team_subs: true,
+      available: Date.current,
+      due_date: Date.current + 1.day,
+      points_available: 5)
+    @team2 = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 2.days, end_date: nil)
+    @team2.users = [@john, @sarah]
+    @team2.save
+
+    # TODO: Create graders and allocations.
+
+    @sub14 = create(:submission, user: @john, assignment: @as13, team: @team2, created_at: @as13.available + 1.hours)
+    @sub15 = create(:submission, user: @sarah, assignment: @as13, team: @team2, created_at: @as13.available + 2.hours)
+
+    @sub15.set_used_everyone!
+
+    # Confirm UsedSub is sub13 and other data
+
+    @sub15.set_used_everyone!
+
+    # Confirmed UsedSub is sub12 and other data
+
+  end
+
+  test "should allow a member of a current team to use an old submission with a dissolved prior team for grading" do
+  end
+
+  test "should allow two users in the same team to use two different team submissions for grading" do
+
+  end
+
+
 end
