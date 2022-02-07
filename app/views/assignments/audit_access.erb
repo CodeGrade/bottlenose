@@ -100,7 +100,11 @@
       $("#submissions").tablesorter({
         headerTemplate: "{content} {icon}",
         theme: "bootstrap",
-        widgets: ['uitheme']
+        widgets: ['uitheme'],
+        headers: {
+          2: { sorter: false },
+          4: { sorter: false }
+        }
       });
       $(".no-resort").on("mousedown", function(e) { e.stopPropagation(); });
       enableShowUsernames("#show_username");
