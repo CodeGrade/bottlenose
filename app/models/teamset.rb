@@ -21,7 +21,7 @@ class Teamset < ActiveRecord::Base
     # with at least two assignments (otherwise, there's no need to
     # copy teams and modify assignments, anyway).
     
-    # TODO: should this be in a transaction?
+    # TODO: should this be in a transaction? YES
     new_ts = Teamset.new(course: self.course, name: name || "Copy of #{self.name}")
     new_ts.save!
     new_ts.copy_from(self, revise_subs_for_assn)
@@ -79,21 +79,22 @@ class Teamset < ActiveRecord::Base
     self.dissolve_all
     count = 0
     dropped_users = src.users.pluck(:user_id, :dropped_date).to_h
-    src.active_teams.each do |team|
-      if team.users.any?{|u| dropped_users[u.id]}
-        debugger
-        next
+    Teamset.transaction do 
+      src.active_teams.each do |team|
+        if team.users.any?{|u| dropped_users[u.id]}
+          raise "Team #{team.id} is still active, but at least one of its students has dropped. Contact an admin."
+        end
+        new_team = team.dup
+        new_team.users = team.users
+        new_team.teamset = self
+        new_team.save!
+        if revise_subs_for_assn
+          team.submissions
+            .where(assignment: revise_subs_for_assn)
+            .update_all({team_id: new_team.id}) # does this need to be team_id, or can it be just team?
+        end
+        count += 1
       end
-      new_team = team.dup
-      new_team.users = team.users
-      new_team.teamset = self
-      new_team.save!
-      if revise_subs_for_assn
-        team.submissions
-          .where(assignment: revise_subs_for_assn)
-          .update_all({team_id: new_team.id}) # does this need to be team_id, or can it be just team?
-      end
-      count += 1
     end
     return count
   end
