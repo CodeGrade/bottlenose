@@ -302,10 +302,10 @@ class User < ApplicationRecord
     # Dissolve any teams, if this person is a student in the course
     # Active teams are teams without an end date or on that is "in the futue",
     # aka tomorrow or onwards.
-    future_range = (Date.today + 1.day)..Date::Infinity.new
+    future_range = (Date.tomorrow)..Date::Infinity.new
     active_teams = teams.where(end_date: nil).or(teams.where(end_date: future_range))
     if course
-      to_dissolve = teams.where(course_id: course.id).merge(active_teams)
+      to_dissolve = active_teams.where(course_id: course.id)
     else
       to_dissolve = active_teams
     end
