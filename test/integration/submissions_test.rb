@@ -598,41 +598,112 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "should be able to use a different individiual submission for user with use_for_user" do
-    @as12 = create(:assignment, course: @cs101, teamset: @ts1, team_subs: false,
+    # Abbreviation for this => iaufu
+    # This notation is used for objects referencing it.
+    @ind_asgn_use_for_user = create(:assignment, course: @cs101, teamset: @ts1, team_subs: false,
       available: Date.current,
       due_date: Date.current + 1.day,
       points_available: 5)
+    @iaufu_grader = create(:grader, assignment: @ind_asgn_use_for_user)
+
+    @john_ind_sub_1 = create(:submission, user: @john, assignment: @ind_asgn_use_for_user, 
+                                created_at: @ind_asgn_use_for_user.available + 1.hours)
+    @john_ind_sub_2 = create(:submission, user: @john, assignment: @ind_asgn_use_for_user, 
+                                created_at: @ind_asgn_use_for_user.available + 2.hours)
+
+    # UsedSub for John on this assignment should not exist yet.
+    assert_not(UsedSub.exists?(assignment_id: @ind_asgn_use_for_user.id, user_id: @john.id, 
+                                submission_id: @john_ind_sub_1.id));
+    assert_not(UsedSub.exists?(assignment_id: @ind_asgn_use_for_user.id, user_id: @john.id, 
+                                submission_id: @john_ind_sub_2.id));
     
-    @sub12 = create(:submission, user: @john, assignment: @a12, created_at: @as12.available + 1.hours)
-    @sub13 = create(:submission, user: @john, assignment: @as12, created_at: @as12.available + 1.hours)
+    # Set Sub2 Used
+    @john_ind_sub_2.set_used_user!(@john.id)
 
-    @sub13.set_used_user!(@john.id)
+    # Assert existence of UsedSub for John with sub2 on this assignment. Sub1 should
+    # not have a used sub.
+    assert_not(UsedSub.exists?(assignment_id: @ind_asgn_use_for_user.id, user_id: @john.id, 
+      submission_id: @john_ind_sub_1.id));
+    assert(UsedSub.exists?(assignment_id: @ind_asgn_use_for_user.id, user_id: @john.id, 
+      submission_id: @john_ind_sub_2.id));
 
-    @sub12.set_used_user!(@john.id)
+    # Create GraderAlloc for the submission.
+    @iaufu_alloc = create(:grader_allocation, course: @cs101, assignment: @ind_asgn_use_for_user, 
+                            submission: @john_ind_sub_2, who_grades_id: @fred.id)
+    
+    # Assert GraderAlloc information is still the same.
+    assert_equal(@cs101, @iaufu_alloc.course)
+    assert_equal(@ind_asgn_use_for_user.id, @iaufu_alloc.assignment_id)
+    assert_equal(@fred, @iaufu_alloc.who_grades)
+    assert_equal(@john_ind_sub_2, @iaufu_alloc.submission)
+
+    # Should NOT be submission 1.
+    assert_not_equal(@iaufu_alloc.submission, @john_ind_sub_1)
+
+    # Set Sub1 Used
+    @john_ind_sub_1.set_used_user!(@john.id)
+    @iaufu_alloc.reload
+
+    # Should be a UsedSub for John on this assignment for sub1, and not for sub2.
+    assert(UsedSub.exists?(assignment_id: @ind_asgn_use_for_user.id, user_id: @john.id, 
+      submission_id: @john_ind_sub_1.id));
+    assert_not(UsedSub.exists?(assignment_id: @ind_asgn_use_for_user.id, user_id: @john.id, 
+      submission_id: @john_ind_sub_2.id));
+
+    # All alloc data Except :submission should not have changed.
+    assert_equal(@cs101, @iaufu_alloc.course)
+    assert_equal(@ind_asgn_use_for_user.id, @iaufu_alloc.assignment_id)
+    assert_equal(@fred, @iaufu_alloc.who_grades)
+
+    # Sub1 should be in grader allocation; sub2 should not.
+    assert_equal(@john_ind_sub_1.id, @iaufu_alloc.submission_id);
+    assert_not_equal(@john_ind_sub_2.id, @iaufu_alloc.submission_id);
     
   end
 
   test "should be able to use a different submission for entire team (use_for_everyone)" do
-    @as13 = create(:assignment, course: @cs101, teamset: @ts1, team_subs: true,
+    @team_ev1_asgn = create(:assignment, course: @cs101, teamset: @ts1, team_subs: true,
       available: Date.current,
       due_date: Date.current + 1.day,
       points_available: 5)
-    @team2 = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 2.days, end_date: nil)
-    @team2.users = [@john, @sarah]
-    @team2.save
+    
+    @js_team_ev1 = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 2.days, end_date: nil)
+    @js_team_ev1.users = [@john, @sarah]
+    @js_team_ev1.save
 
-    # TODO: Create graders and allocations.
+    @john_ev1_sub = create(:submission, team: @js_team_ev1, assignment: @team_ev1_asgn, 
+        created_at: @team_ev1_asgn.available + 1.hours)
+    @sarah_ev1_sub = create(:submission, team: @js_team_ev1, assignment: @team_ev1_asgn, 
+      created_at: @team_ev1_asgn.available + 2.hours)
 
-    @sub14 = create(:submission, user: @john, assignment: @as13, team: @team2, created_at: @as13.available + 1.hours)
-    @sub15 = create(:submission, user: @sarah, assignment: @as13, team: @team2, created_at: @as13.available + 2.hours)
+    assert_not(UsedSub.exists?(submission_id: @john_ev1_sub.id))
+    assert_not(UsedSub.exists?(submission_id: @sarah_ev1_sub.id))
 
-    @sub15.set_used_everyone!
+    # Sarah's sub is the used submission.
+    @sarah_ev1_sub.set_used_everyone!
 
-    # Confirm UsedSub is sub13 and other data
+    assert_not(UsedSub.exists?(submission_id: @john_ev1_sub.id))
+    assert(UsedSub.exists?(submission_id: @sarah_ev1_sub.id, user_id: @john.id))
+    assert(UsedSub.exists?(submission_id: @sarah_ev1_sub.id, user_id: @sarah.id))
 
-    @sub15.set_used_everyone!
+    # Create a GraderAllocation for the UsedSubmission.
+    @ev1_sub_ga = create(:grader_allocation, course: @cs101, assignment: @team_ev1_asgn, 
+                          submission: @sarah_ev1_sub, who_grades_id: @fred.id)
+    
+    # John's submission is set for everyone's use.
+    @john_ev1_sub.set_used_everyone!
+    @ev1_sub_ga.reload
 
-    # Confirmed UsedSub is sub12 and other data
+    assert(UsedSub.exists?(submission_id: @john_ev1_sub.id, user_id: @john.id))
+    assert(UsedSub.exists?(submission_id: @john_ev1_sub.id, user_id: @sarah.id))
+    assert_not(UsedSub.exists?(submission_id: @sarah_ev1_sub.id))
+
+    # Grader allocation info should be same, EXCEPT for the submission.
+    assert_equal(@cs101.id, @ev1_sub_ga.course_id)
+    assert_equal(@team_ev1_asgn.id, @ev1_sub_ga.assignment_id)
+    assert_equal(@fred.id, @ev1_sub_ga.who_grades_id)
+    assert_equal(@john_ev1_sub.id, @ev1_sub_ga.submission_id)
+    assert_not_equal(@sarah_ev1_sub.id, @ev1_sub_ga.submission_id)
 
   end
 
@@ -640,7 +711,50 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "should allow two users in the same team to use two different team submissions for grading" do
+    # ufu is Use for User
+    @team_asgn_2_ufu = create(:assignment, course: @cs101, teamset: @ts1, team_subs: true,
+      available: Date.current,
+      due_date: Date.current + 1.day,
+      points_available: 5)
+    
+    @js_team_ufu = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 2.days, end_date: nil)
+    @js_team_ufu.users = [@john, @sarah]
+    @js_team_ufu.save
 
+    @john_ufu_sub = create(:submission, team: @js_team_ufu, assignment: @team_asgn_2_ufu, 
+        created_at: @team_asgn_2_ufu.available + 1.hours)
+    @sarah_ufu_sub = create(:submission, team: @js_team_ufu, assignment: @team_asgn_2_ufu, 
+      created_at: @team_asgn_2_ufu.available + 2.hours)
+
+    assert_not(UsedSub.exists?(submission_id: @john_ufu_sub.id))
+    assert_not(UsedSub.exists?(submission_id: @sarah_ufu_sub.id))
+
+    # Sarah's sub is the used submission for everyone.
+    @sarah_ufu_sub.set_used_everyone!
+
+    assert(UsedSub.exists?(submission_id: @sarah_ufu_sub.id, user_id: @sarah.id))
+    assert(UsedSub.exists?(submission_id: @sarah_ufu_sub.id, user_id: @john.id))
+    assert_not(UsedSub.exists?(submission_id: @john_ufu_sub.id))
+
+    # Create a GraderAllocation for the UsedSubmission.
+    @ufu_sub_ga = create(:grader_allocation, course: @cs101, assignment: @team_asgn_2_ufu, 
+                          submission: @sarah_ufu_sub, who_grades_id: @fred.id)
+    
+    # John's submission is set for him Only. Sarah's UsedSub data and associated GraderAlloc 
+    # data should not change.
+    @john_ufu_sub.set_used_user!(@john.id)
+    @ufu_sub_ga.reload
+
+    assert(UsedSub.exists?(submission_id: @john_ufu_sub.id, user_id: @john.id))
+    assert_not(UsedSub.exists?(submission_id: @john_ufu_sub.id, user_id: @sarah.id))
+    assert(UsedSub.exists?(submission_id: @sarah_ufu_sub.id, user_id: @sarah.id))
+    assert_not(UsedSub.exists?(submission_id: @sarah_ufu_sub.id, user_id: @john.id))
+
+    # Grader allocation info should not change.
+    assert_equal(@cs101.id, @ufu_sub_ga.course_id)
+    assert_equal(@team_asgn_2_ufu.id, @ufu_sub_ga.assignment_id)
+    assert_equal(@fred.id, @ufu_sub_ga.who_grades_id)
+    assert_equal(@sarah_ufu_sub.id, @ufu_sub_ga.submission_id)
   end
 
 
