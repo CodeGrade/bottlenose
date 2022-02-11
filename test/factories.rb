@@ -61,6 +61,15 @@ FactoryBot.define do
     assignment
   end
 
+  factory :grader_allocation do
+    course
+    assignment
+    submission
+    who_grades_id { 1 }
+    grading_assigned { DateTime.now }
+    abandoned { false }
+  end
+  
   factory :teamset do
     course
     sequence(:name) {|n| "Default teamset #{n}"}
