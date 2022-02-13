@@ -671,9 +671,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @js_team_ev1.users = [@john, @sarah]
     @js_team_ev1.save
 
-    @john_ev1_sub = create(:submission, team: @js_team_ev1, assignment: @team_ev1_asgn, 
+    @john_ev1_sub = create(:submission, user: @john, team: @js_team_ev1, assignment: @team_ev1_asgn, 
         created_at: @team_ev1_asgn.available + 1.hours)
-    @sarah_ev1_sub = create(:submission, team: @js_team_ev1, assignment: @team_ev1_asgn, 
+    @sarah_ev1_sub = create(:submission, user: @sarah, team: @js_team_ev1, assignment: @team_ev1_asgn, 
       created_at: @team_ev1_asgn.available + 2.hours)
 
     assert_not(UsedSub.exists?(submission_id: @john_ev1_sub.id))
@@ -708,6 +708,33 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "should allow a member of a current team to use an old submission with a dissolved prior team for grading" do
+    @asgn_team_diss = create(:assignment, course: @cs101, teamset: @ts1, team_subs: true,
+      available: Date.yesterday,
+      due_date: Date.tomorrow,
+      points_available: 5)
+    
+    @js_team_to_diss = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 3.days, end_date: nil)
+    @js_team_to_diss.users = [@john, @sarah]
+    @js_team_to_diss.save
+
+    @js_john_sub_diss = create(:submission, user: @john, team: @js_team_to_diss,
+                            created_at: Time.now - 1.day)
+    
+    @js_john_sub_diss.set_used_everyone!
+
+    # Vaildate UsedSub data (one for j and s)
+
+    @js_john_sub_diss_ga = create(:grader_allocation, assignment: @asgn_team_diss, 
+                                    course: @cs101, submission: @js_john_sub_diss, who_grades_id: @fred.id)
+
+    # Dissolve the team. Ensure UsedSub and GraderAlloc information does not change.
+    @js_team_to_diss.dissolve
+
+    # Create new team and submission for them.
+    @jc_team_no_diss = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now, end_date: nil)
+    @jc_team_no_diss.users = [@john, @sarah]
+    @jc_team_no_diss.save
+    
   end
 
   test "should allow two users in the same team to use two different team submissions for grading" do
