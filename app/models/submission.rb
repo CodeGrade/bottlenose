@@ -77,7 +77,11 @@ class Submission < ApplicationRecord
   def set_used_user!(user_id)
     if team&.user_ids&.include?(user_id) || (user&.id == user_id)
       used = UsedSub.find_or_initialize_by(user_id: user_id, assignment_id: assignment_id)
-      if used.submission_id
+      
+      # NOTE: Grader allocation should only be updated if there is a prev used submission
+      # and the sub has no team OR if user who submitted the content in the prev UsedSub
+      # is the user who we are setting this submission to be used for. 
+      if used.submission_id && used.user_id == self.user.id
         self.update_grader_alloc(used)
       end
       used.submission = self
@@ -563,7 +567,8 @@ class Submission < ApplicationRecord
     end
   end
 
-
+  
+  
 end
 
 class UserIDNotAssociated < StandardError
