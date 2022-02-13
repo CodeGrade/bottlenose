@@ -717,23 +717,50 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @js_team_to_diss.users = [@john, @sarah]
     @js_team_to_diss.save
 
-    @js_john_sub_diss = create(:submission, user: @john, team: @js_team_to_diss,
+    @js_john_sub_diss = create(:submission, assignment: @asgn_team_diss, user: @john, team: @js_team_to_diss,
                             created_at: Time.now - 1.day)
     
     @js_john_sub_diss.set_used_everyone!
 
     # Vaildate UsedSub data (one for j and s)
+    assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @john))
+    assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @sarah))
 
     @js_john_sub_diss_ga = create(:grader_allocation, assignment: @asgn_team_diss, 
                                     course: @cs101, submission: @js_john_sub_diss, who_grades_id: @fred.id)
 
     # Dissolve the team. Ensure UsedSub and GraderAlloc information does not change.
-    @js_team_to_diss.dissolve
+    @js_team_to_diss.dissolve(Date.today)
+    @js_john_sub_diss_ga.reload
+
+    assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @john))
+    assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @sarah))
+
+    assert_equal(@fred.id, @js_john_sub_diss_ga.who_grades_id)
+    assert_equal(@asgn_team_diss.id, @js_john_sub_diss_ga.assignment_id)
+    assert_equal(@cs101.id, @js_john_sub_diss_ga.course_id)
+    assert_equal(@js_john_sub_diss.id, @js_john_sub_diss_ga.who_grades_id)
 
     # Create new team and submission for them.
     @jc_team_no_diss = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now, end_date: nil)
-    @jc_team_no_diss.users = [@john, @sarah]
+    @jc_team_no_diss.users = [@john, @claire]
     @jc_team_no_diss.save
+
+    @jc_john_sub_no_diss = create(:submission, assignment: @asgn_team_diss, user: @john, 
+                              team: @jc_team_no_diss, created_at: Time.now)
+    
+    # Set the submission to be used for everyone.
+    @jc_john_sub_no_diss.set_used_everyone!
+
+    # UsedSub for John should now be jc_..., as well as for Claire. Sarah should still use old one.
+    assert_not(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @john))
+    assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @sarah))
+
+    assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @john))
+    assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @claire))
+    assert_not(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @sarah))
+
+
     
   end
 
