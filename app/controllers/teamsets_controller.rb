@@ -222,9 +222,14 @@ class TeamsetsController < ApplicationController
                     alert: "No such teamset"
       return
     end
-    count = @teamset.copy_from(source, nil)
-    redirect_back fallback_location: course_teamsets_path(@course),
-                  notice: "#{pluralize(count, 'team')} copied from #{source.name}"
+    begin
+      count = @teamset.copy_from(source, nil)
+      redirect_back fallback_location: course_teamsets_path(@course),
+                    notice: "#{pluralize(count, 'team')} copied from #{source.name}"
+    rescue ActiveTeamWithDroppedStudent => dropped_student_ts_err
+      redirect_back fallback_location: course_teamsets_path(@course),
+                    alert: dropped_student_ts_err.msg
+    end
   end
 
   def accept_request
