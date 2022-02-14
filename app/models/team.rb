@@ -49,6 +49,7 @@ class Team < ApplicationRecord
     stale_subs = self.submissions.joins(:assignment).where('due_date >= ?', as_of)
     stale_subs.update_all(stale_team: true)
     UsedSub.where(submission: stale_subs).delete_all
+    GraderAllocation.where(submission: stale_subs).delete_all
     CodereviewMatching.where(team: self).delete_all
     CodereviewMatching.where(target_team: self).delete_all
   end
