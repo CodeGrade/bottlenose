@@ -21,11 +21,12 @@ class Teamset < ActiveRecord::Base
     # with at least two assignments (otherwise, there's no need to
     # copy teams and modify assignments, anyway).
     
-    # TODO: should this be in a transaction? YES
-    new_ts = Teamset.new(course: self.course, name: name || "Copy of #{self.name}")
-    new_ts.save!
-    new_ts.copy_from(self, revise_subs_for_assn)
-    return new_ts
+    Teamset.transaction do
+      new_ts = Teamset.new(course: self.course, name: name || "Copy of #{self.name}")
+      new_ts.save!
+      new_ts.copy_from(self, revise_subs_for_assn)
+      return new_ts
+    end
   end
 
   def randomize(size, within_section, start_date, end_date = nil)
@@ -75,6 +76,8 @@ class Teamset < ActiveRecord::Base
     return count
   end
 
+  # NOTE: Throws an ActiveTeamWithDroppedStudent, as teams with dropped 
+  # students should not be carried over (or exist at all, for that matter).
   def copy_from(src, revise_subs_for_assn)
     self.dissolve_all
     count = 0
@@ -82,7 +85,7 @@ class Teamset < ActiveRecord::Base
     Teamset.transaction do 
       src.active_teams.each do |team|
         if team.users.any?{|u| dropped_users[u.id]}
-          raise "Team #{team.id} is still active, but at least one of its students has dropped. Contact an admin."
+          raise ActiveTeamWithDroppedStudent.new(team.id)
         end
         new_team = team.dup
         new_team.users = team.users
@@ -170,4 +173,13 @@ class Teamset < ActiveRecord::Base
       # does this need to be team_id, or can it be just team?
     end
   end
+end
+
+class ActiveTeamWithDroppedStudent < StandardError
+
+  def initialize(team_id)
+    msg = "Team #{team_id} is still active, but at least one of its students has dropped. Contact an admin."
+    super(msg)
+  end
+
 end
