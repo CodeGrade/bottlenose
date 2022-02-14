@@ -42,10 +42,6 @@ class Submission < ApplicationRecord
       UserSubmission.find_or_create_by!(user: user, submission: self)
     end
   end
-
-  def set_used_sub!
-    raise "Oh god how did you get here?"
-  end
   
   # Update the used submission for this submission/student OR submission/team
   # pair and update grader allocation if applicable.
@@ -79,9 +75,8 @@ class Submission < ApplicationRecord
       used = UsedSub.find_or_initialize_by(user_id: user_id, assignment_id: assignment_id)
       
       # NOTE: Grader allocation should only be updated if there is a prev used submission
-      # and the sub has no team OR if user who submitted the content in the prev UsedSub
-      # is the user who we are setting this submission to be used for. 
-      if used.submission_id && used.user_id == self.user.id
+      # and the user_id is the ONLY user still using that submission. 
+      if used.submission_id && UsedSub.where(submission_id: used.submission_id).count == 1
         self.update_grader_alloc(used)
       end
       used.submission = self

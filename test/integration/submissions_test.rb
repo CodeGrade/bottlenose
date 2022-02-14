@@ -729,17 +729,18 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @js_john_sub_diss_ga = create(:grader_allocation, assignment: @asgn_team_diss, 
                                     course: @cs101, submission: @js_john_sub_diss, who_grades_id: @fred.id)
 
-    # Dissolve the team. Ensure UsedSub and GraderAlloc information does not change.
+    # Dissolve the team.
     @js_team_to_diss.dissolve(Date.today)
-    @js_john_sub_diss_ga.reload
+    # @js_john_sub_diss_ga.reload
 
-    # assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @john))
-    # assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @sarah))
+    assert_not(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @john))
+    assert_not(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @sarah))
 
-    assert_equal(@fred.id, @js_john_sub_diss_ga.who_grades_id)
-    assert_equal(@asgn_team_diss.id, @js_john_sub_diss_ga.assignment_id)
-    assert_equal(@cs101.id, @js_john_sub_diss_ga.course_id)
-    assert_equal(@js_john_sub_diss.id, @js_john_sub_diss_ga.submission_id)
+    assert_not(GraderAllocation.exists?(submission: @js_john_sub_diss))
+    # assert_equal(@fred.id, @js_john_sub_diss_ga.who_grades_id)
+    # assert_equal(@asgn_team_diss.id, @js_john_sub_diss_ga.assignment_id)
+    # assert_equal(@cs101.id, @js_john_sub_diss_ga.course_id)
+    # assert_equal(@js_john_sub_diss.id, @js_john_sub_diss_ga.submission_id)
 
     # Create new team and submission for them.
     @jc_team_no_diss = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now, end_date: nil)
@@ -758,7 +759,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
 
     assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @john))
     assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @claire))
-    assert_not(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @sarah))
+    assert_not(UsedSub.exists?(assignment: @asgn_team_diss,  user: @sarah))
 
 
     # Set John's previous submission with Sarah to be used for John. 
@@ -768,6 +769,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     assert_not(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @john))
     assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @john))
     assert(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @claire))
+    assert_not(UsedSub.exists?(assignment: @asgn_team_diss,  user: @sarah))
 
 
     
@@ -818,6 +820,22 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     assert_equal(@team_asgn_2_ufu.id, @ufu_sub_ga.assignment_id)
     assert_equal(@fred.id, @ufu_sub_ga.who_grades_id)
     assert_equal(@sarah_ufu_sub.id, @ufu_sub_ga.submission_id)
+    assert_not(GraderAllocation.exists?(submission_id: @john_ufu_sub.id))
+
+    @john_ufu_sub.set_used_user!(@sarah.id)
+    @ufu_sub_ga.reload
+
+    assert(UsedSub.exists?(submission_id: @john_ufu_sub.id, user_id: @john.id))
+    assert(UsedSub.exists?(submission_id: @john_ufu_sub.id, user_id: @sarah.id))
+    assert_not(UsedSub.exists?(submission_id: @sarah_ufu_sub.id))
+
+    # Grader allocation info should stay the same EXCEPT we now use John's sub.
+    assert_equal(@cs101.id, @ufu_sub_ga.course_id)
+    assert_equal(@team_asgn_2_ufu.id, @ufu_sub_ga.assignment_id)
+    assert_equal(@fred.id, @ufu_sub_ga.who_grades_id)
+    assert_equal(@john_ufu_sub.id, @ufu_sub_ga.submission_id)
+    assert_not(GraderAllocation.exists?(submission_id: @sarah_ufu_sub.id))
+    
   end
 
 
