@@ -78,6 +78,8 @@ class TeamsetsControllerTest < ActionController::TestCase
     assert_equal 5, @ts2.teams.count
   end
 
+
+  # TODO: Team count is not actually what we're testing here or the next one.
   test "shouldn't update team with same start and end date" do 
     sign_in @fred
     assert_no_difference('Team.count') do

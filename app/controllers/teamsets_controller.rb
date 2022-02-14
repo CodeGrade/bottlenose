@@ -275,6 +275,14 @@ class TeamsetsController < ApplicationController
   end
   def accept_all_requests
     team_info = custom_params
+
+    if team_info[:end_date] && 
+      (team_info[:start_date] >= team_info[:end_date])
+        redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                      alert: "Cannot create a team with the end date on or before the start date."
+        return 
+    end
+
     setup_params(params[:section_id])
     @swat = @others.map{|s| [s.id, s]}.to_h
     count = 0

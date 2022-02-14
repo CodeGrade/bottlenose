@@ -73,17 +73,11 @@
           target.datetimepicker({
             sideBySide: true,
             format: "MMMM Do, YYYY",
-            minDate: "<%= DateTime.now.iso8601 %>",
+            minDate: target.data("default"),
             defaultDate: target.data("default"),
             allowInputToggle: true
           });
         });
-
-        // According to Bootstrap DateTimePicker docs,
-        // you can access any of the fields (e.g., minDate)
-        // through the data function.
-        $('#end_date').data("DateTimePicker")
-          .minDate("<%= DateTime.now.tomorrow.iso8601%>");
 
         var start = $("#start_date").parent();
         var end = $("#end_date").parent();
@@ -93,6 +87,8 @@
           $("#random_start_date").val(v);
           $("#bulk_start_date").val(v);
           $("#single_start_date").val(v);
+          // Takes start date, converts it to ISO8601 String
+          console.log(v);
         });
         end.on("dp.change", function(e) {
           var v = $("#end_date").val()
