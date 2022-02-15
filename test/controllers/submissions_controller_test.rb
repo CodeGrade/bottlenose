@@ -229,4 +229,59 @@ class SubmissionsControllerTest < ActionController::TestCase
     assert_equal prohib, flash[:alert]
     assert_redirected_to [@cs101, @hello2]
   end
+
+  test "can use submission for one student's grade" do
+    # Basic sanity check to ensure use_for_user is working.
+    # Use for User <=> ufu
+    @sanity_ufu_asgn = create(:assignment, course: @cs101, teamset: @ts1, team_subs: false,
+      available: Date.yesterday,
+      due_date: Date.tomorrow,
+      points_available: 5)
+
+    @sanity_ufu_john_sub = create(:submission, assignment: @sanity_ufu_asgn, user: @john, created_at: Time.now - 1.day)
+    
+    sign_in @fred
+
+    assert_not(UsedSub.exists?(submission: @sanity_ufu_john_sub))
+
+    post :use_for_user, params: {
+      course_id: @cs101.id,
+      assignment_id: @sanity_ufu_asgn.id,
+      user_id: @john.id,
+      id: @sanity_ufu_john_sub.id
+    }
+
+    assert_response :redirect
+    assert(UsedSub.exists?(submission: @sanity_ufu_john_sub, user: @john))
+  end
+
+  test "can use submission for all members of a team" do
+    # Sanity check for use_for_everyone.
+    @sanity_ev1_asgn = create(:assignment, course: @cs101, teamset: @ts1, team_subs: true,
+      available: Date.yesterday,
+      due_date: Date.tomorrow,
+      points_available: 5)
+
+    @sanity_ev1_js_team = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 3.days, end_date: nil)
+    @sanity_ev1_js_team.users = [@john, @sarah]
+    @sanity_ev1_js_team.save
+
+    @sanity_ev1_sarah_sub = create(:submission, assignment: @sanity_ev1_asgn, user: @sarah, team: @sanity_ev1_js_team,
+                                    created_at: Time.now)
+    
+    assert_not(UsedSub.exists?(submission: @sanity_ev1_sarah_sub))
+
+    sign_in @fred
+
+    post :use_for_everyone, params: {
+      course_id: @cs101.id,
+      assignment_id: @sanity_ev1_asgn.id, 
+      id: @sanity_ev1_sarah_sub.id
+    }
+
+    assert_response :redirect
+    assert(UsedSub.exists?(submission: @sanity_ev1_sarah_sub, user: @sarah))
+    assert(UsedSub.exists?(submission: @sanity_ev1_sarah_sub, user: @john))
+
+  end
 end

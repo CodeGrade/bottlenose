@@ -174,7 +174,13 @@ class SubmissionsController < ApplicationController
 
   def use_for_user
     begin
-      @submission.set_used_user!(params[:user_id])
+      user = User.find(params[:user_id])
+      if user.nil?
+        redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                    alert: "The given user ID was not associated with this submission."
+        return
+      end
+      @submission.set_used_user!(user)
       redirect_to course_assignment_submission_path(@course, @assignment, @submission),
                   notice: "Successfully set submission to be used in grading this student."
     rescue UserIDNotAssociated

@@ -618,7 +618,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                                 submission_id: @john_ind_sub_2.id));
     
     # Set Sub2 Used
-    @john_ind_sub_2.set_used_user!(@john.id)
+    @john_ind_sub_2.set_used_user!(@john)
 
     # Assert existence of UsedSub for John with sub2 on this assignment. Sub1 should
     # not have a used sub.
@@ -641,7 +641,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     assert_not_equal(@iaufu_alloc.submission, @john_ind_sub_1)
 
     # Set Sub1 Used
-    @john_ind_sub_1.set_used_user!(@john.id)
+    @john_ind_sub_1.set_used_user!(@john)
     @iaufu_alloc.reload
 
     # Should be a UsedSub for John on this assignment for sub1, and not for sub2.
@@ -763,7 +763,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
 
 
     # Set John's previous submission with Sarah to be used for John. 
-    @js_john_sub_diss.set_used_user!(@john.id)
+    @js_john_sub_diss.set_used_user!(@john)
 
     # Claire's UsedSub should be the same, John's should not.
     assert_not(UsedSub.exists?(assignment: @asgn_team_diss, submission: @jc_john_sub_no_diss, user: @john))
@@ -807,7 +807,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     
     # John's submission is set for him Only. Sarah's UsedSub data and associated GraderAlloc 
     # data should not change.
-    @john_ufu_sub.set_used_user!(@john.id)
+    @john_ufu_sub.set_used_user!(@john)
     @ufu_sub_ga.reload
 
     assert(UsedSub.exists?(submission_id: @john_ufu_sub.id, user_id: @john.id))
@@ -822,7 +822,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     assert_equal(@sarah_ufu_sub.id, @ufu_sub_ga.submission_id)
     assert_not(GraderAllocation.exists?(submission_id: @john_ufu_sub.id))
 
-    @john_ufu_sub.set_used_user!(@sarah.id)
+    @john_ufu_sub.set_used_user!(@sarah)
     @ufu_sub_ga.reload
 
     assert(UsedSub.exists?(submission_id: @john_ufu_sub.id, user_id: @john.id))

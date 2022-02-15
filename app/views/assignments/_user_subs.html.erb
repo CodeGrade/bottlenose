@@ -117,13 +117,16 @@
               <% if sub.team %>
                 <li><%= link_to "Use for everyone", 
                       team_use_course_assignment_submission_path(course, gradesheet.assignment, sub),
+                      method: :post,
                       class: "dropdown-item" %></li>
                 <li><%= link_to "Use for this student",
                         user_use_course_assignment_submission_path(course, gradesheet.assignment, sub, user),
+                        method: :post,
                         class: "dropdown-item" %></li>
               <% else %>
                 <li><%= link_to "Use for grading",
                         user_use_course_assignment_submission_path(course, gradesheet.assignment, sub, user),
+                        method: :post,
                         class: "dropdown-item"%></li>
               <% end %>
             </ul>

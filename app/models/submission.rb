@@ -68,11 +68,12 @@ class Submission < ApplicationRecord
     end
   end
 
-  # Given a User ID, update the used submission for this student/submission pair
+  # Given a User, update the used submission for this student/submission pair
   # and update grader allocation if applicable.
-  def set_used_user!(user_id)
-    if team&.user_ids&.include?(user_id) || (user&.id == user_id)
-      used = UsedSub.find_or_initialize_by(user_id: user_id, assignment_id: assignment_id)
+  def set_used_user!(user)
+
+    if team&.users&.include?(user) || (self.user == user)
+      used = UsedSub.find_or_initialize_by(user: user, assignment_id: assignment_id)
       
       # NOTE: Grader allocation should only be updated if there is a prev used submission
       # and the user_id is the ONLY user still using that submission. 
