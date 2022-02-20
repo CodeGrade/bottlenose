@@ -86,9 +86,7 @@
           $("input[id='custom_start_date']").val(v);
           $("#random_start_date").val(v);
           $("#bulk_start_date").val(v);
-          $("#single_start_date").val(v);
-          // Takes start date, converts it to ISO8601 String
-          console.log(v);
+          $("#single_start_date").val(v);          
         });
         end.on("dp.change", function(e) {
           var v = $("#end_date").val()
@@ -100,9 +98,12 @@
         start.trigger("dp.change");
         end.trigger("dp.change");
         start.on("dp.change", function(e) {
-          var v = end.data("DateTimePicker").date();
+          let curr_end_date = end.data("DateTimePicker").date();
+          let new_min_end_date = e.date.add(1, 'days');
           end.data("DateTimePicker").minDate(e.date);
-          if (v.isBefore(e.date)) end.data("DateTimePicker").clear();
+          if (curr_end_date.isBefore(e.date)) {
+            end.data("DateTimePicker").date(new_min_end_date);
+          }
         });
       })
     </script>
