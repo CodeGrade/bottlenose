@@ -137,6 +137,14 @@ class TeamsetsController < ApplicationController
   end
 
   def bulk_enter
+
+    if params[:bulk_teams][:end_date] && 
+      (params[:bulk_teams][:start_date] >= params[:bulk_teams][:end_date] )
+      redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                    alert: "Cannot create teams with the end date on or before the start date."
+      return
+    end
+
     @success = []
     @failure = []
     @swat = @teamset.users_without_active_team.map{|s| [s.id, s]}.to_h
@@ -210,6 +218,14 @@ class TeamsetsController < ApplicationController
   end
   
   def randomize
+
+    if params[:random][:end_date] && 
+      params[:random][:end_date] <= params[:random][:start_date]
+      redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                    alert: "Cannot create teams with the end date on or before the start date."
+      return
+    end
+
     begin
       count = @teamset.randomize(params[:random][:size].to_i,
                                  params[:random][:teams_within],
@@ -237,6 +253,14 @@ class TeamsetsController < ApplicationController
 
   def accept_request
     team_info = custom_params
+
+    if team_info[:end_date] && 
+      (team_info[:start_date] >= team_info[:end_date])
+        redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
+                      alert: "Cannot create a team with the end date on or before the start date."
+        return 
+    end
+
     uids = (team_info.delete("users") || []).map(&:to_i)
     team_info["users"] = User.where(id: uids)
     if uids.length != team_info["users"].length
