@@ -78,8 +78,6 @@ class TeamsetsControllerTest < ActionController::TestCase
     assert_equal 5, @ts2.teams.count
   end
 
-
-  # TODO: Team count is not actually what we're testing here or the next one.
   test "shouldn't update team with same start and end date" do 
     sign_in @fred
     assert_no_difference('Team.count') do
@@ -103,4 +101,67 @@ class TeamsetsControllerTest < ActionController::TestCase
     end
     assert_response :redirect
   end
+
+  test "should be able to bulk enter teams with valid dates" do
+    sign_in @fred
+    assert_difference('Team.count', 2) do
+      patch :bulk_enter, params: {
+        course_id: @team.course,
+        id: @team.teamset_id,
+        bulk: {
+          teams: [
+            [@mark.username, @jane.username], [@greg.username]
+          ].map(&:to_csv).join,
+
+      
+          start_date: Date.today,
+          end_date: Date.tomorrow        
+        }
+      }
+    end
+    assert_response :redirect
+  end
+
+  test "shouldn't be able to bulk enter team with end date on the start date" do
+    sign_in @fred
+    assert_no_difference('Team.count') do
+      patch :bulk_enter, params: {
+        course_id: @team.course,
+        id: @team.teamset_id,
+        bulk: {
+          teams: [
+            [@mark.username, @jane.username], [@greg.username]
+          ].map(&:to_csv).join,
+
+      
+          start_date: Date.today,
+          end_date: Date.today        
+        }
+      }
+    end
+    assert_response :redirect
+    assert_equal "Cannot create teams with the end date on or before the start date.", flash[:alert]
+  end
+
+  test "shouldn't be able to bulk enter team with end date before the start date" do
+    sign_in @fred
+    assert_no_difference('Team.count') do
+      patch :bulk_enter, params: {
+        course_id: @team.course,
+        id: @team.teamset_id,
+        bulk: {
+          teams: [
+            [@mark.username, @jane.username], [@greg.username]
+          ].map(&:to_csv).join,
+
+      
+          start_date: Date.today,
+          end_date: Date.yesterday        
+        }
+      }
+    end
+    assert_response :redirect
+    assert_equal "Cannot create teams with the end date on or before the start date.", flash[:alert]
+  end
+
 end

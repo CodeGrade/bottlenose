@@ -137,18 +137,17 @@ class TeamsetsController < ApplicationController
   end
 
   def bulk_enter
-
-    if params[:bulk_teams][:end_date] && 
-      (params[:bulk_teams][:start_date] >= params[:bulk_teams][:end_date] )
+    bulk_info = bulk_params
+    if bulk_info[:end_date] && 
+      (bulk_info[:end_date] <= bulk_info[:start_date] )
       redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                     alert: "Cannot create teams with the end date on or before the start date."
       return
     end
-
     @success = []
     @failure = []
     @swat = @teamset.users_without_active_team.map{|s| [s.id, s]}.to_h
-    csv = CSV.parse(params[:bulk_teams])
+    csv = CSV.parse(bulk_info.delete(:teams))
     seen = [].to_set
     csv.each do |row|
       if row.any?(&:nil?)
@@ -171,7 +170,7 @@ class TeamsetsController < ApplicationController
         else
           in_teams = users.select{|s| @swat[s.id].nil?}
           if in_teams.empty?
-            team = Team.new(bulk_params)
+            team = Team.new(bulk_info)
             team.users = users
             users.each do |u| @swat[u.id] = nil end
             if team.valid?
@@ -195,7 +194,7 @@ class TeamsetsController < ApplicationController
       rescue Exception => e
         @teamset.errors.add(:base, "Could not save all teams: #{e}")
         setup_params
-        @teamset.bulk_teams = params[:bulk_teams]
+        @teamset.bulk_teams = params[:bulk][:teams]
         render :edit, status: 500
         return
       end
@@ -255,7 +254,7 @@ class TeamsetsController < ApplicationController
     team_info = custom_params
 
     if team_info[:end_date] && 
-      (team_info[:start_date] >= team_info[:end_date])
+      (team_info[:end_date] <= team_info[:start_date])
         redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                       alert: "Cannot create a team with the end date on or before the start date."
         return 
@@ -301,9 +300,9 @@ class TeamsetsController < ApplicationController
     team_info = custom_params
 
     if team_info[:end_date] && 
-      (team_info[:start_date] >= team_info[:end_date])
+      (team_info[:end_date] <= team_info[:start_date])
         redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
-                      alert: "Cannot create a team with the end date on or before the start date."
+                      alert: "Cannot create teams with the end date on or before the start date."
         return 
     end
 
@@ -371,7 +370,7 @@ class TeamsetsController < ApplicationController
   end
 
   def bulk_params
-    ans = params.require(:bulk).permit(:start_date, :end_date)
+    ans = params.require(:bulk).permit(:start_date, :end_date, :teams)
     ans[:course_id] = params[:course_id]
     ans[:teamset_id] = params[:id]
     ans

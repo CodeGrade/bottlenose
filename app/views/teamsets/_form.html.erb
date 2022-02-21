@@ -95,16 +95,16 @@
           $("#bulk_end_date").val(v);
           $("#single_end_date").val(v);
         });
-        start.trigger("dp.change");
-        end.trigger("dp.change");
         start.on("dp.change", function(e) {
           let curr_end_date = end.data("DateTimePicker").date();
           let new_min_end_date = e.date.add(1, 'days');
-          end.data("DateTimePicker").minDate(e.date);
+          end.data("DateTimePicker").minDate(new_min_end_date);
           if (curr_end_date.isBefore(e.date)) {
             end.data("DateTimePicker").date(new_min_end_date);
           }
         });
+        start.trigger("dp.change");
+        end.trigger("dp.change");
       })
     </script>
   </div>
