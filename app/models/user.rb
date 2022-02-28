@@ -31,6 +31,9 @@ class User < ApplicationRecord
   has_many :courses, through: :registrations
   has_many :sections, through: :registrations
 
+  has_many :grading_conflicts_as_staff, foreign_key: "staff_id", class_name: "GradingConflict", inverse_of: :staff
+  has_many :grading_conflicts_as_student, foreign_key: "student_id", class_name: "GradingConflict", inverse_of: :student
+
   has_many :user_submissions, dependent: :destroy
   has_many :submissions, through: :user_submissions
   has_many :reg_requests, dependent: :destroy

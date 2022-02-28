@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_28_025125) do
+ActiveRecord::Schema.define(version: 2022_02_24_011641) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -108,24 +108,18 @@ ActiveRecord::Schema.define(version: 2022_02_28_025125) do
     t.index ["submission_id"], name: "index_grades_on_submission_id"
   end
 
-  create_table "grading_conflict_requests", force: :cascade do |t|
-    t.bigint "course_id"
-    t.bigint "user_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["course_id"], name: "index_grading_conflict_requests_on_course_id"
-    t.index ["user_id"], name: "index_grading_conflict_requests_on_user_id"
-  end
-
   create_table "grading_conflicts", force: :cascade do |t|
-    t.bigint "grader_user_id"
-    t.bigint "gradee_user_id"
-    t.bigint "course_id"
+    t.bigint "staff_id", null: false
+    t.bigint "student_id", null: false
+    t.bigint "course_id", null: false
+    t.json "activity", null: false
+    t.boolean "active", default: false, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["course_id"], name: "index_grading_conflicts_on_course_id"
-    t.index ["gradee_user_id"], name: "index_grading_conflicts_on_gradee_user_id"
-    t.index ["grader_user_id"], name: "index_grading_conflicts_on_grader_user_id"
+    t.index ["staff_id", "student_id", "course_id"], name: "index_grading_conflict_uniqueness", unique: true
+    t.index ["staff_id"], name: "index_grading_conflicts_on_staff_id"
+    t.index ["student_id"], name: "index_grading_conflicts_on_student_id"
   end
 
   create_table "individual_extensions", force: :cascade do |t|
@@ -429,11 +423,9 @@ ActiveRecord::Schema.define(version: 2022_02_28_025125) do
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
-  add_foreign_key "grading_conflict_requests", "courses"
-  add_foreign_key "grading_conflict_requests", "users"
   add_foreign_key "grading_conflicts", "courses"
-  add_foreign_key "grading_conflicts", "users", column: "gradee_user_id"
-  add_foreign_key "grading_conflicts", "users", column: "grader_user_id"
+  add_foreign_key "grading_conflicts", "users", column: "staff_id"
+  add_foreign_key "grading_conflicts", "users", column: "student_id"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_grants", "users", column: "resource_owner_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
