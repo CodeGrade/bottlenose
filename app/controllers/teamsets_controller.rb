@@ -255,6 +255,12 @@ class TeamsetsController < ApplicationController
     end
   end
 
+  # NOTE: There might be a rare race condition here
+  # Step 1: Alice and Bob request each other
+  # Step 2: The Professor loads the Teamset Editor
+  # Step 3: Alice rescinds her request
+  # Step 4: Professor accepts the TeamRequest.
+  # NOTE: This should be **Really Rare** and can be handled manually.
   def accept_request
     team_info = custom_params
 
