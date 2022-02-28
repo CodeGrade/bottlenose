@@ -1,4 +1,6 @@
 class GradingConflictController < ApplicationController
+    
+    layout 'course'
 
     before_action :require_admin_or_staff
     before_action :require_admin_or_prof, only: [:delete, :update]

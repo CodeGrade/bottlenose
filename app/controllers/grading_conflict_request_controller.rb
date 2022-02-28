@@ -1,0 +1,2 @@
+class GradingConflictRequestController < ApplicationController
+end
