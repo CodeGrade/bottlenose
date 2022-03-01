@@ -300,7 +300,7 @@ class User < ApplicationRecord
 
   def disconnect(course = nil)
     # Dissolve any teams, if this person is a student in the course
-    # Active teams are teams without an end date or on that is "in the futue",
+    # Active teams are teams without an end date or one that is "in the futue",
     # aka tomorrow or onwards.
     future_range = (Date.tomorrow)..Date::Infinity.new
     active_teams = teams.where(end_date: nil).or(teams.where(end_date: future_range))
