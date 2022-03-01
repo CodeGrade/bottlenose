@@ -5,6 +5,7 @@ class GradingConflict < ApplicationRecord
   belongs_to :course
 
   # TODO: What else needs to be validated?
+  # TODO: Add a field to track who submitted a GradingConflict.
   validates :staff, presence: true
   validates :student, presence: true
   validates :course, presence: true
@@ -40,4 +41,5 @@ class GradingConflict < ApplicationRecord
       self.staff.course_assistant?(course)) &&
       self.student.course_student?(course)
   end
+  
 end
