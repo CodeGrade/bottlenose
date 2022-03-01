@@ -236,9 +236,14 @@ class Assignment < ApplicationRecord
         self.errors.add(:base, "The specified teamset to be copied does not exist")
         return false
       end
-      # TODO: Should we throw a separate exception here or use
-      # this one?
-      self.teamset = ts.dup(nil, "Teamset for #{self.name}")
+
+      begin
+        self.teamset = ts.dup(nil, "Teamset for #{self.name}")
+      rescue ActiveTeamWithDroppedStudent => e
+        self.errors.add(:base, e.msg)
+        return false
+      end
+
       self.teamset.make_solo_teams_for(self)
     elsif @teamset_plan == "unique"
       # nothing to do
