@@ -59,6 +59,8 @@ Bottlenose::Application.routes.draw do
       end
     end
 
+    resources :grading_conflicts
+
     resources :registrations, except: [:show, :edit, :update] do
       collection do
         get :bulk_edit

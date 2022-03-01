@@ -1,8 +1,0 @@
-<% cur_reg = current_user.registration_for(@course) %>
-<% cur_user_site_admin = current_user.site_admin? %>
-<% cur_user_prof = current_user.course_professor?(@course) %>
-<% cur_user_grader_or_assistant = current_user.course_grader(@course) ||
-    current_user.course_assistant?(@course) %>
-<% %>
-
-<% # TODO: Admin/Prof can see ALL conflicts; Other Staff can see conflicts that ONLY apply to them. %>
