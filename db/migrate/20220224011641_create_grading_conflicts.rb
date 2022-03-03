@@ -5,7 +5,7 @@ class CreateGradingConflicts < ActiveRecord::Migration[5.2]
       t.references :student, null: false
       t.references :course, foreign_key: true, null: false
       t.json :activity, null: false
-      t.boolean :active, null: false, default: false
+      t.integer :status, null: false, default: 0
       t.timestamps      
     end
 

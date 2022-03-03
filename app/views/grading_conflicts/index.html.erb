@@ -1,11 +1,9 @@
 <% cur_reg = current_user.registration_for(@course) %>
+<% cur_user_prof_ever = current_user.professor_ever? %>
 <% cur_user_site_admin = current_user.site_admin? %>
-<% cur_user_prof = current_user.course_professor?(@course) %>
-<% cur_user_grader_or_assistant = (current_user.course_grader?(@course) ||
-    current_user.course_assistant?(@course)) %>
 <% @page_title = "Grading Conflicts" %>
 
-<% # TODO: Admin/Prof can see ALL conflicts; Other Staff can see conflicts that ONLY apply to them. %>
+<% # TODO: Add tablesorter code to the table showing all grading conflicts. %>
 <% # TODO: Add tablesorter code to the table showing all grading conflicts. %>
 
 <table class="table">
@@ -18,18 +16,12 @@
     </thead>
     <tbody>
         <% @grading_conflicts.each do |gc| %>
-            <td><%= gc.staff.name %></td>
-            <td><%= gc.staff.student %></td>
+            <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.staff.id == current_user.id, gc.staff) %></td>
+            <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.student.id == current_user.id, gc.student) %></td>
             <td>Someone</td>
             <td><%= gc.created_at %></td>
             <td>
-                <% if gc.pending %>
-                    Pending
-                <% elsif gc.active %>
-                    Active
-                <% else %>
-                    Inactive
-                <% end %>
+                <%= gc.status.capitalize %>
             </td>
         <% end %>
     </tbody>
