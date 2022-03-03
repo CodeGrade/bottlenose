@@ -113,7 +113,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.bigint "student_id", null: false
     t.bigint "course_id", null: false
     t.json "activity", null: false
-    t.boolean "active", default: false, null: false
+    t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["course_id"], name: "index_grading_conflicts_on_course_id"

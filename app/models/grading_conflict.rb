@@ -1,4 +1,9 @@
 class GradingConflict < ApplicationRecord
+  
+  # A GradingConflict is either not considered in allocations (inactive),
+  # used in allocating staff graders to students (active), or has been
+  # requested by a student and is awaiting approval (pending).
+  enum status: [:inactive, :active, :pending]
 
   belongs_to :staff, class_name: "User"
   belongs_to :student, class_name: "User"
