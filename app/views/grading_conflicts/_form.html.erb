@@ -1,18 +1,29 @@
 <%= form_for :grading_conflict do |f| %>
 
-    <div class="form-group">
-        <label for="staff" class="input-label"></label>
-        <% # TODO: Substitute :name with display_name? %>
-        <%= f.select :staff_id, class: "form-control" do%>
-            <% @tas_and_graders.each do |stf| %>
-                <%= attribs = {value: stf.id} %>
-                <%= content_tag :option, attribs do stf.display_name end %>
+    <% # TODO: Added default "field" (e.g., just display current_user's name) if 
+        # the user is not admin/prof. %>
+
+    <div style="display: flex; column-gap: 10px;">
+        <div class="form-group">
+            <label for="student" class="input-label">Student:</label>
+            <%= f.select :student_id, class: "form-control" do %>
+                <% @students.each do |stdt| %>
+                    <%= content_tag :option, stdt.display_name, value: stdt.id %>
+                <% end %>
             <% end %>
-        <% end %>
+        </div>
+        <div class="form-group">
+            <label for="staff" class="input-label">Course Grader/Assistant:</label>
+            <%= f.select :staff_id, class: "form-control" do %>
+                <% @tas_and_graders.each do |stf| %>
+                    <%= content_tag :option, stf.display_name, value: stf.id %>
+                <% end %>
+            <% end %>
+        </div>
     </div>
 
     <div class="form-group">
-        <%= f.submit "Create Conflict", id: "submit-button", class: "btn btn-success" %>
+        <%= f.submit "Create Conflict", id: "submit-button", class: "btn btn-primary" %>
     </div>
 
 <% end %>

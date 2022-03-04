@@ -5,10 +5,11 @@
 
 <% # TODO: Add tablesorter code to the table showing all grading conflicts. %>
 
-<div>
-    <h3>Grading Conflicts</h3>
+<div style="margin-bottom: 10px;" >
+    <span class="h3">Grading Conflicts</span>
     <%= link_to "Create a Grading Conflict", 
-        new_course_grading_conflict_path(@course), class: "btn btn-success" %>
+        new_course_grading_conflict_path(@course), class: "btn btn-sm btn-success",
+        style: "float: right;" %>
 </div>
 <table class="table">
     <thead>
