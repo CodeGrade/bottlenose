@@ -7,7 +7,6 @@ class GradingConflictsController < ApplicationController
     before_action :require_admin_or_prof, only: [:delete, :update]
 
     def index
-        
         if current_user.course_professor?(@course) || current_user.site_admin
             @grading_conflicts = GradingConflict.where(course: @course)
         elsif current_user.course_assistant?(@course)
@@ -15,11 +14,6 @@ class GradingConflictsController < ApplicationController
         else
             @grading_conflicts = GradingConflict.where(course: @course, student: current_user)
         end
-
-        # @active_and_inactive_conflicts = grading_conflicts.where(status: :inactive)
-        #     .or(grading_conflicts.where(status: :active))
-        # @pending_conflicts = grading_conflicts.where(status: :pending)
-
     end
 
     # TODO: Should there be a show method? May not be enough info/data
