@@ -4,24 +4,31 @@
 <% @page_title = "Grading Conflicts" %>
 
 <% # TODO: Add tablesorter code to the table showing all grading conflicts. %>
-<% # TODO: Add tablesorter code to the table showing all grading conflicts. %>
 
+<div>
+    <h3>Grading Conflicts</h3>
+    <%= link_to "Create a Grading Conflict", 
+        new_course_grading_conflict_path(@course), class: "btn btn-success" %>
+</div>
 <table class="table">
     <thead>
         <th>Staff</th>
         <th>Student</th>
-        <th>Submitted By</th>
-        <th>Created At</th>
         <th>Status</th>
     </thead>
     <tbody>
         <% @grading_conflicts.each do |gc| %>
             <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.staff.id == current_user.id, gc.staff) %></td>
             <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.student.id == current_user.id, gc.student) %></td>
-            <td>Someone</td>
-            <td><%= gc.created_at %></td>
             <td>
-                <%= gc.status.capitalize %>
+                <% # TODO: Potentially convert this to a JS/JQuery procedure for the labels? %>
+                <% if gc.inactive? %>
+                    <span class="text-danger"><strong><%= gc.status.capitalize %></strong></span>
+                <% elsif gc.active? %>
+                    <span class="text-success"><strong><%= gc.status.capitalize %></strong></span>
+                <% else %>
+                    <span class="text-warning"><strong><%= gc.status.capitalize %></strong></span>
+                <% end %>
             </td>
         <% end %>
     </tbody>
