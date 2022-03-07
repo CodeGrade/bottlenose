@@ -108,11 +108,21 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["submission_id"], name: "index_grades_on_submission_id"
   end
 
+  create_table "grading_conflict_audits", force: :cascade do |t|
+    t.bigint "grading_conflict_id", null: false
+    t.bigint "user_id", null: false
+    t.string "reason"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "status", default: 0, null: false
+    t.index ["grading_conflict_id"], name: "index_grading_conflict_audits_on_grading_conflict_id"
+    t.index ["user_id"], name: "index_grading_conflict_audits_on_user_id"
+  end
+
   create_table "grading_conflicts", force: :cascade do |t|
     t.bigint "staff_id", null: false
     t.bigint "student_id", null: false
     t.bigint "course_id", null: false
-    t.json "activity", null: false
     t.integer "status", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -423,6 +433,8 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["username"], name: "index_users_on_username", unique: true
   end
 
+  add_foreign_key "grading_conflict_audits", "grading_conflicts"
+  add_foreign_key "grading_conflict_audits", "users"
   add_foreign_key "grading_conflicts", "courses"
   add_foreign_key "grading_conflicts", "users", column: "staff_id"
   add_foreign_key "grading_conflicts", "users", column: "student_id"

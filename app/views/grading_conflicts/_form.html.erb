@@ -1,22 +1,28 @@
-<%= form_for :grading_conflict do |f| %>
-
-    <% # TODO: Added default "field" (e.g., just display current_user's name) if 
-        # the user is not admin/prof. %>
-
-    <div style="display: flex; column-gap: 10px;">
+<% cur_user_grades = current_user.course_grader?(@course) || current_user.course_assistant?(@course)%>
+<% cur_user_student = current_user.course_student?(@course)%>
+<%= form_for :grading_conflict, do |f| %>
+    <div style="display: flex; column-gap: 20px; align-items: end;">
         <div class="form-group">
             <label for="student" class="input-label">Student:</label>
-            <%= f.select :student_id, class: "form-control" do %>
-                <% @students.each do |stdt| %>
-                    <%= content_tag :option, stdt.display_name, value: stdt.id %>
+            <% if cur_user_student %>
+                <span><%= current_user.display_name %></span>
+            <% else %>
+                <%= f.select :student_id, class: "form-control" do %>
+                    <% @students.each do |stdt| %>
+                        <%= content_tag :option, stdt.display_name, value: stdt.id %>
+                    <% end %>
                 <% end %>
             <% end %>
         </div>
         <div class="form-group">
             <label for="staff" class="input-label">Course Grader/Assistant:</label>
-            <%= f.select :staff_id, class: "form-control" do %>
-                <% @tas_and_graders.each do |stf| %>
-                    <%= content_tag :option, stf.display_name, value: stf.id %>
+            <% if cur_user_grades %>
+                <%= current_user.display_name %>
+            <% else %>
+                <%= f.select :staff_id, class: "form-control" do %>
+                    <% @tas_and_graders.each do |stf| %>
+                        <%= content_tag :option, stf.display_name, value: stf.id %>
+                    <% end %>
                 <% end %>
             <% end %>
         </div>

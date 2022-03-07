@@ -4,16 +4,21 @@ class GradingConflict < ApplicationRecord
   # used in allocating staff graders to students (active), or has been
   # requested by a student and is awaiting approval (pending).
 
-  # TODO: Should we have a *denied* status as well, for those 
-  # that are disapproved and thus not considered?
-  enum status: [:inactive, :active, :pending]
+  # A student creates a Pending request. It can be marked Active by a professor, 
+  # or Rejected completely. An Active conflict can be made Inactive and from
+  # there can be made Pending again.
+  
+  # The activity history of a GradingConflict is recorded in the GradingConflictAudit table,
+  # and an inactive request that becomes pending again cannot be rejected (i.e., the history
+  # will not be deleted).
+  enum status: [:inactive, :active, :pending, :rejected]
 
   belongs_to :staff, class_name: "User"
   belongs_to :student, class_name: "User"
   belongs_to :course
 
-  # TODO: What else needs to be validated?
-  # TODO: Add a field to track who submitted a GradingConflict.
+  has_many :grading_conflict_audits, -> { order(:created_at) }, dependent: :destroy
+
   validates :staff, presence: true
   validates :student, presence: true
   validates :course, presence: true
