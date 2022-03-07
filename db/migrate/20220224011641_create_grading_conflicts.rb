@@ -4,9 +4,16 @@ class CreateGradingConflicts < ActiveRecord::Migration[5.2]
       t.references :staff, null: false
       t.references :student, null: false
       t.references :course, foreign_key: true, null: false
-      t.json :activity, null: false
       t.integer :status, null: false, default: 0
       t.timestamps      
+    end
+
+    create_table :grading_conflict_audits do |t|
+      t.references :grading_conflict, null: false, foreign_key: true
+      t.references :user, null:false, foreign_key: true
+      t.string :reason, null: true
+      t.timestamps
+      t.integer :status, null: false, default: 0
     end
 
     add_foreign_key :grading_conflicts, :users, column: :staff_id, primary_key: :id

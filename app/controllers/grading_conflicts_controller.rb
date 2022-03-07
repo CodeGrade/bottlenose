@@ -32,7 +32,26 @@ class GradingConflictsController < ApplicationController
             .map{|reg| reg.user}
     end
 
+    # TODO: Use find_or_initialize_by in case of student submitting GradingConflict request
+    # a second time.
     def create
+        gc_info = grading_conflict_params
+        if current_user.professor_ever? || current_user.site_admin?
+            @grading_conflict = GradingConflict.create(student_id: gc_info[:student_id], staff_id: gc_info[:staff_id],
+                course: @course, status: :active)
+        elsif current_user.course_grader?(@course) || current_user.course_assistant?(@course)
+            @grading_conflict = GradingConflict.create(student: current_user, staff_id: gc_info[:staff_id], course: @course, 
+                status: :pending)
+        else
+            @grading_conflict = GradingConflict.create(student: current_user, staff_id: gc_info[:staff_id], course: @course, 
+                status: :pending)
+        end
+
+        if @grading_conflict.save!
+            # Redirect to index with success toast
+        else
+            # Redirect BACK to new with error message
+        end
     end
     
     private
