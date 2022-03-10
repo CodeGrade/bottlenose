@@ -1,6 +1,6 @@
 <% cur_user_grades = current_user.course_grader?(@course) || current_user.course_assistant?(@course)%>
 <% cur_user_student = current_user.course_student?(@course)%>
-<%= form_for :grading_conflict, do |f| %>
+<%= form_for :grading_conflict, :url => {action: :create, method: :post} do |f| %>
     <div style="display: flex; column-gap: 20px; align-items: end;">
         <div class="form-group">
             <label for="student" class="input-label">Student:</label>

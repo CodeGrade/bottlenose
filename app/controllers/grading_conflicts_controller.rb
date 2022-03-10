@@ -16,10 +16,6 @@ class GradingConflictsController < ApplicationController
         end
     end
 
-    # TODO: Should there be a show method? May not be enough info/data
-    # to warrant showing an individual one since it's essentially
-    # just a pair of usernames.
-
     def show
     end
 
@@ -35,28 +31,38 @@ class GradingConflictsController < ApplicationController
     # TODO: Use find_or_initialize_by in case of student submitting GradingConflict request
     # a second time.
     def create
-        gc_info = grading_conflict_params
         if current_user.professor_ever? || current_user.site_admin?
-            @grading_conflict = GradingConflict.create(student_id: gc_info[:student_id], staff_id: gc_info[:staff_id],
+            @grading_conflict = GradingConflict.create(student_id: gc_params[:student_id], staff_id: gc_params[:staff_id],
                 course: @course, status: :active)
         elsif current_user.course_grader?(@course) || current_user.course_assistant?(@course)
-            @grading_conflict = GradingConflict.create(student: current_user, staff_id: gc_info[:staff_id], course: @course, 
+            @grading_conflict = GradingConflict.create(student_id: gc_params[:student_id], staff: current_user, course: @course, 
                 status: :pending)
         else
-            @grading_conflict = GradingConflict.create(student: current_user, staff_id: gc_info[:staff_id], course: @course, 
+            @grading_conflict = GradingConflict.create(student: current_user, staff_id: gc_params[:staff_id], course: @course, 
                 status: :pending)
         end
+
+        # TODO: Add audit information to creation of Grading Conflict
 
         if @grading_conflict.save!
-            # Redirect to index with success toast
+            redirect_to course_grading_conflicts_path(@course), 
+                        notice: "Successfully created a grading conflict."
         else
-            # Redirect BACK to new with error message
+            redirect_back new_course_grading_conflict_path(@course),
+                        alert: "Error saving the grading conflict."
         end
     end
-    
+
     private
 
-    # TODO: Add param methods
-    def grading_conflict_params
-    end    
+    def gc_params
+        ans = params.require(:grading_conflict).permit(:student_id, :staff_id)
+        if params[:grading_conflict].key?(:student_id)
+            ans[:student_id] = params[:grading_conflict][:student_id]
+        end
+        if params[:grading_conflict].key?(:staff_id)
+            ans[:student_id] = params[:grading_conflict][:student_id]
+        end
+        ans
+    end
 end
