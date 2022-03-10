@@ -1,0 +1,19 @@
+<% cur_reg = current_user.registration_for(@course) %>
+<% cur_user_prof_ever = current_user.professor_ever? %>
+<% cur_user_site_admin = current_user.site_admin? %>
+<% @page_title = "Grading Conflicts" %>
+
+<table class="table">
+  <thead>
+    <th>Student</th>
+    <th>Staff</th>
+    <th>Status</th>
+  </thead>
+  <tbody>
+    <tr>
+      <td><%= @grading_conflict.student %></td>
+      <td><%= @grading_conflict.staff %></td>
+      <td><%= @grading_conflict.status %></td>
+    </tr>
+  </tbody>
+</table>
