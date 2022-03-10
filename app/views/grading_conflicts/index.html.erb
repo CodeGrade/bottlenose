@@ -6,31 +6,32 @@
 <% # TODO: Add tablesorter code to the table showing all grading conflicts. %>
 
 <div style="margin-bottom: 10px;" >
-    <span class="h3">Grading Conflicts</span>
-    <%= link_to "Create a Grading Conflict", 
-        new_course_grading_conflict_path(@course), class: "btn btn-sm btn-success",
-        style: "float: right;" %>
+  <span class="h3">Grading Conflicts</span>
+  <%= link_to "Create a Grading Conflict", 
+    new_course_grading_conflict_path(@course), class: "btn btn-sm btn-success",
+    style: "float: right;" %>
 </div>
+
 <table class="table">
-    <thead>
-        <th>Staff</th>
-        <th>Student</th>
-        <th>Status</th>
-    </thead>
-    <tbody>
-        <% @grading_conflicts.each do |gc| %>
-            <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.staff.id == current_user.id, gc.staff) %></td>
-            <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.student.id == current_user.id, gc.student) %></td>
-            <td>
-                <% # TODO: Potentially convert this to a JS/JQuery procedure for the labels? %>
-                <% if gc.inactive? %>
-                    <span class="text-danger"><strong><%= gc.status.capitalize %></strong></span>
-                <% elsif gc.active? %>
-                    <span class="text-success"><strong><%= gc.status.capitalize %></strong></span>
-                <% else %>
-                    <span class="text-warning"><strong><%= gc.status.capitalize %></strong></span>
-                <% end %>
-            </td>
+  <thead>
+    <th>Staff</th>
+    <th>Student</th>
+    <th>Status</th>
+  </thead>
+  <tbody>
+    <% @grading_conflicts.each do |gc| %>
+      <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.staff.id == current_user.id, gc.staff) %></td>
+      <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.student.id == current_user.id, gc.student) %></td>
+      <td>
+        <% # TODO: Potentially convert this to a JS/JQuery procedure for the labels? %>
+        <% if gc.inactive? %>
+          <span class="text-danger"><strong><%= gc.status.capitalize %></strong></span>
+        <% elsif gc.active? %>
+          <span class="text-success"><strong><%= gc.status.capitalize %></strong></span>
+        <% else %>
+          <span class="text-warning"><strong><%= gc.status.capitalize %></strong></span>
         <% end %>
-    </tbody>
+      </td>
+    <% end %>
+  </tbody>
 </table>
