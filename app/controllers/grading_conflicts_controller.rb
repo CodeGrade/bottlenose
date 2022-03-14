@@ -29,8 +29,16 @@ class GradingConflictsController < ApplicationController
       .map{|reg| reg.user}
   end
 
-  # TODO: Use find_or_initialize_by in case of student submitting GradingConflict request
-  # a second time.
+  def edit
+    find_grading_conflict
+  end
+
+  def update
+    @grading_conflict.status = update_params[:status]
+    GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict, 
+      status: @grading_conflict.status)
+  end
+
   def create
     if current_user.professor_ever? || current_user.site_admin?
       @grading_conflict = GradingConflict.find_or_initialize_by(student_id: gc_params[:student_id], staff_id: gc_params[:staff_id],
@@ -66,7 +74,14 @@ class GradingConflictsController < ApplicationController
     if params[:grading_conflict].key?(:staff_id)
       ans[:student_id] = params[:grading_conflict][:student_id]
     end
-    ans[:reason] = params[:grading_conflict][:reason]
+    ans[:reason] = has_reason_param? ? params[:grading_conflict][:reason] : nil
+    ans
+  end
+
+  def update_params
+    ans = params.require(:grading_conflict).permit(:status, :reason)
+    ans[:reason] = has_reason_param? ? params[:grading_conflict][:reason] : nil
+    ans[:status] = params[:grading_conflict][:status]
     ans
   end
 
@@ -77,5 +92,11 @@ class GradingConflictsController < ApplicationController
         alert: "No such grading conflict for this course."
       return
     end
+  end
+
+  def has_reason_param?
+    return params[:grading_conflict].key?(:reason) && 
+      !(params[:grading_conflict][:reason].nil? || 
+        params[:grading_conflict][:reason] != "")
   end
 end
