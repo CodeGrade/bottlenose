@@ -5,15 +5,28 @@
 
 <table class="table">
   <thead>
-    <th>Student</th>
     <th>Staff</th>
+    <th>Student</th>
     <th>Status</th>
   </thead>
   <tbody>
     <tr>
-      <td><%= @grading_conflict.student %></td>
-      <td><%= @grading_conflict.staff %></td>
-      <td><%= @grading_conflict.status %></td>
+      <td>
+        <%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || 
+          @grading_conflict.student.id == current_user.id, @grading_conflict.staff) %>
+      </td>
+      <td>
+        <%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || 
+          @grading_conflict.student.id == current_user.id, @grading_conflict.student) %>
+      </td>
+      <td><%= @grading_conflict.status.capitalize %></td>
     </tr>
   </tbody>
 </table>
+
+<span style="float: right" >
+  <% if cur_user_prof_ever || cur_user_site_admin %>
+    <%= link_to "View audit log", course_grading_conflict_path(@course), class: "btn btn-default" %>
+    <%= link_to "Edit Conflict", course_grading_conflict_path(@course), class: "btn btn-primary" %>
+  <% end %>
+</span>

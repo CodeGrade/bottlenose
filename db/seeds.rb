@@ -102,6 +102,37 @@ when "development"
   ).save!
   kyle.save!
 
+  jackson = User.create(
+    name: 'Jackson',
+    first_name: 'Jackson',
+    last_name: 'Williams',
+    nickname: 'jack',
+    email: 'jackson@localhost.localdomain',
+    site_admin: false,
+    username: 'jackson',
+    nuid: 1000,
+    encrypted_password: Devise::Encryptor.digest(User, 'jackson')
+  )
+  jackson.save!
+
+  jackson_reg = Registration.create(
+    course: fundies,
+    user: jackson,
+    role: 'grader',
+    show_in_lists: true
+  )
+  jackson_reg.save!
+
+  RegistrationSection.create(
+    registration: jackson_reg,
+    section: lec
+  ).save!
+  RegistrationSection.create(
+    registration: jackson_reg,
+    section: lab1
+  ).save!
+  jackson.save!
+
   for i in 0..39
     lab = i < 20 ? lab1 : lab2
     num = i.to_s.rjust(2, "0")

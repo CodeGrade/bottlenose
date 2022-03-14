@@ -3,35 +3,38 @@
 <% cur_user_site_admin = current_user.site_admin? %>
 <% @page_title = "Grading Conflicts" %>
 
-<% # TODO: Add tablesorter code to the table showing all grading conflicts. %>
-
 <div style="margin-bottom: 10px;" >
   <span class="h3">Grading Conflicts</span>
-  <%= link_to "Create a Grading Conflict", 
-    new_course_grading_conflict_path(@course), class: "btn btn-sm btn-success",
-    style: "float: right;" %>
+  <span style="float: right;" >
+    <button class="btn btn-sm btn-default">Toggle Conflict View</button>
+    <%= link_to "Create a Grading Conflict", 
+      new_course_grading_conflict_path(@course), class: "btn btn-sm btn-success" %>
+  </span>
 </div>
+<hr style="margin-bottom: 20px;">
 
-<table class="table">
-  <thead>
-    <th>Staff</th>
-    <th>Student</th>
-    <th>Status</th>
-  </thead>
-  <tbody>
-    <% @grading_conflicts.each do |gc| %>
-      <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.staff.id == current_user.id, gc.staff) %></td>
-      <td><%= maybe_link_user(cur_user_site_admin || cur_user_prof_ever || gc.student.id == current_user.id, gc.student) %></td>
-      <td>
-        <% # TODO: Potentially convert this to a JS/JQuery procedure for the labels? %>
-        <% if gc.inactive? %>
-          <span class="text-danger"><strong><%= gc.status.capitalize %></strong></span>
-        <% elsif gc.active? %>
-          <span class="text-success"><strong><%= gc.status.capitalize %></strong></span>
-        <% else %>
-          <span class="text-warning"><strong><%= gc.status.capitalize %></strong></span>
-        <% end %>
-      </td>
+<div>
+  <dl>
+    <% conflicts_by_staff = @grading_conflicts.group_by{ |gc| gc.staff } %>
+    <% conflicts_by_staff.each do |conflicted_staff, student_conflicts| %>
+      <div style="margin-bottom: 20px;">
+        <dd style="display: inline; padding-right: 15px;"> <%= conflicted_staff.display_name %> </dd>
+        <div style="display: inline;">
+          <% student_conflicts.each do |cf| %>
+            <dt style="display: inline-flex; padding: 0px 10px;"> 
+              <% if cf.active? %>
+                <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf.id), class: "text-success" %>
+              <% elsif cf.inactive? %>
+                <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf.id), class: "text-muted" %>
+              <% elsif cf.pending? %>
+                <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf.id), class: "text-warning" %>
+              <% else %>
+                <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf.id), class: "text-danger" %>
+              <% end %>
+            </dt>
+          <% end %>
+        </div>
+      </div>
     <% end %>
-  </tbody>
-</table>
+  </dl>
+</div>
