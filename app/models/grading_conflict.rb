@@ -10,8 +10,8 @@ class GradingConflict < ApplicationRecord
   
   # The activity history of a GradingConflict is recorded in the GradingConflictAudit table,
   # and an inactive request that becomes pending again cannot be rejected (i.e., the history
-  # will not be deleted).
-  enum status: [:inactive, :active, :pending, :rejected]
+  # will not be deleted). See app/models/concerns/graiding_conflict_status.rb for implementation.
+  enum status: [:active, :inactive, :pending, :rejected]
 
   belongs_to :staff, class_name: "User"
   belongs_to :student, class_name: "User"

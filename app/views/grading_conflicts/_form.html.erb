@@ -29,6 +29,11 @@
     </div>
 
     <div class="form-group">
+        <label for="reason" class="input-label">Reason for Conflict:</label>
+        <%= f.text_area :reason, class: "form-control" %>
+    </div>
+
+    <div class="form-group">
         <%= f.submit "Create Conflict", id: "submit-button", class: "btn btn-primary" %>
     </div>
 

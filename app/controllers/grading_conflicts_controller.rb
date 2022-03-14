@@ -9,7 +9,7 @@ class GradingConflictsController < ApplicationController
   def index
     if current_user.course_professor?(@course) || current_user.site_admin
       @grading_conflicts = GradingConflict.where(course: @course)
-    elsif current_user.course_assistant?(@course)
+    elsif current_user.course_assistant?(@course) || current_user.course_grader?(@course)
       @grading_conflicts = GradingConflict.where(course: @course, staff: current_user)
     else
       @grading_conflicts = GradingConflict.where(course: @course, student: current_user)
@@ -45,7 +45,7 @@ class GradingConflictsController < ApplicationController
 
     # TODO: Add audit information to creation of Grading Conflict
     @grading_conflict.grading_conflict_audits << GradingConflictAudit.create(grading_conflict: @grading_conflict,
-      user: current_user, status: @grading_conflict.status)
+      user: current_user, status: @grading_conflict.status, reason: gc_params[:reason])
 
     if @grading_conflict.save!
       redirect_to course_grading_conflicts_path(@course), 
@@ -59,13 +59,14 @@ class GradingConflictsController < ApplicationController
   private
 
   def gc_params
-    ans = params.require(:grading_conflict).permit(:student_id, :staff_id)
+    ans = params.require(:grading_conflict).permit(:student_id, :staff_id, :reason)
     if params[:grading_conflict].key?(:student_id)
       ans[:student_id] = params[:grading_conflict][:student_id]
     end
     if params[:grading_conflict].key?(:staff_id)
       ans[:student_id] = params[:grading_conflict][:student_id]
     end
+    ans[:reason] = params[:grading_conflict][:reason]
     ans
   end
 
