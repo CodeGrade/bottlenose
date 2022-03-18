@@ -3,8 +3,9 @@ class GradingConflictsController < ApplicationController
   layout 'course'
 
   before_action :find_course
+  before_action :find_grading_conflict, only: [:update]
   before_action :require_registered_user
-  before_action :require_admin_or_prof, only: [:delete, :update]
+  before_action :require_admin_or_prof, only: [:update]
 
   def index
     if current_user.course_professor?(@course) || current_user.site_admin
@@ -35,8 +36,18 @@ class GradingConflictsController < ApplicationController
 
   def update
     @grading_conflict.status = update_params[:status]
-    GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict, 
+    update_audit = GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict, 
       status: @grading_conflict.status)
+    update_audit.save!
+    @grading_conflict.grading_conflict_audits << update_audit
+
+    if @grading_conflict.save!
+      redirect_to course_grading_conflict_path(@course, @grading_conflict)
+    else
+      redirect_back edit_course_grading_conflict_path(@course, @grading_conflict),
+        alert: "Error updating this grading conflict. Please contact an admin."
+    end
+
   end
 
   def create

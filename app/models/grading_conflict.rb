@@ -26,14 +26,8 @@ class GradingConflict < ApplicationRecord
   validate :users_are_registered_for_course
   validate :users_must_have_correct_roles
 
-  # TODO: Is there a case where this fails?
-  # e.g., Prof creates Active conflict, marks it as Inactive, then
-  # student requests it be Pending, and this would say that it could be 
-  # rejected again even though it shouldn't.
   def can_be_rejected?
-    return self.pending? && 
-      GradingConflictAudit.select(:status)
-        .where(grading_conflict_id: temp.id).group(:status).count == 1
+    return self.pending? && self.grading_conflict_audits.count <= 1
   end
 
   def users_are_registered_for_course
