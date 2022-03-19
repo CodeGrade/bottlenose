@@ -7,6 +7,9 @@ class GradingConflict < ApplicationRecord
   # A student creates a Pending request. It can be marked Active by a professor, 
   # or Rejected completely. An Active conflict can be made Inactive and from
   # there can be made Pending again.
+
+  # Corollary: If a GradingConflict can be rejected, this means that it can also be
+  # deleted by the user who created the pending request.
   
   # The activity history of a GradingConflict is recorded in the GradingConflictAudit table,
   # and an inactive request that becomes pending again cannot be rejected (i.e., the history
