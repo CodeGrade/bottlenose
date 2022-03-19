@@ -38,16 +38,15 @@ class GradingConflictsController < ApplicationController
     @grading_conflict.status = update_params[:status]
     update_audit = GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict, 
       status: @grading_conflict.status)
-    update_audit.save!
     @grading_conflict.grading_conflict_audits << update_audit
 
-    if @grading_conflict.save!
-      redirect_to course_grading_conflict_path(@course, @grading_conflict)
+    if @grading_conflict.save! && update_audit.save!
+      redirect_to course_grading_conflict_path(@course, @grading_conflict), 
+        notice: "Successfully updated this conflict."
     else
       redirect_back edit_course_grading_conflict_path(@course, @grading_conflict),
         alert: "Error updating this grading conflict. Please contact an admin."
     end
-
   end
 
   def create
@@ -63,15 +62,16 @@ class GradingConflictsController < ApplicationController
     end
 
     # TODO: Add audit information to creation of Grading Conflict
-    @grading_conflict.grading_conflict_audits << GradingConflictAudit.create(grading_conflict: @grading_conflict,
+    creation_audit = GradingConflictAudit.create(grading_conflict: @grading_conflict,
       user: current_user, status: @grading_conflict.status, reason: gc_params[:reason])
+    @grading_conflict.grading_conflict_audits << creation_audit
 
-    if @grading_conflict.save!
+    if @grading_conflict.save! && creation_audit.save!
       redirect_to course_grading_conflicts_path(@course), 
             notice: "Successfully created a grading conflict."
     else
       redirect_back new_course_grading_conflict_path(@course),
-            alert: "Error saving the grading conflict."
+            alert: "Error saving the grading conflict. Please contact a site admin."
     end
   end
 
@@ -79,19 +79,15 @@ class GradingConflictsController < ApplicationController
 
   def gc_params
     ans = params.require(:grading_conflict).permit(:student_id, :staff_id, :reason)
-    if params[:grading_conflict].key?(:student_id)
-      ans[:student_id] = params[:grading_conflict][:student_id]
-    end
-    if params[:grading_conflict].key?(:staff_id)
-      ans[:student_id] = params[:grading_conflict][:student_id]
-    end
+    ans[:student_id] = params[:grading_conflict][:student_id]
+    ans[:student_id] = params[:grading_conflict][:student_id]
     ans[:reason] = has_reason_param? ? params[:grading_conflict][:reason] : nil
     ans
   end
 
   def update_params
     ans = params.require(:grading_conflict).permit(:status, :reason)
-    ans[:reason] = has_reason_param? ? params[:grading_conflict][:reason] : nil
+    ans[:reason] = params[:grading_conflict][:reason]
     ans[:status] = params[:grading_conflict][:status]
     ans
   end

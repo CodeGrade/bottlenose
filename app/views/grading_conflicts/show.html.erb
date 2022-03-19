@@ -37,12 +37,29 @@
       <button class="btn btn-sm btn-success" id="confirm-grading-conflict-changes-button"
         data-toggle="modal" data-target="#grading-conflict-submit-modal">Confirm</button>
       <button class="btn btn-sm btn-danger" id="cancel-grading-conflict-changes-button">Cancel</button>
+    </div>
+  <% elsif @grading_conflict.can_be_rejected? %>
+    <div class="grading-conflict-header-buttons">
+      <button class="btn btn-sm btn-danger">Delete conflict request</button>
+    </div>
+  <% elsif !(@grading_conflict.pending?) %>
+    <div class="grading-conflict-header-buttons">
+      <%# TODO: Better wording for action accomplished? %>
+      <button class="btn-btn-sm btn-primary">Request conflict active</button>
     </div>  
   <% end %>
 </div>
 <div class="grading-conflict-info-container">
-  <span class="grading-conflict-info"><b>Staff: </b> <%= @grading_conflict.staff.display_name %></span>
-  <span class="grading-conflict-info"><b>Student: </b> <%= @grading_conflict.student.display_name %> </span>
+  <span class="grading-conflict-info">
+    <b>Staff: </b><%= maybe_link_user(cur_user_prof_ever || cur_user_site_admin || 
+      current_user == @grading_conflict.staff, 
+      @grading_conflict.staff) %>
+  </span>
+  <span class="grading-conflict-info">
+    <b>Student: </b> <%= maybe_link_user(cur_user_prof_ever || cur_user_site_admin || 
+      current_user == @grading_conflict.student, 
+      @grading_conflict.student) %>
+  </span>
   <%
     if @grading_conflict.active?
       text_class = "text-success"
@@ -57,47 +74,54 @@
   <span class="grading-conflict-info" id="grading-conflict-status">
     <b>Status: </b><b class=<%= text_class%>><%= @grading_conflict.status.capitalize %></b>
   </span>
+  <%# TODO: Add logic for updating a grading conflict and deleting a request. %>
   <% if cur_user_prof_ever || cur_user_site_admin %>
-    <div class="form-group" id="select-new-gc-status">
-      <label for="updated-status" class="input-label">New Status:</label>
-      <%
-        status_options = GradingConflict.statuses.keys
-        if !(@grading_conflict.can_be_rejected?)
-          status_options = status_options.select { |s| s != "rejected" }
-        end
-      %>
-      <%# https://api.rubyonrails.org/classes/ActionView/Helpers/FormOptionsHelper.html#method-i-select %>
-      <%= select :grading_conflict, :status, status_options.collect { |s| [s.capitalize, s] }, 
-        { include_blank: false } %>
-    </div>    
+    <%# Form/inputs for Prof/Admin updating this conflict. %>
+    <%= form_with model: @grading_conflict, url: course_grading_conflict_path(@course, @grading_conflict), 
+      method: "patch" do |f| %>
+      <div class="form-group" id="select-new-gc-status">
+        <label for="updated-status" class="input-label">New Status:</label>
+        <%
+          status_options = GradingConflict.statuses.keys
+          if !(@grading_conflict.can_be_rejected?)
+            status_options = status_options.select { |s| s != "rejected" }
+          end
+        %>
+        <%= f.select :status, options_for_select(status_options.collect { |s| [s.capitalize, s] }), 
+          { include_blank: false } %>
+      </div>
+      <div class="modal fade" id="grading-conflict-submit-modal" role="dialog" tabindex="-1" >
+        <div class="modal-dialog" role="document" >
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+              <h4 class="modal-title">Confirm Grading Conflict Changes</h4>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label for="grading_conflict[status]" class="input-label">Reason for updating Grading Conflict: </label>
+                <%= f.text_area :reason, class: "form-control" %>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-sm btn-danger" data-dismiss="modal">Cancel</button>
+              <%= f.submit "Submit changes", class: "btn btn-sm btn-success" %>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>  
+  <% else %>
+    <%# Form/inputs for Students, Graders, and Staff updating this conflict. %>
+
   <% end %>
 </div>
 
 <% if cur_user_prof_ever || cur_user_site_admin %>
-  <div class="modal fade" id="grading-conflict-submit-modal" role="dialog" tabindex="-1" >
-    <div class="modal-dialog" role="document" >
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-          <h4 class="modal-title">Confirm Grading Conflict Changes</h4>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label for="grading_conflict_audit[reason]" class="input-label">Reason for updating Grading Conflict: </label>
-            <%= text_area :grading_conflict_audit, :reason, class: "form-control" %>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-sm btn-danger" data-dismiss="modal">Cancel</button>
-          <%# TODO: Fill in link to update and action items. %>
-          <%= link_to "Submit changes", nil, class: "btn btn-sm btn-success" %>
-        </div>
-      </div>
-    </div>
-  </div>
   <h4>Audit Log</h4>
+  <% # TODO: Add table sorter to this to sort by date updated. %>
   <% # TODO: Format DateTime to be readable. %>
   <table class="grading-conflict-audit-log table">
     <thead>
@@ -108,29 +132,31 @@
     </thead>
     <tbody>
       <% @grading_conflict.grading_conflict_audits.each do |ad| %>
-        <td> <%= link_to ad.user.display_name, user_path(ad.user) %> </td>
-        <td> <%= ad.updated_at %> </td>
-        <td>
-          <%
-          if ad.active?
-            text_class = "text-success"
-          elsif ad.inactive?
-            text_class = "text-muted"
-          elsif ad.pending?
-            text_class = "text-warning"
-          else
-            text_class = "text-danger"
-          end
-          %>
-          <span class=<%= text_class%>><%= ad.status.capitalize %></span>
-        </td>
-        <td> 
-          <% if ad.reason.nil? || ad.reason == "" %>
-            N/A
-          <% else %>
-            <%= ad.reason %>
-          <% end %>
-        </td>
+        <tr>
+          <td> <%= link_to ad.user.display_name, user_path(ad.user) %> </td>
+          <td> <%= ad.updated_at.to_formatted_s(:long) %> </td>
+          <td>
+            <%
+            if ad.active?
+              text_class = "text-success"
+            elsif ad.inactive?
+              text_class = "text-muted"
+            elsif ad.pending?
+              text_class = "text-warning"
+            else
+              text_class = "text-danger"
+            end
+            %>
+            <span class=<%= text_class%>><%= ad.status.capitalize %></span>
+          </td>
+          <td> 
+            <% if ad.reason.nil? || ad.reason == "" %>
+              N/A
+            <% else %>
+              <%= ad.reason %>
+            <% end %>
+          </td>
+        </tr>
       <% end %>
     </tbody>
   </table>
