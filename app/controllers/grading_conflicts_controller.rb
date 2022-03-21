@@ -3,7 +3,7 @@ class GradingConflictsController < ApplicationController
   layout 'course'
 
   before_action :find_course
-  before_action :find_grading_conflict, only: [:update]
+  before_action :find_grading_conflict, only: [:update, :destroy]
   before_action :require_registered_user
   before_action :require_admin_or_prof, only: [:update]
 
@@ -72,6 +72,21 @@ class GradingConflictsController < ApplicationController
     else
       redirect_back new_course_grading_conflict_path(@course),
             alert: "Error saving the grading conflict. Please contact a site admin."
+    end
+  end
+
+  def destroy
+    # TODO: Should prof/admin be able to delete this regardless of state?
+    unless @grading_conflict.can_be_rejected?
+      redirect_to course_grading_conflict_path(@course, @grading_conflict),
+        alert: "This grading conflict cannot be deleted."
+    end
+    if @grading_conflict.destroy
+      redirect_to course_grading_conflicts_path(@course), 
+        notice: "Grading conflict was successfully deleted."
+    else
+      redirect_to course_grading_conflict(@course, @grading_conflict), 
+        alert: "Grading conflict could not be deleted. Please contact a site admin."
     end
   end
 
