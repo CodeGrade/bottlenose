@@ -13,73 +13,77 @@
 </div>
 <hr style="margin-bottom: 20px;">
 
-<table class="table" id="conflicts-by-staff">
-  <thead>
-    <th>Staff</th>
-    <th>Student</th>
-  </thead>
-  <tbody>
-    <% conflicts_by_staff = @grading_conflicts.group_by{ |gc| gc.staff } %>
-    <% conflicts_by_staff.each do |conflicted_staff, student_conflicts| %>
-      <tr>
-        <td><%= conflicted_staff.display_name %></td>
-        <td>
-          <% first_conflict = true %>
-          <% student_conflicts.each do |cf| %>
-              <% if cf.active? 
-                    link_class = "text-success"
-                  elsif cf.inactive?
-                  link_class = "text-muted"
-                  elsif cf.pending?
-                  link_class = "text-warning"
-                  else
-                  link_class = "text-danger"
-                  end
-              %>
-            <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf), 
-              class: link_class, style: (first_conflict ? "padding-right: 5px;": "padding: 0px 5px;") %>
-            <% first_conflict = false %>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+<% if @grading_conflicts.any? %>
+  <table class="table" id="conflicts-by-staff">
+    <thead>
+      <th>Staff</th>
+      <th>Student</th>
+    </thead>
+    <tbody>
+      <% conflicts_by_staff = @grading_conflicts.group_by{ |gc| gc.staff } %>
+      <% conflicts_by_staff.each do |conflicted_staff, student_conflicts| %>
+        <tr>
+          <td><%= conflicted_staff.display_name %></td>
+          <td>
+            <% first_conflict = true %>
+            <% student_conflicts.each do |cf| %>
+                <% if cf.active? 
+                      link_class = "text-success"
+                    elsif cf.inactive?
+                    link_class = "text-muted"
+                    elsif cf.pending?
+                    link_class = "text-warning"
+                    else
+                    link_class = "text-danger"
+                    end
+                %>
+              <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf), 
+                class: link_class, style: (first_conflict ? "padding-right: 5px;": "padding: 0px 5px;") %>
+              <% first_conflict = false %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
 
-<table class="table" id="conflicts-by-student">
-  <thead>
-    <th>Student</th>
-    <th>Staff</th>
-  </thead>
-  <tbody>
-    <% conflicts_by_student = @grading_conflicts.group_by { |gc| gc.student } %>
-    <% conflicts_by_student.each do |conflicted_student, conflicts| %>
-      <tr>
-        <td><%= conflicted_student.display_name %></td>
-        <td>
-          <% first_conflict = true %>
-          <% conflicts.each do |cf| %>
-            <%
-             if cf.active?
-              link_class = "text-success"
-             elsif cf.inactive?
-              link_class = "text-muted"
-             elsif
-              link_class = "text-warning"
-             else
-              link_class = "text-danger"
-             end
-            %>
-            <%= link_to cf.staff.display_name, 
-              course_grading_conflict_path(@course, cf),
-              class: link_class, style: (first_conflict ? "padding-right: 5px;": "padding: 0px 5px;")%>
-            <% first_conflict = false %>
-          <% end %>
-        </td>
-      </tr>
-    <% end %>
-  </tbody>
-</table>
+  <table class="table" id="conflicts-by-student">
+    <thead>
+      <th>Student</th>
+      <th>Staff</th>
+    </thead>
+    <tbody>
+      <% conflicts_by_student = @grading_conflicts.group_by { |gc| gc.student } %>
+      <% conflicts_by_student.each do |conflicted_student, conflicts| %>
+        <tr>
+          <td><%= conflicted_student.display_name %></td>
+          <td>
+            <% first_conflict = true %>
+            <% conflicts.each do |cf| %>
+              <%
+              if cf.active?
+                link_class = "text-success"
+              elsif cf.inactive?
+                link_class = "text-muted"
+              elsif
+                link_class = "text-warning"
+              else
+                link_class = "text-danger"
+              end
+              %>
+              <%= link_to cf.staff.display_name, 
+                course_grading_conflict_path(@course, cf),
+                class: link_class, style: (first_conflict ? "padding-right: 5px;": "padding: 0px 5px;")%>
+              <% first_conflict = false %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <h4 style="text-align: center;">No grading conflicts to show.</h4>
+<% end %>
 
 <script type="text/javascript">
   $(function () {

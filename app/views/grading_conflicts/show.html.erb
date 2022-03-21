@@ -40,12 +40,13 @@
     </div>
   <% elsif @grading_conflict.can_be_rejected? %>
     <div class="grading-conflict-header-buttons">
-      <button class="btn btn-sm btn-danger">Delete conflict request</button>
+      <button class="btn btn-sm btn-danger" data-toggle="modal" 
+        data-target="#delete-grading-conflict-req-modal">Delete conflict request</button>
     </div>
   <% elsif !(@grading_conflict.pending?) %>
     <div class="grading-conflict-header-buttons">
       <%# TODO: Better wording for action accomplished? %>
-      <button class="btn-btn-sm btn-primary">Request conflict active</button>
+      <button class="btn-btn-sm btn-primary">Resubmit conflict request</button>
     </div>  
   <% end %>
 </div>
@@ -106,16 +107,35 @@
               </div>
             </div>
             <div class="modal-footer">
-              <button class="btn btn-sm btn-danger" data-dismiss="modal">Cancel</button>
               <%= f.submit "Submit changes", class: "btn btn-sm btn-success" %>
+              <button class="btn btn-sm btn-danger" data-dismiss="modal">Cancel</button>
             </div>
           </div>
         </div>
       </div>
     <% end %>  
-  <% else %>
+  <% elsif @grading_conflict.can_be_rejected? %>
     <%# Form/inputs for Students, Graders, and Staff updating this conflict. %>
-
+    <div class="modal" id="delete-grading-conflict-req-modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title">Delete Grading Conflict</h4>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to delete the requested grading conflict?
+          </div>
+          <div class="modal-footer">
+            <%= link_to "Confirm", course_grading_conflict_path(@course, @grading_conflict), 
+              method: :delete, class: "btn btn-sm btn-success" %>
+            <button class="btn btn-sm btn-danger" data-dismiss="modal">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
   <% end %>
 </div>
 
