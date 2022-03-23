@@ -43,10 +43,13 @@
       <button class="btn btn-sm btn-danger" data-toggle="modal" 
         data-target="#delete-grading-conflict-req-modal">Delete conflict request</button>
     </div>
-  <% elsif !(@grading_conflict.pending?) %>
+  <% elsif !(@grading_conflict.pending? || @grading_conflict.active?) %>
     <div class="grading-conflict-header-buttons">
       <%# TODO: Better wording for action accomplished? %>
-      <button class="btn-btn-sm btn-primary">Resubmit conflict request</button>
+      <button class="btn-btn-sm btn-primary"
+        data-toggle="modal" data-target="#resubmit-grading-conflict-req-modal">
+        Resubmit conflict request
+      </button>
     </div>  
   <% end %>
 </div>
@@ -136,6 +139,34 @@
         </div>
       </div>
     </div>
+  <% elsif !(@grading_conflict.pending? || @grading_conflict.active?) %>
+    <%= form_with model: @grading_conflict, url: resubmit_course_grading_conflict_path(@course, @grading_conflict), 
+      method: :post do |f| %>
+      <div class="modal" id="resubmit-grading-conflict-req-modal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+              </button>
+              <h4 class="modal-title">Resubmit Grading Conflict Request</h4>
+            </div>
+            <div class="modal-body">
+              <div class="form-group">
+                <label for="grading_conflict[reason]" class="input-label">
+                  Please give a reason for resubmitting this grading conflict request:
+                </label>
+                <%= f.text_area :reason, class: "form-control" %>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <%= f.submit "Confirm", class: "btn btn-sm btn-success" %>
+              <button class="btn btn-sm btn-danger" data-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
   <% end %>
 </div>
 
@@ -143,7 +174,7 @@
   <h4>Audit Log</h4>
   <% # TODO: Add table sorter to this to sort by date updated. %>
   <% # TODO: Format DateTime to be readable. %>
-  <table class="grading-conflict-audit-log table">
+  <table class="table" id="grading-conflict-audit-log">
     <thead>
       <th>Actor</th>
       <th>Updated At</th>
@@ -196,6 +227,33 @@
 
       $("#edit-grading-conflict-button").on("click", toggleEditConflictForm);
       $("#cancel-grading-conflict-changes-button").on("click", toggleEditConflictForm);
+
+      $.tablesorter.themes.bootstrap = {
+        caption      : 'caption',
+        sortNone     : '',
+        sortAsc      : '',
+        sortDesc     : '',
+        active       : '', // applied when column is sorted
+        hover        : '', // custom css required - a defined bootstrap style may not override other classes
+        // icon class names
+        icons        : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+        iconSortAsc  : 'glyphicon glyphicon-chevron-up', // class name added to icon when column has ascending sort
+        iconSortDesc : 'glyphicon glyphicon-chevron-down', // class name added to icon when column has descending sort
+        filterRow    : '', // filter row class; use widgetOptions.filter_cssFilter for the input/select element
+        footerRow    : '',
+        footerCells  : '',
+        even         : '', // even row zebra striping
+        odd          : ''  // odd row zebra striping
+      };
+      $("#grading-conflict-audit-log").tablesorter({
+        headerTemplate: "{content} {icon}",
+        theme: "bootstrap",
+        widgets: ['uitheme'],
+        sortList: [[1, 1]],
+        headers: {
+          3: { sorter: false }
+        }
+      });
     });
   </script>
 <% end %>
