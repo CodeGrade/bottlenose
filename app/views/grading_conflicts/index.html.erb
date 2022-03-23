@@ -30,15 +30,18 @@
                 <% if cf.active? 
                       link_class = "text-success"
                     elsif cf.inactive?
-                    link_class = "text-muted"
+                      link_class = "text-muted"
                     elsif cf.pending?
-                    link_class = "text-warning"
+                      link_class = "text-warning"
                     else
-                    link_class = "text-danger"
+                      link_class = "text-danger"
                     end
                 %>
-              <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf), 
-                class: link_class, style: (first_conflict ? "padding-right: 5px;": "padding: 0px 5px;") %>
+              <span class="status-tooltip">
+                <span><%= cf.status.humanize %> as of <span class="local-time"><%= cf.updated_at.iso8601 %></span></span>
+                <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf), 
+                class: "#{link_class}", style: (first_conflict ? "padding-right: 5px;": "padding: 0px 5px;") %>
+              </span>
               <% first_conflict = false %>
             <% end %>
           </td>
@@ -91,6 +94,12 @@
     $("#toggle-conflicts-view").on("click", function(e) {
       $("#conflicts-by-student").toggle();
       $("#conflicts-by-staff").toggle();
+    });
+
+    $(".status-tooltip").each(function() {
+      var tooltipContents = $(this).children("span").first().remove();
+      $(this).attr("title", tooltipContents[0].outerHTML);
+      $(this).tooltip({animated: "fade", placement: "top", html: true});
     });
   });
 </script>

@@ -59,7 +59,11 @@ Bottlenose::Application.routes.draw do
       end
     end
 
-    resources :grading_conflicts
+    resources :grading_conflicts do 
+      member do
+        post 'resubmit', to: 'grading_conflicts#resubmit_conflict_request', as: 'resubmit'
+      end
+    end
 
     resources :registrations, except: [:show, :edit, :update] do
       collection do

@@ -3,7 +3,7 @@ class GradingConflictsController < ApplicationController
   layout 'course'
 
   before_action :find_course
-  before_action :find_grading_conflict, only: [:update, :destroy]
+  before_action :find_grading_conflict, only: [:update, :destroy, :resubmit_conflict_request]
   before_action :require_registered_user
   before_action :require_admin_or_prof, only: [:update]
 
@@ -37,7 +37,7 @@ class GradingConflictsController < ApplicationController
   def update
     @grading_conflict.status = update_params[:status]
     update_audit = GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict, 
-      status: @grading_conflict.status)
+      status: @grading_conflict.status, reason: update_params[:reason])
     @grading_conflict.grading_conflict_audits << update_audit
 
     if @grading_conflict.save! && update_audit.save!
@@ -88,6 +88,22 @@ class GradingConflictsController < ApplicationController
       redirect_to course_grading_conflict(@course, @grading_conflict), 
         alert: "Grading conflict could not be deleted. Please contact a site admin."
     end
+  end
+
+  def resubmit_conflict_request
+    @grading_conflict.status = :pending
+    update_audit = GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict,
+      status: :pending, reason: update_params[:reason])
+    @grading_conflict.grading_conflict_audits << update_audit
+
+    if update_audit.save && @grading_conflict.save
+      redirect_to course_grading_conflict_path(@course, @grading_conflict),
+        notice: "Successfully resubmitted this grading conflict request."
+    else
+      redirect_back course_grading_conflict_path(@course, @grading_conflict), 
+        alert: "An error has occurred resubmitting this grading conflict request. Please contact a site admin."
+    end
+
   end
 
   private

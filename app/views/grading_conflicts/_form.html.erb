@@ -20,6 +20,7 @@
       <% if cur_user_grades %>
         <%= current_user.display_name %>
       <% else %>
+        <%# TODO: Filter out any graders where a conflict already exists. %>
         <%= f.select :staff_id, class: "form-control" do %>
           <% @tas_and_graders.each do |stf| %>
             <%= content_tag :option, stf.display_name, value: stf.id %>
