@@ -28,6 +28,25 @@ class GradingConflictsController < ApplicationController
       .map{|reg| reg.user}
     @students = Registration.where(course: @course, role: Registration.roles[:student])
       .map{|reg| reg.user}
+
+    if current_user.course_grader?(@course) || current_user.course_assistant?(@course)
+      @students = @students.select{ |s| !GradingConflict.exists?(course: @course, 
+          student: s, staff: current_user) }
+    elsif current_user.course_student?(@course)
+      @tas_and_graders = @tas_and_graders.select {|s| !GradingConflict.exists?(course: @course,
+          student: current_user, staff: s) }
+    end
+
+    # If a student or grader/TA has submitted ALL possible combinations
+    # of themself with their counterparts, one of these lists will be 
+    # empty (per the above if/elsif), and thus they will not be able
+    # to submit another conflict.
+    unless (@tas_and_graders.any? && @students.any?)
+      redirect_to course_grading_conflicts_path(@course), 
+        alert: "You cannot submit any more grading conflicts."
+      return
+    end
+    
   end
 
   def edit
@@ -49,16 +68,21 @@ class GradingConflictsController < ApplicationController
     end
   end
 
+  # TODO: Add guard clause for exisitng conflict.
   def create
     if current_user.professor_ever? || current_user.site_admin?
-      @grading_conflict = GradingConflict.find_or_initialize_by(student_id: gc_params[:student_id], staff_id: gc_params[:staff_id],
+      @grading_conflict = GradingConflict.create(student_id: gc_params[:student_id], staff_id: gc_params[:staff_id],
         course: @course)
-    elsif current_user.course_grader?(@course) || current_user.course_assistant?(@course)
-      @grading_conflict = GradingConflict.find_or_initialize_by(student_id: gc_params[:student_id], staff: current_user, course: @course)
+    elsif staff_can_create_conflict?(gc_params[:student_id])
+      @grading_conflict = GradingConflict.create(student_id: gc_params[:student_id], staff: current_user, course: @course)
+      @grading_conflict.status = :pending
+    elsif student_can_create_conflict?(gc_params[:staff_id])
+      @grading_conflict = GradingConflict.create(student: current_user, staff_id: gc_params[:staff_id], course: @course)
       @grading_conflict.status = :pending
     else
-      @grading_conflict = GradingConflict.find_or_initialize_by(student: current_user, staff_id: gc_params[:staff_id], course: @course)
-      @grading_conflict.status = :pending
+      redirect_back new_course_grading_conflict_path(@course), 
+        alert: "This conflict already exists."
+      return
     end
 
     # TODO: Add audit information to creation of Grading Conflict
@@ -137,4 +161,16 @@ class GradingConflictsController < ApplicationController
       !(params[:grading_conflict][:reason].nil? || 
         params[:grading_conflict][:reason] != "")
   end
+
+  def student_can_create_conflict?(staff_id)
+    return current_user.course_student?(@course) &&
+      !GradingConflict.exists?(course: @course, student: current_user, staff_id: staff_id)
+  end
+
+  def staff_can_create_conflict?(student_id)
+    return (current_user.course_grader?(@course) || 
+      current_user.course_assistant?(@course)) &&
+      !GradingConflict.exists?(course: @course, student_id: student_id, staff: current_user)
+  end
+
 end
