@@ -1,101 +1,55 @@
 <% cur_reg = current_user.registration_for(@course) %>
+<% cur_user_ta = current_user.course_assistant?(@course) %>
+<% cur_user_grades = current_user.course_grader?(@course) %>
 <% cur_user_prof_ever = current_user.professor_ever? %>
 <% cur_user_site_admin = current_user.site_admin? %>
+<% cur_user_can_view_all = cur_user_ta || cur_user_prof_ever || 
+  cur_user_site_admin %>
 <% @page_title = "Grading Conflicts" %>
 
 <div style="margin-bottom: 10px;" >
   <span class="h3">Grading Conflicts</span>
   <span style="float: right;" >
-    <button class="btn btn-sm btn-default" id="toggle-conflicts-view">Toggle Conflict View</button>
+    <% if cur_user_can_view_all %>
+      <button class="btn btn-sm btn-default" id="toggle-conflicts-view">Toggle Conflict View</button>
+    <% end %>
     <%= link_to "Create a Grading Conflict", 
       new_course_grading_conflict_path(@course), class: "btn btn-sm btn-success" %>
   </span>
 </div>
 <hr style="margin-bottom: 20px;">
 
-<% if @grading_conflicts.any? %>
-  <table class="table" id="conflicts-by-staff">
-    <thead>
-      <th>Staff</th>
-      <th>Student</th>
-    </thead>
-    <tbody>
-      <% conflicts_by_staff = @grading_conflicts.group_by{ |gc| gc.staff } %>
-      <% conflicts_by_staff.each do |conflicted_staff, student_conflicts| %>
-        <tr>
-          <td><%= conflicted_staff.display_name %></td>
-          <td>
-            <% first_conflict = true %>
-            <% student_conflicts.each do |cf| %>
-                <% if cf.active? 
-                      link_class = "text-success"
-                    elsif cf.inactive?
-                      link_class = "text-muted"
-                    elsif cf.pending?
-                      link_class = "text-warning"
-                    else
-                      link_class = "text-danger"
-                    end
-                %>
-              <span class="status-tooltip">
-                <span><%= cf.status.humanize %> as of <span class="local-time"><%= cf.updated_at.iso8601 %></span></span>
-                <%= link_to cf.student.display_name, course_grading_conflict_path(@course, cf), 
-                class: "#{link_class}", style: (first_conflict ? "padding-right: 5px;": "padding: 0px 5px;") %>
-              </span>
-              <% first_conflict = false %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-
-  <table class="table" id="conflicts-by-student">
-    <thead>
-      <th>Student</th>
-      <th>Staff</th>
-    </thead>
-    <tbody>
-      <% conflicts_by_student = @grading_conflicts.group_by { |gc| gc.student } %>
-      <% conflicts_by_student.each do |conflicted_student, conflicts| %>
-        <tr>
-          <td><%= conflicted_student.display_name %></td>
-          <td>
-            <% first_conflict = true %>
-            <% conflicts.each do |cf| %>
-              <%
-              if cf.active?
-                link_class = "text-success"
-              elsif cf.inactive?
-                link_class = "text-muted"
-              elsif
-                link_class = "text-warning"
-              else
-                link_class = "text-danger"
-              end
-              %>
-              <%= link_to cf.staff.display_name, 
-                course_grading_conflict_path(@course, cf),
-                class: link_class, style: (first_conflict ? "padding-right: 5px;": "padding: 0px 5px;")%>
-              <% first_conflict = false %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-<% else %>
+<% if @grading_conflicts.empty? %>
   <h4 style="text-align: center;">No grading conflicts to show.</h4>
+<% elsif cur_user_can_view_all %>
+  <%= render 'conflict_tables' %>  
+<% else %>
+  <ul>
+    <% @grading_conflicts.each do |gc| %>
+      <%
+        if gc.active?
+          link_class = "text-success"
+        elsif gc.inactive?
+          link_class = "text-muted"
+        elsif gc.pending?
+          link_class = "text-warning"
+        else
+          link_class = "text-danger"
+        end
+      %>
+      <li>
+        <span class="status-tooltip">
+          <span><%= gc.status.humanize %> as of <span class="local-time"><%= gc.updated_at.iso8601 %></span></span>
+          <%= link_to ( cur_user_grades ? gc.student.display_name : gc.staff.display_name), 
+            course_grading_conflict_path(@course, gc), class: "#{link_class}" %>
+        </span>
+      </li>
+    <% end %>
+  </ul>
 <% end %>
 
 <script type="text/javascript">
   $(function () {
-    $("#conflicts-by-staff").hide();
-    $("#toggle-conflicts-view").on("click", function(e) {
-      $("#conflicts-by-student").toggle();
-      $("#conflicts-by-staff").toggle();
-    });
-
     $(".status-tooltip").each(function() {
       var tooltipContents = $(this).children("span").first().remove();
       $(this).attr("title", tooltipContents[0].outerHTML);
