@@ -1,5 +1,5 @@
 <% cur_reg = current_user.registration_for(@course) %>
-<% cur_user_prof_ever = current_user.professor_ever? %>
+<% cur_user_prof = current_user.course_prof?(@course) %>
 <% cur_user_site_admin = current_user.site_admin? %>
 <% @page_title = "Grading Conflicts" %>
 
@@ -27,11 +27,9 @@
   }
 </style>
 
-<%# TODO: Make modal/dialog for editing the conflict; isolate all editing to there. %>
-
 <div class="grading-conflict-header">
   <h4>Conflict Information</h4>
-  <% if cur_user_prof_ever || cur_user_site_admin %>
+  <% if cur_user_prof || cur_user_site_admin %>
     <div class="grading-conflict-header-buttons">
       <button class="btn btn-sm btn-primary" id="edit-grading-conflict-button">Edit conflict</button>
       <button class="btn btn-sm btn-success" id="confirm-grading-conflict-changes-button"
@@ -79,7 +77,7 @@
     <b>Status: </b><b class=<%= text_class%>><%= @grading_conflict.status.capitalize %></b>
   </span>
   <%# TODO: Add logic for updating a grading conflict and deleting a request. %>
-  <% if cur_user_prof_ever || cur_user_site_admin %>
+  <% if cur_user_prof || cur_user_site_admin %>
     <%# Form/inputs for Prof/Admin updating this conflict. %>
     <%= form_with model: @grading_conflict, url: course_grading_conflict_path(@course, @grading_conflict), 
       method: "patch" do |f| %>
@@ -170,7 +168,7 @@
   <% end %>
 </div>
 
-<% if cur_user_prof_ever || cur_user_site_admin %>
+<% if cur_user_prof || cur_user_site_admin %>
   <h4>Audit Log</h4>
   <% # TODO: Add table sorter to this to sort by date updated. %>
   <% # TODO: Format DateTime to be readable. %>
