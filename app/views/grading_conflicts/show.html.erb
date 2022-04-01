@@ -1,5 +1,6 @@
 <% cur_reg = current_user.registration_for(@course) %>
-<% cur_user_prof = current_user.course_prof?(@course) %>
+<% cur_user_prof = current_user.course_professor?(@course) %>
+<% cur_user_prof_ever = current_user.professor_ever? %>
 <% cur_user_site_admin = current_user.site_admin? %>
 <% @page_title = "Grading Conflicts" %>
 
@@ -140,6 +141,7 @@
   <% elsif !(@grading_conflict.pending? || @grading_conflict.active?) %>
     <%= form_with model: @grading_conflict, url: resubmit_course_grading_conflict_path(@course, @grading_conflict), 
       method: :post do |f| %>
+      <%= f.hidden_field :status, value: :pending %>
       <div class="modal" id="resubmit-grading-conflict-req-modal">
         <div class="modal-dialog">
           <div class="modal-content">

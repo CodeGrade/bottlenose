@@ -1,7 +1,7 @@
 <% cur_reg = current_user.registration_for(@course) %>
 <% cur_user_ta = current_user.course_assistant?(@course) %>
 <% cur_user_grades = current_user.course_grader?(@course) %>
-<% cur_user_prof = current_user.course_prof?(@course) %>
+<% cur_user_prof = current_user.course_professor?(@course) %>
 <% cur_user_site_admin = current_user.site_admin? %>
 <% cur_user_can_view_all = cur_user_ta || cur_user_prof || 
   cur_user_site_admin %>
