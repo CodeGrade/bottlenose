@@ -88,23 +88,12 @@ class GraderAllocationsController < ApplicationController
     end
     unfinished.shuffle!
     time = DateTime.now
-    who_grades.sort_by! {|g| 0 - weights[g.id] || 0}
+    # Since sorting is stable, shuffling who grades ensures that graders with equal workloads
+    # are chosen at random.
+    # TODO: Swap this out with a call to GraphUtils
+    allocations = round_robin_allocate(unfinished, who_grades, weights, [])
     GraderAllocation.transaction do
-      who_grades.each do |g|
-        1.upto(weights[g.id] * ungraded_count) do |i|
-          sub = unfinished.pop
-          alloc = GraderAllocation.find_or_initialize_by(
-            submission: sub,
-            who_grades_id: g.id,
-            assignment: @assignment,
-            course: @course)
-          alloc.grading_assigned = time
-          alloc.abandoned = false
-          alloc.save
-        end
-      end
-      unfinished.each_with_index do |sub, i|
-        g = who_grades[i % unfinished.count]
+      allocations.each do |sub, g|
         alloc = GraderAllocation.find_or_initialize_by(
           submission: sub,
           who_grades_id: g.id,
@@ -116,6 +105,23 @@ class GraderAllocationsController < ApplicationController
       end
     end
     redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)
+  end
+
+  def round_robin_allocate(unfinished, who_grades, weights, conflicts)
+    ret = []
+    who_grades.shuffle!
+    who_grades.sort_by! {|g| 0 - weights[g.id] || 0}
+    who_grades.each do |g|
+      1.upto(weights[g.id] * ungraded_count) do |i|
+        sub = unfinished.pop
+        ret << [sub, g]
+      end
+    end
+    unfinished.each_with_index do |sub, i|
+      g = who_grades[i % unfinished.count]
+      ret << [sub, g]
+    end
+    return ret
   end
 
   def abandon

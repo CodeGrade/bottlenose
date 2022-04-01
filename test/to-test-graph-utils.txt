@@ -1,0 +1,4 @@
+Predicates for Testing Graph Flow on Grading COnflicts:
+- Every edge b/n a submission and a grader has an integer flow of 0 OR 1.
+- Every edge from source to submission has a flow of 1
+- Conflicted pairs should not be allocated to each other

@@ -56,48 +56,39 @@ class GradingConflictsController < ApplicationController
   end
 
   def update
-    @grading_conflict.status = update_params[:status]
-    update_audit = GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict, 
-      status: @grading_conflict.status, reason: update_params[:reason])
-    @grading_conflict.grading_conflict_audits << update_audit
-
-    if @grading_conflict.save! && update_audit.save!
-      redirect_to course_grading_conflict_path(@course, @grading_conflict), 
-        notice: "Successfully updated this conflict."
-    else
-      redirect_back edit_course_grading_conflict_path(@course, @grading_conflict),
-        alert: "Error updating this grading conflict. Please contact an admin."
-    end
+    update_this_conflict("Successfully updated this conflict.", 
+      "Error updating this grading conflict. Please contact an admin.")
   end
 
   def create
-    if prof_admin_can_create_conflict?(gc_params[:student_id], gc_params[:staff_id])
-      @grading_conflict = GradingConflict.create(student_id: gc_params[:student_id], staff_id: gc_params[:staff_id],
-        course: @course)
-    elsif staff_can_create_conflict?(gc_params[:student_id])
-      @grading_conflict = GradingConflict.create(student_id: gc_params[:student_id], staff: current_user, course: @course)
-      @grading_conflict.status = :pending
-    elsif student_can_create_conflict?(gc_params[:staff_id])
-      @grading_conflict = GradingConflict.create(student: current_user, staff_id: gc_params[:staff_id], course: @course)
-      @grading_conflict.status = :pending
-    else
-      redirect_back fallback_location: new_course_grading_conflict_path(@course), 
-        alert: "This conflict already exists."
-      return
-    end
+    begin
+      GradingConflict.transaction do
+        if prof_admin_can_create_conflict?(gc_params[:student_id], gc_params[:staff_id])
+          @grading_conflict = GradingConflict.create(student_id: gc_params[:student_id], staff_id: gc_params[:staff_id],
+            course: @course) # Default status is Active.
+        elsif staff_can_create_conflict?(gc_params[:student_id])
+          @grading_conflict = GradingConflict.create(student_id: gc_params[:student_id], staff: current_user, course: @course)
+          @grading_conflict.status = :pending
+        elsif student_can_create_conflict?(gc_params[:staff_id])
+          @grading_conflict = GradingConflict.create(student: current_user, staff_id: gc_params[:staff_id], course: @course)
+          @grading_conflict.status = :pending
+        else
+          redirect_back fallback_location: new_course_grading_conflict_path(@course), 
+            alert: "This conflict already exists."
+          return
+        end
 
-    # TODO: Add audit information to creation of Grading Conflict
-    # TODO: Wrap saves in a transaction.
-    creation_audit = GradingConflictAudit.create(grading_conflict: @grading_conflict,
-      user: current_user, status: @grading_conflict.status, reason: gc_params[:reason])
-    @grading_conflict.grading_conflict_audits << creation_audit
-
-    if @grading_conflict.save! && creation_audit.save!
+        creation_audit = GradingConflictAudit.create(grading_conflict: @grading_conflict,
+          user: current_user, status: @grading_conflict.status, reason: gc_params[:reason])
+        @grading_conflict.grading_conflict_audits << creation_audit
+        @grading_conflict.save!
+        creation_audit.save!
+      end
       redirect_to course_grading_conflict_path(@course, @grading_conflict), 
-            notice: "Successfully created a grading conflict."
-    else
+              notice: "Successfully created a grading conflict."
+    rescue ActiveRecord::RecordInvalid
       redirect_back new_course_grading_conflict_path(@course),
-            alert: "Error saving the grading conflict. Please contact a site admin."
+                alert: "Error saving the grading conflict. Please contact a site admin."
     end
   end
 
@@ -117,22 +108,30 @@ class GradingConflictsController < ApplicationController
   end
 
   def resubmit_conflict_request
-    @grading_conflict.status = :pending
-    update_audit = GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict,
-      status: :pending, reason: update_params[:reason])
-    @grading_conflict.grading_conflict_audits << update_audit
-
-    if update_audit.save && @grading_conflict.save
-      redirect_to course_grading_conflict_path(@course, @grading_conflict),
-        notice: "Successfully resubmitted this grading conflict request."
-    else
-      redirect_back course_grading_conflict_path(@course, @grading_conflict), 
-        alert: "An error has occurred resubmitting this grading conflict request. Please contact a site admin."
-    end
-
+    update_this_conflict("Successfully resubmitted this grading conflict request.", 
+      "An error has occurred resubmitting this grading conflict request. Please contact a site admin.")
   end
 
   private
+
+  # Abstracts out the logic to update the Controller instance's @grading_conflict.
+  # Takes in a success message/error message based on the type of update being made.
+  def update_this_conflict(success_message, on_error_message)
+    begin
+      GradingConflict.transaction do
+        @grading_conflict.status = update_params[:status]
+        update_audit = GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict, 
+          status: @grading_conflict.status, reason: update_params[:reason])
+        @grading_conflict.grading_conflict_audits << update_audit
+        @grading_conflict.save!
+        update_audit.save!
+      end
+      redirect_to course_grading_conflict_path(@course, @grading_conflict), notice: success_message
+    rescue ActiveRecord::RecordInvalid
+      redirect_back fallback_location: course_grading_conflict_path(@course, @grading_conflict), 
+        alert: on_error_message
+    end
+  end
 
   def gc_params
     ans = params.require(:grading_conflict).permit(:student_id, :staff_id, :reason)
