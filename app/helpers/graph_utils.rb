@@ -1,5 +1,7 @@
 class GraphUtils
 
+  # TODO: Prohibitions is expected to be a hash of user grader IDs => User objects...
+  # let's make a note and/or fix that.
   def self.assign_graders(submissions, graders, weights, prohibitions)
     # Given a list of submissions, a list of graders,
     #   a mapping of graders to weights of how much they should work,
@@ -36,11 +38,13 @@ class GraphUtils
       c[grader_to_n[g.id]] = {}
       c[grader_to_n[g.id]][n] = ((weights[g.id] / total_weight) * submissions.size).ceil
     end
+
     # Connect submissions to permitted graders by 1 unit of flow
     submissions.includes(:users).each do |s|
       c[sub_to_n[s.id]] = {}
       graders.each do |g|
-        if prohibitions[g.id].to_set.disjoint?(s.users.map(:id).to_set)
+        if ((prohibitions.empty? || prohibitions[g.id].nil?) || 
+          prohibitions[g.id]&.to_set&.disjoint?(s.users.map(&:id).to_set))
           c[sub_to_n[s.id]][g.id] = 1
         end
       end
@@ -61,7 +65,6 @@ class GraphUtils
     ans
   end
 
-  private
   # based on https://en.wikipedia.org/wiki/Push%E2%80%93relabel_maximum_flow_algorithm
   # runs in O(V^3)
   def relabel_to_front(c, source, sink)
@@ -127,6 +130,7 @@ class GraphUtils
     (0...@n).each do |v|
       push(source, v)
     end
+    puts @f
 
     p = 0
     while p < @nodelist.size
