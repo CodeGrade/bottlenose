@@ -1,11 +1,9 @@
 class GraphUtils
 
-  # TODO: Prohibitions is expected to be a hash of user grader IDs => User objects...
-  # let's make a note and/or fix that.
   def self.assign_graders(submissions, graders, weights, prohibitions)
     # Given a list of submissions, a list of graders,
-    #   a mapping of graders to weights of how much they should work,
-    #   and a mapping of students who cannot be graded by particular graders,
+    #   a mapping of grader IDs to weights of how much they should work,
+    #   and a mapping of grader IDs to lists of student IDs that the grader should not grade,
     #   assign each submission to a grader, if possible.
     # Runs in time O(V^3) = O((submissions + graders) ^ 3) = O(submissions ^ 3)
     #   when graders < submissions, which is basically always.
@@ -29,6 +27,7 @@ class GraphUtils
     end
     c = {}
     c[0] = {}
+    c[n] = {}
     # Connect 1 unit of flow from the source to each submission
     submissions.each do |s|
       c[0][sub_to_n[s.id]] = 1
@@ -36,7 +35,7 @@ class GraphUtils
     # Connect an appripriate weight of work from each grader to the sink
     graders.each do |g|
       c[grader_to_n[g.id]] = {}
-      c[grader_to_n[g.id]][n] = ((weights[g.id] / total_weight) * submissions.size).ceil
+      c[grader_to_n[g.id]][n] = ((weights[g.id].to_f / total_weight) * submissions.size).ceil
     end
 
     # Connect submissions to permitted graders by 1 unit of flow
@@ -45,12 +44,12 @@ class GraphUtils
       graders.each do |g|
         if ((prohibitions.empty? || prohibitions[g.id].nil?) || 
           prohibitions[g.id]&.to_set&.disjoint?(s.users.map(&:id).to_set))
-          c[sub_to_n[s.id]][g.id] = 1
+          c[sub_to_n[s.id]][grader_to_n[g.id]] = 1
         end
       end
     end
     # Compute flow
-    f = GraphUtils.new.relabel_to_front(c, 0, n)
+    f, _ = GraphUtils.new.relabel_to_front(c, 0, n)
     # Compute results
     ans = {graders: {}, unfinished: []}
     submissions.each do |s|
@@ -110,7 +109,7 @@ class GraphUtils
 
     def discharge(u)
       while @excess[u] > 0
-        if @seen[u] < @n
+        if @seen[u] <= @n
           v = @seen[u]
           if residual(u, v) > 0 && @height[u] > @height[v]
             push(u, v)
@@ -130,13 +129,14 @@ class GraphUtils
     (0...@n).each do |v|
       push(source, v)
     end
-    puts @f
 
     p = 0
+    num_discharges = 0
     while p < @nodelist.size
       u = @nodelist[p]
       old_height = @height[u]
       discharge(u)
+      num_discharges += 1
       if @height[u] > old_height
         @nodelist.unshift(@nodelist.delete_at(p))
         p = 0
@@ -145,7 +145,7 @@ class GraphUtils
       end
     end
 
-    return @f
+    return @f, num_discharges
   end
   
 end
