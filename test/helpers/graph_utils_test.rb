@@ -10,13 +10,19 @@ class GraphUtilsTest < ActiveSupport::TestCase
     @jackson = create(:user, name: "Jackson Williams", first_name: "Jackson", last_name: "Williams")
     @jackson_reg = create(:registration, course: @cs101, user: @jackson,
       role: Registration::roles[:grader])
+    @bjarne = create(:user, name: "Bjarne Stroustrop", first_name: "Bjarne", last_name: "Stroustrop")
+    @bjarne_reg = create(:registration, course: @cs101, user: @bjarne,
+      role: Registration::roles[:assistant])
+    @james = create(:user, name: "James Gosling", first_name: "James", last_name: "Gosling")
+    @james_reg = create(:registration, course: @cs101, user: @james,
+      role: Registration::roles[:grader])
     @assignment = create(:assignment, course: @cs101, teamset: @ts1, team_subs: false, 
       available: Date.current - 1, due_date: Date.current)
     @subs = []
     @students.each do |s|
       @subs << create(:submission, user: s, assignment: @assignment, created_at: @assignment.due_date - 2.hours)
     end
-    @user_graders = [@jackson, @kyle]
+    @all_graders = [@kyle, @jackson, @bjarne, @james]
   end
 
   test "Graders without conflicts should be given an equal number of submissions with equal weights." do
@@ -27,7 +33,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(assignment: @assignment)
     assert_equal @subs.size, subs_for_graders.size
     
-    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @user_graders, weights, conflicts)
+    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
     assert sub_allocs[:unfinished].empty?
     assert_equal @subs.size, sub_allocs[:graders].values.flatten.size
 
@@ -41,7 +47,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(assignment: @assignment)
     assert_equal @subs.size, subs_for_graders.size
     
-    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @user_graders, weights, conflicts)
+    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
     assert sub_allocs[:unfinished].empty?
     assert_equal @subs.size, sub_allocs[:graders].values.flatten.size
 
@@ -58,7 +64,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(assignment: @assignment)
     assert_equal @subs.size, subs_for_graders.size
     
-    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @user_graders, weights, conflicts)
+    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
     assert_not sub_allocs[:unfinished].empty?
 
     assert_not sub_allocs[:graders].empty?
@@ -77,16 +83,108 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(assignment: @assignment)
     assert_equal @subs.size, subs_for_graders.size
     
-    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @user_graders, weights, conflicts)
+    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
     assert_equal @subs.size, sub_allocs[:unfinished].size
     assert sub_allocs[:graders].empty?
   end
 
-  test "Given an even number of graders with no conflicts, an even number of assignments, and unequal weights, 
-  each graders should have a different number of submissions to grade." do
+  # NOTE: As it stands now, this test may fail if the number of students/submissions
+  # is not large enough.
+  test "Given an even number of graders with no conflicts, an even number of assignments, 
+  and distinct weights, each graders should have a different number of submissions to grade." do
+    weights = []
+    (0...@all_graders.size).each do |i|
+      weights << [@all_graders[i].id, (i + 1).to_f]
+    end
+
+    test_students = []
+    test_regs = []
+    test_subs = []
+    (0...(16 * @all_graders.size)).each do |i|
+      cur_student = create(:user, name: "Student #{i}", first_name: "Student", last_name: "#{i}")
+      test_students << cur_student
+      test_regs << create(:registration, course: @cs101, user: cur_student, 
+          role: Registration::roles[:student], show_in_lists: true, new_sections: [@section.crn])
+      test_subs << create(:submission, user: cur_student, assignment: @assignment, created_at: @assignment.due_date - 2.hours)
+    end
+    subs_for_graders = Submission.where(assignment: @assignment, user: test_students)
+
+    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights.to_h, {})
+    id_to_num_subs = {}
+    sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
+    puts id_to_num_subs
+    
+    assert sub_allocs[:unfinished].empty?
+    assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
+    assert_equal @all_graders.size, sub_allocs[:graders].values.map {|v| v.size}.to_set.size
+
   end
 
-  test "Confirming max flow works on examples from CLRS" do
+  test "Given some number of graders, 2g + 1 submissions, equal weights, and no conflicts, the number of submissions
+  each grader is allocated should not differ by more than +/-1" do
+    weights = @all_graders.map { |g| [g.id, 1.0] }.to_h
+    conflicts = {}
+
+    test_students = []
+    test_regs = []
+    test_subs = []
+    (0...(@all_graders.size * 2 + 1)).each do |i|
+      cur_student = create(:user, name: "Student #{i}", first_name: "Student", last_name: "#{i}")
+      test_students << cur_student
+      test_regs << create(:registration, course: @cs101, user: cur_student, 
+          role: Registration::roles[:student], show_in_lists: true, new_sections: [@section.crn])
+      test_subs << create(:submission, user: cur_student, assignment: @assignment, created_at: @assignment.due_date - 2.hours)
+    end
+
+    subs_for_graders = Submission.where(user: test_students, assignment: @assignment)
+    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
+
+    id_to_num_subs = {}
+    sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
+    puts id_to_num_subs
+    
+    assert sub_allocs[:unfinished].empty?
+    assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
+
+  end
+
+  test "Given some number of graders, 2g + 1 submissions, equal weights, and each grader with 2 conflicts, the number of submissions
+  each grader is allocated should not differ by more than +/-1" do
+    weights = @all_graders.map { |g| [g.id, 1.0] }.to_h
+    test_students = []
+    test_regs = []
+    test_subs = []
+    (0...(@all_graders.size * 2 + 1)).each do |i|
+      cur_student = create(:user, name: "Student #{i}", first_name: "Student", last_name: "#{i}")
+      test_students << cur_student
+      test_regs << create(:registration, course: @cs101, user: cur_student, 
+          role: Registration::roles[:student], show_in_lists: true, new_sections: [@section.crn])
+      test_subs << create(:submission, user: cur_student, assignment: @assignment, created_at: @assignment.due_date - 2.hours)
+    end
+
+    conflicts = {}
+    s_ind = 0
+    @all_graders.each do |g|
+      conflicts[g.id] = []
+      2.times do
+        conflicts[g.id] << test_students[s_ind]
+        s_ind += 1
+      end
+    end
+
+    subs_for_graders = Submission.where(user: test_students, assignment: @assignment)
+    sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
+
+    id_to_num_subs = {}
+    sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
+    puts id_to_num_subs
+    
+    assert sub_allocs[:unfinished].empty?
+    assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
+
+  end
+
+  test "Confirming max flow works on examples from CLRS (algorithms textbook)." do
     c = {
       0 => {1 => 1000000, 2 => 1000000},
       1 => {2 => 1, 3 => 1000000},
