@@ -32,10 +32,32 @@ class GraphUtils
     submissions.each do |s|
       c[0][sub_to_n[s.id]] = 1
     end
+    
     # Connect an appripriate weight of work from each grader to the sink
+    fractional_capacities = []
+    weights.each do |k, v|
+      fc = (v.to_f / total_weight) * submissions.size
+      fractional_capacities << [k, fc]
+    end
+
+    allocated_capacity = fractional_capacities.map { |arr| arr.second.floor }.sum
+    # Fractional capacity is index 1. Compare syntax will sort in desc. order.
+    fractional_capacities.sort { |a, b| b.second <=> a.second }
+    current_index = 0
+    while (allocated_capacity < submissions.size) do
+      fractional_capacities[current_index][1] = fractional_capacities[current_index][1].ceil
+      allocated_capacity += 1
+      current_index += 1
+    end
+    while current_index < fractional_capacities.size do
+      fractional_capacities[current_index][1] = fractional_capacities[current_index][1].floor
+      current_index += 1
+    end
+    grader_capacities = fractional_capacities.to_h
+
     graders.each do |g|
       c[grader_to_n[g.id]] = {}
-      c[grader_to_n[g.id]][n] = ((weights[g.id].to_f / total_weight) * submissions.size).ceil
+      c[grader_to_n[g.id]][n] = grader_capacities[g.id]
     end
 
     # Connect submissions to permitted graders by 1 unit of flow
