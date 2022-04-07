@@ -1,5 +1,6 @@
 require 'test_helper'
 
+# TODO: Add assertions about the number of graders and the number of graders with allocated submissions.
 class GraphUtilsTest < ActiveSupport::TestCase
 
   setup do
@@ -110,9 +111,8 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(assignment: @assignment, user: test_students)
 
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights.to_h, {})
-    id_to_num_subs = {}
+    
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
-    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
@@ -139,12 +139,21 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(user: test_students, assignment: @assignment)
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
 
-    id_to_num_subs = {}
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
-    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
+
+    grader_subs = sub_allocs[:graders]
+    (0...@all_graders.size).each do |i|
+      if (i == @all_graders.size - 1)
+        assert (grader_subs[@all_graders[i]].size - 
+          grader_subs[@all_graders[0]].size).abs <= 1
+      else
+        assert (grader_subs[@all_graders[i]].size - 
+          grader_subs[@all_graders[i+1]].size).abs <= 1
+      end
+    end
 
   end
 
@@ -175,12 +184,21 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(user: test_students, assignment: @assignment)
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
 
-    id_to_num_subs = {}
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
-    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
+
+    grader_subs = sub_allocs[:graders]
+    (0...@all_graders.size).each do |i|
+      if (i == @all_graders.size - 1)
+        assert (grader_subs[@all_graders[i]].size - 
+          grader_subs[@all_graders[0]].size).abs <= 1
+      else
+        assert (grader_subs[@all_graders[i]].size - 
+          grader_subs[@all_graders[i+1]].size).abs <= 1
+      end
+    end
 
   end
 
