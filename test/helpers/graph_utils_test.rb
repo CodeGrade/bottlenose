@@ -89,10 +89,9 @@ class GraphUtilsTest < ActiveSupport::TestCase
     assert sub_allocs[:graders].empty?
   end
 
-  # NOTE: As it stands now, this test may fail if the number of students/submissions
-  # is not large enough.
   test "Given an even number of graders with no conflicts, an even number of assignments, 
-  and distinct weights, each graders should have a different number of submissions to grade." do
+  and distinct weights, and a large number of submissions, each graders should have a different 
+  number of submissions to grade." do
     weights = []
     (0...@all_graders.size).each do |i|
       weights << [@all_graders[i].id, (i + 1).to_f]
@@ -111,8 +110,10 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(assignment: @assignment, user: test_students)
 
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights.to_h, {})
-    
+
+    id_to_num_subs = {}
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
+    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
@@ -120,7 +121,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
 
   end
 
-  test "Given some number of graders, 2g + 1 submissions, equal weights, and no conflicts, the number of submissions
+  test "Given some number of graders, MANY*g + 1 submissions, equal weights, and no conflicts, the number of submissions
   each grader is allocated should not differ by more than +/-1" do
     weights = @all_graders.map { |g| [g.id, 1.0] }.to_h
     conflicts = {}
@@ -128,7 +129,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
     test_students = []
     test_regs = []
     test_subs = []
-    (0...(@all_graders.size * 2 + 1)).each do |i|
+    (0...(@all_graders.size * 100 + 1)).each do |i|
       cur_student = create(:user, name: "Student #{i}", first_name: "Student", last_name: "#{i}")
       test_students << cur_student
       test_regs << create(:registration, course: @cs101, user: cur_student, 
@@ -139,7 +140,9 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(user: test_students, assignment: @assignment)
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
 
+    id_to_num_subs = {}
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
+    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
@@ -157,13 +160,13 @@ class GraphUtilsTest < ActiveSupport::TestCase
 
   end
 
-  test "Given some number of graders, 2g + 1 submissions, equal weights, and each grader with 2 conflicts, the number of submissions
+  test "Given some number of graders, MANY*g + 1 submissions, equal weights, and each grader with 2 conflicts, the number of submissions
   each grader is allocated should not differ by more than +/-1" do
     weights = @all_graders.map { |g| [g.id, 1.0] }.to_h
     test_students = []
     test_regs = []
     test_subs = []
-    (0...(@all_graders.size * 2 + 1)).each do |i|
+    (0...(@all_graders.size * 40 + 1)).each do |i|
       cur_student = create(:user, name: "Student #{i}", first_name: "Student", last_name: "#{i}")
       test_students << cur_student
       test_regs << create(:registration, course: @cs101, user: cur_student, 
@@ -184,7 +187,9 @@ class GraphUtilsTest < ActiveSupport::TestCase
     subs_for_graders = Submission.where(user: test_students, assignment: @assignment)
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
 
+    id_to_num_subs = {}
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
+    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
