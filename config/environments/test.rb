@@ -1,4 +1,9 @@
-require 'mkmf'
+def find_executable(name)
+  [name,
+   *ENV['PATH'].split(File::PATH_SEPARATOR).map {|p| File.join(p, name)}
+  ].find {|f| File.executable?(f)}
+end
+
 
 Rails.application.configure do
   Selenium::WebDriver::Chrome.path = find_executable 'chrome'
