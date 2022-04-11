@@ -23,7 +23,7 @@ class GraderAllocationsControllerTest < ActionController::TestCase
   between each grader and one of those students, GraderAllocations should be produced equal to the number of submissions
   (also n) where no grader is allocated a submission whose author is a student the are conflicted with." do
     
-    @subs.each {|s| s.set_used_sub!}
+    @subs.each {|s| s.set_used_everyone!}
 
     GradingConflict.transaction do
       @graders.each_with_index do |g, i|
