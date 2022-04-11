@@ -6,9 +6,9 @@ require 'addressable/uri'
 class Submission < ApplicationRecord
   belongs_to :assignment
   belongs_to :user
-  belongs_to :team
-  belongs_to :upload
-  belongs_to :comments_upload, class_name: "Upload"
+  belongs_to :team, optional: true
+  belongs_to :upload, optional: true
+  belongs_to :comments_upload, class_name: "Upload", optional: true
   has_many :used_subs, dependent: :destroy
   has_many :grades
   has_many :reviews, class_name: "ReviewFeedback", dependent: :destroy

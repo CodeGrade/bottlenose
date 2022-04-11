@@ -1,9 +1,9 @@
 class CodereviewMatching < ApplicationRecord
   belongs_to :assignment
-  belongs_to :user
-  belongs_to :team
-  belongs_to :target_user, class_name: "User"
-  belongs_to :target_team, class_name: "Team"
+  belongs_to :user, optional: true
+  belongs_to :team, optional: true
+  belongs_to :target_user, class_name: "User", optional: true
+  belongs_to :target_team, class_name: "Team", optional: true
 
   validates :assignment, presence: true
   validate :some_src

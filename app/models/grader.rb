@@ -103,10 +103,10 @@ class Grader < ApplicationRecord
     end
   end
 
-  belongs_to :submission
+  #belongs_to :submission
   belongs_to :assignment
-  belongs_to :upload
-  belongs_to :extra_upload, class_name: 'Upload'
+  belongs_to :upload, optional: true
+  belongs_to :extra_upload, class_name: 'Upload', optional: true
 
   has_many :grades
   validates :assignment, presence: true

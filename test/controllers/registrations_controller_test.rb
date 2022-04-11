@@ -61,11 +61,21 @@ class RegistrationsControllerTest < ActionController::TestCase
   end
   
   test "should highlight non-student registrations" do
+    last_rr = nil
     Registration::roles.zip(@students) do |(roleName, role), student|
       rr = @cs301.reg_requests.new(user: student, role: role, "#{@section.type}_sections".to_sym => @section.crn.to_s)
       rr.save!
+      @cs301.reg_requests << rr
+      @cs301.save!
+      res = rr.save
+      puts "RESULT: #{res.to_s}"
+      last_rr = rr
     end
+    @cs301.save!
+    puts "one: " + @cs301.reg_requests.count.to_s
+    puts "two: " + last_rr.course.reg_requests.count.to_s
     @cs301.reload
+    #assert_equal "expected", "result"
     assert_equal Registration::roles.count, @cs301.reg_requests.count
     sign_in @fred
     get :index, params: {course_id: @cs301.id}
