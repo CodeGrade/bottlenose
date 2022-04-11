@@ -1,4 +1,4 @@
 class RegRequestSection < ApplicationRecord
-  belongs_to :registration
+  belongs_to :reg_request
   belongs_to :section
 end
