@@ -10,7 +10,7 @@
         <td><%= conflicted_staff.display_name %></td>
         <td>
           <% first_conflict = true %>
-          <% student_conflicts.each do |cf| %>
+          <% student_conflicts.sort_by { |c| c.student.display_name }.each do |cf| %>
               <% if cf.active? 
                     link_class = "text-success"
                   elsif cf.inactive?
@@ -46,7 +46,7 @@
         <td><%= conflicted_student.display_name %></td>
         <td>
           <% first_conflict = true %>
-          <% staff_conflicts.each do |cf| %>
+          <% staff_conflicts.sort_by {|c| c.staff.display_name }.each do |cf| %>
             <%
               if cf.active?
                 link_class = "text-success"
@@ -78,5 +78,41 @@
       $("#conflicts-by-student").toggle();
       $("#conflicts-by-staff").toggle();
     });
+
+    $.tablesorter.themes.bootstrap = {
+        caption      : 'caption',
+        sortNone     : '',
+        sortAsc      : '',
+        sortDesc     : '',
+        active       : '', // applied when column is sorted
+        hover        : '', // custom css required - a defined bootstrap style may not override other classes
+        // icon class names
+        icons        : '', // add "icon-white" to make them white; this icon class is added to the <i> in the header
+        iconSortAsc  : 'glyphicon glyphicon-chevron-up', // class name added to icon when column has ascending sort
+        iconSortDesc : 'glyphicon glyphicon-chevron-down', // class name added to icon when column has descending sort
+        filterRow    : '', // filter row class; use widgetOptions.filter_cssFilter for the input/select element
+        footerRow    : '',
+        footerCells  : '',
+        even         : '', // even row zebra striping
+        odd          : ''  // odd row zebra striping
+      };
+      $("#conflicts-by-student").tablesorter({
+        headerTemplate: "{content} {icon}",
+        theme: "bootstrap",
+        widgets: ['uitheme'],
+        sortList: [[0, 0]],
+        headers: {
+          1: { sorter: false }
+        }
+      });
+      $("#conflicts-by-staff").tablesorter({
+        headerTemplate: "{content} {icon}",
+        theme: "bootstrap",
+        widgets: ['uitheme'],
+        sortList: [[0, 0]],
+        headers: {
+          1: { sorter: false }
+        }
+      });
   });
 </script>

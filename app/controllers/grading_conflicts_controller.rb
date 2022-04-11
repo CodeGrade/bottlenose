@@ -57,7 +57,8 @@ class GradingConflictsController < ApplicationController
 
   def update
     update_this_conflict("Successfully updated this conflict.", 
-      "Error updating this grading conflict. Please contact an admin.")
+      "Error updating this grading conflict. Please contact an admin.",
+      update_params[:status])
   end
 
   def create
@@ -112,17 +113,18 @@ class GradingConflictsController < ApplicationController
 
   def resubmit_conflict_request
     update_this_conflict("Successfully resubmitted this grading conflict request.", 
-      "An error has occurred resubmitting this grading conflict request. Please contact a site admin.")
+      "An error has occurred resubmitting this grading conflict request. Please contact a site admin.",
+      :pending)
   end
 
   private
 
   # Abstracts out the logic to update the Controller instance's @grading_conflict.
   # Takes in a success message/error message based on the type of update being made.
-  def update_this_conflict(success_message, on_error_message)
+  def update_this_conflict(success_message, on_error_message, updated_status)
     begin
       GradingConflict.transaction do
-        @grading_conflict.status = update_params[:status]
+        @grading_conflict.status = updated_status
         update_audit = GradingConflictAudit.create(user: current_user, grading_conflict: @grading_conflict, 
           status: @grading_conflict.status, reason: update_params[:reason])
         @grading_conflict.grading_conflict_audits << update_audit
