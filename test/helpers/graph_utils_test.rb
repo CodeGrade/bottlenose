@@ -31,7 +31,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
     # Conflicts are empty; use of variable is for testing clarity.
     conflicts = {}
 
-    subs_for_graders = Submission.where(assignment: @assignment)
+    subs_for_graders = Submission.where(assignment: @assignment).includes(:users)
     assert_equal @subs.size, subs_for_graders.size
     
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
@@ -45,7 +45,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
     weights = [[@jackson.id, 1], [@kyle.id, 1]].to_h
     conflicts = {@jackson.id => [@john.id]}
 
-    subs_for_graders = Submission.where(assignment: @assignment)
+    subs_for_graders = Submission.where(assignment: @assignment).includes(:users)
     assert_equal @subs.size, subs_for_graders.size
     
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
@@ -62,7 +62,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
     weights = [[@jackson.id, 1], [@kyle.id, 1]].to_h
     conflicts = {@jackson.id => @students[0...@subs.size - 1].map(&:id)}
 
-    subs_for_graders = Submission.where(assignment: @assignment)
+    subs_for_graders = Submission.where(assignment: @assignment).includes(:users)
     assert_equal @subs.size, subs_for_graders.size
     
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
@@ -81,7 +81,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
     weights = [[@jackson.id, 1], [@kyle.id, 1]].to_h
     conflicts = {@jackson.id => @students.map(&:id), @kyle.id => @students.map(&:id)}
 
-    subs_for_graders = Submission.where(assignment: @assignment)
+    subs_for_graders = Submission.where(assignment: @assignment).includes(:users)
     assert_equal @subs.size, subs_for_graders.size
     
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
@@ -107,7 +107,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
           role: Registration::roles[:student], show_in_lists: true, new_sections: [@section.crn])
       test_subs << create(:submission, user: cur_student, assignment: @assignment, created_at: @assignment.due_date - 2.hours)
     end
-    subs_for_graders = Submission.where(assignment: @assignment, user: test_students)
+    subs_for_graders = Submission.where(assignment: @assignment, user: test_students).includes(:users)
 
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights.to_h, {})
 
@@ -137,7 +137,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
       test_subs << create(:submission, user: cur_student, assignment: @assignment, created_at: @assignment.due_date - 2.hours)
     end
 
-    subs_for_graders = Submission.where(user: test_students, assignment: @assignment)
+    subs_for_graders = Submission.where(user: test_students, assignment: @assignment).includes(:users)
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
 
     id_to_num_subs = {}
@@ -184,7 +184,7 @@ class GraphUtilsTest < ActiveSupport::TestCase
       end
     end
 
-    subs_for_graders = Submission.where(user: test_students, assignment: @assignment)
+    subs_for_graders = Submission.where(user: test_students, assignment: @assignment).includes(:users)
     sub_allocs = GraphUtils.assign_graders(subs_for_graders, @all_graders, weights, conflicts)
 
     id_to_num_subs = {}
