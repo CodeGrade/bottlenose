@@ -2,7 +2,7 @@
   description = "bottlenose";
 
   # https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=ruby
-  inputs.nixpkgs-ruby.url = "github:nixos/nixpkgs/2c162d49cd5b979eb66ff1653aecaeaa01690fcc";
+  inputs.nixpkgs-ruby.url = "github:nixos/nixpkgs/c82b46413401efa740a0b994f52e9903a4f6dcd5";
 
   outputs = { self, nixpkgs, nixpkgs-ruby }: let
     pkgs = import nixpkgs {
