@@ -62,3 +62,5 @@ screenshots/
 /postgres/
 /postgres_data/
 /.direnv/
+
+/mkmf.log
