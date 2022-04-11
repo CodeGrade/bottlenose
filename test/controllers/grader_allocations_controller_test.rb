@@ -50,9 +50,9 @@ class GraderAllocationsControllerTest < ActionController::TestCase
 
     assert_redirected_to edit_course_assignment_grader_allocations_path(@cs101, @assignment, @assignment.graders.first)
 
-    # TODO: Why is this failing? Works as a manual test.
     allocs = GraderAllocation.where(course: @cs101, assignment: @assignment)
     assert_equal(@subs.size, allocs.size)
+    allocs.each {|a| assert_not a.conflict_currently_exists? }
 
   end
 
