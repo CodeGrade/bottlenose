@@ -63,7 +63,7 @@ class RegRequest < ActiveRecord::Base
         RegRequestSection.create!(reg_request_id: self.id, section_id: s.id)
       rescue Exception => e
         self.errors.add(:base, "Could not register for section #{s.crn}: #{e}")
-        raise ActiveRecord::Rollback
+        raise e
       end
     end
   end
