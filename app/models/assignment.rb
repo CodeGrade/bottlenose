@@ -21,12 +21,12 @@ class Assignment < ApplicationRecord
 
   belongs_to :course
 
-  belongs_to :teamset
+  belongs_to :teamset, optional: true
 
-  belongs_to :lateness_config
+  belongs_to :lateness_config, optional: true
   accepts_nested_attributes_for :lateness_config
 
-  belongs_to :related_assignment, :class_name => "Assignment", :foreign_key => "related_assignment_id"
+  belongs_to :related_assignment, :class_name => "Assignment", :foreign_key => "related_assignment_id", optional: true
 
   has_many :submissions, :dependent => :restrict_with_error
   has_many :used_subs, :dependent => :destroy
