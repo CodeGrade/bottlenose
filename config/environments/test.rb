@@ -1,12 +1,12 @@
-def find_executable(name)
-  [name,
-   *ENV['PATH'].split(File::PATH_SEPARATOR).map {|p| File.join(p, name)}
-  ].find {|f| File.executable?(f)}
+def find_executable(names)
+  names.map{ |name| [name,
+    *ENV['PATH'].split(File::PATH_SEPARATOR).map {|p| File.join(p, name)}
+   ] }.flatten.find {|f| File.executable?(f)}
 end
 
 
 Rails.application.configure do
-  Selenium::WebDriver::Chrome.path = find_executable 'chrome'
+  Selenium::WebDriver::Chrome.path = find_executable ['chrome', 'chromium-browser']
 
   # Settings specified here will take precedence over those in config/application.rb.
 
