@@ -22,8 +22,11 @@ class GraderAllocationsControllerTest < ActionController::TestCase
   test "Given an even number of graders, a number of students (n) > the number of graders (g), equal weights, and a conflict
   between each grader and one of those students, GraderAllocations should be produced equal to the number of submissions
   (also n) where no grader is allocated a submission whose author is a student the are conflicted with." do
-    @graders.each_with_index do |g, i|
-      GradingConflict.transaction do
+    
+    @subs.each {|s| s.set_used_sub!}
+
+    GradingConflict.transaction do
+      @graders.each_with_index do |g, i|
         conflict = GradingConflict.create(course: @cs101, staff: g, student: @students[i])
         creation_audit = GradingConflictAudit.create(user: @fred, grading_conflict: conflict, status: conflict.status, 
           reason: "Oh god.")

@@ -211,9 +211,8 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @regGrader.update(avail_score: 50)
     @regGrader.save
     @regGrader.reload
-    @ecGrader = create(:grader, extra_credit: true, avail_score: 20)
-    @as4.graders << @ecGrader
-    @as4.save
+    @ecGrader = create(:grader, extra_credit: true, avail_score: 20, assignment: @as4)
+    @as4.reload
     @sub4 = create(:submission, user: @john, assignment: @as4, created_at: Time.now - 2.days)
     @sub4.set_used_everyone!
     @sub4.create_grades!

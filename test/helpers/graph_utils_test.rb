@@ -113,7 +113,6 @@ class GraphUtilsTest < ActiveSupport::TestCase
 
     id_to_num_subs = {}
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
-    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
@@ -142,7 +141,6 @@ class GraphUtilsTest < ActiveSupport::TestCase
 
     id_to_num_subs = {}
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
-    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
@@ -189,7 +187,6 @@ class GraphUtilsTest < ActiveSupport::TestCase
 
     id_to_num_subs = {}
     sub_allocs[:graders].each {|k, v| id_to_num_subs[k.id] = v.size}
-    puts id_to_num_subs
     
     assert sub_allocs[:unfinished].empty?
     assert_equal test_subs.size, sub_allocs[:graders].values.flatten.size
