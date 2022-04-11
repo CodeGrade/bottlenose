@@ -72,14 +72,16 @@ class GradingConflictsControllerTest < ActionController::TestCase
       course_id: @cs101.id,
       id: @inactive_conflict.id,
       grading_conflict: {
-        status: :inactive,
+        status: :active,
         reason: "This is a problem still."
       }
     }
     assert_response :redirect
+    assert_nil flash[:alert]
     assert_not_nil flash[:notice]
-
-    puts @inactive_conflict.status
+    @inactive_conflict.reload
+    assert @inactive_conflict.active?
+    assert_not @inactive_conflict.inactive?
   end
 
   test "Can resubmit a conflict request." do
@@ -93,8 +95,11 @@ class GradingConflictsControllerTest < ActionController::TestCase
       }
     }
     assert_response :redirect
+    assert_nil flash[:alert]
     assert_not_nil flash[:notice]
-    puts @inactive_conflict.status
+    @inactive_conflict.reload
+    assert @inactive_conflict.pending?
+    assert_not @inactive_conflict.inactive?
   end
 
 end

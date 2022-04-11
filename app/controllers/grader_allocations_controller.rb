@@ -81,7 +81,7 @@ class GraderAllocationsController < ApplicationController
     end
     compute_who_grades
     # Underscore is for grades that are finished.
-    unfinished, _ = @who_grades[nil].partition {|s| @grades[s.id].score.nil?}
+    unfinished = @who_grades[nil].select {|s| @grades[s.id].score.nil?}
     # ungraded_count = unfinished.count
     weights = {}
     who_grades = @course.staff.to_a
@@ -108,9 +108,9 @@ class GraderAllocationsController < ApplicationController
         subs.each do |sub|
           alloc = GraderAllocation.find_or_initialize_by(
             submission: sub,
-            who_grades_id: g.id,
             assignment: @assignment,
             course: @course)
+          alloc.who_grades_id = g.id
           alloc.grading_assigned = time
           alloc.abandoned = false
           alloc.save
@@ -119,23 +119,6 @@ class GraderAllocationsController < ApplicationController
     end
     redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)
   end
-
-  # def round_robin_allocate(unfinished, who_grades, weights, conflicts)
-  #   ret = []
-  #   who_grades.shuffle!
-  #   who_grades.sort_by! {|g| 0 - weights[g.id] || 0}
-  #   who_grades.each do |g|
-  #     1.upto(weights[g.id] * ungraded_count) do |i|
-  #       sub = unfinished.pop
-  #       ret << [sub, g]
-  #     end
-  #   end
-  #   unfinished.each_with_index do |sub, i|
-  #     g = who_grades[i % unfinished.count]
-  #     ret << [sub, g]
-  #   end
-  #   return ret
-  # end
 
   def abandon
     @alloc.abandoned = true

@@ -116,6 +116,10 @@ FactoryBot.define do
       end
 
       sub.upload_file = FakeUpload.new("none", "no content provided")
+      sub.assignment.graders.each do |g|
+        sub.grades << Grade.new(grader: g, submission: sub, 
+          out_of: g.avail_score)
+      end
     end
   end
 
