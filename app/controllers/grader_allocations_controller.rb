@@ -71,6 +71,7 @@ class GraderAllocationsController < ApplicationController
     redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)
   end
 
+  # TODO: Figure out best way to handle .include(:users)
   def update
     total_weight = params[:weight].values.map(&:to_f).sum
     if total_weight == 0
@@ -79,50 +80,62 @@ class GraderAllocationsController < ApplicationController
       return
     end
     compute_who_grades
-    unfinished, finished = @who_grades[nil].partition {|s| @grades[s.id].score.nil?}
-    ungraded_count = unfinished.count
+    # Underscore is for grades that are finished.
+    unfinished, _ = @who_grades[nil].partition {|s| @grades[s.id].score.nil?}
+    # ungraded_count = unfinished.count
     weights = {}
     who_grades = @course.staff.to_a
     params[:weight].permit(who_grades.map{|s| s.id.to_s}).to_h.map do |k, v|
       weights[k.to_i] = (v.to_f / total_weight)
     end
     unfinished.shuffle!
-    time = DateTime.now
-    # Since sorting is stable, shuffling who grades ensures that graders with equal workloads
-    # are chosen at random.
-    # TODO: Swap this out with a call to GraphUtils
-    allocations = round_robin_allocate(unfinished, who_grades, weights, [])
+    time = DateTime.now    
+    conflicts = GradingConflict.where(course: @course).group_by(&:staff)
+    conflicts_by_id = {}
+    conflicts.each do |grader, conflicts|
+      unless conflicts_by_id[grader.id]
+        conflicts_by_id[grader.id] = []
+      end
+      conflicts.each { |conflict|  conflicts_by_id[grader.id] << conflict.student_id }
+    end
+    # Since sorting (see GraphUtils.assign_graders) is stable, shuffling who grades ensures 
+    # that graders with equal workloads are chosen at random.
+    who_grades.shuffle!
+    sub_assignments = GraphUtils.assign_graders(unfinished, who_grades, weights, conflicts_by_id)
+    allocated = sub_assignments[:graders]
     GraderAllocation.transaction do
-      allocations.each do |sub, g|
-        alloc = GraderAllocation.find_or_initialize_by(
-          submission: sub,
-          who_grades_id: g.id,
-          assignment: @assignment,
-          course: @course)
-        alloc.grading_assigned = time
-        alloc.abandoned = false
-        alloc.save
+      allocated.each do |g, subs|
+        subs.each do |sub|
+          alloc = GraderAllocation.find_or_initialize_by(
+            submission: sub,
+            who_grades_id: g.id,
+            assignment: @assignment,
+            course: @course)
+          alloc.grading_assigned = time
+          alloc.abandoned = false
+          alloc.save
+        end
       end
     end
     redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)
   end
 
-  def round_robin_allocate(unfinished, who_grades, weights, conflicts)
-    ret = []
-    who_grades.shuffle!
-    who_grades.sort_by! {|g| 0 - weights[g.id] || 0}
-    who_grades.each do |g|
-      1.upto(weights[g.id] * ungraded_count) do |i|
-        sub = unfinished.pop
-        ret << [sub, g]
-      end
-    end
-    unfinished.each_with_index do |sub, i|
-      g = who_grades[i % unfinished.count]
-      ret << [sub, g]
-    end
-    return ret
-  end
+  # def round_robin_allocate(unfinished, who_grades, weights, conflicts)
+  #   ret = []
+  #   who_grades.shuffle!
+  #   who_grades.sort_by! {|g| 0 - weights[g.id] || 0}
+  #   who_grades.each do |g|
+  #     1.upto(weights[g.id] * ungraded_count) do |i|
+  #       sub = unfinished.pop
+  #       ret << [sub, g]
+  #     end
+  #   end
+  #   unfinished.each_with_index do |sub, i|
+  #     g = who_grades[i % unfinished.count]
+  #     ret << [sub, g]
+  #   end
+  #   return ret
+  # end
 
   def abandon
     @alloc.abandoned = true
@@ -196,7 +209,7 @@ class GraderAllocationsController < ApplicationController
       @assignment
       .used_submissions
       .joins("INNER JOIN registrations ON used_subs.user_id = registrations.user_id")
-      .where("registrations.role": Registration::roles["student"])
+      .where("registrations.role": Registration::roles["student"]).includes(:users)
     any_missing_grades = @used_subs.any? { |sub| @grades[sub.id].nil? }
     if any_missing_grades
       redirect_back fallback_location: course_assignment_path(@course, @assignment),

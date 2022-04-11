@@ -61,7 +61,7 @@ class GraphUtils
     end
 
     # Connect submissions to permitted graders by 1 unit of flow
-    submissions.includes(:users).each do |s|
+    submissions.each do |s| # submissions.includes(:users).each do |s|
       c[sub_to_n[s.id]] = {}
       graders.each do |g|
         if ((prohibitions.empty? || prohibitions[g.id].nil?) || 

@@ -97,13 +97,16 @@ class GradingConflictsController < ApplicationController
     unless @grading_conflict.can_be_rejected?
       redirect_to course_grading_conflict_path(@course, @grading_conflict),
         alert: "This grading conflict cannot be deleted."
+      return 
     end
     if @grading_conflict.destroy
       redirect_to course_grading_conflicts_path(@course), 
         notice: "Grading conflict was successfully deleted."
+      return
     else
       redirect_to course_grading_conflict(@course, @grading_conflict), 
         alert: "Grading conflict could not be deleted. Please contact a site admin."
+      return
     end
   end
 
