@@ -41,6 +41,10 @@ class ActiveSupport::TestCase
                        role: Registration::roles[:professor], show_in_lists: false, new_sections: [@section.crn])
     @fred_reg.save_sections
 
+    @kyle = create(:user, name: "Kyle TA", first_name: "Kyle", last_name: "TA")
+    @kyle_reg = create(:registration, course: @cs101, user: @kyle,
+      role: Registration::roles[:assistant], show_in_lists: false, new_sections: [@section.crn])
+
     @students = []
     @regs     = []
     [["John", "Joker"], ["Sarah", "Studious"], ["Andy", "Assiduous"], ["Claire", "Crafter"]].each do |fn, ln|
