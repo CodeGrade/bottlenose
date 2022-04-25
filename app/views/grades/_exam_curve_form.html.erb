@@ -1,8 +1,8 @@
 <% questions = @assignment.questions %>
-<% flat_questions = @assignment.flattened_questions %>
+<% non_ec_questions = questions.reject{|q| q["extra"]} %>
+<% flat_questions = @assignment.flattened_questions(non_ec_questions) %>
 <% col_count = flat_questions.count %>
-<% any_parts = (questions.count != col_count) %>
-<% total_score = questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
+<% total_score = non_ec_questions.map{|q| q["weight"]}.sum %>
 <% used_subs = @used_subs.group_by(&:user_id) %>
 
 <% if @student_info.length >= 1 %>
