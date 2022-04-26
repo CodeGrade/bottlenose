@@ -627,7 +627,8 @@ class GradesController < ApplicationController
     questions_params.map do |k, v|
       feedback = all_feedbacks.find{|f| f.submission_id == k.to_i}
       if feedback.nil?
-        redirect_to :back, alert: "Submitted feedback for an unexpected submission #{k}"
+        redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
+                      alert: "Submitted feedback for an unexpected submission #{k}"
       else
         feedback.grade_id = @grade.id
         feedback.score, feedback.out_of = @grade.grader.partial_grade_for_sub(@assignment, @grade, k)
