@@ -64,7 +64,8 @@
         bundix
         curl.dev
         pcre
-        nodejs
+        nodejs-16_x
+        nodePackages.yarn
         start_postgres
         stop_postgres
         chromedriver
