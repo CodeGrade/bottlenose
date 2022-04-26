@@ -10,12 +10,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_02_24_011641) do
+ActiveRecord::Schema.define(version: 2022_04_26_161610) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "assignments", id: :serial, force: :cascade do |t|
+  create_table "assignments", force: :cascade do |t|
     t.string "name", null: false
     t.datetime "due_date", null: false
     t.string "assignment_file_name"
@@ -57,7 +57,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["user_id"], name: "index_codereview_matchings_on_user_id"
   end
 
-  create_table "courses", id: :serial, force: :cascade do |t|
+  create_table "courses", force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -71,7 +71,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.integer "lateness_config_id", default: 0, null: false
   end
 
-  create_table "grader_allocations", id: :serial, force: :cascade do |t|
+  create_table "grader_allocations", force: :cascade do |t|
     t.integer "course_id", null: false
     t.integer "assignment_id", null: false
     t.integer "submission_id", null: false
@@ -85,7 +85,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["who_grades_id"], name: "index_grader_allocations_on_who_grades_id"
   end
 
-  create_table "graders", id: :serial, force: :cascade do |t|
+  create_table "graders", force: :cascade do |t|
     t.string "type"
     t.float "avail_score"
     t.string "params"
@@ -96,7 +96,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.boolean "extra_credit", default: false, null: false
   end
 
-  create_table "grades", id: :serial, force: :cascade do |t|
+  create_table "grades", force: :cascade do |t|
     t.integer "grader_id", null: false
     t.integer "submission_id", null: false
     t.string "grading_output"
@@ -146,7 +146,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["user_id"], name: "index_individual_extensions_on_user_id"
   end
 
-  create_table "inline_comments", id: :serial, force: :cascade do |t|
+  create_table "inline_comments", force: :cascade do |t|
     t.integer "submission_id", null: false
     t.string "title", null: false
     t.string "filename", null: false
@@ -178,7 +178,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["related_assignment_id"], name: "index_interlocks_on_related_assignment_id"
   end
 
-  create_table "lateness_configs", id: :serial, force: :cascade do |t|
+  create_table "lateness_configs", force: :cascade do |t|
     t.string "type"
     t.integer "days_per_assignment"
     t.integer "percent_off"
@@ -238,7 +238,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["section_id"], name: "index_reg_request_sections_on_section_id"
   end
 
-  create_table "reg_requests", id: :serial, force: :cascade do |t|
+  create_table "reg_requests", force: :cascade do |t|
     t.integer "course_id"
     t.text "notes"
     t.datetime "created_at"
@@ -254,7 +254,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["section_id"], name: "index_registration_sections_on_section_id"
   end
 
-  create_table "registrations", id: :serial, force: :cascade do |t|
+  create_table "registrations", force: :cascade do |t|
     t.integer "course_id", null: false
     t.integer "user_id", null: false
     t.datetime "created_at"
@@ -280,14 +280,14 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["submission_id"], name: "index_review_feedbacks_on_submission_id"
   end
 
-  create_table "sandboxes", id: :serial, force: :cascade do |t|
+  create_table "sandboxes", force: :cascade do |t|
     t.string "name"
     t.integer "submission_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
 
-  create_table "sections", id: :serial, force: :cascade do |t|
+  create_table "sections", force: :cascade do |t|
     t.integer "course_id", null: false
     t.integer "crn", null: false
     t.string "meeting_time"
@@ -314,7 +314,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "submissions", id: :serial, force: :cascade do |t|
+  create_table "submissions", force: :cascade do |t|
     t.integer "assignment_id", null: false
     t.integer "user_id", null: false
     t.string "secret_dir"
@@ -347,7 +347,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["user_id"], name: "index_team_requests_on_user_id"
   end
 
-  create_table "team_users", id: :serial, force: :cascade do |t|
+  create_table "team_users", force: :cascade do |t|
     t.integer "team_id"
     t.integer "user_id"
     t.datetime "created_at", null: false
@@ -355,7 +355,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["team_id", "user_id"], name: "unique_team_memebers", unique: true
   end
 
-  create_table "teams", id: :serial, force: :cascade do |t|
+  create_table "teams", force: :cascade do |t|
     t.integer "course_id"
     t.date "start_date"
     t.datetime "created_at", null: false
@@ -364,13 +364,13 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.integer "teamset_id", null: false
   end
 
-  create_table "teamsets", id: :serial, force: :cascade do |t|
+  create_table "teamsets", force: :cascade do |t|
     t.integer "course_id", null: false
     t.string "name"
     t.index ["course_id"], name: "index_teamsets_on_course_id"
   end
 
-  create_table "terms", id: :serial, force: :cascade do |t|
+  create_table "terms", force: :cascade do |t|
     t.boolean "archived", default: false
     t.datetime "created_at"
     t.datetime "updated_at"
@@ -379,7 +379,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["semester", "year"], name: "index_terms_on_semester_and_year", unique: true
   end
 
-  create_table "uploads", id: :serial, force: :cascade do |t|
+  create_table "uploads", force: :cascade do |t|
     t.integer "user_id"
     t.string "file_name"
     t.string "secret_key"
@@ -390,7 +390,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["secret_key"], name: "index_uploads_on_secret_key", unique: true
   end
 
-  create_table "used_subs", id: :serial, force: :cascade do |t|
+  create_table "used_subs", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "assignment_id", null: false
     t.integer "submission_id", null: false
@@ -398,7 +398,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["user_id", "assignment_id"], name: "unique_sub_per_user_assignment", unique: true
   end
 
-  create_table "user_submissions", id: :serial, force: :cascade do |t|
+  create_table "user_submissions", force: :cascade do |t|
     t.integer "user_id"
     t.integer "submission_id"
     t.index ["submission_id"], name: "index_user_submissions_on_submission_id"
@@ -406,7 +406,7 @@ ActiveRecord::Schema.define(version: 2022_02_24_011641) do
     t.index ["user_id"], name: "index_user_submissions_on_user_id"
   end
 
-  create_table "users", id: :serial, force: :cascade do |t|
+  create_table "users", force: :cascade do |t|
     t.string "name", null: false
     t.string "email"
     t.boolean "site_admin"
