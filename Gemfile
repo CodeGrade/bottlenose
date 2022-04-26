@@ -5,6 +5,8 @@ gem 'rails', '~> 6.0'
 gem 'rack'
 gem 'i18n'
 
+gem 'webpacker'
+
 gem 'devise'
 gem 'erubis'
 gem 'devise_ldap_authenticatable' #, github: 'cschiewek/devise_ldap_authenticatable' # needed to use LDAP instead of email auth
