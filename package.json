@@ -8,7 +8,7 @@
     "codemirror": "^5.59.1",
     "dompurify": "^2.2.6",
     "pdfjs-dist": "^2.5.207",
-    "pyret-codemirror-mode": "git://github.com/brownplt/pyret-codemirror-mode.git#master",
+    "pyret-codemirror-mode": "git+https://github.com/brownplt/pyret-codemirror-mode.git#master",
     "webpack-cli": "^3.3.12"
   },
   "devDependencies": {
