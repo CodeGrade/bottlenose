@@ -99,7 +99,7 @@
 <div class="container">
 </div>
 <script>
-  <%= render partial: "new_questions.js", locals: {count: count} %>
+  <%= render partial: "new_questions", formats: [:js], locals: {count: count} %>
   var deadline = moment(Date.parse("<%= @assignment.effective_due_date(current_user, @team).strftime("%Y/%m/%d %H:%M") %>")).valueOf();
   var now = moment().valueOf();
   setTimeout(function() {

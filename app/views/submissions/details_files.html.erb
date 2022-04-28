@@ -7,7 +7,7 @@
 <% content_for :wide_content_before do %>
 <%= javascript_include_tag "dompurify/dist/purify.min.js" %>
 <script>
-  <%= render 'submissions/purify.js' %>
+  <%= render partial: 'submissions/purify', formats: [:js] %>
 </script>
 <%# Styles injected here by script to turn comment visibility on and off %>
 <style id="comment-styles"></style>
