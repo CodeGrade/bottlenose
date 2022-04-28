@@ -9,7 +9,7 @@ class UploadTest < ActiveSupport::TestCase
              available: DateTime.now - 1.weeks, due_date: DateTime.now + 1.weeks,
              lateness_config: @cs101.lateness_config)
 
-    upload_file = fixture_file_upload("files/Archive-no-perms.zip", "application/octet-stream")
+    upload_file = fixture_file_upload("Archive-no-perms.zip", "application/octet-stream")
     sub = FilesSub.new(user: @john, assignment: assn, upload_file: upload_file,
                        created_at: assn.due_date - 1.days)
     sub.save_upload

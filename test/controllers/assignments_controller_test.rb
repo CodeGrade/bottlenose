@@ -65,7 +65,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     teamset_count = Teamset.count
     upload_file = fixture_file_upload(
-      "files/peer-eval.yaml",'application/octet-stream')
+      "peer-eval.yaml",'application/octet-stream')
     assert_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
@@ -110,7 +110,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     teamset_count = Teamset.count
     upload_file = fixture_file_upload(
-      "files/questions.yaml",'application/octet-stream')
+      "questions.yaml",'application/octet-stream')
     assert_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
@@ -151,7 +151,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     teamset_count = Teamset.count
     upload_file = fixture_file_upload(
-      "files/test-exam.yaml",'application/octet-stream')
+      "test-exam.yaml",'application/octet-stream')
     assert_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
@@ -193,7 +193,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     teamset_count = Teamset.count
     upload_file = fixture_file_upload(
-      "files/test-exam.yaml",'application/octet-stream')
+      "test-exam.yaml",'application/octet-stream')
     assert_no_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
@@ -233,7 +233,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     teamset_count = Teamset.count
     upload_file = fixture_file_upload(
-      "files/test-exam.yaml",'application/octet-stream')
+      "test-exam.yaml",'application/octet-stream')
     assert_no_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
@@ -269,7 +269,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     sign_in @fred
     teamset_count = Teamset.count
     upload_file = fixture_file_upload(
-      "files/peer-eval.yaml",'application/octet-stream')
+      "peer-eval.yaml",'application/octet-stream')
     assert_no_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,
@@ -761,7 +761,7 @@ class AssignmentsControllerTest < ActionController::TestCase
   test "should allow for graders with files" do
     sign_in @fred
     upload_file = fixture_file_upload(
-      "files/fundies-config.json",'application/octet-stream')
+      "fundies-config.json",'application/octet-stream')
     assert_difference('Assignment.count') do
       post :create, params: {
              course_id: @cs101.id,

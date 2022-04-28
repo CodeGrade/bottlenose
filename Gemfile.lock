@@ -383,7 +383,7 @@ DEPENDENCIES
   pry-rails
   puma
   rack
-  rails (~> 6.0)
+  rails (~> 6.1)
   rails-controller-testing
   rouge
   ruby-debug-ide

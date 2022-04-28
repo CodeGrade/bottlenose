@@ -16,7 +16,7 @@ class SubmissionTest < ActiveSupport::TestCase
              lateness_config: @cs101.lateness_config)
     end
 
-    upload = fixture_file_upload('files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+    upload = fixture_file_upload('HelloWorld/HelloWorld.tgz','application/octet-stream')
 
     sub0 = build(:submission, user: @john, assignment: assns[0], upload_file: upload,
                  created_at: assns[0].due_date + 6.days)

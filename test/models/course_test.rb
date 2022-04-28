@@ -81,8 +81,7 @@ class CourseTest < ActiveSupport::TestCase
     students.to_a.sample(count).map do |user|
       sub = FilesSub.create(assignment: assn, user: user,
                             team: user.active_team_for(course, assn), created_at: assn.available + 1.5.days)
-      sub.upload_file = fixture_file_upload(Rails.root.join("test", "fixtures", "files/#{assn.name}/#{file}"),
-                                            "application/octet-stream")
+      sub.upload_file = fixture_file_upload("#{assn.name}/#{file}", "application/octet-stream")
       sub.save_upload
       sub.save!
       sub.set_used_everyone!

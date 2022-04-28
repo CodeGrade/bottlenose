@@ -202,8 +202,8 @@ class AssignmentsController < ApplicationController
       new_assn.assignment_upload_id = nil # cleanup the Upload and clear out the upload_id, to force re-upload
       new_assn.related_interlocks << @assignment.related_interlocks.map(&:dup)
       new_assn.interlocks << @assignment.interlocks.map(&:dup)
-      @assignment.errors.each do |attr, err|
-        new_assn.errors[attr] << err
+      @assignment.errors.each do |error|
+        new_assn.errors.add(error.attribute, error.message)
       end
       @assignment.destroy
       @assignment = new_assn
@@ -345,7 +345,7 @@ class AssignmentsController < ApplicationController
       render json: {changes: result}, status: 409 # conflict
       return
     else
-      toggle.update_attributes(submissions_allowed: requested_state)
+      toggle.update(submissions_allowed: requested_state)
       render json: {changes: [{id: toggle.id, state: requested_state}], updated: true}
       return
     end

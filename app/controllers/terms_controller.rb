@@ -40,7 +40,7 @@ class TermsController < ApplicationController
   def update
     find_term
 
-    if @term.update_attributes(term_params)
+    if @term.update(term_params)
       redirect_to term_path(@term), notice: 'Term was successfully updated.'
     else
       render action: "edit", status: 400

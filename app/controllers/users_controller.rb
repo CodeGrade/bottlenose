@@ -56,7 +56,7 @@ class UsersController < ApplicationController
       up[:profile] = filename.to_s
     end
     
-    if @user.update_attributes(up)
+    if @user.update(up)
       if old_user_profile && File.exists?(Upload.full_path_for(old_user_profile)) && old_user_profile != @user.profile
         FileUtils.rm(Upload.full_path_for(old_user_profile))
       end

@@ -72,14 +72,14 @@ class UsersControllerTest < ActionController::TestCase
   test "should not change profile or 404 on invalid image" do
     sign_in @user
 
-    good_img = fixture_file_upload("files/image.jpg", 'application/octet-stream')
+    good_img = fixture_file_upload("image.jpg", 'application/octet-stream')
     put :update, params: {id: @user, user: { emal: @user.email, name: @user.name, profile: good_img}}
     
     @user = assigns(:user)
     old_img = @user.profile
     assert_not_nil old_img
 
-    bad_img = fixture_file_upload("files/HelloSingle/hello.c",'application/octet-stream')
+    bad_img = fixture_file_upload("HelloSingle/hello.c",'application/octet-stream')
     put :update, params: {id: @user, user: { emal: @user.email, name: @user.name, profile: bad_img}}
     assert_response 400
     

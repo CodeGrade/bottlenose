@@ -470,7 +470,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @manyUsers.each do |u|
       sign_in u
 
-      upload_file = fixture_file_upload("files/HelloSingle/hello.c",'application/octet-stream')
+      upload_file = fixture_file_upload("HelloSingle/hello.c",'application/octet-stream')
 
       assert_difference('Submission.count') do
         post course_assignment_submissions_path(course_id: @largeCourse.id, assignment_id: @hello.id), params: {
@@ -498,7 +498,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   test "should dynamically allocate Codereviews (team/team, no presets)" do
     course_assn_with_teams(30, 2)
     
-    questions = fixture_file_upload("files/peer-eval.yaml", 'application/octet-stream')
+    questions = fixture_file_upload("peer-eval.yaml", 'application/octet-stream')
     @helloReview = build(:assignment, course: @largeCourse, teamset: @largeTs, type: "Codereview",
                          related_assignment: @hello, team_subs: true, blame: @fred)
     @helloReview.assignment_file = questions
@@ -544,7 +544,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   test "should dynamically allocate Codereviews (team/team, some presets)" do
     course_assn_with_teams(30, 2)
 
-    questions = fixture_file_upload("files/peer-eval.yaml", 'application/octet-stream')
+    questions = fixture_file_upload("peer-eval.yaml", 'application/octet-stream')
     @helloReview = build(:assignment, course: @largeCourse, teamset: @largeTs, type: "Codereview",
                          related_assignment: @hello, team_subs: true, blame: @fred)
     @helloReview.assignment_file = questions

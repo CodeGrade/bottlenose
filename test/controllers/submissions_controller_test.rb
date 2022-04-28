@@ -27,8 +27,7 @@ class SubmissionsControllerTest < ActionController::TestCase
   end
 
   test "should create submission" do
-    upload = fixture_file_upload(
-      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+    upload = fixture_file_upload('HelloWorld/HelloWorld.tgz','application/octet-stream')
 
     sign_in @john
 
@@ -49,8 +48,7 @@ class SubmissionsControllerTest < ActionController::TestCase
 
   test "should handle different archives" do
     ["zip", "tar", "tar.gz", "tgz"].each do |ext|
-      upload_file = fixture_file_upload(
-        "files/HelloWorld/HelloWorld.#{ext}",'application/octet-stream')
+      upload_file = fixture_file_upload("HelloWorld/HelloWorld.#{ext}",'application/octet-stream')
 
       sign_in @john
 
@@ -80,8 +78,7 @@ class SubmissionsControllerTest < ActionController::TestCase
   end
 
   test "should handle non-archive" do
-    upload_file = fixture_file_upload(
-      "files/HelloSingle/hello.c",'application/octet-stream')
+    upload_file = fixture_file_upload("HelloSingle/hello.c",'application/octet-stream')
 
     sign_in @john
 
@@ -120,8 +117,7 @@ class SubmissionsControllerTest < ActionController::TestCase
       related_assignment: @hello
     )
 
-    upload = fixture_file_upload(
-      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+    upload = fixture_file_upload('HelloWorld/HelloWorld.tgz','application/octet-stream')
 
     sign_in @john
 
@@ -150,8 +146,7 @@ class SubmissionsControllerTest < ActionController::TestCase
     sets = @lock.submission_enabled_toggles.to_a
     sets.first.update_attribute(:submissions_allowed, true)
 
-    upload = fixture_file_upload(
-      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+    upload = fixture_file_upload('HelloWorld/HelloWorld.tgz','application/octet-stream')
 
     sign_in @john
 
@@ -191,8 +186,7 @@ class SubmissionsControllerTest < ActionController::TestCase
     sets.second.update_attribute(:submissions_allowed, true)
     sets.third.update_attribute(:submissions_allowed, false)
 
-    upload = fixture_file_upload(
-      'files/HelloWorld/HelloWorld.tgz','application/octet-stream')
+    upload = fixture_file_upload('HelloWorld/HelloWorld.tgz','application/octet-stream')
 
     sign_in mark
 
