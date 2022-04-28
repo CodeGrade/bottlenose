@@ -1,5 +1,3 @@
-require 'clamp'
-
 class LatenessConfig < ApplicationRecord
   def self.unique
     select(column_names - ["id"]).distinct

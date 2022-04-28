@@ -1,4 +1,3 @@
-require 'clamp'
 require 'csv'
 class ExamGrader < Grader
   # Overridden from Grader, because the default is to publish automatically

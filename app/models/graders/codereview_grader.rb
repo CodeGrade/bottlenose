@@ -1,4 +1,3 @@
-require 'clamp'
 class CodereviewGrader < Grader
   def review_target
     @review_target

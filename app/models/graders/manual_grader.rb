@@ -1,4 +1,3 @@
-require 'clamp'
 require 'sub_tarball'
 class ManualGrader < Grader
   def autograde!(assignment, sub, prio = 0)
