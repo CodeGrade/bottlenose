@@ -13,4 +13,4 @@
 <% end %>
 
 <%= render 'assignment_files_info', gradesheet: @gradesheet %>
-<%= render 'admin_subs', type: {noun: "submission", verb: "submit", gerund: "submitting" }, cur_reg: cur_reg %>
+<%= render 'admin_subs', type: { noun: "submission", verb: "submit", gerund: "submitting" }, locals: { cur_reg: cur_reg } %>

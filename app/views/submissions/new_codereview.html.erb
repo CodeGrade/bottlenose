@@ -2,7 +2,7 @@
 <% content_for :wide_content_before do %>
 <%= javascript_include_tag "dompurify/dist/purify.min.js" %>
 <script>
-  <%= render 'submissions/purify.js' %>
+  <%= render partial: 'submissions/purify', formats: [:js] %>
 </script>
 <%# Styles injected here by script to turn comment visibility on and off %>
 <style id="comment-styles"></style>
@@ -81,8 +81,8 @@
       </div>
     </div>
     <script>
-      <%= render "submissions/comment_edit_widgets.js" %>
-      <%= render "submissions/render_filepicker.js" %>
+      <%= render partial: "submissions/comment_edit_widgets", formats: [:js] %>
+      <%= render partial: "submissions/render_filepicker", formats: [:js] %>
       $(function() {
         var dirInfo = <%= raw json_escape(JSON.pretty_generate(sub_dirs)) %>;
         activateFileView("sub_<%= sub_id %>", "new-submission", dirInfo, false, true);
@@ -165,7 +165,7 @@
 <% end %><%# _new_common %>
 <% end %><%# form-for %>
 <script>
-  <%= render partial: "new_questions.js", locals: {count: @count.to_i} %>
+  <%= render partial: "new_questions", formats: [:js], locals: {count: @count.to_i} %>
   $(".navbar-header a").click(function(e) { 
     window.scrollTo(0, $($(this).attr("href"))[0].offsetTop); 
     e.stopPropagation();

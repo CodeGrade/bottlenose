@@ -55,9 +55,9 @@
 
 <script>
   var lineComments = <%= raw json_escape(JSON.pretty_generate(@submission_files.map{|s| s[:lineComments]})) %>;
-  <%= render "submissions/comment_edit_widgets.js" %>
-  <%= render "submissions/render_filepicker.js" %>
-  <%= render "grades/enter_comments.js" %>
+  <%= render partial: "submissions/comment_edit_widgets", formats: [:js] %>
+  <%= render partial: "submissions/render_filepicker", formats: [:js] %>
+  <%= render partial: "grades/enter_comments", formats: [:js] %>
   $(function() {
     var dirInfo = <%= raw json_escape(JSON.pretty_generate(@submission_dirs)) %>;
     activateFileView("all-files", "<%= @grade.id %>", dirInfo, true, false);

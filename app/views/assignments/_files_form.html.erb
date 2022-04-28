@@ -87,7 +87,7 @@
                 <strong><%= gr.object.display_type %></strong>
               </div>
               <div class="panel-body">
-                <%= render "graders/#{gr.object.type.underscore}.html.erb", f: gr %>
+                <%= render partial: "graders/#{gr.object.type.underscore}", formats: [:html], locals: { f: gr } %>
               </div>
             </div>
           </li>

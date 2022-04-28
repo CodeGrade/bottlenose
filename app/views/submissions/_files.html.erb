@@ -277,8 +277,8 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </div>
 </div>
 <script>
-  <%= render 'submissions/comment_edit_widgets.js.erb' %>
-  <%= render 'submissions/render_embedded_images.js' %>
-  <%= render 'submissions/render_pdfs.js' %>
+  <%= render partial: 'submissions/comment_edit_widgets', formats: [:js] %>
+  <%= render partial: 'submissions/render_embedded_images', formats: [:js] %>
+  <%= render partial: 'submissions/render_pdfs', formats: [:js] %>
   $(function() { $("div[id^='pdf_']").pdfViewer(); });
 </script>

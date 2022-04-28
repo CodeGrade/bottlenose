@@ -226,6 +226,6 @@
 <script>
   var grades = <%= raw json_escape(JSON.generate(grades_info).gsub("},", "},\n")) %>;
   var maxScore = <%= total_score %>;
-  <%= render "exam_curve_form.js" %>
+  <%= render partial: "exam_curve_form", formats: [:js] %>
 </script>
 <% end %>

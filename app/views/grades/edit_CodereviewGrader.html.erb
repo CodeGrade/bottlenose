@@ -80,8 +80,8 @@
       </div>
     </div>
     <script>
-      <%= render "submissions/comment_edit_widgets.js" %>
-      <%= render "submissions/render_filepicker.js" %>
+      <%= render partial: "submissions/comment_edit_widgets", formats: [:js] %>
+      <%= render partial: "submissions/render_filepicker", formats: [:js] %>
       $(function() {
         var dirInfo = <%= raw json_escape(JSON.pretty_generate(sub_dirs)) %>;
         activateFileView("sub_<%= sub_id %>", "<%= @grade.id %>", dirInfo, false, true);
@@ -98,7 +98,7 @@
     <div class="spacer">&nbsp;</div>
   </div>
   <script>
-    <%= render "submissions/render_questions.js" %>
+    <%= render partial: "submissions/render_questions", formats: [:js] %>
     $(function() { activateQuestions("sub_<%= sub_id %>"); });
   </script>
 </div>

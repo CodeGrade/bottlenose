@@ -21,9 +21,12 @@
     <span class="sr-only">Next</span>
   </a>
 </div>
-<script><%= render "time_distribution.js",
-            assn: @gradesheet.assignment,
-            allSubs: @gradesheet.assignment.submissions,
-            usedSubs: @gradesheet.submissions
+<script><%= render partial: "time_distribution",
+            formats: [:js],
+            locals: {
+              assn: @gradesheet.assignment,
+              allSubs: @gradesheet.assignment.submissions,
+              usedSubs: @gradesheet.submissions
+            }
             %></script>
-<script><%= render "grade_distribution.js" %></script>
+<script><%= render partial: "grade_distribution", formats: [:js] %></script>

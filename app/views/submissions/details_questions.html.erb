@@ -21,7 +21,7 @@
   <div id="responses" class="form-group">
   <%= render "render_questions", start: 0, root: "sub_#{@submission.id}", sub_id: @submission.id %>  
   <script>
-    <%= render "render_questions.js" %>
+    <%= render partial: "render_questions", formats: [:js] %>
     $(function() { activateQuestions("sub_<%= @submission.id %>"); });
     $("textarea.sourceCode").each(function(index, code) {
       if ($(code).data("lang")) {
