@@ -36,7 +36,7 @@ jobs:
     - name: Install ruby gems
       run: nix develop -c bundle install --jobs 4 --retry 3
     - name: Install npm packages
-      run: nix develop -c npm ci
+      run: nix develop -c yarn install --frozen-lockfile
     - name: Setup postgres
       run: |
         nix develop -c start_postgres
