@@ -9,7 +9,7 @@ Bundler.require(*Rails.groups)
 module Bottlenose
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
-    config.load_defaults 6.1
+    config.load_defaults 7.0
 
     config.autoload_paths << Rails.root.join('lib')
     config.assets.paths << Rails.root.join('node_modules')

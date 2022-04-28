@@ -4,6 +4,7 @@ source 'https://rubygems.org'
 gem 'rails', '~> 7.0'
 gem 'rack'
 gem 'i18n'
+gem 'net-http'
 
 gem 'webpacker'
 
