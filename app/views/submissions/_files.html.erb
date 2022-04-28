@@ -1,6 +1,5 @@
 <% @@MAX_LINES = 10000 %>
-<%= javascript_include_tag "pdfjs-dist/build/pdf.min.js" %>
-<%= javascript_include_tag "pdfjs-dist/web/pdf_viewer.js" %>
+<%= javascript_pack_tag "pdfjs" %>
 <style>
 .embed-replaced { vertical-align: baseline; display: inline-block; }
 .embed-image { }
@@ -279,6 +278,5 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
 <script>
   <%= render partial: 'submissions/comment_edit_widgets', formats: [:js] %>
   <%= render partial: 'submissions/render_embedded_images', formats: [:js] %>
-  <%= render partial: 'submissions/render_pdfs', formats: [:js] %>
   $(function() { $("div[id^='pdf_']").pdfViewer(); });
 </script>

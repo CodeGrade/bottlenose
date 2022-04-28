@@ -306,6 +306,7 @@ $(function() {
       manualComments[i] = lineComments[i][gradeId] || {};
       delete lineComments[i][gradeId];
     }
+    console.log(window.renderComments);
     renderComments(lineComments);
     function loadPageComments(pdfViewer, index, pageNum, pageComments, page) {
       // Page numbers are 1-based
