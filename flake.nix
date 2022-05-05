@@ -4,7 +4,7 @@
   inputs.nixpkgs.url = "github:nixos/nixpkgs/b0f1f80094ccf0c1fba0a2096d1ec468bcfed48c";
 
   # https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=ruby
-  inputs.nixpkgs-ruby.url = "github:nixos/nixpkgs/b0f1f80094ccf0c1fba0a2096d1ec468bcfed48c";
+  inputs.nixpkgs-ruby.url = "github:nixos/nixpkgs/5e15d5da4abb74f0dd76967044735c70e94c5af1";
 
   outputs = { self, nixpkgs, nixpkgs-ruby }: let
     pkgs = import nixpkgs {
@@ -73,7 +73,7 @@
         chromedriver
         chromeWrapper
       ]) ++ (with rubyPkgs; [
-        ruby_2_7
+        ruby_3_0
       ]);
 
       shellHook = ''
