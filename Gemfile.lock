@@ -134,9 +134,6 @@ GEM
       activerecord (>= 5.a)
       database_cleaner-core (~> 2.0.0)
     database_cleaner-core (2.0.1)
-    debase (0.2.4.1)
-      debase-ruby_core_source (>= 0.10.2)
-    debase-ruby_core_source (0.10.15)
     debug_inspector (1.1.0)
     devise (4.8.1)
       bcrypt (~> 3.0)
@@ -289,8 +286,6 @@ GEM
       railties (>= 5.0)
     rexml (3.2.5)
     rouge (3.28.0)
-    ruby-debug-ide (0.7.3)
-      rake (>= 0.8.1)
     ruby-progressbar (1.11.0)
     rubyzip (2.3.2)
     sassc (2.4.0)
@@ -385,7 +380,6 @@ DEPENDENCIES
   coffee-rails-source-maps
   daemons
   database_cleaner
-  debase
   devise
   devise_ldap_authenticatable
   doorkeeper (= 5.4.0)
@@ -415,7 +409,6 @@ DEPENDENCIES
   rails (~> 7.0)
   rails-controller-testing
   rouge
-  ruby-debug-ide
   rubyzip
   sassc-rails
   simplecov
