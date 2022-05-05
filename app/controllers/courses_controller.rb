@@ -73,8 +73,8 @@ class CoursesController < ApplicationController
       new_course = @course.dup
       new_course.lateness_config = @course.lateness_config.dup
       new_course.sections = @course.sections.map(&:dup)
-      @course.errors.each do |attr, err|
-        new_course.errors[attr] << err
+      @course.errors.each do |error|
+        new_course.errors.add(error.attribute, error.message)
       end
       @course.destroy
       @course = new_course

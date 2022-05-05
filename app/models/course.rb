@@ -68,7 +68,7 @@ class Course < ApplicationRecord
           r.new_sections = [sec.id]
           r.save!
         rescue Exception => e
-          errors[:base] << "Could not register #{sec.instructor.name} for course: #{e}"
+          errors.add(:base, "Could not register #{sec.instructor.name} for course: #{e}")
         end
         begin
           rs = RegistrationSection.create!(
@@ -76,7 +76,7 @@ class Course < ApplicationRecord
             section: sec
           )
         rescue Exception => e
-          errors[:base] << "Could not register #{sec.instructor.name} for section #{sec.id}: #{e}"
+          errors.add(:base, "Could not register #{sec.instructor.name} for section #{sec.id}: #{e}")
         end
       end
     end
