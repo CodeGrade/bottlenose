@@ -21,17 +21,22 @@ class SubmissionMetagradingTest < ActionDispatch::IntegrationTest
      
     # Creating a comment to ensure score is updated even with comments loaded.
     comment = InlineComment.new(user: @fred, submission: john_pdf_sub, grade: john_pdf_grade, 
-      severity: InlineComment.severities[:warning], weight: 1.0, line: 1, title: "",
+      severity: InlineComment.severities[:error], weight: 1.0, line: 1, title: "",
       comment: "You did not say \"Goodbye World!\" as well.", label: @fred.display_name, 
       filename: john_pdf_sub.file_path)
     comment.save!
+
+    # TODO: Confirm file path is accurate; currently no comments for the files.
   
     pdf_grader.grade(assignment, john_pdf_sub)
     john_pdf_grade.reload
+    john_pdf_sub.reload
     
     sign_in @kyle
     visit edit_course_assignment_submission_grade_path(@cs101, assignment, john_pdf_sub, john_pdf_grade)
-    # save_and_open_page
+
+    page.has_selector?("div", class: "comment")
+    save_and_open_page
 
     # Browser displays scores with two trailing zeroes (after decimal), 
     # as well as two spaces b/n the slash and the "out_of" value.
