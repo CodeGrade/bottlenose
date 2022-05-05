@@ -57,7 +57,7 @@ class UsersController < ApplicationController
     end
     
     if @user.update(up)
-      if old_user_profile && File.exists?(Upload.full_path_for(old_user_profile)) && old_user_profile != @user.profile
+      if old_user_profile && File.exist?(Upload.full_path_for(old_user_profile)) && old_user_profile != @user.profile
         FileUtils.rm(Upload.full_path_for(old_user_profile))
       end
       if current_user_site_admin?

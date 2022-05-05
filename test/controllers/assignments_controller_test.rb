@@ -797,7 +797,7 @@ class AssignmentsControllerTest < ActionController::TestCase
     upload = @assn.graders.first.upload
     assert_equal @assn, upload.assignment
     assert upload.upload_dir.to_s.starts_with?(Upload.base_upload_dir.join(@cs101.id.to_s, @assn.id.to_s).to_s)
-    assert File.exists?(upload.submission_path)
+    assert File.exist?(upload.submission_path)
     assert_redirected_to [@cs101, @assn.becomes(Assignment)]
   end
   

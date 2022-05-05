@@ -83,6 +83,7 @@ group :development, :test do
 end
 
 group :test do
+  gem 'webrick'
   gem 'simplecov'
   gem 'database_cleaner'
   gem 'capybara'

@@ -29,7 +29,7 @@ class Settings
   end
 
   def self.load_json
-    unless File.exists?(file_path)
+    unless File.exist?(file_path)
       return defaults
     end
 

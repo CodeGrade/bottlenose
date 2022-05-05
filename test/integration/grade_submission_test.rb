@@ -58,8 +58,8 @@ class GradeSubmissionTest < ActionDispatch::IntegrationTest
 
     pset = make_assignment(@bucket, 'HelloWorld')
 
-    assert File.exists?(pset.assignment_full_path)
-    assert File.exists?(pset.grading_full_path)
+    assert File.exist?(pset.assignment_full_path)
+    assert File.exist?(pset.grading_full_path)
 
     # Log in as a student.
     visit "http://test.host/main/auth?email=#{@john.email}&key=#{@john.auth_key}"
@@ -83,7 +83,7 @@ class GradeSubmissionTest < ActionDispatch::IntegrationTest
 
     assert_equal 100, @submission.auto_score
 
-    assert File.exists?(@submission.file_full_path)
+    assert File.exist?(@submission.file_full_path)
 
     # Download the submissions tarball.
     visit "http://test.host/main/auth?email=#{@fred.email}&key=#{@fred.auth_key}"
@@ -142,8 +142,8 @@ class GradeSubmissionTest < ActionDispatch::IntegrationTest
 
     pset.reload
 
-    assert File.exists?(pset.assignment_full_path)
-    assert File.exists?(pset.grading_full_path)
+    assert File.exist?(pset.assignment_full_path)
+    assert File.exist?(pset.grading_full_path)
 
     # Log in as a student.
     visit "http://test.host/main/auth?email=#{@john.email}&key=#{@john.auth_key}"

@@ -110,7 +110,7 @@ end
 
 # Clean up afterwards.
 
-# if File.exists?("#{test_dir}/sandbox/bin/bash")
+# if File.exist?("#{test_dir}/sandbox/bin/bash")
 #   puts "Loopback mounts still exist. Calling in the reaper man."
 #   system(%Q{cd #{Rails.root} && script/sandbox-reaper &})
 # end
@@ -122,7 +122,7 @@ sub.save!
 # # Run the sandbox reaper occasionally.
 #
 # last_reap = Rails.root.join('tmp', 'last-reap')
-# if !File.exists?(last_reap) || File.mtime(last_reap) < (Time.now - 6.hours)
+# if !File.exist?(last_reap) || File.mtime(last_reap) < (Time.now - 6.hours)
 #   File.write(last_reap, "#{Time.now}\n")
 #   system(%Q{cd #{Rails.root} && script/sandbox-reaper &})
 # end

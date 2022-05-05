@@ -128,13 +128,13 @@ class Upload < ApplicationRecord
           {
             path: child.basename.to_s,
             link_to: Upload.upload_path_for(child.dirname.join(File.readlink(child))),
-            broken: (!File.exists?(File.realpath(child)) rescue true)
+            broken: (!File.exist?(File.realpath(child)) rescue true)
           }
         elsif child.file?
           converted_path = Pathname.new(child.to_s.gsub(extracted_path.to_s,
                                                         extracted_path.dirname.join("converted").to_s))
           converted_path = converted_path.dirname.join(child.basename(child.extname).to_s + ".pdf")
-          if File.exists?(converted_path)
+          if File.exist?(converted_path)
             {path: child.basename.to_s,
              full_path: child,
              converted_path: Upload.upload_path_for(converted_path),

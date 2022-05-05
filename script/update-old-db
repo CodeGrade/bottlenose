@@ -111,7 +111,7 @@ class Upload
             replace_in_file(g.id, g.grading_output, replacements)
             if g.grading_output &&
                !g.grading_output.ends_with?("details.log") &&
-               File.exists?(Pathname.new(g.grading_output).dirname.join("details.log"))
+               File.exist?(Pathname.new(g.grading_output).dirname.join("details.log"))
               replace_in_file(g.id, Pathname.new(g.grading_output).dirname.join("details.log"), replacements)
             end
           end
@@ -310,7 +310,7 @@ def convert_old_questions_to_codereview
         r.out_of = grader.avail_score
         r.save
         print "\t\tLeaving feedback #{r}\n"
-        if File.exists?(s.upload.submission_path.to_s + ".bak")
+        if File.exist?(s.upload.submission_path.to_s + ".bak")
           # ans = YAML.load(File.read(s.upload.submission_path.to_s + ".bak"))
           # ans.each do |answer|
           #   answer["parts"]&.each do |p|

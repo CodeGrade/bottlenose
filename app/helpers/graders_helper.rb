@@ -211,7 +211,7 @@ module GradersHelper
         .where("grades.grader_id": self.id).map do |s|
         upload_path = Upload.upload_path_for(s.upload.extracted_path)
         g = s.grades.first.grading_output_path
-        if File.exists? g
+        if File.exist? g
           ["#{s.id}#{File.extname(g)}", File.read(g).gsub("#{upload_path}/", "")]
         else
           ["#{s.id}.missing", ""]
