@@ -1,7 +1,7 @@
 {
   description = "bottlenose";
 
-  inputs.nixpkgs.url = "github:nixos/nixpkgs/b0f1f80094ccf0c1fba0a2096d1ec468bcfed48c";
+  inputs.nixpkgs.url = "github:nixos/nixpkgs/5e15d5da4abb74f0dd76967044735c70e94c5af1";
 
   # https://lazamar.co.uk/nix-versions/?channel=nixpkgs-unstable&package=ruby
   inputs.nixpkgs-ruby.url = "github:nixos/nixpkgs/5e15d5da4abb74f0dd76967044735c70e94c5af1";
