@@ -1,5 +1,5 @@
 <% content_for :wide_content do %>
-<%= javascript_include_tag "dompurify/dist/purify.min.js" %>
+<%= javascript_pack_tag "dompurify" %>
 <script>
   <%= render partial: 'submissions/purify', formats: [:js] %>
 </script>

@@ -26,10 +26,6 @@ gem 'sprockets', '~>3.7'
 gem 'coffee-rails'
 gem 'coffee-rails-source-maps'
 gem 'uglifier'
-gem 'jquery-rails' # needed for general jQuery stuff
-gem 'jquery-ui-rails' # needed specifically for drag-and-drop ability
-gem 'jquery-tablesorter' # needed to allow re-sortable tables
-gem 'cocoon' # used for dynamically generating nested forms
 
 gem 'rubyzip' # used for reading submitted zip files
 
@@ -38,9 +34,7 @@ gem 'bootstrap-sass', '>= 3.4.1'
 gem 'sassc-rails'
 gem 'bootstrap-sass-extras'
 gem 'bootstrap3-datetimepicker-rails' # for the datetime widget
-gem 'bootstrap-toggle-rails' # for toggle buttons instead of checkboxes
 
-gem 'momentjs-rails', '>= 2.9.0' # needed for human-friendly textual dates
 gem 'font-awesome-rails'
 
 gem 'addressable'

@@ -1,50 +1,6 @@
-// This is a manifest file that'll be compiled into application.js, which will include all the files
-// listed below.
-//
-// Any JavaScript/Coffee file within this directory, lib/assets/javascripts, vendor/assets/javascripts,
-// or vendor/assets/javascripts of plugins, if any, can be referenced here using a relative path.
-//
-// It's not advisable to add code directly here, but if you do, it'll appear at the bottom of the
-// the compiled file.
-//
-// WARNING: THE FIRST BLANK LINE MARKS THE END OF WHAT'S TO BE PROCESSED, ANY BLANK LINE SHOULD
-// GO AFTER THE REQUIRES BELOW.
-//
-//= require jquery
-//= require jquery-ui/widgets/draggable
-//= require jquery-ui/widgets/resizable
-//= require jquery-ui/widgets/sortable
-//= require jquery-ui/widgets/selectable
-//= require jquery_ujs
-//= require jquery.matchHeight
-//= require jquery-tablesorter
-//= require jquery.keyDecoder
-//= require cocoon
-//= require moment
-//= require bootstrap-sprockets
+// TODO: finish removing all of these
 //= require bootstrap-datetimepicker
-//= require bootstrap.treeview
-//= require bootstrap-toggle
-//= require codemirror/lib/codemirror
-//= require codemirror/addon/runmode/runmode
-//= require codemirror/addon/selection/active-line
-//= require codemirror/mode/clike/clike
-//= require codemirror/mode/mllike/mllike
-//= require codemirror/mode/haskell/haskell
-//= require codemirror/mode/haskell-literate/haskell-literate
-//= require codemirror/mode/ebnf/ebnf
-//= require codemirror/mode/javascript/javascript
-//= require codemirror/mode/markdown/markdown
-//= require codemirror/mode/scheme/scheme
-//= require codemirror/mode/commonlisp/commonlisp
-//= require codemirror/mode/python/python
-//= require codemirror/mode/css/css
-//= require codemirror/mode/stex/stex
-//= require codemirror/mode/xml/xml
-//= require codemirror/mode/yaml/yaml
-//= require codemirror/mode/htmlmixed/htmlmixed
 //= require pyret-codemirror-mode/mode/pyret
-//= require_tree .
 
 
 function enableShowUsernames(elts) {
@@ -189,12 +145,15 @@ function activate_file_picker($e) {
   });
 }
 
+import $ from 'jquery';
+import t from 'tablesorter';
+$.tablesorter = t;
 $.tablesorter.addParser({
   id: 'dates',
   is: function(_) {
     return false;
   },
-  format: function(_, _, cell, _) {
+  format: function(_a, _b, cell, _) {
     return $(cell).find("span.local-time").data("iso-date");
   },
   parsed: false,
@@ -210,11 +169,13 @@ $(function() {
     $(this).attr("title", makeFriendlyDate($(this).attr("title"), true));
   });
   $('[data-toggle="tooltip"]').each(function(elt) {
-    $(this).tooltip({
+    console.log("am running", this, $(this).tooltip);
+    var ret = $(this).tooltip({
       animated: 'fade',
       placement: $(this).data("placement") || 'right',
       html: true
     });
+    console.log(ret);
   });
 
   $("input.numeric").on("keydown", validateNumericInput);
