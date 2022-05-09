@@ -10,6 +10,59 @@ class GradeSubmissionTest < ActionDispatch::IntegrationTest
     Upload.cleanup_test_uploads!
   end
 
+  test "Regression team lateness grade sheet" do
+
+    # Set up: two teams, one user in both, second team has only one user. 
+    # extension applied to both, one in March, one in April
+    lateness_config = LatePerHourConfig.new(days_per_assignment: 1, percent_off: 2, frequency: 1, 
+      max_penalty: 100)
+    asn = create(:assignment, due_date: Time.new(2022, 2, 27, 12, 0), lateness_config: lateness_config,
+      type: Files, team_subs: true, points_available: 5, course: @cs101, teamset: @ts1, available: Time.new(2022, 2, 20, 12, 0))
+    asn.save!
+    
+    team_AS = Team.new(course: @cs101, start_date: Time.new(2022, 02, 01), teamset: @ts1,
+      end_date: Time.new(2022, 04, 01))
+    team_AS.users = [@andy, @sarah]
+    team_AS.individual_extensions << IndividualExtension.new(due_date: Time.new(2022, 3, 4, 12, 0), 
+                                                        created_at: Time.new(2022, 3, 3, 12, 0), assignment: asn)
+    team_AS.save!
+
+    team_S = Team.new(course: @cs101, start_date: Time.new(2022, 04, 01), end_date: nil, 
+      teamset: @ts1)
+    team_S.users = [@sarah]
+    team_S.individual_extensions << IndividualExtension.new(due_date: Time.new(2022, 4, 3, 12, 0), 
+                                                        created_at: Time.new(2022, 4, 1 , 18, 0), assignment: asn)
+    team_S.save!
+
+    sub_AS = create(:submission, assignment: asn, team: team_AS, user: @andy, 
+                created_at: Time.new(2022, 3, 3, 16, 0))
+    sub_AS.save!
+    sub_AS.reload
+    sub_AS.grades.first.update(score: 70)
+    sub_AS.compute_grade!
+
+    sub_S = create(:submission, assignment: asn, user: @sarah, team: team_S, 
+                created_at: Time.new(2022, 4, 1, 20, 0))
+    sub_S.save!
+    sub_S.reload
+    sub_S.grades.first.update(score: 90)
+    sub_S.compute_grade!
+
+    # NOTE: This ordering matters.  Specifically, it ensures
+    # that Sarah's submission gets processed _before_ the paired submission,
+    # which led to the bug before (we produced a hash 
+    # [S => team_S, A => team_AS, S => team_AS], which overwrote Sarah's info)
+    sub_S.set_used_everyone!
+    sub_AS.set_used_user!(@andy)
+
+    # Test: Lateness should be accurate in the cache
+    asn.cache_effective_due_dates!([@andy, @sarah])
+
+    lc = asn.lateness_config
+    penalty = lc.late_penalty(asn, sub_S)
+    assert penalty == 0
+  end
+
   test "teacher sets ignore late penalty flag" do
     skip
 

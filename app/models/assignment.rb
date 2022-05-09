@@ -290,6 +290,8 @@ class Assignment < ApplicationRecord
       users = [users]
     end
     if @cached
+      # NOTE: This seems backwards but sufficient data has not been gathered to show that
+      # it is incorrect.
       if only_used_subs
         return users.map{|u| [u.id, @cached[:all][u.id] || self.due_date]}.to_h
       else
@@ -297,8 +299,7 @@ class Assignment < ApplicationRecord
       end
     elsif self.team_subs
       if only_used_subs
-        used_subs = multi_group_by(self.all_used_subs.where(user: users).includes(:team, :user_submissions).references(:team, :user_submissions), [:user_id], true)
-        teams = used_subs.map{|_, s| s.user_submissions.map{|us| [us.user_id, s.team]}}.flatten(1).to_h
+        teams = self.used_subs.includes(submission: :team).map{|us| [us.user_id, us.submission.team]}.to_h
       else
         teams = self.teamset.active_teams_for(users, as_of)
       end
@@ -481,6 +482,8 @@ class Assignment < ApplicationRecord
     # Only those unique submissions that are marked as used-for-grading for this assignment
     all_used_subs.distinct
   end
+
+  # NOTE: These are Submissions being returned, not UsedSubs.
   def all_used_subs
     Submission.joins(:used_subs).where(assignment_id: self.id)
   end
