@@ -13,7 +13,7 @@ end
 
 
 Rails.application.configure do
-  Selenium::WebDriver::Chrome.path = find_executable ['chrome', 'chromium-browser']
+  Selenium::WebDriver::Chrome::Service.driver_path = find_executable ['chrome', 'chromium-browser', 'chromium.chromedriver', 'chromium']
 
   # Settings specified here will take precedence over those in config/application.rb.
 
