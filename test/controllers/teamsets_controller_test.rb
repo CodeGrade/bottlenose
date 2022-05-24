@@ -32,6 +32,39 @@ class TeamsetsControllerTest < ActionController::TestCase
       .save_sections
   end
 
+  test "accepting invalid team should not destroy request" do
+    teamset = @team.teamset
+    mark_jane_team = Team.new(course: teamset.course, teamset: teamset, start_date: DateTime.now, end_date: nil)
+    mark_jane_team.users = [@mark, @jane]
+    mark_jane_team.save!
+    req1 = TeamRequest.create(teamset: teamset, user: @mark,
+                             partner_names: [@mark.username, @jane.username, @greg.username].join(';'))
+    req1.save!
+    req2 = TeamRequest.create(teamset: teamset, user: @jane,
+                             partner_names: [@mark.username, @jane.username, @greg.username].join(';'))
+    req2.save!
+    req3 = TeamRequest.create(teamset: teamset, user: @greg,
+                             partner_names: [@mark.username, @jane.username, @greg.username].join(';'))
+    req3.save!
+    sign_in @fred
+    assert_no_difference('Team.count') do
+      delete :accept_request, params: {
+               course_id: @team.course_id,
+               id: teamset.id,
+               custom: {
+                 start_date: DateTime.now,
+                 users: [@mark.id, @jane.id, @greg.id]
+               }
+             }
+      assert_response 400
+    end
+    [req1, req2, req3].each do |req|
+      assert_equal req, TeamRequest.find(req.id)
+    end
+    assert_equal "Could not create team: #{@mark.username} and #{@jane.username} are already in an active team",
+                 assigns(:teamset).errors.full_messages.to_sentence
+  end
+  
   test "should get index" do
     sign_in @fred
     get :index, params: { course_id: @team.course, teamset_id: @ts1 }
