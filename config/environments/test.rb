@@ -13,7 +13,6 @@ end
 
 
 Rails.application.configure do
-  Webdrivers.logger.level = :DEBUG
   driver_path = find_executable ['chromium.chromedriver', 'chromedriver']
   if driver_path&.start_with? "/snap"
     Selenium::WebDriver::Chrome::Service.driver_path = driver_path
