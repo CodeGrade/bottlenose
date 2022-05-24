@@ -1,8 +1,8 @@
 require 'active_record'
 APP_PATH = File.expand_path('../../../config/application',  __FILE__)
 require File.expand_path('../../../config/boot',  __FILE__)
+ENV["RAILS_ENV"] = "test"
 require APP_PATH
-Rails.env = ENV["RAILS_ENV"] = "test"
 Rails.logger = ActiveSupport::Logger.new("/dev/null") # Don't need logging for this
 Rails.application.require_environment!
 
@@ -287,6 +287,11 @@ class Screenshots
   include Capybara::DSL
   include FactoryBot::Syntax::Methods
   include ActionDispatch::TestProcess
+  class << self
+    def file_fixture_path
+      ActiveSupport::TestCase.file_fixture_path
+    end
+  end
   include Utilities
 
   BROWSER_WIDTH  = 1280
@@ -576,6 +581,7 @@ class Screenshots
                           prevent_late_submissions: assn1.id)
     assn.graders << CodereviewGrader.new(review_target: "self", review_count: 1, review_threshold: 75,
                                          upload_by_user_id: @fred.id, order: 1)
+    assn.related_interlocks = []
     assn.save!
     @assignments << assn
     puts "Done."
@@ -591,6 +597,7 @@ class Screenshots
                           prevent_late_submissions: assn2.id)
     assn.graders << CodereviewGrader.new(review_target: "peer", review_count: 2, review_threshold: 75,
                                          upload_by_user_id: @fred.id, order: 1)
+    assn.related_interlocks = []
     assn.save!
     @assignments << assn
     puts "Done."
@@ -632,7 +639,7 @@ class Screenshots
                                             "application/octet-stream")
       sub.save_upload
       sub.save!
-      sub.set_used_sub!
+      sub.set_used_everyone!
       sub
     end
   end
@@ -1085,7 +1092,7 @@ class Screenshots
       page.first('#submission_id option').select_option
       page.select('Joe Jones', from: 'who_grades_id')
       assign_grader = page.find(:xpath, ".//input[@value='Assign grader']")
-      highlight_area("assign_grader", bbox(assign_grader)) # TODO: wrong bbox?
+      highlight_area("assign_grader", inflate_box(bbox(assign_grader), 9, 0, -9, 0)) # TODO: wrong bbox?
       header = page.find(:xpath, ".//h3[contains(text(), 'single grader')]")
       form = page.find(:xpath, ".//select[@id='who_grades_id']")
       yield options: inflate_box(bbox(header, form), 10, 10, 10, 10)
@@ -1313,8 +1320,6 @@ end
 srand RANDOM_SEED
 puts "SEED=#{RANDOM_SEED}"
 
-
-FactoryBot.find_definitions
 Utilities.redefine_factories
 Capybara.default_driver = :selenium_chrome_headless #:selenium_chrome
 Capybara.disable_animation = true
