@@ -232,6 +232,8 @@ module ApplicationHelper
       "text/x-common-lisp"
     when ".sml", ".ml", ".mli"
       "mllike"
+    when ".lean"
+      "text/lean"
     when ".hs"
       "text/x-haskell"
     when ".lhs"
@@ -308,6 +310,7 @@ module ApplicationHelper
          "scheme",
          "text/x-common-lisp",
          "mllike",
+         "text/lean",
          "text/x-haskell",
          "text/x-literate-haskell",
          "text/markdown",
