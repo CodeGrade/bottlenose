@@ -12,7 +12,7 @@ class SubTarball
 
   def update!
     make_tar do |afname, dirs|
-      @as.all_used_subs.each do |sub|
+      @as.used_submissions.each do |sub|
         next if sub.file_full_path.blank?
         
         uu = sub.user
@@ -31,7 +31,7 @@ class SubTarball
 
   def update_moss!
     make_tar do |afname, dirs|
-      @as.all_used_subs.each do |sub|
+      @as.used_submissions.each do |sub|
         next if sub.upload.nil?
 
         uu = sub.user
