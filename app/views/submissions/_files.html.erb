@@ -81,7 +81,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </ul>
   <div class="tab-content" style="height: 100%;">
     <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">
-      <% if f[:contents].lines.length > @@MAX_LINES %>
+      <% if f[:contents].split(/\r?\n|\r/).length > @@MAX_LINES %>
       <div class="contentTooLong">
         <div class="warningContent" data-source="<%= f[:link] %>">
           <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
@@ -107,7 +107,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
                                           syntax_highlighter_opts: {formatter: "html_legacy", line_numbers: true, inline_theme: "github"},
                                           math_engine_opts: {preview: true, preview_as_code: true})
          content = sanitize(content.to_html, scrubber: SubmissionsHelper::MarkupScrubber.new)
-         content = escape_javascript(render("submissions/markdown_template.html", body: content)) %>
+         content = escape_javascript(render("submissions/markdown_template", body: content)) %>
       <script>
         (function() {
           var content = "<%= content %>";
@@ -139,7 +139,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </ul>
   <div class="tab-content" style="height: 100%;">
     <div id="markup_src_<%= i %>_<%= root %>" class="tab-pane nested active">
-      <% if contents.lines.length > @@MAX_LINES %>
+      <% if contents.split(/\r?\n|\r/).length > @@MAX_LINES %>
       <div class="contentTooLong">
         <div class="warningContent" data-source="<%= f[:link] %>">
           <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
@@ -208,7 +208,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
   </div>
   <% elsif f[:type] == "text/unknown" && f[:contents].ascii_only? %>
   <div class="nonCMwrapper flexV">
-      <% if f[:contents].lines.length > @@MAX_LINES %>
+      <% if f[:contents].split(/\r?\n|\r/).length > @@MAX_LINES %>
       <div class="contentTooLong">
         <div class="warningContent" data-source="<%= f[:link] %>">
           <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
@@ -242,7 +242,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
     <%= link_to f[:link_to], f[:link_href], class: "symlink-jump", data: {root: root} %>
     <% end %>
   </div>
-  <% elsif f[:contents].lines.length > @@MAX_LINES %>
+  <% elsif f[:contents].split(/\r?\n|\r/).length > @@MAX_LINES %>
   <div class="nonCMwrapper flexV">
     <div class="warningContent" data-source="<%= f[:link] %>">
     <p>Could not render <%= f[:name] %> &mdash; content was too long</p>
