@@ -10,18 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
-
+ActiveRecord::Schema[7.0].define(version: 2022_04_26_161610) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "assignments", force: :cascade do |t|
     t.string "name", null: false
-    t.datetime "due_date", null: false
+    t.datetime "due_date", precision: nil, null: false
     t.string "assignment_file_name"
     t.text "assignment"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.string "secret_dir"
     t.boolean "hide_grading", default: false
     t.integer "assignment_upload_id"
@@ -33,7 +32,7 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.integer "rate_per_hour"
     t.float "points_available"
     t.integer "lateness_config_id"
-    t.datetime "available", null: false
+    t.datetime "available", precision: nil, null: false
     t.string "type", null: false
     t.integer "related_assignment_id"
     t.boolean "request_time_taken", default: false
@@ -59,8 +58,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
 
   create_table "courses", force: :cascade do |t|
     t.string "name", null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.text "footer"
     t.integer "term_id"
     t.integer "sub_max_size", default: 5, null: false
@@ -76,9 +75,9 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.integer "assignment_id", null: false
     t.integer "submission_id", null: false
     t.integer "who_grades_id", null: false
-    t.datetime "grading_assigned", null: false
+    t.datetime "grading_assigned", precision: nil, null: false
     t.boolean "abandoned", default: false, null: false
-    t.datetime "grading_completed"
+    t.datetime "grading_completed", precision: nil
     t.index ["assignment_id"], name: "index_grader_allocations_on_assignment_id"
     t.index ["course_id"], name: "index_grader_allocations_on_course_id"
     t.index ["submission_id"], name: "index_grader_allocations_on_submission_id"
@@ -103,7 +102,7 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.text "notes"
     t.float "score"
     t.float "out_of"
-    t.datetime "updated_at"
+    t.datetime "updated_at", precision: nil
     t.boolean "available", default: false
     t.index ["submission_id"], name: "index_grades_on_submission_id"
   end
@@ -112,8 +111,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.bigint "grading_conflict_id", null: false
     t.bigint "user_id", null: false
     t.string "reason"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.integer "status", default: 0, null: false
     t.index ["grading_conflict_id"], name: "index_grading_conflict_audits_on_grading_conflict_id"
     t.index ["user_id"], name: "index_grading_conflict_audits_on_user_id"
@@ -124,8 +123,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.bigint "student_id", null: false
     t.bigint "course_id", null: false
     t.integer "status", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["course_id"], name: "index_grading_conflicts_on_course_id"
     t.index ["staff_id", "student_id", "course_id"], name: "index_grading_conflict_uniqueness", unique: true
     t.index ["staff_id"], name: "index_grading_conflicts_on_staff_id"
@@ -136,9 +135,9 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.integer "assignment_id", null: false
     t.integer "user_id"
     t.integer "team_id"
-    t.datetime "due_date", null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "due_date", precision: nil, null: false
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.index ["assignment_id", "team_id"], name: "unique_assn_team_extension", unique: true, where: "(user_id IS NULL)"
     t.index ["assignment_id", "user_id"], name: "unique_assn_user_extension", unique: true, where: "(team_id IS NULL)"
     t.index ["assignment_id"], name: "index_individual_extensions_on_assignment_id"
@@ -159,8 +158,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.float "weight", null: false
     t.boolean "suppressed", default: false, null: false
     t.string "info"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["filename"], name: "index_inline_comments_on_filename"
     t.index ["grade_id"], name: "index_inline_comments_on_grade_id"
     t.index ["label"], name: "index_inline_comments_on_label"
@@ -192,8 +191,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.string "token", null: false
     t.integer "expires_in", null: false
     t.text "redirect_uri", null: false
-    t.datetime "created_at", null: false
-    t.datetime "revoked_at"
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "revoked_at", precision: nil
     t.string "scopes", default: "", null: false
     t.index ["application_id"], name: "index_oauth_access_grants_on_application_id"
     t.index ["resource_owner_id"], name: "index_oauth_access_grants_on_resource_owner_id"
@@ -206,8 +205,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.string "token", null: false
     t.string "refresh_token"
     t.integer "expires_in"
-    t.datetime "revoked_at"
-    t.datetime "created_at", null: false
+    t.datetime "revoked_at", precision: nil
+    t.datetime "created_at", precision: nil, null: false
     t.string "scopes"
     t.string "previous_refresh_token", default: "", null: false
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
@@ -225,8 +224,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.text "redirect_uri", null: false
     t.string "scopes", default: "", null: false
     t.boolean "confidential", default: true, null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["owner_id", "owner_type"], name: "index_oauth_applications_on_owner_id_and_owner_type"
     t.index ["uid"], name: "index_oauth_applications_on_uid", unique: true
   end
@@ -241,8 +240,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
   create_table "reg_requests", force: :cascade do |t|
     t.integer "course_id"
     t.text "notes"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.integer "user_id"
     t.integer "role", default: 0, null: false
   end
@@ -257,12 +256,12 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
   create_table "registrations", force: :cascade do |t|
     t.integer "course_id", null: false
     t.integer "user_id", null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.boolean "show_in_lists"
     t.string "tags", default: ""
     t.integer "role", default: 0, null: false
-    t.datetime "dropped_date"
+    t.datetime "dropped_date", precision: nil
     t.index ["course_id", "user_id"], name: "index_registrations_on_course_id_and_user_id", unique: true
     t.index ["course_id"], name: "index_registrations_on_course_id"
     t.index ["user_id"], name: "index_registrations_on_user_id"
@@ -275,7 +274,7 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.integer "upload_id", null: false
     t.float "score"
     t.float "out_of"
-    t.datetime "updated_at"
+    t.datetime "updated_at", precision: nil
     t.index ["review_submission_id"], name: "index_review_feedbacks_on_review_submission_id"
     t.index ["submission_id"], name: "index_review_feedbacks_on_submission_id"
   end
@@ -283,8 +282,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
   create_table "sandboxes", force: :cascade do |t|
     t.string "name"
     t.integer "submission_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
   end
 
   create_table "sections", force: :cascade do |t|
@@ -302,16 +301,16 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.integer "assignment_id", null: false
     t.integer "interlock_id", null: false
     t.boolean "submissions_allowed", default: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
   end
 
   create_table "submission_views", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "team_id"
     t.integer "assignment_id", null: false
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
   end
 
   create_table "submissions", force: :cascade do |t|
@@ -320,8 +319,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.string "secret_dir"
     t.string "file_name"
     t.text "student_notes"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.boolean "ignore_late_penalty", default: false
     t.integer "upload_id"
     t.integer "upload_size", default: 0, null: false
@@ -340,8 +339,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.integer "teamset_id", null: false
     t.integer "user_id", null: false
     t.string "partner_names", null: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.index ["teamset_id", "user_id"], name: "index_team_requests_on_teamset_id_and_user_id", unique: true
     t.index ["teamset_id"], name: "index_team_requests_on_teamset_id"
     t.index ["user_id"], name: "index_team_requests_on_user_id"
@@ -350,16 +349,16 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
   create_table "team_users", force: :cascade do |t|
     t.integer "team_id"
     t.integer "user_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["team_id", "user_id"], name: "unique_team_memebers", unique: true
   end
 
   create_table "teams", force: :cascade do |t|
     t.integer "course_id"
     t.date "start_date"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.date "end_date"
     t.integer "teamset_id", null: false
   end
@@ -372,8 +371,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
 
   create_table "terms", force: :cascade do |t|
     t.boolean "archived", default: false
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.integer "semester", default: 0, null: false
     t.integer "year", default: 0, null: false
     t.index ["semester", "year"], name: "index_terms_on_semester_and_year", unique: true
@@ -383,8 +382,8 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.integer "user_id"
     t.string "file_name"
     t.string "secret_key"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.integer "assignment_id", default: 0, null: false
     t.index ["assignment_id"], name: "index_uploads_on_assignment_id"
     t.index ["secret_key"], name: "index_uploads_on_secret_key", unique: true
@@ -410,15 +409,15 @@ ActiveRecord::Schema[6.1].define(version: 2022_04_26_161610) do
     t.string "name", null: false
     t.string "email"
     t.boolean "site_admin"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
-    t.datetime "reset_password_sent_at"
-    t.datetime "remember_created_at"
+    t.datetime "reset_password_sent_at", precision: nil
+    t.datetime "remember_created_at", precision: nil
     t.integer "sign_in_count", default: 0, null: false
-    t.datetime "current_sign_in_at"
-    t.datetime "last_sign_in_at"
+    t.datetime "current_sign_in_at", precision: nil
+    t.datetime "last_sign_in_at", precision: nil
     t.inet "current_sign_in_ip"
     t.inet "last_sign_in_ip"
     t.string "username"
