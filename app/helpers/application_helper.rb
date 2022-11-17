@@ -230,7 +230,7 @@ module ApplicationHelper
       "scheme"
     when ".lisp"
       "text/x-common-lisp"
-    when ".sml", ".ml", ".mli"
+    when ".sml", ".ml", ".mli", ".mll"
       "mllike"
     when ".lean"
       "text/lean"
