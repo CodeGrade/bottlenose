@@ -124,7 +124,7 @@ class JunitGrader < Grader
       sub.upload.extracted_path,
       [
         Rails.root.join("lib/assets/annotations.jar"),
-        Rails.root.join("lib/assets/junit-4.12.jar"),
+        Rails.root.join("lib/assets/junit-4.13.2.jar"),
         Rails.root.join("lib/assets/junit-tap.jar"),
         Rails.root.join("lib/assets/hamcrest-core-1.3.jar")
       ]
@@ -145,7 +145,7 @@ class JunitGrader < Grader
       {},
       [
         ["cat", "compile_list.txt"],
-        ["javac", "-cp", "junit-4.12.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
+        ["javac", "-cp", "junit-4.13.2.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
          "@compile_list.txt"]
       ],
       {},
@@ -157,7 +157,7 @@ class JunitGrader < Grader
     [
       "junit.tap",
       {},
-      ["java", "-cp", "junit-4.12.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
+      ["java", "-cp", "junit-4.13.2.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
        "edu.neu.TAPRunner", *(self.test_class.split(" ")),
        "-timeout", self.test_timeout.to_s],
       {},
