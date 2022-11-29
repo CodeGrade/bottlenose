@@ -19,9 +19,12 @@ class TeamsetSpreadsheet < Spreadsheet
                .map{|s| [s.id, s]}.to_h
 
     @teams = course.teams.includes(:users).order(end_date: :desc, id: :asc).group_by(&:teamset_id)
+    seen = Set.new
     course.assignments_sorted.each do |a|
       next unless a.team_subs?
-      sheet = Sheet.new("Teams for #{a.name}")
+      next if seen.member?(a.teamset_id)
+      seen.add(a.teamset_id)
+      sheet = Sheet.new("Teamset #{a.teamset_id} for #{a.name}")
       sheet.columns.push(Col.new("ID", "Number"))
       sheet.columns.push(Col.new("Active"))
       sheet.columns.push(Col.new("Start date"))
