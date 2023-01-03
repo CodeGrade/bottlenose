@@ -1,11 +1,11 @@
-require 'active_record'
-
-course_num = ARGV[0].to_i
-
 APP_PATH = File.expand_path('../../config/application',  __FILE__)
 require File.expand_path('../../config/boot',  __FILE__)
 require APP_PATH
 Rails.application.require_environment!
+
+require 'active_record'
+
+course_num = ARGV[0].to_i
 
 data = [["Assignment", "Min", "Average", "Median", "Stddev", "Max", "Max (with outliers)"]]
 

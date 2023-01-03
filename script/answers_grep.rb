@@ -1,13 +1,13 @@
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
 require 'active_record'
 require 'yaml'
 
 assn_num = ARGV.shift.to_i
 grep_cmds = YAML.load(ARGF.read)
-
-APP_PATH = File.expand_path('../../config/application',  __FILE__)
-require File.expand_path('../../config/boot',  __FILE__)
-require APP_PATH
-Rails.application.require_environment!
 
 def match(ans, query, index)
   return nil if query.nil?

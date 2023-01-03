@@ -1,12 +1,12 @@
-require 'active_record'
-
-assn_num = ARGV[0].to_i
-grep_cmd = ARGV[1]
-
 APP_PATH = File.expand_path('../../config/application',  __FILE__)
 require File.expand_path('../../config/boot',  __FILE__)
 require APP_PATH
 Rails.application.require_environment!
+
+require 'active_record'
+
+assn_num = ARGV[0].to_i
+grep_cmd = ARGV[1]
 
 Assignment.find(assn_num.to_i).submissions.each do |sub|
   to_run = grep_cmd.gsub("{0}", sub.upload.extracted_path.to_s)
