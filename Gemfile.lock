@@ -312,7 +312,6 @@ GEM
       actionpack (>= 5.2)
       activesupport (>= 5.2)
       sprockets (>= 3.0.0)
-    strscan (3.0.0)
     therubyracer (0.12.3)
       libv8 (~> 3.16.14.15)
       ref
@@ -408,10 +407,8 @@ DEPENDENCIES
   simplecov
   single_test
   sprockets (~> 3.7)
-  strscan (= 3.0.0)
   therubyracer
   uglifier
-  uri (= 0.10.1)
   webdrivers (~> 5.0)
   webpacker
   webrick
