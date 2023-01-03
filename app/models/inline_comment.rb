@@ -1,6 +1,6 @@
 class InlineComment < ApplicationRecord
   belongs_to :submission
-  belongs_to :user
+  belongs_to :user, optional: true
   belongs_to :grade
   enum severity: [:error, :warning, :info, :bonus]
   validates :weight, numericality: true
