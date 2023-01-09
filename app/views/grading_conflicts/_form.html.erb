@@ -9,7 +9,7 @@
         <span><%= current_user.display_name %></span>
       <% else %>
         <%= f.select :student_id, class: "form-control" do %>
-          <% @students.each do |stdt| %>
+          <% @students.sort_by(&:display_name).each do |stdt| %>
             <%= content_tag :option, stdt.display_name, value: stdt.id %>
           <% end %>
         <% end %>
@@ -22,7 +22,7 @@
       <% else %>
         <%# TODO: Filter out any graders where a conflict already exists. %>
         <%= f.select :staff_id, class: "form-control" do %>
-          <% @tas_and_graders.each do |stf| %>
+          <% @tas_and_graders.sort_by(&:display_name).each do |stf| %>
             <%= content_tag :option, stf.display_name, value: stf.id %>
           <% end %>
         <% end %>

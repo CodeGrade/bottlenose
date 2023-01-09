@@ -25,8 +25,7 @@ class GradingConflictsController < ApplicationController
 
   def new
     @tas_and_graders = Registration.where(course: @course)
-      .where(role: Registration.roles[:grader])
-      .or(Registration.where(role: Registration.roles[:assistant]))
+      .where(role: [Registration.roles[:grader], Registration.roles[:assistant]])
       .map{|reg| reg.user}
     @students = Registration.where(course: @course, role: Registration.roles[:student])
       .map{|reg| reg.user}
