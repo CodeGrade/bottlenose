@@ -59,7 +59,7 @@
   <div class="col-md-4">
     <div class="form-group">
       <%= label_tag :end_date %><br>
-      <div class='input-group date' data-default="<%= DateTime.now.tomorrow.iso8601 %>" >
+      <div class='input-group date' >
         <%= text_field_tag :end_date, "", class: 'form-control', include_blank: true %>
         <span class="input-group-addon">
           <span class="glyphicon glyphicon-calendar"></span>
@@ -70,10 +70,11 @@
       $(function () {
         $('.input-group.date').each(function() {
           var target = $(this);
+          var minDate = moment.min(moment(target.data("default")), moment("<%= DateTime.now.iso8601 %>"));
           target.datetimepicker({
             sideBySide: true,
             format: "MMMM Do, YYYY",
-            minDate: target.data("default"),
+            minDate: minDate,
             defaultDate: target.data("default"),
             allowInputToggle: true
           });
@@ -95,16 +96,19 @@
           $("#bulk_end_date").val(v);
           $("#single_end_date").val(v);
         });
-        start.on("dp.change", function(e) {
-          let curr_end_date = end.data("DateTimePicker").date();
-          let new_min_end_date = e.date.add(1, 'days');
-          end.data("DateTimePicker").minDate(new_min_end_date);
-          if (curr_end_date.isBefore(e.date)) {
-            end.data("DateTimePicker").date(new_min_end_date);
-          }
-        });
+        // Note: should happen before the next handler, since a manually-triggered change
+        // won't have a defined e.date field
         start.trigger("dp.change");
         end.trigger("dp.change");
+        start.on("dp.change", function(e) {
+          let curr_end_date = end.data("DateTimePicker").date();
+          // Moment dates are mutable, so make a copy before incrementing
+          let new_min_end_date = moment(e.date).add(1, 'days');
+          end.data("DateTimePicker").minDate(new_min_end_date);
+          if (curr_end_date.isBefore(e.date)) {
+            end.data("DateTimePicker").clear();
+          }
+        });
       })
     </script>
   </div>
