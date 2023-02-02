@@ -218,7 +218,7 @@ class TeamsetsController < ApplicationController
   
   def randomize
 
-    if params[:random][:end_date] && 
+    if !params[:random][:end_date]&.blank? && 
       params[:random][:end_date] <= params[:random][:start_date]
       redirect_back fallback_location: edit_course_teamset_path(@course, @teamset),
                     alert: "Cannot create teams with the end date on or before the start date."
@@ -374,21 +374,21 @@ class TeamsetsController < ApplicationController
   end
 
   def team_params
-    ans = params.require(:single).permit(:start_date, :end_date)
+    ans = params.require(:single).permit(:start_date, :end_date).compact_blank
     ans[:course_id] = params[:course_id]
     ans[:teamset_id] = params[:id]
     ans
   end
 
   def bulk_params
-    ans = params.require(:bulk).permit(:start_date, :end_date, :teams)
+    ans = params.require(:bulk).permit(:start_date, :end_date, :teams).compact_blank
     ans[:course_id] = params[:course_id]
     ans[:teamset_id] = params[:id]
     ans
   end
 
   def custom_params
-    ans = params.require(:custom).permit(:start_date, :end_date, users: [])
+    ans = params.require(:custom).permit(:start_date, :end_date, users: []).compact_blank
     ans[:course_id] = params[:course_id]
     ans[:teamset_id] = params[:id]
     ans
