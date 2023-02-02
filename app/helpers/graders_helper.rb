@@ -39,7 +39,7 @@ module GradersHelper
       end
     end
   end
-  def run_build_produce_problems(assignment, sub, timeout: Grader::DEFAULT_COMPILE_TIMEOUT)
+  def run_build_produce_problems(assignment, sub, timeout: Grader::DEFAULT_COMPILE_TIMEOUT, include_dirtree: true)
     g = self.grade_for sub
     u = sub.upload
     grader_dir = u.grader_path(g)
@@ -55,9 +55,13 @@ module GradersHelper
     File.open(grader_dir.join(details_out), "w") do |details|
       start_time = Time.now
       details.puts("#{prefix}: Build began at #{start_time}")
-      details.puts("#{prefix}: Contents of temp directory are:")
-      tree_output = dir_tree(build_dir)
-      details.puts tree_output
+      if include_dirtree
+        details.puts("#{prefix}: Contents of temp directory are:")
+        tree_output = dir_tree(build_dir)
+        details.puts tree_output
+      else
+        details.puts("#{prefix}: Omitting contents of temp directory")
+      end
       cmds.each do |cmd|
         if (cmd.is_a? Hash)
           if cmd[:skip].call
@@ -86,9 +90,13 @@ module GradersHelper
           any_problems = true
         end
       end
-      details.puts("Contents of temp directory are now:")
-      tree_output = dir_tree(build_dir)
-      details.puts(tree_output)
+      if include_dirtree
+        details.puts("Contents of temp directory are now:")
+        tree_output = dir_tree(build_dir)
+        details.puts(tree_output)
+      else
+        details.puts("#{prefix}: Omitting contents of temp directory")
+      end
       end_time = Time.now
       details.puts("Build ended at #{end_time}")
       details.puts("Total build time: #{end_time - start_time} seconds")

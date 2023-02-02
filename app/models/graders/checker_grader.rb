@@ -69,7 +69,7 @@ class CheckerGrader < Grader
       @build_dir = build_dir
       begin
         Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER, autopick: true) do
-          run_build_produce_problems assignment, sub do |prefix, any_problems, details|
+          run_build_produce_problems assignment, sub, include_dirtree: !self.test_class.include?("Examplar") do |prefix, any_problems, details|
             if any_problems
               g.grading_output_path = details.path
               g.score = 0
@@ -209,7 +209,7 @@ class CheckerGrader < Grader
           add_error("The archive does not contain src/ and test/ subdirectories")
           ok = false
         end
-        if ok
+        if ok && !self.test_class.include?("Examplar")
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
             if !entries["test"]["#{tc}.java"]

@@ -257,7 +257,8 @@ class Grader < ApplicationRecord
     up.metadata = {
       type: "#{type} Configuration",
       date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-      mimetype: data.content_type
+      mimetype: data.content_type,
+      prof_override: {file_count: true, file_size: true}
     }
     self.upload = up
     self.upload_id_will_change!
@@ -275,7 +276,8 @@ class Grader < ApplicationRecord
     up.metadata = {
       type: "#{type} Extra Configuration",
       date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
-      mimetype: data.content_type
+      mimetype: data.content_type,
+      prof_override: {file_count: true, file_size: true}
     }
     self.extra_upload = up
     self.extra_upload_id_will_change!
