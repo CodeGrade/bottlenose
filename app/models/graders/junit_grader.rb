@@ -30,7 +30,7 @@ class JunitGrader < Grader
     export_tap_data
   end
   def export_data_schema
-    "junit_export_schema.html"
+    "junit_export_schema"
   end
   def import_data(who_grades, file)
     import_tap_data(who_grades, file) do |g, raw_tap, sub|
@@ -47,7 +47,7 @@ class JunitGrader < Grader
     end
   end
   def import_data_schema
-    "junit_import_schema.html"
+    "junit_import_schema"
   end
 
   protected

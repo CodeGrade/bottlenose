@@ -70,7 +70,7 @@ class ExamGrader < Grader
     out.to_s
   end
   def export_data_schema
-    "exam_export_schema.html"
+    "exam_export_schema"
   end
   def import_data(who_grades, file)
     contents = file.read
@@ -119,7 +119,7 @@ class ExamGrader < Grader
     }
   end
   def import_data_schema
-    "exam_import_schema.html"
+    "exam_import_schema"
   end
 
   def apply_all_exam_grades(who_grades, students_with_grades, key)

@@ -32,13 +32,13 @@ class RacketStyleGrader < Grader
     export_tap_data
   end
   def export_data_schema
-    "tap_style_export_schema.html"
+    "tap_style_export_schema"
   end
   def import_data(who_grades, file)
     import_tap_data(who_grades, file)
   end
   def import_data_schema
-    "tap_style_import_schema.html"
+    "tap_style_import_schema"
   end
   
   protected
