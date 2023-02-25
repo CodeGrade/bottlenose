@@ -2,6 +2,16 @@
 <% cur_user_student = current_user.course_student?(@course)%>
 
 <%= form_for :grading_conflict, :url => {action: :create, method: :post} do |f| %>
+  <div class="alert alert-danger">
+    <h4><i>Note!</i> Grading conflicts are intended to
+      recognize <i>conflicts of interest</i> such that a grader cannot
+      grade a student impartially (because the student and grader
+      already know each other too well, for whatever reason).  They
+      are not intended to request regrades.  If you want to request
+      that your assignment be regraded, contact the grader
+      directly.
+    </h4>
+  </div>  
   <div style="display: flex; column-gap: 20px; align-items: end;">
     <div class="form-group">
       <label for="student" class="input-label">Student:</label>
