@@ -47,34 +47,34 @@ GoogleCharts.load('corechart', function() {
           courseData.push([grades[i].score]);
       }
     }
-    data = GoogleCharts.api.visualization.arrayToDataTable(courseData);
-    options = {
-      title: "Uncurved grade distribution " + (isPercent ? "(percent)" : "(points)"),
-      legend: { position: 'none' },
-      colors: ['gold'],
-      chartArea: {width: '85%', height: '80%'},
-      interpolateNulls: false,
-      hAxis: {type: 'category'},
-      histogram: {bucketSize: 5, minValue: 0, hideBucketItems: true}
-    };
-    chart = new GoogleCharts.api.visualization.Histogram(document.getElementById("rawScore"));
-    chart.draw(data, options);
-
+    if (grades.length > 0) {
+      data = GoogleCharts.api.visualization.arrayToDataTable(courseData);
+      options = {
+        title: "Uncurved grade distribution " + (isPercent ? "(percent)" : "(points)"),
+        legend: { position: 'none' },
+        colors: ['gold'],
+        chartArea: {width: '85%', height: '80%'},
+        interpolateNulls: false,
+        hAxis: {type: 'category'},
+        histogram: {bucketSize: 5, minValue: 0, hideBucketItems: true}
+      };
+      chart = new GoogleCharts.api.visualization.Histogram(document.getElementById("rawScore"));
+      chart.draw(data, options);
+    } 
     courseData.shift();
     courseData = courseData.map((r) => r[0]);
     courseData.sort((a, b) => (a - b));
-    console.log(courseData);
     var umin = courseData[0];
     var umedian = courseData[Math.floor(courseData.length / 2)];
     var umean = average(courseData);
     var umax = courseData[courseData.length - 1];
     var ustdev = standardDeviation(courseData);
     var utds = $("#rawStats td ~ td");
-    $(utds[0]).text(umin.toFixed(2));
-    $(utds[1]).text(umedian.toFixed(2));
-    $(utds[2]).text(umean.toFixed(2));
-    $(utds[3]).text(umax.toFixed(2));
-    $(utds[4]).text(ustdev.toFixed(2));
+    $(utds[0]).text(Number.isFinite(umin) ? umin.toFixed(2) : "?");
+    $(utds[1]).text(Number.isFinite(umedian) ? umedian.toFixed(2) : "?");
+    $(utds[2]).text(Number.isFinite(umean) ? umean.toFixed(2) : "?");
+    $(utds[3]).text(Number.isFinite(umax) ? umax.toFixed(2) : "?");
+    $(utds[4]).text(Number.isFinite(ustdev) ? ustdev.toFixed(2) : "?");
     $("#rawStats").removeClass("hidden").show();
     
 
@@ -87,34 +87,34 @@ GoogleCharts.load('corechart', function() {
           courseData.push([curveFunction(grades[i].score)]);
       }
     }
-    data = GoogleCharts.api.visualization.arrayToDataTable(courseData);
-    options = {
-      title: "Curved grade distribution " + (isPercent ? "(percent)" : "(points)"),
-      legend: { position: 'none' },
-      colors: ['seagreen'],
-      chartArea: {width: '85%', height: '80%'},
-      interpolateNulls: false,
-      hAxis: {type: 'category'},
-      histogram: {bucketSize: 5, minValue: 0, hideBucketItems: true}
-    };
-    chart = new GoogleCharts.api.visualization.Histogram(document.getElementById("curvedScore"));
-    chart.draw(data, options);
-
+    if (grades.length > 0) {
+      data = GoogleCharts.api.visualization.arrayToDataTable(courseData);
+      options = {
+        title: "Curved grade distribution " + (isPercent ? "(percent)" : "(points)"),
+        legend: { position: 'none' },
+        colors: ['seagreen'],
+        chartArea: {width: '85%', height: '80%'},
+        interpolateNulls: false,
+        hAxis: {type: 'category'},
+        histogram: {bucketSize: 5, minValue: 0, hideBucketItems: true}
+      };
+      chart = new GoogleCharts.api.visualization.Histogram(document.getElementById("curvedScore"));
+      chart.draw(data, options);
+    }
     courseData.shift();
     courseData = courseData.map((r) => r[0]);
     courseData.sort((a, b) => (a - b));
-    console.log(courseData);
     var cmin = courseData[0];
     var cmedian = courseData[Math.floor(courseData.length / 2)];
     var cmean = average(courseData);
     var cmax = courseData[courseData.length - 1];
     var cstdev = standardDeviation(courseData);
     var ctds = $("#curvedStats td ~ td");
-    $(ctds[0]).text(cmin.toFixed(2));
-    $(ctds[1]).text(cmedian.toFixed(2));
-    $(ctds[2]).text(cmean.toFixed(2));
-    $(ctds[3]).text(cmax.toFixed(2));
-    $(ctds[4]).text(cstdev.toFixed(2));
+    $(ctds[0]).text(Number.isFinite(cmin) ? cmin.toFixed(2) : "?");
+    $(ctds[1]).text(Number.isFinite(cmedian) ? cmedian.toFixed(2) : "?");
+    $(ctds[2]).text(Number.isFinite(cmean) ? cmean.toFixed(2) : "?");
+    $(ctds[3]).text(Number.isFinite(cmax) ? cmax.toFixed(2) : "?");
+    $(ctds[4]).text(Number.isFinite(cstdev) ? cstdev.toFixed(2) : "?");
     $("#curvedStats").removeClass("hidden").show();
   }
   function showFlatPoints() {
@@ -133,14 +133,16 @@ GoogleCharts.load('corechart', function() {
     var isPercent = ($(this).find("select").val() === "Percent");
     var minCurved = Number.parseFloat($(this).find("#linearMapMin").val());
     var maxCurved = Number.parseFloat($(this).find("#linearMapMax").val());
-    var maxVal = (isPercent ? 100 : maxScore);
+    var minVal =    Number.parseFloat($(this).find("#linearRawMin").val());
+    var maxVal =    Number.parseFloat($(this).find("#linearRawMax").val());
+    debugger
     $(this).find("#linearRawMax").text(maxVal);
     $(this).find(".pointsOrPercent").text(isPercent ? "percent" : "points");
     $(this).find(".pointsOrPercent.terse").text(isPercent ? "%" : "pts");
-    var slope = (maxCurved - minCurved) / (maxVal - 0);
+    var slope = (maxCurved - minCurved) / (maxVal - minVal);
     var intercept = minCurved;
     curveFunction = (function(slope, intercept) {
-      return function(raw) { return slope * raw + intercept; };
+      return function(raw) { return slope * (raw - minVal) + intercept; };
     })(slope, intercept);
     drawSampleCurve($(this).find(".curveSample"), isPercent);
   }

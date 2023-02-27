@@ -90,13 +90,19 @@
               <option value="Percent" selected>Percent</option>
             </select>
           </p>
-          <p>A raw grade of <span id="linearRawMin">0</span><span class="pointsOrPercent terse"></span>
+          <p>A raw grade of
+            <span style="display: inline-block; vertical-align: middle;">
+              <%= f.spinner "linearRawMin", 0.0, min: 0, text: {id: "linearRawMin"} %>
+            </span> <span class="pointsOrPercent terse"></span>
             should map to 
             <span style="display: inline-block; vertical-align: middle;">
               <%= f.spinner "linearMapMin", 0.0, min: 0, text: {id: "linearMapMin"} %>
             </span> <span class="pointsOrPercent terse"></span>
           </p>
-          <p>A raw grade of <span id="linearRawMax">100</span><span class="pointsOrPercent terse"></span>
+          <p>A raw grade of
+            <span style="display: inline-block; vertical-align: middle;">
+              <%= f.spinner "linearRawMax", 100.0, min: 0, text: {id: "linearRawMax"} %>
+            </span> <span class="pointsOrPercent terse"></span>
             should map to 
             <span style="display: inline-block; vertical-align: middle;">
               <%= f.spinner "linearMapMax", 100.0, min: 0, text: {id: "linearMapMax"} %>

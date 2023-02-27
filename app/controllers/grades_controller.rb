@@ -132,7 +132,7 @@ class GradesController < ApplicationController
   def curve_params
     params[:grader].permit(:curveType, :gradeUnit,
                            :flatPoints, :flatMax,
-                           :linearMapMin, :linearMapMax,
+                           :linearMapMin, :linearMapMax, :linearRawMin, :linearRawMax,
                            :contrastDegree, :contrastWeight)
   end
 
@@ -497,14 +497,10 @@ class GradesController < ApplicationController
     when "linear"
       minCurved = curve_params[:linearMapMin].to_f
       maxCurved = curve_params[:linearMapMax].to_f
-      case curve_params[:gradeUnit]
-      when "Points"
-        slope = (maxCurved - minCurved) / total
-        intercept = minCurved
-      when "Percent"
-        slope = (maxCurved - minCurved) / 100.0
-        intercept = minCurved * (total / 100.0)
-      end
+      minRaw =    curve_params[:linearRawMin].to_f
+      maxRaw =    curve_params[:linearRawMax].to_f
+      slope = (maxCurved - minCurved) / (maxRaw - minRaw)
+      intercept = minCurved
       @assignment.submissions.each do |sub|
         sub.set_curved_grade(current_user) do |num_questions, grades, curved|
           if curved
@@ -513,7 +509,7 @@ class GradesController < ApplicationController
           else
             newCurveCount += 1
             score = grades.sum{|c| c[:score]}
-            slope * score + intercept
+            slope * (score - minRaw) + intercept
           end
         end
       end
