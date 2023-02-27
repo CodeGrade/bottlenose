@@ -500,7 +500,14 @@ class GradesController < ApplicationController
       minRaw =    curve_params[:linearRawMin].to_f
       maxRaw =    curve_params[:linearRawMax].to_f
       slope = (maxCurved - minCurved) / (maxRaw - minRaw)
-      intercept = minCurved
+      case curve_params[:gradeUnit]
+      when "Points"
+        intercept = minCurved
+        minVal = minRaw
+      when "Percent"
+        intercept = minCurved * (total / 100.0)
+        minVal = minRaw * (total / 100.0)
+      end
       @assignment.submissions.each do |sub|
         sub.set_curved_grade(current_user) do |num_questions, grades, curved|
           if curved
@@ -509,7 +516,7 @@ class GradesController < ApplicationController
           else
             newCurveCount += 1
             score = grades.sum{|c| c[:score]}
-            slope * (score - minRaw) + intercept
+            slope * (score - minVal) + intercept
           end
         end
       end
