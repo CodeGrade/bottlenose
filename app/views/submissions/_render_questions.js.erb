@@ -23,7 +23,7 @@ $(function() {
         prevLine[href] = line;
       }
     }
-    $('[data-show-file]').click(function(d) {
+    $('#' + root + ' [data-show-file]').click(function(d) {
       var args = $(this).data('showFile');
       showFile(args[0], args[1]);
     });
