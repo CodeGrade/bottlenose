@@ -1,5 +1,5 @@
 class ReviewFeedback < ApplicationRecord
-  belongs_to :grade
+  belongs_to :grade, optional: true
   belongs_to :submission
   belongs_to :review_submission, class_name: "Submission"
   belongs_to :upload # These might be shared with the underlying submission, so don't destroy dependents here
