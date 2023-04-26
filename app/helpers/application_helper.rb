@@ -224,6 +224,10 @@ module ApplicationHelper
       "application/java-vm"
     when ".js"
       "text/javascript"
+    when ".json"
+      "application/json"
+    when ".ts", ".tsx"
+      "text/typescript"
     when ".arr"
       "pyret"
     when ".rkt", ".ss"
@@ -306,6 +310,8 @@ module ApplicationHelper
     case mimetype
     when "text/x-java",
          "text/javascript",
+         "text/typescript",
+         "application/json",
          "pyret",
          "scheme",
          "text/x-common-lisp",
