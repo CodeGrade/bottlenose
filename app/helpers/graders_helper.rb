@@ -91,7 +91,7 @@ module GradersHelper
         end
       end
       if include_dirtree
-        details.puts("Contents of temp directory are now:")
+        details.puts("#{prefix}: Contents of temp directory are now:")
         tree_output = dir_tree(build_dir)
         details.puts(tree_output)
       else
