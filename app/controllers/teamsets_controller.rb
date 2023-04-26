@@ -194,7 +194,7 @@ class TeamsetsController < ApplicationController
       rescue Exception => e
         @teamset.errors.add(:base, "Could not save all teams: #{e}")
         setup_params
-        @teamset.bulk_teams = params[:bulk][:teams]
+        @teamset.bulk_teams = params[:bulk][:teams] || params[:bulk_teams]
         render :edit, status: 500
         return
       end
@@ -384,6 +384,7 @@ class TeamsetsController < ApplicationController
     ans = params.require(:bulk).permit(:start_date, :end_date, :teams).compact_blank
     ans[:course_id] = params[:course_id]
     ans[:teamset_id] = params[:id]
+    ans[:teams] = params[:bulk_teams] if (params[:bulk_teams] && ans[:teams].blank?)
     ans
   end
 
@@ -391,6 +392,7 @@ class TeamsetsController < ApplicationController
     ans = params.require(:custom).permit(:start_date, :end_date, users: []).compact_blank
     ans[:course_id] = params[:course_id]
     ans[:teamset_id] = params[:id]
+    ans[:users] = params[:custom_users] if (params[:custom_users] && ans[:users].blank?)
     ans
   end
     
