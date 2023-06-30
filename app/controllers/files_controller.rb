@@ -3,11 +3,12 @@ class FilesController < ApplicationController
   @@resources_true_dir = "lib/assets"
 
   def upload
-    if File.file?(Upload.base_upload_dir.join(params[:path]))
+    file_path = Upload.base_upload_dir.join(params[:path])
+    if File.file?(file_path)
       disp = get_file_disposition(File.extname(params[:path]).downcase)
       mime = ApplicationHelper.mime_type(params[:path])
       
-      send_file Upload.base_upload_dir.join(params[:path]).to_s,
+      send_file file_path.to_s,
                 filename: File.basename(params[:path]),
                 disposition: disp,
                 type: mime
@@ -17,11 +18,12 @@ class FilesController < ApplicationController
   end
 
   def resource
-    if File.file?(Pathname.new(@@resources_true_dir).join(params[:path]))
+    file_path = Rails.root.join(@@resources_true_dir, params[:path])
+    if File.file?(file_path)
       disp = get_file_disposition(File.extname(params[:path]).downcase)
       mime = ApplicationHelper.mime_type(params[:path])
 
-      send_file Pathname.new(@@resources_true_dir).join(params[:path]).to_s,
+      send_file file_path.to_s,
                 filename: File.basename(params[:path]),
                 disposition: disp,
                 type: mime
