@@ -86,4 +86,11 @@ class Team < ApplicationRecord
   def delete_team_requests
     TeamRequest.where(teamset: self.teamset, user: self.users.map(&:id)).delete_all
   end
+
+  def num_submissions_in_last_duration(from_time, duration)
+    start_time, end_time = from_time - duration, from_time
+    Submission.where("created_at <= :end_time AND created_at >= :start_time", 
+                              {start_time: start_time, end_time: end_time})
+                            .where(team_id: self.id).count
+  end
 end

@@ -118,7 +118,14 @@ class Grader < ApplicationRecord
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
+    attr_accessor :resource_files
   end
+
+  # resource_files is of type Hash[string, Pair[string, string]], where the keys
+  # are the file paths to the resources, and the pair is composed of a key for the
+  # grading job's files object and the MIME type of the file, in that order.
+  @resource_files = {}
+  
   @delayed_grades = {}
   @delayed_count = 0
   
@@ -127,6 +134,10 @@ class Grader < ApplicationRecord
   end
   def self.delayed_count
     @delayed_count
+  end
+
+  def generate_grading_job_json(sub)
+    fail NotImplementedError, "Graders who send jobs to Orca should implement this method."
   end
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
@@ -348,6 +359,20 @@ class Grader < ApplicationRecord
   def add_error(msg)
     order = self.assignment.graders.sort_by(&:order).index(self)
     self.errors.add("##{order + 1}", msg)
+  end
+
+  def generate_grading_job_metadata_table(sub)
+    ans = {}
+    if sub.team
+      ans["display_name"] = sub.team.member_names
+      ans["id"] = sub.team_id
+      ans["user_or_team"] = "team"
+    else
+      ans["display_name"] = sub.user.display_name
+      ans["id"] = sub.user_id
+      ans["user_or_team"] = "user"
+    end
+    ans
   end
 
 end

@@ -7,6 +7,13 @@ class JunitGrader < Grader
   before_validation :set_junit_params
   validate :proper_configuration
 
+  @resource_files = {
+    "lib/assets/annotations.jar": ["annotations-jar", "application/zip"],
+    "lib/assets/junit-4.13.2.jar": ["junit-jar", "application/zip"],
+    "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/zip"],
+    "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/zip"]
+  }
+
   def autograde?
     true
   end
@@ -48,6 +55,21 @@ class JunitGrader < Grader
   end
   def import_data_schema
     "junit_import_schema"
+  end
+
+  def generate_grading_job_json(sub)
+    ans = {}
+    ans["key"] = JSON.generate({ grade_id: self.grade_for(sub).id })
+    ans["files"] = self.generate_file_hash
+    ans["collation"] = sub.team ? { id: sub.team.id, type: "team" } :
+                        { id: sub.user.id, type: "user"}
+    ans["response_url"] = "#{Settings['site_url']}/job-output"
+    ans["script"] = self.get_build_script.push << self.get_grade_command
+    # TODO: replace this with an actual SHA for junit grader
+    ans["grading_image_sha"] = "orca-java-grader"
+    ans["metadata"] = self.generate_grading_job_metadata_table(sub)
+    ans["priority"] = sub.priority
+    ans
   end
 
   protected
@@ -234,4 +256,39 @@ class JunitGrader < Grader
       add_error("Could not read upload: #{e_msg}")
     end
   end
+
+  def generate_file_hash
+    files = {}
+
+    files["sub"] = {}
+    files["sub"]["url"] = self.upload.url
+    files["sub"]["mime_type"] = self.upload.read_metadata["mimetype"].first
+    files["sub"]["should_replace_paths"] = false
+
+    @resource_files_name_to_mime.each do |filename, details|
+      files_key, mime = details
+      files[files_key] = {}
+      files[files_key]["url"] = "#{Settings['site_url']}/resources/#{filename}"
+      files[files_key]["should_replace_paths"] = false
+      files[files_key]["mime_type"] = mime
+    end
+
+    files
+  end
+
+  def get_build_script
+    JSON.load "lib/assets/build-scripts/junit_grader.json"
+  end
+
+  def get_grade_command
+    {
+      cmd: ["java", "-cp", "junit-4.13.2.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
+        "edu.neu.TAPRunner", *(self.test_class.split(" ")),
+        "-timeout", self.test_timeout.to_s],
+      on_complete: "output",
+      timeout: 360,
+      working_dir: "$BUILD"
+    }
+  end
+
 end
