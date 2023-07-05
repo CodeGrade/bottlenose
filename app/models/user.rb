@@ -339,11 +339,4 @@ class User < ApplicationRecord
       .sort{|(t1, c1s), (t2, c2s)| t2.canonical_name <=> t1.canonical_name}
       .map{|t, cs| [t, cs.map(&:second).sort_by(&:name)]}.to_h
   end
-
-  def num_submissions_in_last_duration(from_time, duration)
-    start_time, end_time = from_time - duration, from_time
-    Submission.where("created_at <= :end_time AND created_at >= :start_time", 
-                              {start_time: start_time, end_time: end_time})
-                            .where(user_id: self.id).count
-  end
 end

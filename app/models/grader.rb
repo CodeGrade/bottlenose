@@ -118,13 +118,7 @@ class Grader < ApplicationRecord
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
-    attr_accessor :resource_files
   end
-
-  # resource_files is of type Hash[string, Pair[string, string]], where the keys
-  # are the file paths to the resources, and the pair is composed of a key for the
-  # grading job's files object and the MIME type of the file, in that order.
-  @resource_files = {}
   
   @delayed_grades = {}
   @delayed_count = 0
@@ -136,7 +130,7 @@ class Grader < ApplicationRecord
     @delayed_count
   end
 
-  def generate_grading_job_json(sub)
+  def generate_grading_job(sub)
     fail NotImplementedError, "Graders who send jobs to Orca should implement this method."
   end
 
