@@ -118,12 +118,10 @@ class Grader < ApplicationRecord
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
-    attr_accessor :resource_files
   end
   
   @delayed_grades = {}
   @delayed_count = 0
-  @resource_files = {}
   
   def self.delayed_grades
     @delayed_grades
@@ -134,6 +132,20 @@ class Grader < ApplicationRecord
 
   def generate_grading_job(sub)
     fail NotImplementedError, "Graders who send jobs to Orca should implement this method."
+  end
+
+  def generate_grading_job_metadata_table(sub)
+    ans = {}
+    if sub.team
+      ans["display_name"] = sub.team.member_names
+      ans["id"] = sub.team_id
+      ans["user_or_team"] = "team"
+    else
+      ans["display_name"] = sub.user.display_name
+      ans["id"] = sub.user_id
+      ans["user_or_team"] = "user"
+    end
+    ans
   end
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
@@ -356,19 +368,4 @@ class Grader < ApplicationRecord
     order = self.assignment.graders.sort_by(&:order).index(self)
     self.errors.add("##{order + 1}", msg)
   end
-
-  def generate_grading_job_metadata_table(sub)
-    ans = {}
-    if sub.team
-      ans["display_name"] = sub.team.member_names
-      ans["id"] = sub.team_id
-      ans["user_or_team"] = "team"
-    else
-      ans["display_name"] = sub.user.display_name
-      ans["id"] = sub.user_id
-      ans["user_or_team"] = "user"
-    end
-    ans
-  end
-
 end

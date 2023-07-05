@@ -7,11 +7,11 @@ class JunitGrader < Grader
   before_validation :set_junit_params
   validate :proper_configuration
 
-  @resource_files = {
-    "lib/assets/annotations.jar": ["annotations-jar", "application/java-archive"],
-    "lib/assets/junit-4.13.2.jar": ["junit-jar", "application/java-archive"],
-    "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/java-archive"],
-    "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/java-archive"]
+  @@resource_files = {
+    "lib/assets/annotations.jar": ["annotations-jar", "application/java-archive", false],
+    "lib/assets/junit-4.13.2.jar": ["junit-jar", "application/java-archive", false],
+    "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/java-archive", false],
+    "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/java-archive", false]
   }
 
   def autograde?
@@ -68,7 +68,7 @@ class JunitGrader < Grader
     # TODO: replace this with an actual SHA for junit grader
     ans["grading_image_sha"] = "orca-java-grader"
     ans["metadata"] = self.generate_grading_job_metadata_table(sub)
-    ans["priority"] = self.delay_for_sub(sub)
+    ans["priority"] = self.delay_for_sub(sub).in_seconds
     ans
   end
 
@@ -257,7 +257,7 @@ class JunitGrader < Grader
     end
   end
 
-  def generate_file_hash(sub)
+  def generate_files_hash(sub)
     files = {}
 
     files["sub"] = {}
@@ -270,15 +270,15 @@ class JunitGrader < Grader
     files["grader_zip"]["url"] = self.upload.url
     files["grader_zip"]["mime_type"] = self.upload.read_metadata["mimetype"].first
     files["grader_zip"]["should_replace_paths"] = false
-
-    @resource_files_name_to_mime.each do |filename, details|
-      files_key, mime = details
+    
+    @@resource_files.each do |file_path, details|
+      files_key, mime, should_replace_paths = details
       files[files_key] = {}
-      files[files_key]["url"] = "#{Settings['site_url']}/resources/#{filename}"
-      files[files_key]["should_replace_paths"] = false
+      files[files_key]["url"] = 
+        "#{Settings.site_url}/resources/#{files_path.gsub('lib/assets/', '')}"
       files[files_key]["mime_type"] = mime
+      files[files_key]["should_replace_paths"] = should_replace_paths
     end
-
     files
   end
 
