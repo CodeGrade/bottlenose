@@ -118,10 +118,12 @@ class Grader < ApplicationRecord
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
+    attr_accessor :resource_files
   end
   
   @delayed_grades = {}
   @delayed_count = 0
+  @resource_files = {}
   
   def self.delayed_grades
     @delayed_grades

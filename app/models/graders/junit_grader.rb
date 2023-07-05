@@ -271,7 +271,8 @@ class JunitGrader < Grader
     files["grader_zip"]["mime_type"] = self.upload.read_metadata["mimetype"].first
     files["grader_zip"]["should_replace_paths"] = false
 
-    @resource_files_name_to_mime.each do |filename, [files_key, mime]|
+    @resource_files_name_to_mime.each do |filename, details|
+      files_key, mime = details
       files[files_key] = {}
       files[files_key]["url"] = "#{Settings['site_url']}/resources/#{filename}"
       files[files_key]["should_replace_paths"] = false
