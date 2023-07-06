@@ -4,7 +4,6 @@
       "predicate": "dir",
       "path": "$EXTRACTED/starter"
     },
-    "on_false": "cp_submission",
     "on_true": [
       {
         "cmd": "cp -r $EXTRACTED/starter/src/. $BUILD/"
@@ -15,8 +14,7 @@
     ]
   },
   {
-    "cmd": "cp -r $EXTRACTED/submission/src/. $BUILD/",
-    "label": "cp_submission"
+    "cmd": "cp -r $EXTRACTED/submission/src/. $BUILD/"
   },
   {
     "cmd": "cp -r $EXTRACTED/submission/test/. $BUILD/"

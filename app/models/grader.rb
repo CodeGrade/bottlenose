@@ -336,6 +336,15 @@ class Grader < ApplicationRecord
 
   protected
 
+  def delay_for_sub(sub)
+    # Delay = 1 minute * # of subs (excluding given sub) in the last 15 minutes.
+    duration = 15.minutes
+    recent_subs = self.assignment.submissions_for(sub.user_or_team)
+                    .where("created_at >= :start_time", { start_time: sub.created_at - 15.minutes })
+                    .count - 1
+    recent_subs * 1.minute 
+  end
+
   def save_uploads
     self.upload&.save!
     self.extra_upload&.save!
