@@ -1,0 +1,120 @@
+<% @page_title = @grader.display_type %>
+<% cur_reg = current_user.registration_for(@course)
+   cur_reg_staff = cur_reg&.staff? %>
+
+<p>
+  <%= link_to "< Back to submission", course_assignment_submission_path(@course, @assignment, @submission) %>
+</p>
+
+<h1>Submission</h1>
+
+<%= render 'submissions/sub_info' %>
+
+
+<h1>Scoring Details: Examplar</h1>
+
+<h3>
+  <%= @grading_header %>
+  <% if cur_reg_staff && @grading_output.kind_of?(TapParser) %>
+  <% if File.file?(@grade.full_log) %>
+  <div class="btn-group" style="white-space: nowrap;">
+    <%= link_to Upload.upload_path_for(@grade.grading_output), class: "btn btn-default" do %>
+      <i class="glyphicon glyphicon-download-alt"></i> Download raw output
+    <% end %><button type="button" class="btn btn-md btn-default dropdown-toggle"
+                     data-toggle="dropdown"
+                     aria-haspopup="true" aria-expanded="false">
+         <span class="caret"></span>
+         <span class="sr-only">Toggle Dropdown</span>
+    </button><% #
+    %><ul class="dropdown-menu">
+      <li><%= link_to "Download raw output", 
+              Upload.upload_path_for(@grade.grading_output),
+              class: "dropdown-item" %></li>
+      <li><%= link_to "Download detailed build log", 
+              Upload.upload_path_for(@grade.full_log),
+              class: "dropdown-item" %></li>
+      <!-- <div class="dropdown-divider"></div> -->
+    </ul>
+  </div>
+  <% else %>
+    <%= link_to Upload.upload_path_for(@grade.grading_output), class: "btn btn-default" do %>
+      <i class="glyphicon glyphicon-download-alt"></i> Download raw output
+    <% end %>
+  <% end %>
+
+  <span class="pull-right">Total score:
+    <%= to_fixed(@grading_output.points_earned) %>&nbsp;/&nbsp;
+    <%= to_fixed(@grading_output.points_available)%>
+  </span>
+  <% end %>
+</h3>
+<% if @grading_output.kind_of?(String) %>
+<pre><%= @grading_output %></pre>
+<% else %>
+<div id="tests">
+  <% if @grading_header == "Selected test results" && @tests.empty? %>
+  <h4>There is at least one failed test, but this assignment is not
+    going to show you any hints.</h4>
+  <% end %>
+  <% @tests&.group_by{|t| t[:comment].split(":").first }.each do |comment, ts| %>
+    <% ts.sort_by!{|t| t[:passed] ? 0 : 1 } %>
+    <% t = ts[0] %>
+    <% percentCorrect = t[:info]["actual"]["value"].to_f / t[:info]["expected"]["value"].to_f %>
+    <% if percentCorrect == 1
+       style = "alert-success"
+       elsif percentCorrect == 0
+       style = "alert-danger"
+       else
+       style = "alert-warning"
+       end %>
+    <div class="alert <%= style %>">
+      <p>
+        <% if cur_reg_staff %>
+        <span class="pull-right">Weight: <%= t[:info]["weight"] || 1 %></span>
+        <% end %>
+        <b><%= t[:comment] %></b>
+      </p>
+      <div style="padding: 0.75em 0; display: flex;">
+        <b><%= t[:info]["actual"]["label"] %>:</b>
+        <div style="flex-grow: 1;
+                    background: gray;
+                    padding: 2px;
+                    display: flex;
+                    margin-left: 2em;">
+          <b style="text-align: right;
+                    flex-basis: <%= (percentCorrect * 100).to_i %>%;
+                    min-width: fit-content;
+                    padding: 0 1em;" class="<%= style %>">
+            <%= t[:info]["actual"]["value"] %> out of <%= t[:info]["expected"]["value"] %>
+          </b>
+        </div>
+      </div>
+      <p><b>Details:</b></p>
+      <table class="table table-condensed" style="margin-bottom: 0">
+        <thead>
+          <tr>
+            <th style="white-space: nowrap;"><%= t[:info]["details"][0] %></th>
+            <th style="padding-left: 2em;"><%= t[:info]["details"][1] %></th>
+          </tr>
+        </thead>
+        <tbody style="color: black;">
+          <% t[:info]["results"].sort_by(&:first).each do |k, v| %>
+          <tr>
+            <td style="border: none; width: 1%; white-space: nowrap; vertical-align: baseline;">
+              <pre style="padding: 0.25em; display: inline;"><%= k %></pre>
+            </td>
+            <td style="border: none; padding-left: 2em; vertical-align: baseline">
+              <% if v.is_a?(String) %>
+              <%= v %>
+              <% else %>
+              <pre style="margin: 0; padding: 0.25em;"><%= v.join("\n") %></pre>
+              <% end %>
+            </td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>  
+</div>
+<% end %>

@@ -216,7 +216,7 @@ class JunitGrader < Grader
           add_error("The archive does not contain src/ and test/ subdirectories")
           ok = false
         end
-        if ok
+        if ok && !self.test_class.include?("Examplar")
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
             if !entries["test"]["#{tc}.java"]

@@ -715,6 +715,13 @@ HEADER
 
   # JunitGrader
   def show_JunitGrader
+    load_and_show "show_JunitGrader"
+  end
+  def details_JunitGrader
+    "No details to show for Junit grader"
+  end
+
+  def load_and_show(renderer)
     if @grade.grading_output
       begin
         @grading_output = File.read(@grade.grading_output_path)
@@ -750,49 +757,16 @@ HEADER
       end
     end
 
-    render "show_JunitGrader"
-  end
-  def details_JunitGrader
-    "No details to show for Junit grader"
+    if @grading_output.commentary.member?("Examplar results")
+      render "show_ExamplarGrader"
+    else
+      render renderer
+    end
   end
 
   # CheckerGrader
   def show_CheckerGrader
-    if @grade.grading_output
-      begin
-        @grading_output = File.read(@grade.grading_output_path)
-        begin
-          tap = TapParser.new(@grading_output)
-          @grading_output = tap
-          @tests = tap.tests
-        rescue Exception
-          @tests = []
-        end
-      rescue Errno::ENOENT
-        @grading_output = "Grading output file is missing or could not be read"
-        @tests = []
-      end
-    end
-
-    if current_user_site_admin? || current_user_staff_for?(@course)
-      if @grading_output.nil? || @grading_output.kind_of?(String)
-        @grading_header = "Errors running tests"
-      else
-        @grading_header = "All test results"
-        @tests = @grading_output.tests
-      end
-    else
-      if @grading_output.nil? || @grading_output.kind_of?(String)
-        @grading_header = "Errors running tests"
-      elsif @grading_output.passed_count == @grading_output.test_count
-        @grading_header = "All tests passed"
-      else
-        @grading_header = "Selected test results"
-        @tests = @grading_output.tests.reject{|t| t[:passed]}.shuffle!.take(@grade.grader.errors_to_show || 3)
-      end
-    end
-
-    render "show_CheckerGrader"
+    load_and_show "show_CheckerGrader"
   end
   def details_CheckerGrader
     GradesController.pretty_print_comments(@grade.inline_comments)
