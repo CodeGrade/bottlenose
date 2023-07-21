@@ -1,52 +1,48 @@
 [
   {
-    "condition": {
-      "predicate": "dir",
-      "path": "$EXTRACTED/starter"
-    },
-    "on_true": [
-      {
-        "cmd": "cp -r $EXTRACTED/starter/src/. $BUILD/"
-      },
-      {
-        "cmd": "cp -r $EXTRACTED/starter/test/. $BUILD/"
-      }
-    ]
+    "cmd": ["tree"],
+    "working_dir": "$BUILD"
   },
   {
-    "cmd": "cp -r $EXTRACTED/submission/src/. $BUILD/"
+    "cmd": ["cp", "-r", "$EXTRACTED/starter/src/.", "$BUILD/"]
   },
   {
-    "cmd": "cp -r $EXTRACTED/submission/test/. $BUILD/"
+    "cmd": ["cp", "-r", "$EXTRACTED/starter/src/.", "$BUILD/"]
   },
   {
-    "cmd": "cp -r $EXTRACTED/junit-jar/* $BUILD/"
+    "cmd": ["cp", "-r", "$EXTRACTED/submission/src/.", "$BUILD/"]
   },
   {
-    "cmd": "cp -r $EXTRACTED/hamcrest-jar/* $BUILD/"
+    "cmd": ["cp", "-r", "$EXTRACTED/starter/src/.", "$BUILD/"]
   },
   {
-    "cmd": "cp -r $EXTRACTED/junit-tap-jar/* $BUILD/"
+    "cmd": ["cp", "-r", "$EXTRACTED/junit-jar/*", "$BUILD/"]
   },
   {
-    "cmd": "cp -r $EXTRACTED/annotations-jar/* $BUILD/"
+    "cmd": ["cp", "-r", "$EXTRACTED/hamcrest-jar/*", "$BUILD/"]
   },
   {
-    "condition": {
-      "predicate": "dir",
-      "path": "$EXTRACTED/testing"
-    },
-    "on_true": [
-      {
-        "cmd": "cp -r $EXTRACTED/testing/src/. $BUILD/"
-      },
-      {
-        "cmd": "cp -r $EXTRACTED/testing/test/. $BUILD/"
-      }
-    ]
+    "cmd": ["cp", "-r", "$EXTRACTED/junit-tap-jar/*", "$BUILD/"]
   },
   {
-    "cmd": "find -type f -name '*.java' > compile-list.txt",
+    "cmd": ["cp", "-r", "$EXTRACTED/annotations-jar/*", "$BUILD/"]
+  },
+  {
+    "cmd": ["cp", "-r", "$EXTRACTED/testing/src/.", "$BUILD/"]
+  },
+  {
+    "cmd": ["cp", "-r", "$EXTRACTED/testing/src/.", "$BUILD/"]
+  },
+  {
+    "cmd": [
+      "find",
+      "-type",
+      "f",
+      "-name",
+      "'*.java'",
+      "-fprint",
+      "compile-list.txt"
+    ],
     "working_dir": "$BUILD",
     "label": "gen-compile-list"
   },
@@ -61,6 +57,10 @@
       "junit-4.13.2.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
       "@compile-list.txt"
     ],
+    "working_dir": "$BUILD"
+  },
+  {
+    "cmd": ["tree"],
     "working_dir": "$BUILD"
   }
 ]
