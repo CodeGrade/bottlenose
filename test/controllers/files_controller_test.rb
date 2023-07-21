@@ -30,8 +30,6 @@ class FilesControllerTest < ActionController::TestCase
   end
 
   test "should error on resource path containing ../" do
-    # This is one directory above where the resources endpoint
-    # allows files to be sources from (i.e., lib/assets).
     Tempfile.create("foo", Rails.root.join("lib")) do |f|
       file_name = Pathname.new(f.path).basename
       get "resource", params: {
