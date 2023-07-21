@@ -4,6 +4,7 @@ require 'audit'
 
 class JunitGrader < Grader
   after_initialize :load_junit_params
+  after_save :process_grader_zip
   before_validation :set_junit_params
   validate :proper_configuration
 
@@ -271,8 +272,7 @@ class JunitGrader < Grader
     files["grader_zip"]["mime_type"] = self.upload.read_metadata["mimetype"].first
     files["grader_zip"]["should_replace_paths"] = false
     
-    @@resource_files.each do |file_path, details|
-      files_key, mime, should_replace_paths = details
+    @@resource_files.each do |file_path, (files_key, mime, should_replace_paths)|
       files[files_key] = {}
       files[files_key]["url"] = 
         "#{Settings.site_url}/resources/#{files_path.gsub('lib/assets/', '')}"
@@ -292,6 +292,10 @@ class JunitGrader < Grader
       timeout: 360,
       working_dir: "$BUILD"
     }
+  end
+
+  def process_grader_zip
+    JavaGraderFileProcessor.process_zip(self.upload, self)
   end
 
 end
