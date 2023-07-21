@@ -4,7 +4,7 @@ class FilesController < ApplicationController
 
   def upload
     file_path = Upload.base_upload_dir.join(params[:path])
-    if File.file?(file_path)
+    if valid_path_param(params[:path]) && File.file?(file_path)
       disp = get_file_disposition(File.extname(params[:path]).downcase)
       mime = ApplicationHelper.mime_type(params[:path])
       
@@ -19,7 +19,7 @@ class FilesController < ApplicationController
 
   def resource
     file_path = Rails.root.join(@@resources_true_dir, params[:path])
-    if File.file?(file_path)
+    if valid_path_param(params[:path]) && File.file?(file_path)
       disp = get_file_disposition(File.extname(params[:path]).downcase)
       mime = ApplicationHelper.mime_type(params[:path])
 
@@ -34,6 +34,10 @@ class FilesController < ApplicationController
 
 
   private
+
+  def valid_path_param(path)
+    !path.include? "../"
+  end
   
   def get_file_disposition(file_ext)
     case file_ext
