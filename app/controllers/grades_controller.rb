@@ -757,7 +757,39 @@ HEADER
       end
     end
 
-    if @grading_output.commentary.member?("Examplar results")
+    if !@grading_output.kind_of?(String) && @grading_output.commentary.member?("Examplar results")
+      @tests = {}
+      @grading_output.tests.each do |t|
+        type = t[:comment].split(":").first.downcase
+        @tests[type] ||= {}
+        @tests[type][t[:passed] ? 'passed' : 'failed'] = t
+      end
+      thoroughnessTest = @tests['thoroughness']['passed']
+      @chaffNames = thoroughnessTest[:info]['results'].map(&:first).sort
+      usefulnessTest = @tests['usefulness']['passed']
+      @testNames = usefulnessTest[:info]['results'].map(&:first).sort
+      @testMatrixByChaff = @chaffNames.map do |c|
+        [c,
+         @testNames.map do |t|
+           [t, thoroughnessTest[:info]['results'][c].include?(t)]
+         end.to_h
+        ]
+      end.to_h
+      @testMatrixByTest = @testNames.map do |t|
+        [t,
+         @chaffNames.map do |c|
+           [c, thoroughnessTest[:info]['results'][c].include?(t)]
+         end.to_h
+        ]
+      end.to_h
+      @groupedChaffs = @testMatrixByChaff.group_by(&:second)
+      @groupedTests = @testMatrixByTest.group_by(&:second)
+      @equivChaffs = @testMatrixByChaff.map do |k, v|
+        [k, @groupedChaffs[v].map(&:first)]
+      end.to_h
+      @equivTests = @testMatrixByTest.map do |k, v|
+        [k, @groupedTests[v].map(&:first)]
+      end.to_h
       render "show_ExamplarGrader"
     else
       render renderer
