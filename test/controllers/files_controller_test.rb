@@ -4,6 +4,11 @@ require 'fileutils'
 
 class FilesControllerTest < ActionController::TestCase
 
+  @@method_to_dir = {
+    "upload": Upload.base_upload_dir,
+    "resource": Rails.root.join("lib/assets")
+  }
+
   setup do
     Upload.base_upload_dir.mkpath
   end
@@ -12,57 +17,36 @@ class FilesControllerTest < ActionController::TestCase
     FileUtils.rmdir(Upload.base_upload_dir)
   end
 
-  test "should get valid resource file path" do
-    Tempfile.create("foo", Rails.root.join("lib", "assets")) do |f|
-      file_name = Pathname.new(f.path).basename
-      get "resource", params: {
-        path: file_name
-      }
-      assert_response :success
+  test "should get valid file path" do
+    @@method_to_dir.each do |method, dir|
+      Tempfile.create("foo", dir) do |f|
+        file_name = Pathname.new(f.path).basename
+        get method, params: {
+          path: file_name
+        }
+        assert_response :success
+      end
     end
   end
 
-  test "should error on non existent resource file path" do
-    get "resource", params: {
-      path: "nonexistent_file.txt"
-    }
-    assert_response :missing
-  end
-
-  test "should error on resource path containing ../" do
-    Tempfile.create("foo", Rails.root.join("lib")) do |f|
-      file_name = Pathname.new(f.path).basename
-      get "resource", params: {
-        path: "../#{file_name}"
+  test "should error on non existent file path" do
+    @@method_to_dir.each do |method, _|
+      get method, params: {
+        path: "nonexistent_file.txt"
       }
       assert_response :missing
     end
   end
 
-  test "should get valid upload path" do
-    Tempfile.create("foo", Upload.base_upload_dir) do |f|
-      file_name = Pathname.new(f.path).basename
-      get "upload", params: {
-        path: "#{file_name}"
-      }
-      assert_response :success
-    end
-  end
-
-  test "should error on non-existent upload path" do
-    get "upload", params: {
-      path: "non-existent.txt"
-    }
-    assert_response :missing
-  end
-
-  test "should error on upload path containing ../" do
-    Tempfile.create("foo", Upload.base_upload_dir.join("../")) do |f|
-      file_name = Pathname.new(f.path).basename
-      get "upload", params: {
-        path: "../#{file_name}"
-      }
-      assert_response :missing
+  test "should error on path containing ../" do
+    @@method_to_dir.each do |method, dir|
+      Tempfile.create("foo", dir.join("..")) do |f|
+        file_name = Pathname.new(f.path).basename
+        get method, params: {
+          path: "../#{file_name}"
+        }
+        assert_response :missing
+      end
     end
   end
 
