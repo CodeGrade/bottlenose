@@ -69,7 +69,7 @@ class CheckerGrader < Grader
       @build_dir = build_dir
       begin
         Headless.ly(display: g.id % Headless::MAX_DISPLAY_NUMBER, autopick: true) do
-          run_build_produce_problems assignment, sub, include_dirtree: !self.test_class.include?("Examplar") do |prefix, any_problems, details|
+          run_build_produce_problems assignment, sub, include_dirtree: !self.test_class.downcase.include?("examplar") do |prefix, any_problems, details|
             if any_problems
               g.grading_output_path = details.path
               g.score = 0

@@ -90,7 +90,7 @@ class JunitGrader < Grader
     Dir.mktmpdir("grade-#{sub.id}-#{g.id}_") do |build_dir|
       @build_dir = build_dir
       begin
-        run_build_produce_problems assignment, sub do |prefix, any_problems, details|
+        run_build_produce_problems assignment, sub, include_dirtree: !self.test_class.downcase.include?("examplar") do |prefix, any_problems, details|
           if any_problems
             g.grading_output_path = details.path
             g.score = 0
@@ -177,11 +177,13 @@ class JunitGrader < Grader
   end
 
   def get_command_arguments(assignment, sub)
+    test_class_args = self.test_class.split(" ")
+    test_class_args.unshift "edu.neu.TAPRunner" unless (test_class_args[0] == "examplar.Main")
     [
       "junit.tap",
       {},
       ["java", "-cp", "junit-4.13.2.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
-       "edu.neu.TAPRunner", *(self.test_class.split(" ")),
+       *test_class_args,
        "-timeout", self.test_timeout.to_s],
       {},
       @build_dir
@@ -239,7 +241,7 @@ class JunitGrader < Grader
           add_error("The archive does not contain src/ and test/ subdirectories")
           ok = false
         end
-        if ok
+        if ok && !self.test_class.downcase.include?("examplar")
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
             if !entries["test"]["#{tc}.java"]
