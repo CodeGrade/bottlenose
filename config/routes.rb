@@ -149,7 +149,7 @@ Rails.application.routes.draw do
           patch 'split', to: 'submissions#split_submission', as: 'split'          
         end
         resources :reviews, only: [:show] 
-        resources :grades, only: [:show, :edit, :update] do
+        resources :grades, only: [:show, :edit, :update, :orca_response] do
           member do
             post :regrade
             get :details, defaults: {format: 'text'}
