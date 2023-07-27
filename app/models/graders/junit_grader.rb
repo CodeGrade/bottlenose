@@ -14,6 +14,7 @@ class JunitGrader < Grader
     "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/java-archive", false],
     "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/java-archive", false]
   }
+  @@dockerfile_sha = "74b320b733359ebfa19428c8f073de1a700b6883e84ca70d0f13858830a7b250"
 
   def autograde?
     true
@@ -66,8 +67,7 @@ class JunitGrader < Grader
                         { id: sub.user.id, type: "user"}
     ans["response_url"] = "#{Settings['site_url']}/job-output"
     ans["script"] = self.get_grading_script
-    # TODO: replace this with an actual SHA for junit grader
-    ans["grading_image_sha"] = "orca-java-grader"
+    ans["grading_image_sha"] = @@dockerfile_sha
     ans["metadata"] = self.generate_grading_job_metadata_table(sub)
     ans["priority"] = self.delay_for_sub(sub).in_seconds
     ans
