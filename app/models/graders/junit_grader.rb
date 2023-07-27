@@ -266,6 +266,13 @@ class JunitGrader < Grader
     files["sub"]["mime_type"] = sub.upload.read_metadata["mimetype"].first
     files["sub"]["should_replace_paths"] = false
 
+    @zip_paths.each do |key, path|
+      files[key] = {}
+      files[key]["url"] = Settings["site_url"] + Upload.upload_path_for(path)
+      files[key]["mime_type"] = "application/zip"
+      files[key]["should_replace_paths"] = false
+    end
+
     # TODO: configure separation of starter and test and rewrite this logic
     files["grader_zip"] = {}
     files["grader_zip"]["url"] = self.upload.url
@@ -295,7 +302,8 @@ class JunitGrader < Grader
   end
 
   def process_grader_zip
-    JavaGraderFileProcessor.process_zip(self.upload, self)
+    zip_paths = JavaGraderFileProcessor.process_zip(self.upload, self)
+    @zip_paths = zip_paths
   end
 
 end

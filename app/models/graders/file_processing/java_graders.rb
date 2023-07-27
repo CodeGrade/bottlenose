@@ -6,12 +6,25 @@ class JavaGraderFileProcessor
     grader_path = upload.grader_path(grader)
     starter_zip_path, testing_zip_path = grader_path.join("starter.zip"),
                                           grader_path.join("testing.zip")
+    # Since this method is run on a grader's :after_save hook, it's
+    # possible files may already exist and need to be cleaned up.
+    [starter_zip_path, testing_zip_path].each do |zip_path|
+      if File.exists?(zip_path)
+        FilUtils.rm(zip_path)
+      end
+    end
+    include_starter_zip = false
     if Dir.exists?(grader_path.join("starter")) && Dir.exists?(grader_path.join("testing"))
       self.populate_zip(starter_zip_path, grader_path, "starter")
       self.populate_zip(testing_zip_path, grader_path, "testing")
+      include_starter_zip = true
     else
-      FileUtils.touch(starter_zip_path)
       self.populate_zip(testing_zip_path, grader_path, "")
+    end
+    
+    zip_file_paths = { testing: testing_zip_path }
+    if include_starter_zip
+      zip_file_paths["starter"] = starter_zip_path
     end
   end
 
