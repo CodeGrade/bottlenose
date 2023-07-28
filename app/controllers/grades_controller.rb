@@ -43,6 +43,10 @@ class GradesController < ApplicationController
 
   def orca_response
     response_key = JSON.parse(params.require(:key))
+    if response_key["grade_id"] != grade_id
+      render :nothing => true, :status => :bad_request
+    end
+
     orca_response = params.require(:output).permit(:tap_output, :shell_responses, :errors)
     file_prefix = "grade_#{grade_id}"
 
