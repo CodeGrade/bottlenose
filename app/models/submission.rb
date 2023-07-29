@@ -162,6 +162,16 @@ class Submission < ApplicationRecord
       prof_override: prof_override
     }
     begin
+      malformed = assignment.graders.any? do |g|
+        errs = g.check_for_malformed_submission up
+        if errs && errs.size > 0
+          errs.each { |e| errors.add(:base, e) }
+          true
+        else
+          false
+        end
+      end
+      return false if malformed
       up.save!
       self.upload_id = up.id
       Audit.log("Sub #{self.id}: New submission upload by #{user.name} " +

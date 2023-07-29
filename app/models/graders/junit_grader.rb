@@ -50,7 +50,50 @@ class JunitGrader < Grader
     "junit_import_schema"
   end
 
+  def check_for_malformed_submission(upload)
+    errors = []
+    entries = upload.upload_entries
+    if entries["src"] && !entries["test"]
+      errors << "Having a src/ directory requires having a test/ directory also"
+    end
+    if entries["test"] && !entries["src"]
+      errors << "Having a test/ directory requires having a src/ directory also"
+    end
+    if entries.size == 1
+      rootName, rootEntry = entries.first
+      if rootEntry == true
+        # nothing to do; it's just one file
+      elsif rootName != "src" && rootName != "test"
+        errors << "Make sure your submission is directly at the root of your zip, not nested within another directory (#{rootName}/)"
+      end
+    end
+    if self.test_class&.downcase.include?("examplar")
+      if entries["src"].is_a?(Hash)
+        java_files = search_for(entries["src"], "src") {|f| f.ends_with? ".java" }
+        if java_files.size > 0
+          errors << "Make sure not to submit any src/ files for Examplar assignments (#{java_files.to_sentence})"
+        end
+      end
+    end
+    errors
+  end
+  
   protected
+  def search_for(entries, path, &block)
+    entries.map do |k, v|
+      filename = "#{path}#{File::SEPARATOR}#{k}"
+      if v == true
+        if block.call(filename)
+          [filename]
+        else
+          []
+        end
+      else
+        search_for(v, filename, &block)
+      end
+    end.flatten
+  end
+  
   def load_junit_params
     return if new_record?
     testClass, errorsToShow, testTimeout = self.params.to_s.split(";")

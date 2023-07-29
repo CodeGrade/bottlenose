@@ -315,6 +315,10 @@ class Grader < ApplicationRecord
     fail NotImplementedError, "Each grader should implement this"
   end
 
+  def check_for_malformed_submission(upload)
+    []
+  end
+
   protected
 
   def save_uploads
