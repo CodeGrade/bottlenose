@@ -1,6 +1,8 @@
 require 'open3'
 require 'tap_parser'
 require 'audit'
+require 'net/http'
+require 'securerandom'
 
 class JunitGrader < Grader
   after_initialize :load_junit_params
@@ -59,9 +61,46 @@ class JunitGrader < Grader
     "junit_import_schema"
   end
 
-  def generate_grading_job(sub)
+  def grade(assignment, submission, prio = 0)
+    begin
+      secret, secret_file_path = generate_orca_secret!(submission)
+      send_job_to_orca(submission, secret)
+    rescue OrcaJobCreationError => exception
+      FileUtils.rm(secret_file_path)
+      Audit.log("Failed to send job to orca on submission #{submission.id} for assignment #{assignment.id}.")
+    end
+    super(assignment, submission, prio)
+  end
+
+  def send_job_to_orca(submission, secret)
+    job_json = JSON.generate(generate_grading_job(submission, secret))
+    uri = URI.parse("#{Settings['orca_url']}/grading_queue")
+
+    # Exponential back off variables. Wait time in ms.
+    max_wait_time, current_exponent, status_code = 32 * 1000, 0, nil
+    while status_code != 200
+      if status_code != nil
+        random_wait_interval = rand(1000)
+        wait_time = [(2**current_exponent * 1000) + random_wait_interval, max_wait_time].min
+        if wait_time == max_wait_time
+          break
+        end
+        sleep(wait_time)
+      end
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = true
+      res = http.post(job_json, {"Content-Type": "application/json"})
+      status_code = res.status_code
+      current_exponent++
+    end
+    if status_code != 200
+      raise OrcaJobCreationError.new()
+    end
+  end
+
+  def generate_grading_job(sub, secret)
     ans = {}
-    ans["key"] = JSON.generate({ grade_id: self.grade_for(sub).id })
+    ans["key"] = JSON.generate({ grade_id: self.grade_for(sub).id, secret: secret })
     ans["files"] = self.generate_file_hash
     ans["collation"] = sub.team ? { id: sub.team.id, type: "team" } :
                         { id: sub.user.id, type: "user"}
@@ -260,6 +299,22 @@ class JunitGrader < Grader
     end
   end
 
+  ###########################
+  # Orca grading job methods.
+
+  # Generates a secret to be paired with an Orca grading job
+  # and compared upon response. Returns the secret and the
+  # file_path to which it was saved.
+  def generate_orca_secret!(sub)
+    grader_dir = sub.upload.grader_path(self)
+    secret = SecureRandom.hex(32) 
+    file_path = grader_dir.join("orca.secret")
+    File.open(file_path, "w") do |secret_file|
+      secret_file.write(secret)
+    end
+    return secret, file_path
+  end
+
   def generate_files_hash(sub)
     files = {}
 
@@ -306,6 +361,12 @@ class JunitGrader < Grader
   def process_grader_zip
     zip_paths = JavaGraderFileProcessor.process_zip(self.upload, self)
     @zip_paths = zip_paths
+  end
+
+  class OrcaJobCreationError < StandardError
+    def initialize(msg="Could not send a job to Orca after multiple HTTP request retires.")
+      super
+    end
   end
 
 end
