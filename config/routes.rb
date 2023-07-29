@@ -152,6 +152,7 @@ Rails.application.routes.draw do
         resources :grades, only: [:show, :edit, :update] do
           member do
             post :regrade
+            post :orca_response
             get :details, defaults: {format: 'text'}
           end
         end

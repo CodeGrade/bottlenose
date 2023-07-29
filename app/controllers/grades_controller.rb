@@ -41,6 +41,31 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 
+  def orca_response
+    response_key = JSON.parse(params.require(:key))
+    if response_key["grade_id"] != grade_id
+      render :nothing => true, :status => :bad_request
+    end
+
+    orca_response = params.require(:output).permit(:tap_output, :shell_responses, :errors)
+    file_prefix = "grade_#{grade_id}"
+
+    File.open(grader_dir.join("#{file_prefix}_orca_logs.json"), "w") do |orca_logs|
+      orca_logs.write(JSON.generate({
+        "errors": orca_response[:errors],
+        "shell_responses": orca_response[:shell_responses]
+      }))
+    end
+
+    if orca_response[:tap_output]
+      grader_dir = @submission.upload.grader_path(@grader)
+      tap_file_name = "#{file_prefix}_orca_output.tap"
+      File.open(grader_dir.join(tap_file_name), "w") do |orca_tap|
+        orca_tap.write(orca_response[:tap_output])
+      end
+    end
+  end
+
   def bulk_edit
     self.send("bulk_edit_#{@grader.type}")
   end
