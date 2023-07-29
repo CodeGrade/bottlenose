@@ -94,7 +94,7 @@ class JunitGrader < Grader
       current_exponent++
     end
     if status_code != 200
-      raise OrcaJobCreationError.new()
+      raise OrcaJobCreationError.new(status_code)
     end
   end
 
@@ -364,7 +364,11 @@ class JunitGrader < Grader
   end
 
   class OrcaJobCreationError < StandardError
-    def initialize(msg="Could not send a job to Orca after multiple HTTP request retires.")
+
+    :attr_reader status_code
+
+    def initialize(status_code, msg="Could not send a job to Orca after multiple HTTP request retries.")
+      @status_code = status_code
       super
     end
   end
