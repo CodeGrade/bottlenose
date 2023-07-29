@@ -44,11 +44,13 @@ class GradesController < ApplicationController
   def orca_response
     response_params = orca_response_params
     grade_id, secret = orca_response_params["grade_id"], orca_response_params["secret"]
-    unless valid_orca_response?(response_params)
+    grader_dir = @submission.upload.grader_path(@grader)
+    secret_file_path = grader_dir.join("orca.secret")
+    unless valid_orca_response?(grade_id, secret_file_path, secret)
       render body: nil, status: 404
+      return
     end
 
-    grader_dir = @submission.upload.grader_path(@grader)
     File.open(grader_dir.join("orca_logs.json"), "w") do |f|
       f.write(JSON.generate(orca_response_params["logs"]))
     end
@@ -57,6 +59,8 @@ class GradesController < ApplicationController
         f.write(JSON.generate(orca_response_params["output"]))
       end
     end
+
+    FileUtils.rm(secret_file_path)
   end
 
   def bulk_edit
@@ -166,12 +170,10 @@ class GradesController < ApplicationController
                            :contrastDegree, :contrastWeight)
   end
 
-  def valid_orca_response?(grade_id, response_secret)
+  def valid_orca_response?(grade_id, secret_file_path, response_secret)
     unless Grade.exists?(grade_id)
       return false
     end
-    grader_dir = @submission.upload.grader_path(@grader)
-    secret_file_path = grader_dir.join("orca.secret")
     unless File.exist? secret_file_path
       return false
     end
