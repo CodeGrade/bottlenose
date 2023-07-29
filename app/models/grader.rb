@@ -119,6 +119,7 @@ class Grader < ApplicationRecord
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
   end
+  
   @delayed_grades = {}
   @delayed_count = 0
   
@@ -127,6 +128,24 @@ class Grader < ApplicationRecord
   end
   def self.delayed_count
     @delayed_count
+  end
+
+  def generate_grading_job(sub)
+    fail NotImplementedError, "Graders who send jobs to Orca should implement this method."
+  end
+
+  def generate_grading_job_metadata_table(sub)
+    ans = {}
+    if sub.team
+      ans["display_name"] = sub.team.member_names
+      ans["id"] = sub.team_id
+      ans["user_or_team"] = "team"
+    else
+      ans["display_name"] = sub.user.display_name
+      ans["id"] = sub.user_id
+      ans["user_or_team"] = "user"
+    end
+    ans
   end
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
@@ -317,6 +336,15 @@ class Grader < ApplicationRecord
 
   protected
 
+  def delay_for_sub(sub)
+    # Delay = 1 minute * # of subs (excluding given sub) in the last 15 minutes.
+    duration = 15.minutes
+    recent_subs = self.assignment.submissions_for(sub.user_or_team)
+                    .where("created_at >= :start_time", { start_time: sub.created_at - 15.minutes })
+                    .count - 1
+    recent_subs * 1.minute 
+  end
+
   def save_uploads
     self.upload&.save!
     self.extra_upload&.save!
@@ -349,5 +377,4 @@ class Grader < ApplicationRecord
     order = self.assignment.graders.sort_by(&:order).index(self)
     self.errors.add("##{order + 1}", msg)
   end
-
 end
