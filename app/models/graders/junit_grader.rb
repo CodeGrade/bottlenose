@@ -104,7 +104,8 @@ class JunitGrader < Grader
     ans["files"] = self.generate_file_hash
     ans["collation"] = sub.team ? { id: sub.team.id, type: "team" } :
                         { id: sub.user.id, type: "user"}
-    ans["response_url"] = "#{Settings['site_url']}/job-output"
+    ans["response_url"] = "#{Settings['site_url']}/"\
+                          "#{orca_response_course_assignment_submission_grades(@assignment.course, @assignment, sub)}"
     ans["script"] = self.get_grading_script
     ans["grading_image_sha"] = @@dockerfile_sha
     ans["metadata"] = self.generate_grading_job_metadata_table(sub)

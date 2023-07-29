@@ -42,26 +42,19 @@ class GradesController < ApplicationController
   end
 
   def orca_response
-    response_key = JSON.parse(params.require(:key))
-    if response_key["grade_id"] != grade_id
-      render :nothing => true, :status => :bad_request
+    response_params = orca_response_params
+    grade_id, secret = orca_response_params["grade_id"], orca_response_params["secret"]
+    unless valid_orca_response?(response_params)
+      render body: nil, status: 404
     end
 
-    orca_response = params.require(:output).permit(:tap_output, :shell_responses, :errors)
-    file_prefix = "grade_#{grade_id}"
-
-    File.open(grader_dir.join("#{file_prefix}_orca_logs.json"), "w") do |orca_logs|
-      orca_logs.write(JSON.generate({
-        "errors": orca_response[:errors],
-        "shell_responses": orca_response[:shell_responses]
-      }))
+    grader_dir = @submission.upload.grader_path(@grader)
+    File.open(grader_dir.join("orca_logs.json"), "w") do |f|
+      f.write(JSON.generate(orca_response_params["logs"]))
     end
-
-    if orca_response[:tap_output]
-      grader_dir = @submission.upload.grader_path(@grader)
-      tap_file_name = "#{file_prefix}_orca_output.tap"
-      File.open(grader_dir.join(tap_file_name), "w") do |orca_tap|
-        orca_tap.write(orca_response[:tap_output])
+    if orca_response_params["output"]
+      File.open(grader_dir.join("orca_output"), "w") do |f|
+        f.write(JSON.generate(orca_response_params["output"]))
       end
     end
   end
@@ -138,6 +131,18 @@ class GradesController < ApplicationController
 
   protected
 
+  def orca_response_params
+    ans = {}
+    key, shell_responses = params.require([:key, :shell_responses])
+    permitted = params.permit(:execution_errors, :output)
+    ans["key"] = JSON.parse(key)
+    ans["logs"] = {
+      shell_responses: shell_responses,
+      execution_errors: permitted["execution_errors"]
+    }
+    ans["output"] = permitted["output"]
+    ans
+  end
   def comments_params
     if params[:comments].is_a? String
       comms = JSON.parse(params[:comments])
@@ -159,6 +164,21 @@ class GradesController < ApplicationController
                            :flatPoints, :flatMax,
                            :linearMapMin, :linearMapMax, :linearRawMin, :linearRawMax,
                            :contrastDegree, :contrastWeight)
+  end
+
+  def valid_orca_response?(grade_id, response_secret)
+    unless Grade.exists?(grade_id)
+      return false
+    end
+    grader_dir = @submission.upload.grader_path(@grader)
+    secret_file_path = grader_dir.join("orca.secret")
+    unless File.exist? secret_file_path
+      return false
+    end
+    File.open(secret_file_path) do |fp|
+      secret_from_file = fp.read
+      return secret_from_file == response_secret
+    end
   end
 
   def find_grade
