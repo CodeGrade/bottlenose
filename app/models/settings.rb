@@ -4,7 +4,7 @@ class Settings
       "site_email"   => 'Bottlenose <noreply@example.com>',
       "backup_login" => '',
       "site_url"     => '',
-      "orca_url"     => ''
+      "orca_url"     => 'http://localhost:4000'
     }
   end
 
