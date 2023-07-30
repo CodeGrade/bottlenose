@@ -5,7 +5,7 @@ class GradesController < ApplicationController
   before_action :find_course
   before_action :find_assignment
   before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
-  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball, :orca_response]
+  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
   before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
   before_action :require_registered_user
   before_action -> {
