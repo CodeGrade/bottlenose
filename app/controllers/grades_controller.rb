@@ -5,7 +5,7 @@ class GradesController < ApplicationController
   before_action :find_course
   before_action :find_assignment
   before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
-  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
+  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball, :orca_response]
   before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
   before_action :require_registered_user
   before_action -> {
@@ -43,20 +43,27 @@ class GradesController < ApplicationController
 
   def orca_response
     response_params = orca_response_params
-    grade_id, secret = orca_response_params["grade_id"], orca_response_params["secret"]
-    grader_dir = @submission.upload.grader_path(@grader)
+    key = response_params["key"]
+    grade_id, secret = key["grade_id"], key["secret"]
+    grade = Grade.find_by(id: grade_id)
+    if grade == nil
+      render body: nil, status: 404
+      return
+    end
+
+    grader_dir = @submission.upload.grader_path(grade.grader)
     secret_file_path = grader_dir.join("orca.secret")
-    unless valid_orca_response?(grade_id, secret_file_path, secret)
+    unless valid_orca_response?(secret_file_path, secret)
       render body: nil, status: 404
       return
     end
 
     File.open(grader_dir.join("orca_logs.json"), "w") do |f|
-      f.write(JSON.generate(orca_response_params["logs"]))
+      f.write(JSON.generate(response_params["logs"]))
     end
-    if orca_response_params["output"]
+    if response_params["output"]
       File.open(grader_dir.join("orca_output"), "w") do |f|
-        f.write(JSON.generate(orca_response_params["output"]))
+        f.write(response_params["output"])
       end
     end
 
@@ -137,14 +144,21 @@ class GradesController < ApplicationController
 
   def orca_response_params
     ans = {}
-    key, shell_responses = params.require([:key, :shell_responses])
+    key = params.require(:key)
+    shell_responses = params.require(:shell_responses).map do |response_as_param|
+      response_hash = response_as_param.permit!.to_h
+      response_hash[:status_code] = response_hash[:status_code].to_i
+      response_hash[:timed_out] = response_hash[:timed_out] == "true" ? true : false
+      response_hash
+    end
     permitted = params.permit(:execution_errors, :output)
+    execution_errors, output = permitted[:execution_errors], permitted["output"]
     ans["key"] = JSON.parse(key)
     ans["logs"] = {
       shell_responses: shell_responses,
-      execution_errors: permitted["execution_errors"]
+      execution_errors: execution_errors
     }
-    ans["output"] = permitted["output"]
+    ans["output"] = output
     ans
   end
   def comments_params
@@ -170,10 +184,7 @@ class GradesController < ApplicationController
                            :contrastDegree, :contrastWeight)
   end
 
-  def valid_orca_response?(grade_id, secret_file_path, response_secret)
-    unless Grade.exists?(grade_id)
-      return false
-    end
+  def valid_orca_response?(secret_file_path, response_secret)
     unless File.exist? secret_file_path
       return false
     end
@@ -196,7 +207,7 @@ class GradesController < ApplicationController
     @grader = @grade.grader
   end
 
-  def find_grader
+  def find_grader  
     @grader = Grader.find_by(id: params[:id])
     if @grader.nil?
       redirect_to course_assignment_path(params[:course_id], params[:assignment_id]),

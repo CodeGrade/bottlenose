@@ -150,12 +150,12 @@ Rails.application.routes.draw do
         end
         resources :reviews, only: [:show] 
         resources :grades, only: [:show, :edit, :update] do
+          collection do
+            post :orca_response, to: 'grades#orca_response', as: 'orca_response'
+          end
           member do
             post :regrade
             get :details, defaults: {format: 'text'}
-          end
-          collection do
-            post :orca_response
           end
         end
       end
