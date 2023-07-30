@@ -74,28 +74,8 @@ class JunitGrader < Grader
 
   def send_job_to_orca(submission, secret)
     job_json = JSON.generate(generate_grading_job(submission, secret))
-    uri = URI.parse("#{Settings['orca_url']}/grading_queue")
-
-    # Exponential back off variables. Wait time in ms.
-    max_wait_time, current_exponent, status_code = 32 * 1000, 0, nil
-    while status_code != 200
-      if status_code != nil
-        random_wait_interval = rand(1000)
-        wait_time = [(2**current_exponent * 1000) + random_wait_interval, max_wait_time].min
-        if wait_time == max_wait_time
-          break
-        end
-        sleep(wait_time)
-      end
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-      res = http.post(job_json, {"Content-Type": "application/json"})
-      status_code = res.status_code
-      current_exponent++
-    end
-    if status_code != 200
-      raise OrcaJobCreationError.new(status_code)
-    end
+    uri = URI.parse("#{Settings["orca_url"]}/grading_queue")
+    post_job_json_with_retry(job_json, uri)
   end
 
   def generate_grading_job(sub, secret)
@@ -300,7 +280,6 @@ class JunitGrader < Grader
     end
   end
 
-  ###########################
   # Orca grading job methods.
 
   # Generates a secret to be paired with an Orca grading job
@@ -315,6 +294,31 @@ class JunitGrader < Grader
     end
     return secret, file_path
   end
+
+  def post_job_json_with_retry(uri, job_json)
+    # Exponential back off variables. Wait time in ms.
+    max_wait_time, current_exponent, status_code = 32 * 1000, 0, nil
+    while status_code != 200 do
+     unless status_code == nil
+       random_wait_interval = rand(1000)
+       wait_time = [(2**current_exponent * 1000) + random_wait_interval, max_wait_time].min
+       if wait_time == max_wait_time
+         break
+       end
+       sleep(wait_time)
+     end
+    end
+
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    res = http.post(job_json, {"Content-Type": "application/json"})
+    status_code = res.status_code
+    current_exponent++
+
+    if status_code != 200
+      raise OrcaJobCreationError.new(status_code)
+    end
+ end
 
   def generate_files_hash(sub)
     files = {}
@@ -365,8 +369,8 @@ class JunitGrader < Grader
   end
 
   class OrcaJobCreationError < StandardError
-
-    :attr_reader status_code
+    
+    attr_reader :status_code
 
     def initialize(status_code, msg="Could not send a job to Orca after multiple HTTP request retries.")
       @status_code = status_code
