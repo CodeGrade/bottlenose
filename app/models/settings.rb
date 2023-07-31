@@ -3,22 +3,9 @@ class Settings
     {
       "site_email"   => 'Bottlenose <noreply@example.com>',
       "backup_login" => '',
-      "site_url"     => '',
+      "site_url"     => 'http://localhost:3000',
       "orca_url"     => 'http://localhost:4000'
     }
-  end
-
-  def self.set_site_url!(req)
-    cfg = load_json
-    cfg["site_url"] = "#{req.protocol}#{host_primary_ip}:#{req.port}"
-    save_json(cfg)
-  end
-
-  def self.host_primary_ip
-    route = `ip route get 8.8.8.8`
-    iface = route.match(/dev\s+(\w+?)\s/)[1]
-    addrs = `ip a show dev "#{iface}"`
-    addrs.match(/inet\s+(\d+\.\d+\.\d+\.\d+)[\s|\/]/)[1]
   end
 
   def self.clear_test!
