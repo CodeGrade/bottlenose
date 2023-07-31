@@ -1,11 +1,22 @@
 require 'open3'
 require 'tap_parser'
 require 'audit'
+require 'net/http'
+require 'securerandom'
 
 class JunitGrader < Grader
   after_initialize :load_junit_params
+  after_save :process_grader_zip
   before_validation :set_junit_params
   validate :proper_configuration
+
+  @@resource_files = {
+    "lib/assets/annotations.jar": ["annotations-jar", "application/java-archive", false],
+    "lib/assets/junit-4.13.2.jar": ["junit-jar", "application/java-archive", false],
+    "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/java-archive", false],
+    "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/java-archive", false]
+  }
+  @@dockerfile_sha = "74b320b733359ebfa19428c8f073de1a700b6883e84ca70d0f13858830a7b250"
 
   def autograde?
     true
@@ -48,6 +59,38 @@ class JunitGrader < Grader
   end
   def import_data_schema
     "junit_import_schema"
+  end
+
+  def grade(assignment, submission, prio = 0)
+    begin
+      secret, secret_file_path = generate_orca_secret!(submission)
+      send_job_to_orca(submission, secret)
+    rescue OrcaJobCreationError => exception
+      FileUtils.rm(secret_file_path)
+      Audit.log("Failed to send job to orca on submission #{submission.id} for assignment #{assignment.id}.")
+    end
+    super(assignment, submission, prio)
+  end
+
+  def send_job_to_orca(submission, secret)
+    job_json = JSON.generate(generate_grading_job(submission, secret))
+    uri = URI.parse("#{Settings["orca_url"]}/grading_queue")
+    post_job_json_with_retry(job_json, uri)
+  end
+
+  def generate_grading_job(sub, secret)
+    ans = {}
+    ans["key"] = JSON.generate({ grade_id: self.grade_for(sub).id, secret: secret })
+    ans["files"] = self.generate_file_hash
+    ans["collation"] = sub.team ? { id: sub.team.id, type: "team" } :
+                        { id: sub.user.id, type: "user"}
+    ans["response_url"] = "#{Settings['site_url']}/"\
+                          "#{orca_response_course_assignment_submission_grades(@assignment.course, @assignment, sub)}"
+    ans["script"] = self.get_grading_script
+    ans["grading_image_sha"] = @@dockerfile_sha
+    ans["metadata"] = self.generate_grading_job_metadata_table(sub)
+    ans["priority"] = self.delay_for_sub(sub).in_seconds
+    ans
   end
 
   protected
@@ -236,4 +279,103 @@ class JunitGrader < Grader
       add_error("Could not read upload: #{e_msg}")
     end
   end
+
+  # Orca grading job methods.
+
+  # Generates a secret to be paired with an Orca grading job
+  # and compared upon response. Returns the secret and the
+  # file_path to which it was saved.
+  def generate_orca_secret!(sub)
+    grader_dir = sub.upload.grader_path(self)
+    secret = SecureRandom.hex(32) 
+    file_path = grader_dir.join("orca.secret")
+    File.open(file_path, "w") do |secret_file|
+      secret_file.write(secret)
+    end
+    return secret, file_path
+  end
+
+  def post_job_json_with_retry(uri, job_json)
+    # Exponential back off variables. Wait time in ms.
+    max_wait_time, current_exponent, status_code = 32 * 1000, 0, nil
+    while status_code != 200 do
+     unless status_code == nil
+       random_wait_interval = rand(1000)
+       wait_time = [(2**current_exponent * 1000) + random_wait_interval, max_wait_time].min
+       if wait_time == max_wait_time
+         break
+       end
+       sleep(wait_time)
+     end
+    end
+
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    res = http.post(job_json, {"Content-Type": "application/json"})
+    status_code = res.status_code
+    current_exponent++
+
+    if status_code != 200
+      raise OrcaJobCreationError.new(status_code)
+    end
+ end
+
+  def generate_files_hash(sub)
+    files = {}
+
+    files["sub"] = {}
+    files["sub"]["url"] = sub.upload.url
+    files["sub"]["mime_type"] = sub.upload.read_metadata["mimetype"].first
+    files["sub"]["should_replace_paths"] = false
+
+    @zip_paths.each do |key, path|
+      files[key] = {}
+      files[key]["url"] = Settings["site_url"] + Upload.upload_path_for(path)
+      files[key]["mime_type"] = "application/zip"
+      files[key]["should_replace_paths"] = false
+    end
+
+    # TODO: configure separation of starter and test and rewrite this logic
+    files["grader_zip"] = {}
+    files["grader_zip"]["url"] = self.upload.url
+    files["grader_zip"]["mime_type"] = self.upload.read_metadata["mimetype"].first
+    files["grader_zip"]["should_replace_paths"] = false
+    
+    @@resource_files.each do |file_path, (files_key, mime, should_replace_paths)|
+      files[files_key] = {}
+      files[files_key]["url"] = 
+        "#{Settings.site_url}/resources/#{files_path.gsub('lib/assets/', '')}"
+      files[files_key]["mime_type"] = mime
+      files[files_key]["should_replace_paths"] = should_replace_paths
+    end
+    files
+  end
+
+  def get_grading_script
+    build_script = JSON.load "lib/assets/build-scripts/junit_grader.json"
+    build_script << {
+      cmd: ["java", "-cp", "junit-4.13.2.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
+        "edu.neu.TAPRunner", *(self.test_class.split(" ")),
+        "-timeout", self.test_timeout.to_s],
+      on_complete: "output",
+      timeout: 360,
+      working_dir: "$BUILD"
+    }
+  end
+
+  def process_grader_zip
+    zip_paths = JavaGraderFileProcessor.process_zip(self.upload, self)
+    @zip_paths = zip_paths
+  end
+
+  class OrcaJobCreationError < StandardError
+    
+    attr_reader :status_code
+
+    def initialize(status_code, msg="Could not send a job to Orca after multiple HTTP request retries.")
+      @status_code = status_code
+      super
+    end
+  end
+
 end
