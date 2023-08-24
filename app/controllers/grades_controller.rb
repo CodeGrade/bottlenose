@@ -739,14 +739,14 @@ HEADER
     end
 
     if current_user_site_admin? || current_user_staff_for?(@course)
-      if @grading_output.kind_of?(String)
+      if @grading_output.nil? || @grading_output.kind_of?(String)
         @grading_header = "Errors running tests"
       else
         @grading_header = "All test results"
         @tests = @grading_output.tests
       end
     else
-      if @grading_output.kind_of?(String)
+      if @grading_output.nil? || @grading_output.kind_of?(String)
         @grading_header = "Errors running tests"
       elsif @grading_output.passed_count == @grading_output.test_count
         @grading_header = "Test results"
@@ -757,7 +757,7 @@ HEADER
       end
     end
 
-    if !@grading_output.kind_of?(String) && @grading_output.commentary.member?("Examplar results")
+    if @grading_output && !@grading_output.kind_of?(String) && @grading_output.commentary.member?("Examplar results")
       @tests = {}
       @grading_output.tests.each do |t|
         type = t[:comment].split(":").first.downcase
