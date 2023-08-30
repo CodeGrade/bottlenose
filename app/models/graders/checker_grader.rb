@@ -13,7 +13,11 @@ class CheckerGrader < Grader
   end
 
   def display_type
-    "Checker Tests"
+    if self.test_class&.downcase.include?("examplar")
+      "Examplar results"
+    else
+      "Checker Tests"
+    end
   end
   
   def to_s

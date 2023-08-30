@@ -12,7 +12,11 @@ class JunitGrader < Grader
   end
 
   def display_type
-    "JUnit Tests"
+    if self.test_class&.downcase.include?("examplar")
+      "Examplar results"
+    else
+      "JUnit Tests"
+    end
   end
   
   def to_s
