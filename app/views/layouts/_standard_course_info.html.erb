@@ -41,7 +41,7 @@
 
         <% if cur_reg %>
             <p>
-                You are a
+                You are a<% if ["a", "e", "i", "o", "u"].include?(cur_reg.role[0]) %>n<% end %>
                 <strong><%= cur_reg.role %></strong>
                 of this course.
             </p>
