@@ -771,7 +771,8 @@ HEADER
       @testMatrixByChaff = @chaffNames.map do |c|
         [c,
          @testNames.map do |t|
-           [t, thoroughnessTest[:info]['results'][c].include?(t)]
+           relevant = thoroughnessTest[:info]['results'][c]
+           [t, relevant.is_a?(Array) && relevant.include?(t)]
          end.to_h
         ]
       end.to_h
