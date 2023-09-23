@@ -251,11 +251,11 @@ class JunitGrader < Grader
         if ok
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
-            if !entries["testing"]["test"]["#{tc}.java"]
-              add_error("There is no #{tc}.java file to match the specified test class")
+            if !classNamed(entries["testing"]["test"], tc)
+              add_error("There is no #{tc} file (either .java or .class) to match the specified test class")
             end
           end
-          if entries["testing"]["test"]["GradingSandbox.java"]
+          if classNamed(entries["testing"]["test"], "GradingSandbox")
             add_error("There must not be a class named GradingSandbox")
           end
         end
@@ -268,11 +268,11 @@ class JunitGrader < Grader
         if ok && !self.test_class.downcase.include?("examplar")
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
-            if !entries["test"]["#{tc}.java"]
-              add_error("There is no #{tc}.java file to match the specified test class")
+            if !classNamed(entries["test"], tc)
+              add_error("There is no #{tc} file (either .java or .class) to match the specified test class")
             end
           end
-          if entries["test"]["GradingSandbox.java"]
+          if classNamed(entries["test"], "GradingSandbox")
             add_error("There must not be a class named GradingSandbox")
           end
         end
@@ -282,5 +282,13 @@ class JunitGrader < Grader
       e_msg = e_msg.dump[1...-1] unless e_msg.is_utf8?
       add_error("Could not read upload: #{e_msg}")
     end
+  end
+
+  def classNamed(dict, name)
+    sources = name.split(".")
+    sources[-1] += "\.java"
+    classes = name.split(".")
+    classes[-1] += ".class"
+    return dict.dig(*sources) || dict.dig(*classes)
   end
 end

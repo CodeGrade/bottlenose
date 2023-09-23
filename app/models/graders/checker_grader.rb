@@ -202,8 +202,8 @@ class CheckerGrader < Grader
         if ok
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
-            if !entries["testing"]["test"]["#{tc}.java"]
-              add_error("There is no #{tc}.java file to match the specified test class")
+            if !classNamed(entries["testing"]["test"], tc)
+              add_error("There is no #{tc} file (either .java or .class) to match the specified test class")
             end
           end
         end
@@ -213,11 +213,11 @@ class CheckerGrader < Grader
           add_error("The archive does not contain src/ and test/ subdirectories")
           ok = false
         end
-        if ok && !self.test_class.include?("Examplar")
+        if ok && !self.test_class.downcase.include?("examplar")
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
-            if !entries["test"]["#{tc}.java"]
-              add_error("There is no #{tc}.java file to match the specified test class")
+            if !classNamed(entries["test"], tc)
+              add_error("There is no #{tc} file (either .java or .class) to match the specified test class")
             end
           end
         end
@@ -227,5 +227,13 @@ class CheckerGrader < Grader
       e_msg = e_msg.dump[1...-1] unless e_msg.is_utf8?
       add_error("Could not read upload: #{e_msg}")
     end
+  end
+  
+  def classNamed(dict, name)
+    sources = name.split(".")
+    sources[-1] += "\.java"
+    classes = name.split(".")
+    classes[-1] += ".class"
+    return dict.dig(*sources) || dict.dig(*classes)
   end
 end
