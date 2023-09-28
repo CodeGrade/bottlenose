@@ -98,6 +98,10 @@ class CheckerGrader < Grader
                     details.write("Test output: (exit status #{err[:status] || 'unknown'})\n")
                     details.write(err[:output])
                   end
+                  if err[:err]
+                    details.write("Test errored: (exit status #{err[:status] || 'unknown'})\n")
+                    details.write(err[:err])
+                  end
                   if err[:timed_out]
                     details.write("Running tests timed out after #{self.test_timeout} seconds")
                   end
