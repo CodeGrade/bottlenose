@@ -11,6 +11,7 @@ Bottlenose is built expecting the following environment:
   * PostgreSQL
   * Ruby + Bundler
   * Homebrew
+  * Beanstalk
   
 ### Homebrew
 
@@ -18,21 +19,30 @@ Bottlenose is built expecting the following environment:
 # Install Homebrew
 $/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
 
-# Install postgres, Ruby, and npm 
-brew install postgresql node
+# Install postgres, npm, beanstalk, iproute
+brew install postgresql node beanstalk iproute2mac
 ```
 
 ### Postgres
 
-```sh
-# Switch to the postgres user to create the new bottlenose role.
-sudo su - postgres
+Start postgres:
 
+```sh
+brew services start postgresql
+```
+
+Start beanstalk:
+
+```sh
+brew services start beanstalk
+```
+
+
+Create a user
+
+```sh
 # Create the bottlenose role for postgres.
 createuser -d bottlenose
-
-# Exit back to the vagrant user.
-exit
 ```
 
 If you run into authentication trouble later, you may need to modify
@@ -40,7 +50,15 @@ the pg_hba.conf in /etc/postgres/.../ to allow local ident auth.
 
 ### Ruby
 
-Best practice for Ruby in development is to use a version manager like rvm or rbenv. Once you have the correct version [installed] (https://github.com/rbenv/rbenv#homebrew-on-macos)
+Best practice for Ruby in development is to use a version manager like rvm or rbenv. Once you have the correct version [installed] (https://github.com/rbenv/rbenv#homebrew-on-macos), e.g., by doing something like this:
+
+```
+brew install rbenv ruby-build
+rbenv init # follow instructions to make this persistent
+rbenv install
+```
+
+
 ```
 # Install Ruby's package manager "Bundler".
 gem install bundler
@@ -49,32 +67,11 @@ gem install bundler
 # (from the bottlenose directory checked out from git)
 bundle install
 ```
-### Capybara-webkit
 
-**Prerequisite: Xcode (between 9.4 - 10.1).** Newer versions of Xcode will not work and you will have to downgrade! To do this follow these [instructions] (https://medium.com/@tseboho/how-to-downgrade-xcode-4359df5158d5)
-
-**NOTE:** 
-
-Qt 5.5 is the last version of Qt that capybara-webkit will support. The Qt project has dropped the WebKit bindings from binary releases in 5.6. Make sure that you have Xcode installed (between 9.4 - 10.1). Under Xcode preferences locations, make sure there is a version set. Qt 5.5 was removed from homebrew in newer commits. The previous/parent commit was **9ba3d6e**. So, to be able to install Qt 5.5 with homebrew checkout the old commit first:
+### Javascript
 
 ```
-brew update
-cd $( brew --prefix )/Homebrew/Library/Taps/homebrew/homebrew-core
-git checkout 9ba3d6ef8891e5c15dbdc9333f857b13711d4e97 Formula/qt@5.5.rb
-brew install qt@5.5
-```
-**NOTE:**  
-
-- If you get Error fatal: reference is not a tree: 9ba3d6ef8891e5c15dbdc9333f857b13711d4e97, use git fetch --unshallow to complete git history.
-- If you get Error: qt@5.5: unknown version :mountain_lion or :mojave, comment out line #25 in Formula/qt@5.5.rb
-
-The Homebrew formula for qt@5.5 is keg only which means binaries like qmake will not be symlinked into your /usr/local/bin directory and therefore will not be available for capybara-webkit.
-```
-# Then add to your shell configuration file:
-echo 'export PATH="$(brew --prefix qt@5.5)/bin:$PATH"' >> ~/.bashrc	
-
-# Now you can install capybara-webkit
- gem install capybara-webkit
+npm install
 ```
  
 ### Running Bottlenose
@@ -85,14 +82,14 @@ Currently the bigest weirdness is the use of delayed job.
 
 ```sh
 # Get a fresh database
-rails db:create
-rails db:migrate
+bundle exec rails db:create
+bundle exec rails db:migrate
 
 # Start background job worker
-rake backburner:work
+bundle exec rake backburner:work
 
 # Start the server
-rails s
+bundle exect rails s
 
 #If it returns an error saying it cannot find rails use
 script/rails s
