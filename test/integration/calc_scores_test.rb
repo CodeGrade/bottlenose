@@ -8,7 +8,6 @@ require 'pry'
 class CalcScoresTest < ActionDispatch::IntegrationTest
   setup do
     DatabaseCleaner.clean
-    Capybara.current_driver = :webkit
   end
 
   def test_create_teams_submit_and_grade_many
