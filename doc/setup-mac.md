@@ -89,7 +89,7 @@ bundle exec rails db:migrate
 bundle exec rake backburner:work
 
 # Start the server
-bundle exect rails s
+bundle exec rails s
 
 #If it returns an error saying it cannot find rails use
 script/rails s
