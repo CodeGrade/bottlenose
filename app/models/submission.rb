@@ -10,12 +10,23 @@ class Submission < ApplicationRecord
   belongs_to :upload, optional: true
   belongs_to :comments_upload, class_name: "Upload", optional: true
   has_many :used_subs, dependent: :destroy
-  has_many :grades
+  has_many :grades, dependent: :destroy
   has_many :reviews, class_name: "ReviewFeedback", dependent: :destroy
   has_many :user_submissions, dependent: :destroy
   has_many :users, through: :user_submissions
   has_many :inline_comments, dependent: :destroy
 
+  def self.bulk_delete(ids)
+    # Matches all the dependent: :destroy associations above
+    InlineComment.where(submission_id: ids).delete_all
+    UserSubmission.where(submission_id: ids).delete_all
+    UsedSub.where(submission_id: ids).delete_all
+    ReviewFeedback.where(submission_id: ids).delete_all
+    Grade.where(submission_id: ids).delete_all
+    # Then bulk-delete all these submissions
+    Submission.where(id: ids).delete_all
+  end
+  
   validates :assignment_id, :presence => true
 
   validate :has_team_or_user
@@ -39,7 +50,9 @@ class Submission < ApplicationRecord
         UserSubmission.find_or_create_by!(user: u, submission: self)
       end
     elsif user
-      UserSubmission.find_or_create_by!(user: user, submission: self)
+      if !(association(:user_submissions).loaded?) || !(user_submissions.to_a.find {|us| us.user_id == user_id})
+        UserSubmission.find_or_create_by!(user: user, submission: self)
+      end
     end
   end
   

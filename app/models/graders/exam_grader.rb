@@ -86,21 +86,20 @@ class ExamGrader < Grader
     end
     students_with_grades = {}
     errors = []
-    csv.each do |row|
-      next if row.length == 0
-      row_hash = row.to_hash
-      if row_hash["NUID"].nil?
-        errors << "Cannot handle grades for #{row_hash["First name"]} #{row_hash["Last name"]} without an NUID"
-      else
-        if row_hash["Action"] == "Update"
-          # Column 5 is first column of grades (counting from 0)
-          students_with_grades[row_hash["NUID"]] = row.to_a.slice(5..-1).map(&:second)
-        elsif row_hash["Action"] == "Delete"
-          @sub = Submission.find_by(assignment: self.assignment, user: User.find_by(nuid: row_hash["NUID"]))
-          @sub&.destroy!
-        end
-      end
+    csv_by_nuid = csv.filter{|r| r.length > 0}.group_by{|r| r["NUID"].nil?}
+    errors = csv_by_nuid[true].map do |r|
+      "Cannot handle grades for #{r["First name"]} #{r["Last name"]} without an NUID"
     end
+    csv_by_action = (csv_by_nuid[false] || []).group_by{|r| r["Action"]}
+    nuids = (csv_by_nuid[false] || []).map { |row| row["NUID"] }
+    users_by_nuid = User.where(nuid: nuids).to_h { |u| [u.nuid, u] }
+    subs_by_user = Submission.where(assignment: self.assignment, user: users_by_nuid.values)
+                     .to_h { |s| [s.user_id, s] }
+    students_with_grades = (csv_by_action["Update"] || []).to_h do |r|
+      [r["NUID"], r.fields.slice(5..-1)]
+    end
+    @subs_to_destroy = (csv_by_action["Delete"] || []).map{|r| subs_by_user[users_by_nuid[r["NUID"]]&.id]}.compact
+    Submission.bulk_delete(@subs_to_destroy.map(&:id))
     ans = apply_all_exam_grades(who_grades, students_with_grades, :nuid)
     ans[:errors].push(*errors)
     {notice:
@@ -123,7 +122,8 @@ class ExamGrader < Grader
   end
 
   def apply_all_exam_grades(who_grades, students_with_grades, key)
-    @student_info = self.assignment.course.students.select(:username, :last_name, :first_name, :nickname, :id, :nuid)
+    @student_info = self.assignment.course.students
+                      .select(:username, :last_name, :first_name, :nickname, :id, :nuid)
                       .where(key => students_with_grades.keys)
     ans = {created: 0, updated: 0, errors: []}
     if @student_info.length != students_with_grades.length
@@ -134,50 +134,87 @@ class ExamGrader < Grader
     # @grade_comments = InlineComment.where(submission_id: @used_subs.map(&:id)).group_by(&:user_id)
 
     flattened = self.assignment.flattened_questions
-    @student_info.each do |student|
-      grades = students_with_grades[student[key]]
-      if (grades.nil?)
-        ans[:errors] << "Could not find grades for student with #{key.upcase} #{student[key]}"
-        next
-      elsif (grades.index(nil) || flattened.length) < (flattened.length - 1)
-        ans[:errors] << "Grades for student #{student[key]} (#{student.display_name}) contained nil values"
-        next
+    @grades_by_sub = self.grades.includes(:submission).to_h {|g| [g.submission_id, g]}
+    InlineComment.transaction do
+      @used_submissions = self.assignment.all_used_subs
+                              .includes(:assignment, :inline_comments, :grades, :team, :user, :user_submissions)
+                              .to_h {|s| [s.user_id, s]}
+      @comments_to_insert = []
+      @student_info.each do |student|
+        grades = students_with_grades[student[key]]
+        if (grades.nil?)
+          ans[:errors] << "Could not find grades for student with #{key.upcase} #{student[key]}"
+          next
+        elsif (grades.index(nil) || flattened.length) < (flattened.length - 1)
+          ans[:errors] << "Grades for student #{student[key]} (#{student.display_name}) contained nil values"
+          next
+        end
+        @sub = @used_submissions[student.id]
+        if @sub.nil?
+          @sub = Submission.create!(assignment: self.assignment,
+                                    user: student,
+                                    type: "ExamSub",
+                                    created_at: self.assignment.due_date - 1.minute)
+          @sub.score = compute_score(grades, flattened.count, percent: true)
+          UsedSub.create!(user: student, assignment: self.assignment, submission: @sub)
+          @used_submissions[student.id] = @sub
+          ans[:created] += 1
+        else
+          @sub.update(score: compute_score(grades, flattened.count))
+          ans[:updated] += 1
+        end
+        @sub.cache_grading_comments!
+        @grade = @grades_by_sub[@sub.id] ||= Grade.new(grader_id: self.id, submission_id: @sub.id)
+        if @grade.new_record?
+          @grade.out_of = self.avail_score
+        end
+        @grade.score = compute_score(grades, flattened.count)
+        @grade.available = false
+        @grade.save!
+        grades.each_with_index do |g, q_num|
+          @comments_to_insert << @sub.grading_comment_attributes(who_grades, @grade, q_num, g)
+        end
+        #do_raw_grading(@sub, @grade, grades, flattened.count)
       end
-      @sub = self.assignment.used_sub_for(student)
-      if @sub.nil?
-        @sub = Submission.create!(assignment: self.assignment,
-                                  user: student,
-                                  type: "ExamSub",
-                                  created_at: self.assignment.due_date - 1.minute)
-        ans[:created] += 1
-      else
-        ans[:updated] += 1
+      @comments_to_insert.compact!
+      InlineComment.upsert_all(@comments_to_insert) unless @comments_to_insert.blank?
+      @student_info.each do |student|
+        @sub = @used_submissions[student.id]
+        @grade = @grades_by_sub[@sub.id]
+        expect_num_questions(flattened.count)
       end
-      @sub.set_used_everyone!
-      @grade = Grade.find_or_create_by(grader_id: self.id, submission_id: @sub.id)
-      if @grade.new_record?
-        @grade.out_of = self.avail_score
-      end
-      grades.each_with_index do |g, q_num|
-        @sub.grade_question!(who_grades, q_num, g)
-      end
-      expect_num_questions(flattened.count)
-      grade(@assignment, @sub)
     end
     return ans
   end
 
   protected
-
-  def do_grading(assignment, sub)
-    g = self.grade_for sub
-    comments = InlineComment.where(submission: sub, grade: g, suppressed: false).where('line < ?', @num_questions)
+  def compute_score(grades, num_questions, percent: false)
+    score = grades[num_questions].blank? ? grades.compact.sum : grades[num_questions]
+    score = [0, score].max
+    if percent
+      100.0 * score / self.avail_score
+    else
+      score
+    end
+  end
+  def do_raw_grading(sub, grade, grades, num_questions)
+    grade.out_of = self.avail_score
+    score = grades[num_questions].blank? ? grades.compact.sum : grades[num_questions]
+    grade.score = [0, score].max
+    sub.score = 100.0 * grade.score / grade.out_of
+    grade.updated_at = DateTime.now
+    grade.available = false
+  end
+  
+  def do_grading(assignment, sub, grade = nil)
+    g = grade || self.grade_for(sub)
+    comments = sub.inline_comments.filter{|c| c.grade_id == g.id && !c.suppressed && c.line < @num_questions}
     score = comments.pluck(:weight).sum
 
     g.out_of = self.avail_score
     g.score = [0, score].max # can get extra credit above max score
 
-    curved = InlineComment.find_by(submission: sub, grade: g, suppressed: false, line: @num_questions)
+    curved = sub.inline_comments.find {|c| c.grade_id == g.id && !c.suppressed && c.line == @num_questions}
     if curved
       g.score = curved.weight
     end

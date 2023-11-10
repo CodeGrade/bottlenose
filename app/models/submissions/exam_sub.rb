@@ -3,29 +3,38 @@ require 'audit'
 
 class ExamSub < Submission
   def grade_question!(who_graded, question, score)
-    comment = InlineComment.find_or_initialize_by(submission: self, grade: self.grade, line: question)
+    comment = find_or_initialize_cached_comment_by(self.grade, question)
     if score.blank?
       comment.delete unless comment.new_record?
+      inline_comments.delete(comment)
       return nil
     else
-      comment.update(label: "Exam question",
-                     filename: self.assignment.name,
-                     severity: InlineComment.severities["info"],
-                     user_id: (who_graded || self.user).id,
-                     weight: score,
-                     comment: "",
-                     suppressed: false,
-                     title: "",
-                     line: question,
-                     info: nil)
+      comment.update(grading_comment_attributes(who_graded, self.grade, question, score))
       comment
     end
+  end
+  def grading_comment_attributes(who_graded, grade, question, score)
+    return nil if score.blank?
+    {
+      id: @comments_map&.dig(grade.id, question)&.id,
+      submission_id: self.id,
+      grade_id: grade.id,
+      label: "Exam question",
+      filename: self.assignment.name,
+      severity: InlineComment.severities["info"],
+      user_id: (who_graded || self.user).id,
+      weight: score,
+      comment: "",
+      suppressed: false,
+      title: "",
+      line: question
+    }.compact
   end
   def set_curved_grade(who_graded, curved_grade = nil)
     questions = self.assignment.flattened_questions
     num_questions = questions.count
     if curved_grade.nil? && block_given?
-      comments = InlineComment.where(submission: self, suppressed: false).order(:line)
+      comments = inline_comments.filter{|c| c.suppressed}.sort_by(&:line)
       grades = []
       curved = nil
       comments.each do |c|
@@ -44,8 +53,24 @@ class ExamSub < Submission
     grader.grade(self.assignment, self)
   end
 
+  def cache_grading_comments!
+    @comments_map = multi_group_by(inline_comments, [:grade_id, :line], true)
+  end
+
+  def find_or_initialize_cached_comment_by(grade, question)
+    ans = @comments_map&.dig(grade.id, question)
+    if ans.nil?
+      @comments_map ||= {}
+      @comments_map[grade.id] ||= {}
+      ans = @comments_map[grade.id][question] = inline_comments.create(grade: grade, line: question)
+    end
+    ans
+  end
+
   protected
   def grade
+    return @grade if @grade
+    @grade = self.grades.first
     return @grade if @grade
     self.assignment.graders.first.ensure_grade_exists_for! self
     @grade = self.grades.first
