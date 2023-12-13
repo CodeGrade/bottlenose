@@ -26,21 +26,32 @@ class GraderAllocationsController < ApplicationController
       .where(assignment: @assignment)
       .where(submission_id: params[:submission_id])
       .where.not(abandoned: true)
+      .includes(:grader)
     if existing.count > 0
+      prefix = existing.count > 1 ? "These submissions are" : "This submission is"
+      names = existing.map {|e| e.grader.name}
+      it_them = existing.count > 1 ? "them" : "it"
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
-                    alert: ("This submission is already assigned to #{existing.first.grader.name}.  " +
-                            "Please abandon or delete it first.")
+                    alert: ("#{prefix} already assigned to #{names.to_sentence}.  " +
+                            "Please abandon or delete #{it_them} first.")
       return
     end
     if params[:submission_id].nil?
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
-                    alert: "Please select a submission to be graded"
+                    alert: "Please select at least submission to be graded"
       return
     end
-    sub = Submission.find_by(id: params[:submission_id])
-    if sub.nil? || (sub.assignment_id != @assignment.id)
+    subs = Submission.where(id: params[:submission_id])
+    if subs.empty?
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
-                    alert: "This submission does not belong to this assignment."
+                    alert: "Could not find specified #{'submission'.pluralize(params[:submission_id].count)}"
+      return
+    end
+    assns = subs.to_set(&:assignment_id)
+    if assns.count > 1 || !assns.include?(@assignment.id)
+      prefix = subs.count > 1 ? "This submission does not" : "These submission do not all"
+      redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
+                    alert: "${prefix} belong to this assignment."
       return
     end
     if params[:who_grades_id].nil?
@@ -59,21 +70,30 @@ class GraderAllocationsController < ApplicationController
       return
     end
 
-    alloc = GraderAllocation.find_or_initialize_by(
-      submission: sub,
-      assignment: @assignment,
-      course: @course)
-    alloc.who_grades_id = who_grades.id
-    alloc.grading_assigned = DateTime.now
-    alloc.grading_completed = nil if alloc.abandoned
-    alloc.abandoned = false
-    if alloc.conflict_currently_exists?
+    conflicts = who_grades.grading_conflicts_as_staff
+                  .where(student: subs.flat_map(&:submission_users))
+                  .includes(:student)
+    if !conflicts.empty?
+      subs_text = subs.count > 1 ? "these submissions" : "this submission"
+      students = conflicts.map{|c| c.student.name}.to_sentence
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader), 
-        alert: "Cannot allocate this grader to this submission. A conflict exists between the grader and one or more students."
+                    alert: "Cannot allocate this grader to #{subs_text}. A conflict exists between the grader and #{students}."
       return
     end
-    alloc.save
-    redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader)
+
+    subs.each do |sub|
+      alloc = GraderAllocation.find_or_initialize_by(
+        submission: sub,
+        assignment: @assignment,
+        course: @course)
+      alloc.who_grades_id = who_grades.id
+      alloc.grading_assigned = DateTime.now
+      alloc.grading_completed = nil if alloc.abandoned
+      alloc.abandoned = false
+      alloc.save
+    end
+    redirect_to fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
+                notice: "#{pluralize(subs.count, "allocation")} created"
   end
 
   def update

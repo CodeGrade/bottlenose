@@ -49,7 +49,7 @@
 
   <h3>Assign single grader</h3>
   <p>
-    Choose a submission from the left and a grader from the right,
+    Choose one or more submissions from the left and a single grader from the right,
     then click the middle button to create that grading allocation.
   </p>
   <%= form_for([@course, @assignment.becomes(Assignment), @grader],
@@ -60,7 +60,7 @@
       <%= select_tag(:submission_id,
           names_for_submissions(@unfinished),
           size: 10,
-          multiple: false, class: "form-control") %>
+          multiple: true, class: "form-control") %>
     </div>
     <div class="col-sm-4 text-center">
       <%= f.submit "Assign grader", class: 'btn btn-primary' %>
