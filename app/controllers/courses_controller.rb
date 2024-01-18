@@ -33,7 +33,7 @@ class CoursesController < ApplicationController
 
     if current_user_prof_for?(@course)
       @abnormals = @course.abnormal_subs
-      @assns = @course.assignments_sorted
+      @assns = @course.assignments_sorted.to_a
       @unpublished = @course.unpublished_grades
       @missing_grading = @course.missing_grading.group_by(&:assignment)
     end

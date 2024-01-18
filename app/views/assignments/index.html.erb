@@ -151,7 +151,7 @@
 </script>
 
 <% else %>
-<%= render "assignments/table", assignments: @course.assignments, 
+<%= render "assignments/table", assignments: @course.assignments_sorted.reverse_order, 
     for_user: current_user, show_all: false, show_weight: true %>
 <%= render "assignments/grade_stats",
     for_user: current_user, stats:

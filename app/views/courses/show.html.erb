@@ -13,9 +13,9 @@
 
 <div class="row">
   <div class="col-md-6">
-    <%= render "assignments/table", assignments: @course.assignments,
+    <%= render "assignments/table", assignments: @course.assignments_sorted.reverse_order,
         for_user: current_user, show_all: show_all %>
-    <%= render "lateness_summary", assignments: @course.assignments,
+    <%= render "lateness_summary", assignments: @course.assignments_sorted.reverse_order,
         for_user: current_user, show_all: show_all %>
     <% if show_all %>
     <%= render "abnormal_summary", abnormals: @abnormals %>

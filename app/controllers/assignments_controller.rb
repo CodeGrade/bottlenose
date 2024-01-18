@@ -146,7 +146,7 @@ class AssignmentsController < ApplicationController
   end
 
   def edit_weights
-    @ordered_assignments = @course.assignments.order(due_date: :asc, available: :asc, name: :asc, created_at: :asc)
+    @ordered_assignments = @course.assignments_sorted.reverse_order
   end
 
   def update_weights
