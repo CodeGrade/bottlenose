@@ -758,6 +758,11 @@ HEADER
     end
 
     if @grading_output && !@grading_output.kind_of?(String) && @grading_output.commentary.member?("Examplar results")
+      if @grading_output.tests.count == 1 && @grading_output.tests[0].dig(:info, 'actual', 1) == "Missing:"
+        @grading_output.tests[0][:info]['stack'] = @grading_output.tests[0][:info]['actual']
+        render renderer
+        return
+      end
       @tests = {}
       @grading_output.tests.each do |t|
         type = t[:comment].split(":").first.downcase
