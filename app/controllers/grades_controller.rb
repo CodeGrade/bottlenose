@@ -27,6 +27,11 @@ class GradesController < ApplicationController
   end
 
   def show
+    unless @submission.visible_to?(current_user)
+      redirect_to course_assignment_path(@course, @assignment), alert: "That's not your submission."
+      return
+    end
+
     if !(current_user_site_admin? || current_user_staff_for?(@course)) && !@grade.available
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "That grader is not yet available"
@@ -89,6 +94,11 @@ class GradesController < ApplicationController
   end
 
   def details
+    unless @submission.visible_to?(current_user)
+      redirect_to course_assignment_path(@course, @assignment), alert: "That's not your submission."
+      return
+    end
+
     if !(current_user_site_admin? || current_user_staff_for?(@course)) && !@grade.available
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "That grader is not yet available"
