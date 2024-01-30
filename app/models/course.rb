@@ -340,4 +340,8 @@ class Course < ApplicationRecord
       .order("users.name")
       .select("DISTINCT submissions.*", "users.name AS user_name")
   end
+
+  def last_reg_update
+    course.registrations.order(updated_at: :desc).first.updated_at
+  end
 end
