@@ -8,12 +8,18 @@
       @times[timechunk][key] = @times[timechunk][key].to_i + 1
     end
   end
+  if assn.team_subs
+    firstSubs = allSubs.group(:team_id).minimum(:created_at).values
+  else
+    firstSubs = allSubs.group(:user_id).minimum(:created_at).values
+  end
+  processTimes(firstSubs, assn.available, assn.due_date, :first)
   processTimes(allSubs.pluck(:created_at), assn.available, assn.due_date, :all)
   processTimes(usedSubs.pluck(:created_at), assn.available, assn.due_date, :used)
   if !(@times.empty?)
     (@times.keys.min..[@times.keys.max, 0].max).each do |chunk|
       @times[chunk] ||= {time: (assn.due_date + chunk.hours).at_beginning_of_hour.iso8601,
-                         all: nil, used: nil}
+                         first: nil, all: nil, used: nil}
     end
   end
   @times = @times.to_a.sort_by(&:first).to_h
@@ -26,9 +32,9 @@ GoogleCharts.load('corechart', function() {
   dataKeys.sort((a, b) => Number.parseInt(a) - Number.parseInt(b));
   var minTime = Number.parseInt(dataKeys[0]);
   var maxTime = Math.max(0, Number.parseInt(dataKeys[dataKeys.length - 1]));
-  var data = [[{label: "Time", type: 'number'}, "All", "Used"]]
+  var data = [[{label: "Time", type: 'number'}, "All", "Used", "First"]]
       .concat(dataKeys.map((t) => [{v: Number.parseInt(t), f: makeFriendlyDate(allTimes[t].time, true)},
-                                   allTimes[t].all, allTimes[t].used]));
+                                   allTimes[t].all, allTimes[t].used, allTimes[t].first]));
   data = GoogleCharts.api.visualization.arrayToDataTable(data);
   var timeTicks = [];
   var offset = (Math.ceil(minTime / 24) * 24) - minTime;
@@ -37,13 +43,14 @@ GoogleCharts.load('corechart', function() {
   var options = {
     title: 'Submission time distribution',
     legend: { position: 'in' },
-    colors: [colors[0], colors[10]],
+    colors: [colors[0], colors[10], colors[1]],
     interpolateNulls: false,
     focusTarget: 'category',
     lineWidth: 3,
     series: {
       0: { labelInLegend: "All (<%= allSubs.count %>)" },
-      1: { labelInLegend: "Used (<%= usedSubs.count %>)" }
+      1: { labelInLegend: "Used (<%= usedSubs.count %>)" },
+      2: { labelInLegend: "First (<%= firstSubs.count %>)"}
     },
     hAxis: {
       title: 'Submission time',
