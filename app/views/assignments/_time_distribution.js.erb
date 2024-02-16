@@ -19,10 +19,20 @@
   if !(@times.empty?)
     (@times.keys.min..[@times.keys.max, 0].max).each do |chunk|
       @times[chunk] ||= {time: (assn.due_date + chunk.hours).at_beginning_of_hour.iso8601,
-                         first: nil, all: nil, used: nil}
+                         first: nil, all: nil, used: nil, started: 0, finished: 0}
     end
   end
-  @times = @times.to_a.sort_by(&:first).to_h
+  @times = @times.to_a.sort_by(&:first)
+  @times.each_with_index do |(_, chunk), i|
+    if i == 0
+      chunk[:started] = chunk[:first].to_i
+      chunk[:finished] = chunk[:used].to_i
+    else
+      chunk[:started] = chunk[:first].to_i + @times[i - 1][1][:started]
+      chunk[:finished] = chunk[:used].to_i + @times[i - 1][1][:finished]
+    end  
+  end
+  @times = @times.to_h
 %>
 var allTimes = <%= raw json_escape(JSON.generate(@times)) %>;
 GoogleCharts.load('corechart', function() {
@@ -32,9 +42,9 @@ GoogleCharts.load('corechart', function() {
   dataKeys.sort((a, b) => Number.parseInt(a) - Number.parseInt(b));
   var minTime = Number.parseInt(dataKeys[0]);
   var maxTime = Math.max(0, Number.parseInt(dataKeys[dataKeys.length - 1]));
-  var data = [[{label: "Time", type: 'number'}, "All", "Used", "First"]]
+  var data = [[{label: "Time", type: 'number'}, "All", "Used"]]
       .concat(dataKeys.map((t) => [{v: Number.parseInt(t), f: makeFriendlyDate(allTimes[t].time, true)},
-                                   allTimes[t].all, allTimes[t].used, allTimes[t].first]));
+                                   allTimes[t].all, allTimes[t].used]));
   data = GoogleCharts.api.visualization.arrayToDataTable(data);
   var timeTicks = [];
   var offset = (Math.ceil(minTime / 24) * 24) - minTime;
@@ -50,7 +60,6 @@ GoogleCharts.load('corechart', function() {
     series: {
       0: { labelInLegend: "All (<%= allSubs.count %>)" },
       1: { labelInLegend: "Used (<%= usedSubs.count %>)" },
-      2: { labelInLegend: "First (<%= firstSubs.count %>)"}
     },
     hAxis: {
       title: 'Submission time',
@@ -64,6 +73,41 @@ GoogleCharts.load('corechart', function() {
       }
     },
   };
-  var chart = new GoogleCharts.api.visualization.LineChart(document.getElementById('byTime'));
+  var container = document.getElementById("byTime");
+  var div = document.createElement("div");
+  container.appendChild(div);
+  var chart = new GoogleCharts.api.visualization.LineChart(div);
+  chart.draw(data, options);
+
+  data = [[{label: "Time", type: 'number'}, "Started", "Finished"]]
+      .concat(dataKeys.map((t) => [{v: Number.parseInt(t), f: makeFriendlyDate(allTimes[t].time, true)},
+                                   allTimes[t].started, allTimes[t].finished]));
+  data = GoogleCharts.api.visualization.arrayToDataTable(data);
+  var options = {
+    title: 'Submission completion distribution',
+    legend: { position: 'in' },
+    colors: [colors[0], colors[10]],
+    interpolateNulls: false,
+    focusTarget: 'category',
+    lineWidth: 3,
+    series: {
+      0: { labelInLegend: "# Started" },
+      1: { labelInLegend: "# Finished" },
+    },
+    hAxis: {
+      title: 'Submission time',
+      baseline: 0,
+      showTextEvery: 2,
+      ticks: timeTicks,
+      maxTextLines: 2,
+      viewWindow: {
+        // min: -72,
+        max: 24
+      }
+    },
+  };
+  var div = document.createElement("div");
+  container.appendChild(div);
+  var chart = new GoogleCharts.api.visualization.LineChart(div);
   chart.draw(data, options);
 });
