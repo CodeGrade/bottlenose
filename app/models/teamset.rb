@@ -52,28 +52,27 @@ class Teamset < ActiveRecord::Base
       grouped_students_to_team = [users_without_active_team(section.active_students)]
     end
     leftovers = []
+    new_teams = []
     grouped_students_to_team.each do |students_to_team|
       students_to_team.shuffle!.each_slice(size).each do |t|
-        @team = Team.new(course: self.course,
-                         start_date: start_date,
-                         end_date: end_date,
-                         teamset: self
-                        )
+        team = Team.new(course: self.course,
+                        start_date: start_date,
+                        end_date: end_date,
+                        teamset: self
+                       )
 
         if t.count == size
-          @team.users = t
-          
-          if @team.save
-            count += 1
-          else
-            debugger
-          end
+          team.users = t
+          new_teams << team
         else
           leftovers += t
         end
       end
     end
-    return count
+    Teamset.transaction do
+      new_teams.each(&:save!)
+    end
+    return new_teams.count
   end
 
   # NOTE: Throws an ActiveTeamWithDroppedStudent, as teams with dropped 

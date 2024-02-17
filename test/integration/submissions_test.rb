@@ -473,6 +473,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       upload_file = fixture_file_upload("HelloSingle/hello.c",'application/octet-stream')
 
       assert_difference('Submission.count') do
+        assert_not_nil u.active_team_for(@largeCourse, @hello)
         post course_assignment_submissions_path(course_id: @largeCourse.id, assignment_id: @hello.id), params: {
                submission: {
                  type: "FilesSub",
