@@ -85,11 +85,10 @@ class ExamGrader < Grader
       return {message: nil, errors: "Invalid headers for CSV file: expected #{expected_headers} but got #{csv.headers}"}
     end
     students_with_grades = {}
-    errors = []
     csv_by_nuid = csv.filter{|r| r.length > 0}.group_by{|r| r["NUID"].nil?}
-    errors = csv_by_nuid[true].map do |r|
+    errors = csv_by_nuid[true]&.map do |r|
       "Cannot handle grades for #{r["First name"]} #{r["Last name"]} without an NUID"
-    end
+    end || []
     csv_by_action = (csv_by_nuid[false] || []).group_by{|r| r["Action"]}
     nuids = (csv_by_nuid[false] || []).map { |row| row["NUID"] }
     users_by_nuid = User.where(nuid: nuids).to_h { |u| [u.nuid, u] }
