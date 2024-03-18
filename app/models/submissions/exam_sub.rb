@@ -6,6 +6,7 @@ class ExamSub < Submission
     comment = find_or_initialize_cached_comment_by(self.grade, question)
     if score.blank?
       comment.delete unless comment.new_record?
+      @comments_map[grade.id][question] = nil if @comments_map&.dig(grade.id)
       inline_comments.delete(comment)
       return nil
     else
@@ -34,7 +35,7 @@ class ExamSub < Submission
     questions = self.assignment.flattened_questions
     num_questions = questions.count
     if curved_grade.nil? && block_given?
-      comments = inline_comments.filter{|c| c.suppressed}.sort_by(&:line)
+      comments = inline_comments.reject{|c| c.suppressed}.sort_by(&:line)
       grades = []
       curved = nil
       comments.each do |c|
@@ -62,7 +63,7 @@ class ExamSub < Submission
     if ans.nil?
       @comments_map ||= {}
       @comments_map[grade.id] ||= {}
-      ans = @comments_map[grade.id][question] = inline_comments.create(grade: grade, line: question)
+      ans = @comments_map[grade.id][question] = inline_comments.find_or_create_by(grade: grade, line: question)
     end
     ans
   end

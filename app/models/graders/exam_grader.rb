@@ -138,6 +138,16 @@ class ExamGrader < Grader
       @used_submissions = self.assignment.all_used_subs
                               .includes(:assignment, :inline_comments, :grades, :team, :user, :user_submissions)
                               .to_h {|s| [s.user_id, s]}
+      # Delete all comments corresponding to curves that are now nil
+      grades_with_nil_curves = students_with_grades.filter do |nuid, grades|
+        grades.last.nil?
+      end
+      student_ids_by_key = @student_info.to_h {|s| [s[key], s.id] }
+      submissions_with_nil_curves = @used_submissions.values_at(
+        *student_ids_by_key.values_at(*grades_with_nil_curves.map(&:first)))
+      @comments_to_destroy = InlineComment.where(submission_id: submissions_with_nil_curves, line: flattened.count)
+      @comments_to_destroy.delete_all
+      
       @comments_to_insert = []
       @student_info.each do |student|
         grades = students_with_grades[student[key]]
@@ -176,7 +186,9 @@ class ExamGrader < Grader
         #do_raw_grading(@sub, @grade, grades, flattened.count)
       end
       @comments_to_insert.compact!
-      InlineComment.upsert_all(@comments_to_insert) unless @comments_to_insert.blank?
+      newcomments, updates = @comments_to_insert.partition {|c| c[:id].blank?}
+      InlineComment.upsert_all(updates) unless updates&.blank?
+      InlineComment.insert_all(newcomments) unless newcomments&.blank?
       @student_info.each do |student|
         @sub = @used_submissions[student.id]
         @grade = @grades_by_sub[@sub.id]
