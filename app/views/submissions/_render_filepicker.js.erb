@@ -18,6 +18,21 @@ $(function (){
       styles.deleteRule(hideOtherComments);
     }
 
+    function makeTextInert(info) {
+      if (info instanceof Array) {
+        for (let i = 0; i < info.length; i++) {
+          makeTextInert(info[i]);
+        }
+      }
+      if ('text' in info) {
+        var elt = document.createElement('span');
+        elt.textContent = info.text;
+        info.text = elt;
+      }
+      if ('nodes' in info) {
+        makeTextInert(info['nodes']);
+      }
+    }
     $("#toggle-comments").change(function() {
       if ($(this).prop("checked"))
         showOthers();
@@ -52,6 +67,7 @@ $(function (){
           $("<div>").addClass("pageComments").data("source", $(warning).data("source"))));
     });
     var curActive = {};
+    makeTextInert(dirInfo);
     $("#" + root).find(".files").treeview({
       expandIcon: 'glyphicon glyphicon-chevron-down', // deliberately the same
       collapseIcon: 'glyphicon glyphicon-chevron-down', // always expanded
