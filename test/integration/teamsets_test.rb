@@ -4,7 +4,6 @@ class TeamsetsTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
   setup do
     DatabaseCleaner.clean
-    Capybara.current_driver = :webkit
     @team = create(:team)
     @fred = create(:user)
     r = create(:registration, user: @fred, course: @team.course, new_sections: [@team.course.sections.first],

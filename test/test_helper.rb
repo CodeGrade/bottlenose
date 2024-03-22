@@ -166,7 +166,3 @@ class ActionDispatch::IntegrationTest
     assert has_content?("Logged in as #{user.name}")
   end
 end
-
-Capybara::Webkit.configure do |config|
-  config.allow_url("test.host")
-end

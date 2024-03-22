@@ -13,13 +13,7 @@ end
 
 
 Rails.application.configure do
-  driver_path = find_executable ['chromium.chromedriver', 'chromedriver']
-  if driver_path&.start_with? "/snap"
-    Selenium::WebDriver::Chrome::Service.driver_path = driver_path
-  else
-    Selenium::WebDriver::Chrome.path = find_executable ['chrome', 'chromium-browser', 'chromium']
-  end
-  
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Turn false under Spring and add config.action_view.cache_template_loading = true.

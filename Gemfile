@@ -84,8 +84,7 @@ group :test do
   gem 'simplecov'
   gem 'database_cleaner'
   gem 'capybara'
-  gem 'capybara-webkit' # Needs qt5-default qt5-qmake libqt5webkit5-dev
-  gem 'webdrivers', '~> 5.0'
+  gem 'selenium-webdriver'
   gem 'launchy'
   gem 'factory_bot_rails'
   gem 'rails-controller-testing'

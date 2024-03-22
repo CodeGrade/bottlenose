@@ -5,7 +5,6 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   include Devise::Test::IntegrationHelpers
   setup do
     DatabaseCleaner.clean
-    Capybara.current_driver = :webkit
     make_standard_course
   end
 
