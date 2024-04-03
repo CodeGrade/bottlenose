@@ -150,7 +150,7 @@ class ExamGrader < Grader
       
       @comments_to_insert = []
       @student_info.each do |student|
-        grades = students_with_grades[student[key]]
+        grades = students_with_grades[student[key]].map {|g| g&.to_f}
         if (grades.nil?)
           ans[:errors] << "Could not find grades for student with #{key.upcase} #{student[key]}"
           next
