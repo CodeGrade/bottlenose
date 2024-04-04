@@ -140,7 +140,7 @@ class ExamGrader < Grader
                               .to_h {|s| [s.user_id, s]}
       # Delete all comments corresponding to curves that are now nil
       grades_with_nil_curves = students_with_grades.filter do |nuid, grades|
-        grades.last.nil?
+        grades.last.blank?
       end
       student_ids_by_key = @student_info.to_h {|s| [s[key], s.id] }
       submissions_with_nil_curves = @used_submissions.values_at(
@@ -150,7 +150,7 @@ class ExamGrader < Grader
       
       @comments_to_insert = []
       @student_info.each do |student|
-        grades = students_with_grades[student[key]].map {|g| g&.to_f}
+        grades = students_with_grades[student[key]].map {|g| g.to_f unless g.blank?}
         if (grades.nil?)
           ans[:errors] << "Could not find grades for student with #{key.upcase} #{student[key]}"
           next
