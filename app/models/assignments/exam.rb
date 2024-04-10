@@ -70,7 +70,7 @@ class Exam < Assignment
     @new_flat = self.flattened_questions(@new_questions)
     case @exam_disposal
     when "delete"
-      self.submissions.destroy_all
+      Submission.bulk_delete(self.submissions.map(&:id))
     when "percentage"
       inconsistency = questions_incompatible(@old_questions, @new_questions)
       if inconsistency

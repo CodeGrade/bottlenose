@@ -17,14 +17,16 @@ class Submission < ApplicationRecord
   has_many :inline_comments, dependent: :destroy
 
   def self.bulk_delete(ids)
-    # Matches all the dependent: :destroy associations above
-    InlineComment.where(submission_id: ids).delete_all
-    UserSubmission.where(submission_id: ids).delete_all
-    UsedSub.where(submission_id: ids).delete_all
-    ReviewFeedback.where(submission_id: ids).delete_all
-    Grade.where(submission_id: ids).delete_all
-    # Then bulk-delete all these submissions
-    Submission.where(id: ids).delete_all
+    Submission.transaction do
+      # Matches all the dependent: :destroy associations above
+      InlineComment.where(submission_id: ids).delete_all
+      UserSubmission.where(submission_id: ids).delete_all
+      UsedSub.where(submission_id: ids).delete_all
+      ReviewFeedback.where(submission_id: ids).delete_all
+      Grade.where(submission_id: ids).delete_all
+      # Then bulk-delete all these submissions
+      Submission.where(id: ids).delete_all
+    end
   end
   
   validates :assignment_id, :presence => true
