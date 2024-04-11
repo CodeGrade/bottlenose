@@ -146,9 +146,14 @@ class ExamGrader < Grader
       submissions_with_nil_curves = @used_submissions.values_at(
         *student_ids_by_key.values_at(*grades_with_nil_curves.map(&:first)))
       @comments_to_destroy = InlineComment.where(submission_id: submissions_with_nil_curves, line: flattened.count)
-      @comments_to_destroy.delete_all
-      
-      @comments_to_insert = []
+      @comments_to_destroy.delete_all unless @comments_to_destroy.blank?
+
+      # NOTE: This code could be written more idiomatically with just one loop,
+      # but it triggers O(#students * #questions) individual db queries.
+      # Breaking this logic up into several smaller loops allows using insert_all
+      # to splat in many records at once.
+      @subs_to_create = []
+      @students_with_new_subs = []
       @student_info.each do |student|
         grades = students_with_grades[student[key]].map {|g| g.to_f unless g.blank?}
         if (grades.nil?)
@@ -160,26 +165,69 @@ class ExamGrader < Grader
         end
         @sub = @used_submissions[student.id]
         if @sub.nil?
-          @sub = Submission.create!(assignment: self.assignment,
-                                    user: student,
-                                    type: "ExamSub",
-                                    created_at: self.assignment.due_date - 1.minute)
-          @sub.score = compute_score(grades, flattened.count, percent: true)
-          UsedSub.create!(user: student, assignment: self.assignment, submission: @sub)
-          @used_submissions[student.id] = @sub
+          @subs_to_create << {
+            assignment_id: self.assignment_id,
+            user_id: student.id,
+            type: "ExamSub",
+            created_at: self.assignment.due_date - 1.minute,
+            score: compute_score(grades, flattened.count, percent: true)
+          }
+          @students_with_new_subs << student
           ans[:created] += 1
         else
           @sub.update(score: compute_score(grades, flattened.count))
           ans[:updated] += 1
         end
+      end
+      Submission.insert_all(@subs_to_create) unless @subs_to_create.blank?
+      @created_subs = Submission.where(assignment_id: self.assignment_id, user: @students_with_new_subs)
+      @user_submissions_to_create = @created_subs.map{ |s| {user_id: s.user_id, submission_id: s.id} }
+      UserSubmission.insert_all(@user_submissions_to_create) unless @user_submissions_to_create.blank?
+      @used_subs_to_create = @created_subs.map{|s| {user_id: s.user_id, submission_id: s.id, assignment_id: self.assignment_id} }
+      UsedSub.insert_all(@used_subs_to_create) unless @used_subs_to_create.blank?
+      @created_subs = Submission.where(id: @created_subs.map(&:id))
+                        .includes(:assignment, :inline_comments, :grades, :team, :user, :user_submissions)
+                        .to_h {|s| [s.user_id, s]}
+      @used_submissions.merge!(@created_subs)
+      @grades_to_create = []
+      @grades_to_update = []
+      @sub_grades_to_reload = []
+      @student_info.each do |student|
+        grades = students_with_grades[student[key]].map {|g| g.to_f unless g.blank?}
+        next if grades.nil?
+        next if (grades.index(nil) || flattened.length) < (flattened.length - 1)
+        @sub = @used_submissions[student.id]
         @sub.cache_grading_comments!
-        @grade = @grades_by_sub[@sub.id] ||= Grade.new(grader: self, submission: @sub)
-        if @grade.new_record?
-          @grade.out_of = self.avail_score
+        @grade = @grades_by_sub[@sub.id]
+        if @grade.nil?
+          @grades_to_create << {
+            grader_id: self.id,
+            submission_id: @sub.id,
+            out_of: self.avail_score,
+            score: compute_score(grades, flattened.count),
+            available: false
+          }
+          @sub_grades_to_reload << @sub
+        else
+          @grades_to_update << {
+            id: @grade.id,
+            score: compute_score(grades, flattened.count),
+            available: false
+          }
         end
-        @grade.score = compute_score(grades, flattened.count)
-        @grade.available = false
-        @grade.save!
+      end
+      Grade.insert_all(@grades_to_create) unless @grades_to_create.blank?
+      Grade.upsert_all(@grades_to_update) unless @grades_to_update.blank?
+      @created_grades = Grade.where(submission: @sub_grades_to_reload, grader: self)
+                          .includes(:submission).to_h {|g| [g.submission_id, g]}
+      @grades_by_sub.merge!(@created_grades)
+      @comments_to_insert = []
+      @student_info.each do |student|
+        grades = students_with_grades[student[key]].map {|g| g.to_f unless g.blank?}
+        next if grades.nil?
+        next if (grades.index(nil) || flattened.length) < (flattened.length - 1)
+        @sub = @used_submissions[student.id]
+        @grade = @grades_by_sub[@sub.id]
         grades.each_with_index do |g, q_num|
           @comments_to_insert << @sub.grading_comment_attributes(who_grades, @grade, q_num, g)
         end
