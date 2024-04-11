@@ -173,7 +173,7 @@ class ExamGrader < Grader
           ans[:updated] += 1
         end
         @sub.cache_grading_comments!
-        @grade = @grades_by_sub[@sub.id] ||= Grade.new(grader_id: self.id, submission_id: @sub.id)
+        @grade = @grades_by_sub[@sub.id] ||= Grade.new(grader: self, submission: @sub)
         if @grade.new_record?
           @grade.out_of = self.avail_score
         end
