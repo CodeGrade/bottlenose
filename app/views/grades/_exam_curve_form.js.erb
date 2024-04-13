@@ -8,6 +8,14 @@ GoogleCharts.load('corechart', function() {
     var sum = data.reduce((sum, value) => sum + value, 0);
     return sum / data.length;
   }
+  function median(data) {
+    var midIndex = Math.floor(data.length / 2)
+    if (data.length % 2 === 0) {
+      return (data[midIndex] + data[midIndex - 1]) / 2;
+    } else {
+      return data[midIndex];
+    }
+  }
   function standardDeviation(values){
     var avg = average(values);
     var squareDiffs = values.map(function(value){
@@ -15,7 +23,7 @@ GoogleCharts.load('corechart', function() {
       return diff * diff;
     });
     var avgSquareDiff = average(squareDiffs);
-    return Math.sqrt(avgSquareDiff);
+    return Math.sqrt(avgSquareDiff * values.length / Math.max(1, values.length - 1)));
   }
   function drawSampleCurve(container, isPercent) {
     var maxVal = (isPercent ? Math.max(100, 100 * actualMax / maxScore) : Math.max(actualMax, maxScore));
@@ -65,7 +73,7 @@ GoogleCharts.load('corechart', function() {
     courseData = courseData.map((r) => r[0]);
     courseData.sort((a, b) => (a - b));
     var umin = courseData[0];
-    var umedian = courseData[Math.floor(courseData.length / 2)];
+    var umedian = median(courseData);
     var umean = average(courseData);
     var umax = courseData[courseData.length - 1];
     var ustdev = standardDeviation(courseData);
@@ -105,7 +113,7 @@ GoogleCharts.load('corechart', function() {
     courseData = courseData.map((r) => r[0]);
     courseData.sort((a, b) => (a - b));
     var cmin = courseData[0];
-    var cmedian = courseData[Math.floor(courseData.length / 2)];
+    var cmedian = median(courseData);
     var cmean = average(courseData);
     var cmax = courseData[courseData.length - 1];
     var cstdev = standardDeviation(courseData);
