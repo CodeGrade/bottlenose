@@ -23,7 +23,7 @@ GoogleCharts.load('corechart', function() {
       return diff * diff;
     });
     var avgSquareDiff = average(squareDiffs);
-    return Math.sqrt(avgSquareDiff * values.length / Math.max(1, values.length - 1)));
+    return Math.sqrt(avgSquareDiff * values.length / Math.max(1, values.length - 1));
   }
   function drawSampleCurve(container, isPercent) {
     var maxVal = (isPercent ? Math.max(100, 100 * actualMax / maxScore) : Math.max(actualMax, maxScore));
