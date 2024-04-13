@@ -285,7 +285,7 @@ class Assignment < ApplicationRecord
     end
   end
 
-  def extensions_for_users(users, only_used_subs, as_of = DateTime.now)
+  def extensions_for_users(users, only_used_subs, as_of = DateTime.current)
     if users.is_a? User
       users = [users]
     end
@@ -414,7 +414,7 @@ class Assignment < ApplicationRecord
           type:       "Assignment File",
           user:       "#{user.name} (#{user.id})",
           course:     "#{course.name} (#{course.id})",
-          date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+          date:       Time.current.strftime("%Y/%b/%d %H:%M:%S %Z"),
           mimetype:   @assignment_file_data.content_type
         }
         up.save!
@@ -563,7 +563,7 @@ class Assignment < ApplicationRecord
       "You cannot attempt more #{self.type == 'Files' ? 'submissions' : 'responses'} for this assignment: " +
         "you've reached the maximum number of attempts allowed."
     elsif (self.rate_per_hour.to_i > 0) &&
-          (self.submission.where('created_at >= ?', DateTime.now - 1.hour).count > self.rate_per_hour.to_i)
+          (self.submission.where('created_at >= ?', DateTime.current - 1.hour).count > self.rate_per_hour.to_i)
       "You cannot #{self.type == 'Files' ? 'submit' : 'respond'} to this assignment right now: " +
         "you've tried too many times in the past hour.  Please wait a while before trying again."
     else

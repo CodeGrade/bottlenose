@@ -10,7 +10,7 @@ class IndividualExtensionsController < ApplicationController
     if @assignment.team_subs?
       @existing_extensions = multi_group_by(@assignment.individual_extensions, [:team_id], true)
       teams = @assignment.teamset.teams
-      @all_potential = teams.where(Team.active_query, DateTime.now, DateTime.now)
+      @all_potential = teams.where(Team.active_query, DateTime.current, DateTime.current)
                        .or(teams.where(id: @existing_extensions.keys))
                        .includes(:users)
                        .sort_by(&:to_s)

@@ -12,7 +12,7 @@ class TeamsetTest < ActiveSupport::TestCase
                                             start_date: DateTime.yesterday, end_date: nil)
         @john_sarah_team_dup.save!
 
-        @john_reg.dropped_date = DateTime.now
+        @john_reg.dropped_date = DateTime.current
         @john_reg.save
         
         assert_raises ActiveTeamWithDroppedStudent do
@@ -26,7 +26,7 @@ class TeamsetTest < ActiveSupport::TestCase
                                             start_date: DateTime.yesterday, end_date: nil)
         @js_team_copy_from.save
 
-        @john_reg.dropped_date = DateTime.now
+        @john_reg.dropped_date = DateTime.current
         @john_reg.save
 
         assert_raises ActiveTeamWithDroppedStudent do

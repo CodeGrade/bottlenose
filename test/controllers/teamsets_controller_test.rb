@@ -34,7 +34,7 @@ class TeamsetsControllerTest < ActionController::TestCase
 
   test "accepting invalid team should not destroy request" do
     teamset = @team.teamset
-    mark_jane_team = Team.new(course: teamset.course, teamset: teamset, start_date: DateTime.now, end_date: nil)
+    mark_jane_team = Team.new(course: teamset.course, teamset: teamset, start_date: DateTime.current, end_date: nil)
     mark_jane_team.users = [@mark, @jane]
     mark_jane_team.save!
     req1 = TeamRequest.create(teamset: teamset, user: @mark,
@@ -52,7 +52,7 @@ class TeamsetsControllerTest < ActionController::TestCase
                course_id: @team.course_id,
                id: teamset.id,
                custom: {
-                 start_date: DateTime.now,
+                 start_date: DateTime.current,
                  users: [@mark.id, @jane.id, @greg.id]
                }
              }
@@ -95,9 +95,9 @@ class TeamsetsControllerTest < ActionController::TestCase
 
   test "should clone teamset" do
     sign_in @fred
-    @largeTs.randomize(3, "course", Date.today)
+    @largeTs.randomize(3, "course", Date.current)
     @largeTs.dissolve_all(DateTime.current)
-    @largeTs.randomize(6, "course", Date.today)
+    @largeTs.randomize(6, "course", Date.current)
     # Create 15 teams, only five of which are active
     @ts2 = create(:teamset, course: @largeCourse)
     assert_difference('Team.count', 5) do
@@ -117,7 +117,7 @@ class TeamsetsControllerTest < ActionController::TestCase
       patch :update, params: {
               course_id: @team.course,
               id: @team.teamset_id,
-              single: { start_date: Date.today, end_date: Date.today },
+              single: { start_date: Date.current, end_date: Date.current },
               users: [ @mark.id, @jane.id, @greg.id ] }
     end
     assert_response :redirect
@@ -129,7 +129,7 @@ class TeamsetsControllerTest < ActionController::TestCase
       patch :update, params: {
               course_id: @team.course,
               id: @team.teamset_id,
-              single: { start_date: Date.today, end_date: Date.yesterday },
+              single: { start_date: Date.current, end_date: Date.yesterday },
               users: [ @mark.id, @jane.id, @greg.id ] }
     end
     assert_response :redirect
@@ -147,7 +147,7 @@ class TeamsetsControllerTest < ActionController::TestCase
           ].map(&:to_csv).join,
 
       
-          start_date: Date.today,
+          start_date: Date.current,
           end_date: Date.tomorrow        
         }
       }
@@ -167,8 +167,8 @@ class TeamsetsControllerTest < ActionController::TestCase
           ].map(&:to_csv).join,
 
       
-          start_date: Date.today,
-          end_date: Date.today        
+          start_date: Date.current,
+          end_date: Date.current        
         }
       }
     end
@@ -188,7 +188,7 @@ class TeamsetsControllerTest < ActionController::TestCase
           ].map(&:to_csv).join,
 
       
-          start_date: Date.today,
+          start_date: Date.current,
           end_date: Date.yesterday        
         }
       }

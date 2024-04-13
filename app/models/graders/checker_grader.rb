@@ -47,7 +47,7 @@ class CheckerGrader < Grader
         g.score = 0
         g.out_of = self.avail_score
       end
-      g.updated_at = DateTime.now
+      g.updated_at = DateTime.current
       g.available = true
     end
   end
@@ -78,7 +78,7 @@ class CheckerGrader < Grader
               g.grading_output_path = details.path
               g.score = 0
               g.out_of = self.avail_score
-              g.updated_at = DateTime.now
+              g.updated_at = DateTime.current
               g.available = true
               g.save!
             else
@@ -89,7 +89,7 @@ class CheckerGrader < Grader
                 if tap
                   g.score = tap.points_earned
                   g.out_of = tap.points_available
-                  g.updated_at = DateTime.now
+                  g.updated_at = DateTime.current
                   g.available = true
                   g.save!
                   Audit.log("#{prefix}: Tests give raw score of #{g.score} / #{g.out_of}")
@@ -109,7 +109,7 @@ class CheckerGrader < Grader
                   g.grading_output_path = details.path
                   g.score = 0
                   g.out_of = self.avail_score
-                  g.updated_at = DateTime.now
+                  g.updated_at = DateTime.current
                   g.available = true
                   g.save!
                 end
@@ -121,7 +121,7 @@ class CheckerGrader < Grader
         Audit.log("Assignment #{assignment.id}, submission #{sub.id}: Errors prevented grading; giving a 0: #{e}")
         g.score = 0
         g.out_of = self.avail_score
-        g.updated_at = DateTime.now
+        g.updated_at = DateTime.current
         g.available = true
         g.save!
       end

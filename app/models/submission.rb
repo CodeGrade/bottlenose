@@ -172,7 +172,7 @@ class Submission < ApplicationRecord
       user:       "#{user.name} (#{user.id})",
       course:     "#{course.name} (#{course.id})",
       assignment: "#{assignment.name} (#{assignment.id})",
-      date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      date:       Time.current.strftime("%Y/%b/%d %H:%M:%S %Z"),
       mimetype:   data.content_type,
       prof_override: prof_override
     }
@@ -243,7 +243,7 @@ class Submission < ApplicationRecord
       user:       "Some teacher for #{user.name} (#{user.id})",
       course:     "#{course.name} (#{course.id})",
       assignment: "#{assignment.name} (#{assignment.id})",
-      date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      date:       Time.current.strftime("%Y/%b/%d %H:%M:%S %Z"),
       mimetype:   data.content_type
     }
     up.save!
@@ -275,7 +275,7 @@ class Submission < ApplicationRecord
       if config.autograde?
         # Students will have their delayed jobs de-prioritized based on how many submissions
         # they've spammed the system with in the past fifteen minutes
-        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 15.minutes).count
+        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.current - 15.minutes).count
         config.autograde!(assignment, self, num_recent_attempts)
         true
       else
@@ -304,7 +304,7 @@ class Submission < ApplicationRecord
       if delay
         # Students will have their delayed jobs de-prioritized based on how many submissions
         # they've spammed the system with in the past fifteen minutes
-        assignment.submissions_for(user).where("created_at > ?", Time.now - 15.minutes).count
+        assignment.submissions_for(user).where("created_at > ?", Time.current - 15.minutes).count
       else
         0
       end

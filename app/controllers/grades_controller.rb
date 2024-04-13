@@ -215,7 +215,7 @@ class GradesController < ApplicationController
     if alloc && alloc.grading_completed.nil?
       if alloc.who_grades_id != current_user.id
         alloc.abandoned = true
-        alloc.grading_completed = DateTime.now
+        alloc.grading_completed = DateTime.current
         alloc.save
         alloc = GraderAllocation.new(
           assignment: @assignment,
@@ -225,14 +225,14 @@ class GradesController < ApplicationController
           grading_assigned: alloc.grading_assigned)
       end
       alloc.abandoned = false
-      alloc.grading_completed = DateTime.now
+      alloc.grading_completed = DateTime.current
       alloc.save
     elsif alloc.nil?
       GraderAllocation.create!(
         abandoned: false,
         who_grades_id: current_user.id,
         grading_assigned: @assignment.due_date,
-        grading_completed: DateTime.now,
+        grading_completed: DateTime.current,
         course: @course,
         assignment: @assignment,
         submission: @submission
@@ -424,7 +424,7 @@ class GradesController < ApplicationController
           if sub
             comments = InlineComment.where(submission_id: sub.id)
             render :json => {grades: (comments.to_a.map do |c| [c.line, c.weight] end.to_h),
-                             timestamp: Time.now}
+                             timestamp: Time.current}
           else
             render :json => {"none found": true}
           end

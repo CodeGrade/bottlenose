@@ -12,10 +12,10 @@ module Api
       @assn_teams_1 = create(:assignment, course: @cs101, teamset: @ts3, team_subs: true, name: "HelloSingle")
       
       # Create some non-active teams, and some active ones
-      @ts2.randomize(2, "course", Date.today - 1.week, Date.today - 1.day)
-      @ts2.randomize(2, "course", Date.today)
+      @ts2.randomize(2, "course", Date.current - 1.week, Date.current - 1.day)
+      @ts2.randomize(2, "course", Date.current)
 
-      @ts3.randomize(1, "course", Date.today)
+      @ts3.randomize(1, "course", Date.current)
     end
     teardown do
       Upload.cleanup_test_uploads!
@@ -33,7 +33,7 @@ module Api
         course_id: course.id,
         name: name,
         exam_id: existing_id,
-        finish_time: DateTime.now,
+        finish_time: DateTime.current,
         exam_summary: summary,
         exam_grades: make_random_grades(course, summary)
       }.compact

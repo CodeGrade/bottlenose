@@ -87,7 +87,7 @@ class GraderAllocationsController < ApplicationController
         assignment: @assignment,
         course: @course)
       alloc.who_grades_id = who_grades.id
-      alloc.grading_assigned = DateTime.now
+      alloc.grading_assigned = DateTime.current
       alloc.grading_completed = nil if alloc.abandoned
       alloc.abandoned = false
       alloc.save
@@ -111,7 +111,7 @@ class GraderAllocationsController < ApplicationController
       weights[k.to_i] = (v.to_f / total_weight)
     end
     unfinished.shuffle!
-    time = DateTime.now    
+    time = DateTime.current    
     conflicts = GradingConflict.where(course: @course).group_by(&:staff)
     conflicts_by_id = conflicts.map {|grader, conflicts| [grader.id, conflicts.map(&:student_id)] }.to_h
     # Since sorting (see GraphUtils.assign_graders) is stable, shuffling who grades ensures 
@@ -138,7 +138,7 @@ class GraderAllocationsController < ApplicationController
 
   def abandon
     @alloc.abandoned = true
-    @alloc.grading_completed = DateTime.now
+    @alloc.grading_completed = DateTime.current
     @alloc.save
     if params[:config]
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @alloc.assignment_id, params[:config])
@@ -161,7 +161,7 @@ class GraderAllocationsController < ApplicationController
     if params[:staff]
       allocs = allocs.where(who_grades_id: params[:staff])
     end
-    allocs.update_all(abandoned: true, grading_completed: DateTime.now)
+    allocs.update_all(abandoned: true, grading_completed: DateTime.current)
     if params[:config]
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, params[:config])
     else

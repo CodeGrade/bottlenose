@@ -11,7 +11,7 @@ class ExamGrader < Grader
 
     g.out_of = self.avail_score
 
-    g.updated_at = DateTime.now
+    g.updated_at = DateTime.current
     g.available = false
     g.save!
 
@@ -261,7 +261,7 @@ class ExamGrader < Grader
     score = grades[num_questions].blank? ? grades.compact.sum : grades[num_questions]
     grade.score = [0, score].max
     sub.score = 100.0 * grade.score / grade.out_of
-    grade.updated_at = DateTime.now
+    grade.updated_at = DateTime.current
     grade.available = false
   end
   
@@ -278,7 +278,7 @@ class ExamGrader < Grader
       g.score = curved.weight
     end
 
-    g.updated_at = DateTime.now
+    g.updated_at = DateTime.current
     g.available = false
     g.save!
 

@@ -113,7 +113,7 @@ class SandboxGrader < Grader
       g.grading_output_path = details_log.to_s
     end
 
-    g.updated_at = DateTime.now
+    g.updated_at = DateTime.current
     g.available = true
     g.save!
 
@@ -133,7 +133,7 @@ class SandboxGrader < Grader
       if tap.points_available >= 1.0
         g.out_of = tap.points_available
       end
-      g.updated_at = DateTime.now
+      g.updated_at = DateTime.current
 
       score = g.score.to_f / g.out_of.to_f
       unless (score < 5 && score > -0.1)

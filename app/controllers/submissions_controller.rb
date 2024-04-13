@@ -39,7 +39,7 @@ class SubmissionsController < ApplicationController
 
   def new
     admin_view = current_user_site_admin? || current_user_staff_for?(@course) || prof_override?
-    if !admin_view && (@assignment.available > DateTime.now)
+    if !admin_view && (@assignment.available > DateTime.current)
       redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
       return
     end
@@ -52,7 +52,7 @@ class SubmissionsController < ApplicationController
       @team = current_user.active_team_for(@course, @assignment)
 
       if @team.nil? && current_user.course_staff?(@course)
-        @team = Team.new(course: @course, start_date: DateTime.now, teamset: @assignment.teamset)
+        @team = Team.new(course: @course, start_date: DateTime.current, teamset: @assignment.teamset)
         @team.users = [current_user]
         @team.save
       end
@@ -62,7 +62,7 @@ class SubmissionsController < ApplicationController
 
     if current_user.id == true_user&.id
       @submission_view = SubmissionView.find_or_initialize_by(user: current_user, assignment: @assignment, team: @team)
-      @submission_view.updated_at = DateTime.now
+      @submission_view.updated_at = DateTime.current
       @submission_view.created_at = @submission_view.updated_at unless @submission_view.created_at
       @submission_view_new = @submission_view.new_record?
       @submission_view.save
@@ -86,7 +86,7 @@ class SubmissionsController < ApplicationController
   
   def create
     admin_view = current_user_site_admin? || current_user_staff_for?(@course) || prof_override?
-    if !admin_view && (@assignment.available > DateTime.now)
+    if !admin_view && (@assignment.available > DateTime.current)
       redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
       return
     end
@@ -411,7 +411,7 @@ class SubmissionsController < ApplicationController
       @team = current_user.active_team_for(@course, @assignment)
 
       if @team.nil? && current_user.course_staff?(@course)
-        @team = Team.new(course: @course, start_date: DateTime.now, teamset: @assignment.teamset)
+        @team = Team.new(course: @course, start_date: DateTime.current, teamset: @assignment.teamset)
         @team.users = [current_user]
         @team.save
       end

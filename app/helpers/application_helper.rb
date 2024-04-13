@@ -78,7 +78,7 @@ module ApplicationHelper
 
     if grade_pct.nil?
       # if sub.assignment.has_grading?
-      if sub.created_at > (Time.now - 10.minutes)
+      if sub.created_at > (Time.current - 10.minutes)
         return image_tag("question-mark.png", height: 32)
       else
         return image_tag("null-mark.png", height: 32)

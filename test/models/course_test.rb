@@ -4,7 +4,7 @@ include ActionDispatch::TestProcess
 class CourseTest < ActiveSupport::TestCase
   setup do
     @fred = create(:user, name: "Fred McTeacher", first_name: "Fred", last_name: "McTeacher", nickname: "Fred")
-    @term = Term.create(semester: Term.semesters[:fall], year: Date.today.year, archived: false)
+    @term = Term.create(semester: Term.semesters[:fall], year: Date.current.year, archived: false)
     @late_per_day = LatePerDayConfig.create(days_per_assignment: 1, percent_off: 50,
                                             frequency: 1, max_penalty: 100)
     @course = Course.new(name: "Computing 101", term: @term, lateness_config: @late_per_day)
@@ -32,7 +32,7 @@ class CourseTest < ActiveSupport::TestCase
     # ASSIGNMENT 1
     ts1 = Teamset.create(course: @course, name: "Teamset 1")
     assn = Files.create(name: "Assignment 1", blame: @fred, teamset: ts1, lateness_config: @late_per_day,
-                        course: @course, available: Time.now - 15.days, due_date: Time.now - 10.days,
+                        course: @course, available: Time.current - 15.days, due_date: Time.current - 10.days,
                         points_available: 2.5)
     assn.graders << RacketStyleGrader.new(assignment: assn, params: "80", avail_score: 30, order: 1)
     assn.graders << ManualGrader.new(assignment: assn, avail_score: 50, order: 2)
@@ -42,9 +42,9 @@ class CourseTest < ActiveSupport::TestCase
 
     # ASSIGNMENT 2
     ts2 = Teamset.create(course: @course, name: "Teamset 2")
-    ts2.randomize(2, "course", Time.now - 10.days)
+    ts2.randomize(2, "course", Time.current - 10.days)
     assn = Files.create(name: "Assignment 2", blame: @fred, teamset: ts2, lateness_config: @late_per_day,
-                        course: @course, available: Time.now - 10.days, due_date: Time.now - 5.days,
+                        course: @course, available: Time.current - 10.days, due_date: Time.current - 5.days,
                         points_available: 2.5, team_subs: true)
     u = build(:upload, user: @fred, assignment: assn)
     u.upload_data = FakeUpload.new(Rails.root.join("test", "fixtures", "files", "fundies-config.json").to_s)
@@ -64,9 +64,9 @@ class CourseTest < ActiveSupport::TestCase
   
     # ASSIGNMENT 3
     ts3 = Teamset.create(course: @course, name: "Teamset 3")
-    ts3.randomize(3, "course", Time.now - 10.days)
+    ts3.randomize(3, "course", Time.current - 10.days)
     assn = Files.create(name: "Assignment 3", blame: @fred, teamset: ts3, lateness_config: @late_per_day,
-                        course: @course, available: Time.now - 5.days, due_date: Time.now - 1.days,
+                        course: @course, available: Time.current - 5.days, due_date: Time.current - 1.days,
                         points_available: 2.5, team_subs: true)
     u = build(:upload, user: @fred, assignment: assn)
     u.upload_data = FakeUpload.new(Rails.root.join("test", "fixtures", "files", "fundies-config.json").to_s)

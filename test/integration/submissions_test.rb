@@ -26,7 +26,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                   due_date: Date.current - 1.days + 12.hours,
                   points_available: 5)
     @as1.reload # needed for the lateness config
-    @team1 = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 2.days, end_date: nil)
+    @team1 = Team.new(course: @cs101, teamset: @ts1, start_date: Time.current - 2.days, end_date: nil)
     @team1.users = [@john, @sarah]
     @team1.save
 
@@ -93,8 +93,8 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   
   test "course summaries should handle all submission transitions correctly" do
     @as1 = create(:assignment, course: @cs101, teamset: @ts1,
-                  available: Time.now - 2.days,
-                  due_date: Time.now - 1.days, points_available: 5)
+                  available: Time.current - 2.days,
+                  due_date: Time.current - 1.days, points_available: 5)
     @as1.reload # needed for the lateness config
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 0.0, cur: 0.0, max: 95.0,
@@ -103,7 +103,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  @summary[@john.id],
                  "Create an assignment that's due in the past.  Before sub1 is created, max = 95, pending = 0")
 
-    @sub1 = create(:submission, user: @john, assignment: @as1, created_at: Time.now - 2.days)
+    @sub1 = create(:submission, user: @john, assignment: @as1, created_at: Time.current - 2.days)
     @sub1.set_used_everyone!
     @summary = clean(@cs101.score_summary(@john))
     assert (@summary[@john.id].delete(:cur).nan?)
@@ -124,8 +124,8 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  "After grading (at 50% quality), cur = 50%, min = 2.5, max = 97.5, remaining = 95")
 
     @as2 = create(:assignment, course: @cs101, teamset: @ts1,
-                  available: Time.now - 2.days,
-                  due_date: Time.now + 1.days, points_available: 5)
+                  available: Time.current - 2.days,
+                  due_date: Time.current + 1.days, points_available: 5)
     @as2.reload # needed for the lateness config
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 2.5, cur: 25.0, max: 97.5,
@@ -134,7 +134,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  @summary[@john.id],
                  "Create an assignment due in the future.  Cur drops to 2.5/10.0 since nothing's submitted, but max stays put")
     
-    @as2.update(due_date: Time.now - 1.days)
+    @as2.update(due_date: Time.current - 1.days)
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 2.5, cur: 25.0, max: 92.5,
                   pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
@@ -142,7 +142,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  @summary[@john.id],
                  "After making the assignment overdue, max drops to 92.5, and unsub should now be zero")
 
-    @sub2 = create(:submission, user: @john, assignment: @as2, created_at: Time.now - 2.days)
+    @sub2 = create(:submission, user: @john, assignment: @as2, created_at: Time.current - 2.days)
     @sub2.set_used_everyone!
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 2.5, cur: 50.0, max: 97.5,
@@ -162,8 +162,8 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  "After grading (at 100% quality), cur = 7.5/10, pending = 0, remaining = 90, max = min + remaining + pending")
 
     @as3 = create(:assignment, course: @cs101, teamset: @ts1,
-                  available: Time.now - 2.days,
-                  due_date: Time.now + 1.days, points_available: 5,
+                  available: Time.current - 2.days,
+                  due_date: Time.current + 1.days, points_available: 5,
                   extra_credit: true)
     @as3.reload # needed for the lateness config
     @summary = clean(@cs101.score_summary(@john))
@@ -173,7 +173,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  @summary[@john.id],
                  "After creating an extra credit assignment due in future, but not submitting, max goes up by the available e.c.")
 
-    @as3.update(due_date: Time.now - 1.days)
+    @as3.update(due_date: Time.current - 1.days)
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 7.5, cur: 75.0, max: 97.5,
                   pending: 0.0, pending_names: [], unsub: 0.0, unsub_names: [],
@@ -182,7 +182,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                  "After moving assignment to past, but not submitting, max goes down by the available e.c.")
 
 
-    @sub3 = create(:submission, user: @john, assignment: @as3, created_at: Time.now - 2.days)
+    @sub3 = create(:submission, user: @john, assignment: @as3, created_at: Time.current - 2.days)
     @sub3.set_used_everyone!
     @summary = clean(@cs101.score_summary(@john))
     assert_equal({dropped: nil, min: 7.5, cur: 75.0, max: 102.5,
@@ -204,8 +204,8 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
 
   test "Can handle extra credit in manual grading" do
     @as4 = create(:assignment, course: @cs101, teamset: @ts1,
-                  available: Time.now - 2.days,
-                  due_date: Time.now - 1.days, points_available: 5)
+                  available: Time.current - 2.days,
+                  due_date: Time.current - 1.days, points_available: 5)
     @as4.reload # needed for the lateness config
     @regGrader = @as4.graders.first
     @regGrader.update(avail_score: 50)
@@ -213,7 +213,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     @regGrader.reload
     @ecGrader = create(:grader, extra_credit: true, avail_score: 20, assignment: @as4)
     @as4.reload
-    @sub4 = create(:submission, user: @john, assignment: @as4, created_at: Time.now - 2.days)
+    @sub4 = create(:submission, user: @john, assignment: @as4, created_at: Time.current - 2.days)
     @sub4.set_used_everyone!
     @sub4.create_grades!
     @sub4.grades.find_by(grader: @regGrader).update(score: 25)
@@ -227,9 +227,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Can handle extra credit in exam grading" do
-    @as5 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @as5 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @as5.assignment_file = assign_upload_obj("Exam-EC", "exam.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)
     @as5.graders << g
@@ -255,9 +255,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Can handle editing exam file after having submissions and deleting all submissions correctly" do
-    @as6 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @as6 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @as6.assignment_file = assign_upload_obj("Exam", "exam.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)
     @as6.graders << g
@@ -284,9 +284,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Can handle editing exam file after having submissions and using absolute but question count has changed" do
-    @as7 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @as7 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @as7.assignment_file = assign_upload_obj("Exam", "exam.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)
     @as7.graders << g
@@ -319,9 +319,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Can handle editing exam file after having submissions and using absolute but weight is too low" do
-    @as8 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @as8 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @as8.assignment_file = assign_upload_obj("Exam", "exam.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)
     @as8.graders << g
@@ -354,9 +354,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Can handle editing exam file after having submissions and using absolute" do
-    @as9 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @as9 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @as9.assignment_file = assign_upload_obj("Exam", "exam.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)
     @as9.graders << g
@@ -384,9 +384,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Can handle editing exam file after having submissions and using percentages" do
-    @as10 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @as10 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @as10.assignment_file = assign_upload_obj("Exam", "exam.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)
     @as10.graders << g
@@ -414,9 +414,9 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
   end
 
   test "Can handle changing exam file with a incorrect format one" do
-    @as11 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @as11 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @as11.assignment_file = assign_upload_obj("Exam", "exam-incorrect-format.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)
     @as11.graders << g
@@ -456,8 +456,8 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     assert_difference('Team.count', 15) do
       patch randomize_course_teamset_path(course_id: @largeCourse.id, id: @largeTs.id), params: {
               random: {
-                start_date: Date.today,
-                end_date: Date.today + 1.week,
+                start_date: Date.current,
+                end_date: Date.current + 1.week,
                 teams_within: "course",
                 size: 2
               } }
@@ -667,7 +667,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       due_date: Date.current + 1.day,
       points_available: 5)
     
-    @js_team_ev1 = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 2.days, end_date: nil)
+    @js_team_ev1 = Team.new(course: @cs101, teamset: @ts1, start_date: Time.current - 2.days, end_date: nil)
     @js_team_ev1.users = [@john, @sarah]
     @js_team_ev1.save
 
@@ -713,12 +713,12 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       due_date: Date.tomorrow,
       points_available: 5)
     
-    @js_team_to_diss = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 3.days, end_date: nil)
+    @js_team_to_diss = Team.new(course: @cs101, teamset: @ts1, start_date: Time.current - 3.days, end_date: nil)
     @js_team_to_diss.users = [@john, @sarah]
     @js_team_to_diss.save
 
     @js_john_sub_diss = create(:submission, assignment: @asgn_team_diss, user: @john, team: @js_team_to_diss,
-                            created_at: Time.now - 1.day)
+                            created_at: Time.current - 1.day)
     
     @js_john_sub_diss.set_used_everyone!
 
@@ -730,7 +730,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
                                     course: @cs101, submission: @js_john_sub_diss, who_grades_id: @fred.id)
 
     # Dissolve the team.
-    @js_team_to_diss.dissolve(Date.today)
+    @js_team_to_diss.dissolve(Date.current)
     # @js_john_sub_diss_ga.reload
 
     assert_not(UsedSub.exists?(assignment: @asgn_team_diss, submission: @js_john_sub_diss, user: @john))
@@ -743,12 +743,12 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
     # assert_equal(@js_john_sub_diss.id, @js_john_sub_diss_ga.submission_id)
 
     # Create new team and submission for them.
-    @jc_team_no_diss = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now, end_date: nil)
+    @jc_team_no_diss = Team.new(course: @cs101, teamset: @ts1, start_date: Time.current, end_date: nil)
     @jc_team_no_diss.users = [@john, @claire]
     @jc_team_no_diss.save
 
     @jc_john_sub_no_diss = create(:submission, assignment: @asgn_team_diss, user: @john, 
-                              team: @jc_team_no_diss, created_at: Time.now)
+                              team: @jc_team_no_diss, created_at: Time.current)
     
     # Set the submission to be used for everyone.
     @jc_john_sub_no_diss.set_used_everyone!
@@ -782,7 +782,7 @@ class SubmissionsTest < ActionDispatch::IntegrationTest
       due_date: Date.current + 1.day,
       points_available: 5)
     
-    @js_team_ufu = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 2.days, end_date: nil)
+    @js_team_ufu = Team.new(course: @cs101, teamset: @ts1, start_date: Time.current - 2.days, end_date: nil)
     @js_team_ufu.users = [@john, @sarah]
     @js_team_ufu.save
 

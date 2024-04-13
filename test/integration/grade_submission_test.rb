@@ -222,9 +222,9 @@ class GradeSubmissionTest < ActionDispatch::IntegrationTest
   private
 
   def repeat_until(timeout)
-    t0 = Time.now
+    t0 = Time.current
     result = false
-    until result or Time.now > t0 + timeout
+    until result or Time.current > t0 + timeout
       result = yield
     end
   end
