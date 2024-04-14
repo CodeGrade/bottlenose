@@ -38,8 +38,7 @@ class Exam < Assignment
     sc.check(questions).each{|e| self.errors.add(:base, e)}
     return false if self.errors.count > 0
     questions = sc.convert(questions)
-    weights = questions.map{|q| q["parts"] || q}.flatten.select{|q| !q["extra"]}.map{|q| q["weight"]}
-    @total_weight = weights.sum
+    @total_weight = flattened_questions(questions).select{|q| !q["extra"]}.map{|q| q["weight"]}.sum
     grader = self.graders.first
     if grader.nil?
       grader = Grader.new(type: "ExamGrader", assignment: self)
@@ -169,17 +168,7 @@ class Exam < Assignment
   
   def flattened_questions(qs = nil)
     qs = qs || self.questions
-    flat = []
-    qs.each do |q|
-      if q["parts"]
-        q["parts"].each do |p|
-          flat.push p
-        end
-      else
-        flat.push q
-      end
-    end
-    flat
+    qs.map {|q| q["parts"] || q}.flatten(1)
   end
   
   def sections
