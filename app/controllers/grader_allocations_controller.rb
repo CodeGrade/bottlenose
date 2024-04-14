@@ -97,7 +97,7 @@ class GraderAllocationsController < ApplicationController
   end
 
   def update
-    total_weight = params[:weight].values.map(&:to_f).sum
+    total_weight = params[:weight].values.sum(&:to_f)
     if total_weight == 0
       redirect_back fallback_location: edit_course_assignment_grader_allocations_path(@course, @assignment, @grader),
                     alert: "Total weight for all graders is zero; cannot allocate any work!"
@@ -260,7 +260,7 @@ class GraderAllocationsController < ApplicationController
     @grader_info = GraderAllocation.where(course: @course).group_by(&:who_grades_id).map do |g, gas|
       notdone, finished = gas.partition{|ga| ga.abandoned? || ga.grading_completed.nil?}
       abandoned, incomplete = notdone.partition{|ga| ga.abandoned?}
-      avg_grading_time = finished.map{|ga| (ga.grading_completed - ga.grading_assigned) / 1.day.seconds }.sum
+      avg_grading_time = finished.sum{|ga| (ga.grading_completed - ga.grading_assigned) / 1.day.seconds }
       if finished.count > 0
         avg_grading_time = avg_grading_time / finished.count
       end

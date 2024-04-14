@@ -38,11 +38,11 @@ class ExamGrader < Grader
   end
 
   def normal_weight
-    self.assignment.flattened_questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum
+    self.assignment.flattened_questions.reject{|q| q["extra"]}.sum{|q| q["weight"]}
   end
 
   def extra_credit_weight
-    self.assignment.flattened_questions.select{|q| q["extra"]}.map{|q| q["weight"]}.sum
+    self.assignment.flattened_questions.select{|q| q["extra"]}.sum{|q| q["weight"]}
   end
 
   def export_data
@@ -268,7 +268,7 @@ class ExamGrader < Grader
   def do_grading(assignment, sub, grade = nil)
     g = grade || self.grade_for(sub)
     comments = sub.inline_comments.filter{|c| c.grade_id == g.id && !c.suppressed && c.line < @num_questions}
-    score = comments.pluck(:weight).sum
+    score = comments.sum(&:weight)
 
     g.out_of = self.avail_score
     g.score = [0, score].max # can get extra credit above max score

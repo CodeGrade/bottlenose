@@ -67,7 +67,7 @@ class CourseSpreadsheet < Spreadsheet
       sheet.columns.push(Col.new("", "Number"), Col.new("", "Percent"), Col.new("", "Percent"), Col.new("", "Percent"))
       labels.push(Cell.new("Total"), Cell.new("Computed%"), Cell.new("Curved"), Cell.new("OnServer%"))
       normal_questions_and_indices = questions.zip(0..(questions.count - 1)).delete_if do |q, idx| q["extra"] end
-      tot_weight = normal_questions_and_indices.map{|q, idx| q["weight"]}.sum()
+      tot_weight = normal_questions_and_indices.sum{|q, idx| q["weight"]}
       weight.push(Cell.new(nil, Formula.new(tot_weight, "SUM",
                                             *(normal_questions_and_indices.map do |q, idx|
                                                 CellRef.new(nil,
@@ -310,7 +310,7 @@ class CourseSpreadsheet < Spreadsheet
       sheet.columns.push(Col.new("", "Number"), Col.new("", "Percent"), Col.new("", "Percent"), Col.new("", "Percent"))
       labels.push(Cell.new("Total"), Cell.new("Lateness"), Cell.new("Computed%"), Cell.new("OnServer%"))
       graders = grades.graders.to_a
-      tot_weight = graders.reject(&:extra_credit).map(&:avail_score).sum()
+      tot_weight = graders.reject(&:extra_credit).sum(&:avail_score)
       grader_weights = graders.zip(0..graders.count).reject{|g, _| g.extra_credit}.map do |g, i|
         CellRef.new(nil, Spreadsheet.col_name(weight.count - @graders_count + i), true, 3, true, g.avail_score)
       end
@@ -362,7 +362,7 @@ class CourseSpreadsheet < Spreadsheet
           if sub[:sub].ignore_late_penalty
             sheet.push_row(i, "<ignore>")
           elsif plagiarism_status
-            penalty = plagiarism_status.pluck(:weight).sum
+            penalty = plagiarism_status.sum(&:weight)
             sheet.push_row(i, "Plagiarized (-#{penalty} pts)")
             # (SumGrade - PlagiarismPenalty) / MaxPoints
             sum_grade = Formula.new(nil, "MAX", 0,

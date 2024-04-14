@@ -201,7 +201,7 @@ class SubmissionsController < ApplicationController
   end
 
   def edit_plagiarism
-    @max_points = @assignment.graders.map(&:avail_score).sum
+    @max_points = @assignment.graders.sum(&:avail_score)
   end
 
   def update_plagiarism
@@ -226,7 +226,7 @@ class SubmissionsController < ApplicationController
       return
     end
 
-    @max_points = @assignment.graders.map(&:avail_score).sum
+    @max_points = @assignment.graders.sum(&:avail_score)
     guilty_students.each do |id, penalty|
       penaltyPct = (100.0 * penalty.to_f) / @max_points.to_f
       student = guilty_users[id]

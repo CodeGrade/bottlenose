@@ -38,7 +38,7 @@ class Exam < Assignment
     sc.check(questions).each{|e| self.errors.add(:base, e)}
     return false if self.errors.count > 0
     questions = sc.convert(questions)
-    @total_weight = flattened_questions(questions).reject{|q| q["extra"]}.map{|q| q["weight"]}.sum
+    @total_weight = flattened_questions(questions).reject{|q| q["extra"]}.sum{|q| q["weight"]}
     grader = self.graders.first
     if grader.nil?
       grader = Grader.new(type: "ExamGrader", assignment: self)

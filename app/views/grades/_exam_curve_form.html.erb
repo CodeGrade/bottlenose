@@ -2,7 +2,7 @@
 <% flat_questions = @assignment.flattened_questions %>
 <% col_count = flat_questions.count %>
 <% any_parts = (questions.count != col_count) %>
-<% total_score = flat_questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
+<% total_score = flat_questions.reject{|q| q["extra"]}.sum{|q| q["weight"]} %>
 <% used_subs = @used_subs.group_by(&:user_id) %>
 
 <% if @student_info.length >= 1 %>

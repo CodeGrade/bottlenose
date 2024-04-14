@@ -354,7 +354,7 @@ class Submission < ApplicationRecord
     end
     plagiarism = self.plagiarism_status
     if plagiarism.count > 0
-      penalty = plagiarism.pluck(:weight).sum
+      penalty = plagiarism.sum(:weight)
       log += "Plagiarism penalty => #{penalty}"
       score -= penalty
     end
