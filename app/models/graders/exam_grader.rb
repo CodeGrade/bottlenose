@@ -211,6 +211,8 @@ class ExamGrader < Grader
         else
           @grades_to_update << {
             id: @grade.id,
+            grader_id: self.id, # Note sure why this line and the next are needed, since they don't change,
+            submission_id: @sub.id, # but Rails throws a not-null constraint violation error if they're omitted
             score: compute_score(grades, flattened.count),
             available: false
           }
