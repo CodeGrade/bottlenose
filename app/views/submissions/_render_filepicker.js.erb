@@ -94,7 +94,7 @@ $(function (){
     var filesTreeview = $("#" + root).find(".files").treeview(true);
     filesTreeview.expandAll({ silent: true });
     document.addEventListener("keydown", function(e) {
-      var sel = $(document.getSelection().focusNode).parent(".files li.node-files-" + root);
+      var sel = $(document.getSelection().focusNode).parent(".files li.node-files-" + root + " span");
       if (sel.length === 0) return;
       sel = filesTreeview.getSelected();
       if (!sel) return;
