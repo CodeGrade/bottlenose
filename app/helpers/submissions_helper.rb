@@ -1,13 +1,24 @@
 module SubmissionsHelper
   class MarkupScrubber < Rails::Html::PermitScrubber
-    PROXY = "https://deliberately.invalid?url="
-    def initialize
+    PROXY = "https://deliberately.invalid/?url="
+    def initialize(sub)
       @attributes = Loofah::HTML5::WhiteList::ALLOWED_ATTRIBUTES
+      @submission = sub
     end
     def scrub(node)
       if (node.name == "script")
         # allow MathJax "scripts" to go through unchanged
-        if node.attribute_nodes.any?{|attr| attr.name == "type" && attr.value.starts_with?("math/tex")}
+        if node['type']&.starts_with?("math/tex")
+          return node
+        end
+      elsif (node.name == "img")
+        src_attr = node.attribute('src')
+        super if src_attr.nil?
+        
+        full_path = @submission.upload.extracted_path + src_attr.value
+        file = @submission.upload.extracted_files.find{|f| f[:full_path] == full_path}
+        if file
+          src_attr.value = file[:public_link]
           return node
         end
       end

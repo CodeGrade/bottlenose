@@ -23,12 +23,33 @@ MathJax.Hub.Config({
 });
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-AMS-MML_HTMLorMML&delay"></script>
+    <style>
+      img.placeholderImage {
+        border: 2px solid red;
+      }
+      img { max-width: 100% !important; max-height: 100% !important; }
+    </style>
     <script>
+      const PROXY_PREFIX = '<%= SubmissionsHelper::MarkupScrubber::PROXY %>';
       function receiveMessage(e) {
         if (e.data == "firstShown") {
           MathJax.Hub.Queue(["Reprocess", MathJax.Hub, document])
           window.removeEventListener("message", receiveMessage);
+          document.querySelectorAll("img[src^='" + PROXY_PREFIX + "']").forEach(
+            (e) => {
+              e.addEventListener('dblclick', unproxyLink);
+              e.title = "Double-click to load " + e.title;
+              e.classList.add('placeholderImage');
+            }
+          );
         }
+      }
+      function unproxyLink(e) {
+        const node = e.target;
+        node.src = node.src.slice(PROXY_PREFIX.length);
+        node.title = "";
+        node.removeEventListener('dblclick', unproxyLink);
+        node.classList.remove('placeholderImage');
       }
       window.addEventListener("message", receiveMessage);
     </script>
