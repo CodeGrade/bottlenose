@@ -44,7 +44,7 @@
   <% end %>
 </div>
 <% else %>
-<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id), index|
+<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_upload, sub_id), index|
    @submission_dirs = sub_dirs
    @submission_files = sub_files %>
 <%= f.hidden_field :related_subs, multiple: true, value: sub_id %>
@@ -77,7 +77,7 @@
         <div id="files-sub_<%= sub_id %>" class="files nav treeview condensed"></div>
       </div>
       <div class="tab-content">
-        <%= render "files", sub_files: sub_files, root: "sub_#{sub_id}" %>
+        <%= render "files", sub_files: sub_files, sub_upload: sub_upload, root: "sub_#{sub_id}" %>
       </div>
     </div>
     <script>

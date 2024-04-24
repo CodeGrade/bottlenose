@@ -7,7 +7,7 @@
 <style id="comment-styles">
 </style>
 
-<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_id, sub_team, sub_user), index|
+<% @submission_info.each_with_index do |(sub_dirs, sub_files, sub_upload, sub_id, sub_team, sub_user), index|
    @submission_dirs = sub_dirs
    @submission_files = sub_files %>
 <% if @submission_info.length != 1 %>
@@ -42,7 +42,7 @@
         <div id="files-sub_<%= sub_id %>" class="files nav treeview condensed"></div>
       </div>
       <div class="tab-content">
-        <%= render "submissions/files", sub_files: sub_files, root: "sub_#{sub_id}" %>
+        <%= render "submissions/files", sub_files: sub_files, sub_upload: sub_upload, root: "sub_#{sub_id}" %>
       </div>
     </div>
     <script>

@@ -49,7 +49,7 @@
         <div id="files" class="nav treeview condensed"></div>
       </div>
       <div class="tab-content">
-        <%= render "submissions/files", sub_files: @submission_files, root: "all-files" %>
+        <%= render "submissions/files", sub_files: @submission_files, sub_upload: @submission.upload, root: "all-files" %>
       </div>
     </div>
     <script>
