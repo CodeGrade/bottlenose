@@ -10,8 +10,8 @@ class TermsController < ApplicationController
   end
 
   def new
-    @term = Term.new(year: Date.today.year)
-    case Date.today.month # NOTE: not all months pre-populate a guess for semester
+    @term = Term.new(year: Date.current.year)
+    case Date.current.month # NOTE: not all months pre-populate a guess for semester
     when 8, 9
       @term.semester = Term.semesters[:fall]
     when 12, 1

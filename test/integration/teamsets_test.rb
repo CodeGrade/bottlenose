@@ -44,8 +44,8 @@ class TeamsetsTest < ActionDispatch::IntegrationTest
     assert_difference('Team.count', 10) do
       patch randomize_course_teamset_path(course_id: @largeCourse.id, id: @largeTs.id), params: {
               random: {
-                start_date: Date.today,
-                end_date: Date.today + 1.week,
+                start_date: Date.current,
+                end_date: Date.current + 1.week,
                 teams_within: "course",
                 size: 3
               } }
@@ -57,8 +57,8 @@ class TeamsetsTest < ActionDispatch::IntegrationTest
     assert_no_difference('Team.count') do
       patch randomize_course_teamset_path(course_id: @largeCourse.id, id: @largeTs.id), params: {
               random: {
-                start_date: Date.today,
-                end_date: Date.today + 1.week,
+                start_date: Date.current,
+                end_date: Date.current + 1.week,
                 teams_within: "course",
                 size: 3
               } }
@@ -68,12 +68,12 @@ class TeamsetsTest < ActionDispatch::IntegrationTest
     assert_equal 10, assigns(:teamset).teams.count
     assert_equal "0 random teams created", flash[:notice]
     # Dissolve a few teams (6 teams * 3 partners == 18 people) and try again
-    @largeTs.active_teams.take(6).each do |t| t.dissolve(DateTime.now) end
+    @largeTs.active_teams.take(6).each do |t| t.dissolve(DateTime.current) end
     assert_difference('Team.count', 9) do
       patch randomize_course_teamset_path(course_id: @largeCourse.id, id: @largeTs.id), params: {
               random: {
-                start_date: Date.today,
-                end_date: Date.today + 1.week,
+                start_date: Date.current,
+                end_date: Date.current + 1.week,
                 teams_within: "course",
                 size: 2
               } }
@@ -84,13 +84,13 @@ class TeamsetsTest < ActionDispatch::IntegrationTest
     assert_equal "9 random teams created", flash[:notice]
     # Manually dissolve all teams
     assert_equal 13, @largeTs.active_teams.count
-    @largeTs.dissolve_all(DateTime.now)
+    @largeTs.dissolve_all(DateTime.current)
     assert_equal 0, @largeTs.active_teams.count
     assert_difference('Team.count', 7) do
       patch randomize_course_teamset_path(course_id: @largeCourse.id, id: @largeTs.id), params: {
               random: {
-                start_date: Date.today,
-                end_date: Date.today + 1.week,
+                start_date: Date.current,
+                end_date: Date.current + 1.week,
                 teams_within: "course",
                 size: 4
               } }

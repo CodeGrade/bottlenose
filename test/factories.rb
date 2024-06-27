@@ -22,7 +22,7 @@ FactoryBot.define do
 
   factory :term do
     semester { Term.semesters[:fall] }
-    sequence(:year) {|n| Date.today.year + n}
+    sequence(:year) {|n| Date.current.year + n}
     archived { false }
   end
 
@@ -66,7 +66,7 @@ FactoryBot.define do
     assignment
     submission
     who_grades_id { 1 }
-    grading_assigned { DateTime.now }
+    grading_assigned { DateTime.current }
     abandoned { false }
   end
   
@@ -81,11 +81,11 @@ FactoryBot.define do
     association :blame, factory: :user
     
     lateness_config
-    available { (Time.now - 10.days) }
+    available { (Time.current - 10.days) }
     points_available { 100 }
 
     sequence(:name) {|n| "Homework #{n}" }
-    due_date { (Time.now + 7.days) }
+    due_date { (Time.current + 7.days) }
     after(:build) do |assn|
       assn.course = assn.teamset.course
       assn.graders << build(:grader, assignment: assn)
@@ -163,7 +163,7 @@ FactoryBot.define do
       r2.save_sections
 
       team.users = [u1, u2]
-      team.start_date = Time.now - 2.days
+      team.start_date = Time.current - 2.days
     end
   end
 end

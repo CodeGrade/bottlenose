@@ -5,7 +5,7 @@
 NUID | Last name | First name | Status | Action | <%= @assignment.flattened_questions.map{|q| q["name"]}.join(" | ") %> | Curved
 </pre>
 <ul>
-<li>The uploaded file must have column headers as its first row<./li>
+<li>The uploaded file must have column headers as its first row.</li>
 <li>Each column header must be quoted, separated by commas, and there
   must not be spaces between the column headers.</li>
 <li><b class="text-danger">NOTE: Any students who are missing NUIDs cannot have their grades uploaded.</b></li>

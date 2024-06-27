@@ -232,7 +232,7 @@ class SubmissionsControllerTest < ActionController::TestCase
       due_date: Date.tomorrow,
       points_available: 5)
 
-    @sanity_ufu_john_sub = create(:submission, assignment: @sanity_ufu_asgn, user: @john, created_at: Time.now - 1.day)
+    @sanity_ufu_john_sub = create(:submission, assignment: @sanity_ufu_asgn, user: @john, created_at: Time.current - 1.day)
     
     sign_in @fred
 
@@ -256,12 +256,12 @@ class SubmissionsControllerTest < ActionController::TestCase
       due_date: Date.tomorrow,
       points_available: 5)
 
-    @sanity_ev1_js_team = Team.new(course: @cs101, teamset: @ts1, start_date: Time.now - 3.days, end_date: nil)
+    @sanity_ev1_js_team = Team.new(course: @cs101, teamset: @ts1, start_date: Time.current - 3.days, end_date: nil)
     @sanity_ev1_js_team.users = [@john, @sarah]
     @sanity_ev1_js_team.save
 
     @sanity_ev1_sarah_sub = create(:submission, assignment: @sanity_ev1_asgn, user: @sarah, team: @sanity_ev1_js_team,
-                                    created_at: Time.now)
+                                    created_at: Time.current)
     
     assert_not(UsedSub.exists?(submission: @sanity_ev1_sarah_sub))
 

@@ -106,7 +106,7 @@ class CoursesControllerTest < ActionController::TestCase
     ts = create(:teamset, name: "Teamset for dummy assignment")
     a1 = create(:assignment,
                 course: @course1,
-                due_date: (Time.now + 5.days),
+                due_date: (Time.current + 5.days),
                 name: "Dummy assignment",
                 lateness_config: lateness,
                 teamset: ts
@@ -130,7 +130,7 @@ class CoursesControllerTest < ActionController::TestCase
   test "updating late penalties should change scores" do
     skip # refers to teacher_scores, rather than the newer score model
 
-    a1  = create(:assignment, course: @course1, due_date: (Time.now - 5.days), teamset: @ts1)
+    a1  = create(:assignment, course: @course1, due_date: (Time.current - 5.days), teamset: @ts1)
     sub = create(:submission, assignment: a1, user: @john, teacher_score: 100)
 
     sign_in @fred

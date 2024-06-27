@@ -220,7 +220,7 @@ GEM
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
     orm_adapter (0.5.0)
-    passenger (6.0.18)
+    passenger (6.0.20)
       rack
       rake (>= 0.8.1)
     pg (1.5.3)
@@ -235,7 +235,7 @@ GEM
     puma (6.3.0)
       nio4r (~> 2.0)
     racc (1.7.1)
-    rack (2.2.7)
+    rack (2.2.8.1)
     rack-proxy (0.7.6)
       rack
     rack-test (2.1.0)
@@ -272,7 +272,7 @@ GEM
       rake (>= 12.2)
       thor (~> 1.0)
       zeitwerk (~> 2.5)
-    rake (13.0.6)
+    rake (13.1.0)
     rb-fsevent (0.11.2)
     rb-inotify (0.10.1)
       ffi (~> 1.0)

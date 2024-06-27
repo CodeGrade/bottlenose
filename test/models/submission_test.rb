@@ -12,7 +12,7 @@ class SubmissionTest < ActiveSupport::TestCase
 
     assns = (1..6).map do |i|
       create(:assignment, name: "Assignment #{i}", course: @cs101, teamset: @ts1,
-             available: DateTime.now + (i - 1).weeks, due_date: DateTime.now + i.weeks,
+             available: DateTime.current + (i - 1).weeks, due_date: DateTime.current + i.weeks,
              lateness_config: @cs101.lateness_config)
     end
 

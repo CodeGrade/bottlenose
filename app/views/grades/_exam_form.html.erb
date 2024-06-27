@@ -2,7 +2,7 @@
 <% flat_questions = @assignment.flattened_questions %>
 <% col_count = flat_questions.count %>
 <% any_parts = (questions.count != col_count) %>
-<% total_score = questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
+<% total_score = flat_questions.reject{|q| q["extra"]}.map{|q| q["weight"]}.sum %>
 <% cur_reg_staff = current_user.course_staff?(@course) %>
 
 <% if @student_info.length > 1 %>
@@ -168,7 +168,12 @@
             <% i = 0 %>
             <% questions.each_with_index do |q, q_num| %>
             <tr>
-              <td>Problem <%= q_num + 1 %>: <%= q["name"] %><% if q["extra"] %> (Extra Credit)<% end %></td>
+              <td>
+                Problem <%= q_num + 1 %>: <%= q["name"] %>
+                <% if q["extra"] %>
+                <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
+                <% end %>
+              </td>
               <% if q["parts"] %>
               <td></td>
               <td></td>
@@ -177,18 +182,32 @@
                 <%= spinner_tag "question[#{i}]", "",
                     min: 0, max: flat_questions[i]["weight"], delta: 0.5,
                     wrapper: {style: "float: right;"} %></td>
-              <td>/ <%= show_score(q["weight"], nil, cur_reg_staff) %></td>
+              <td>/ <%= show_score(q["weight"], nil, cur_reg_staff) %>
+                <% if q["extra"] %>
+                <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
+                <% end %>
+              </td>
               <% end %>
             </tr>
             <% if q["parts"] %>
             <% q["parts"].each_with_index do |p, j| %>
             <tr>
-              <td style="padding-left: 2em;">(<%= ('a'..'z').to_a[j] %>) <%= p["name"] %></td>
+              <td style="padding-left: 2em;">
+                (<%= ('a'..'z').to_a[j] %>)
+                <%= p["name"] %>
+                <% if p["extra"] %>
+                <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
+                <% end %>
+              </td>
               <td style="padding-left: 2em;">
                 <%= spinner_tag "question[#{i}]", "",
                     min: 0, max: flat_questions[i]["weight"], delta: 0.5,
                     wrapper: {style: "float: right;"} %></td>
-              <td>/ <%= show_score(p["weight"], nil, cur_reg_staff) %></td>
+              <td>/ <%= show_score(p["weight"], nil, cur_reg_staff) %>
+                <% if p["extra"] %>
+                <span class="glyphicon glyphicon-star-empty" title="Extra credit"></span>
+                <% end %>
+              </td>
             </tr>
             <% i += 1 %>
             <% end %>

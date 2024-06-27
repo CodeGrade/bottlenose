@@ -40,7 +40,7 @@ class GraphUtils
       fractional_capacities << [k, fc]
     end
 
-    allocated_capacity = fractional_capacities.map { |arr| arr.second.floor }.sum
+    allocated_capacity = fractional_capacities.sum { |arr| arr.second.floor }
     # Fractional capacity is index 1. Compare syntax will sort in desc. order.
     fractional_capacities.sort { |a, b| b.second <=> a.second }
     current_index = 0

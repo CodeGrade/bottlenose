@@ -47,7 +47,7 @@ class Grader < ApplicationRecord
       job = Backburner::Worker.enqueue GradingJob, [grader.id, assn.id, sub.id], opts
 
       Grader.delayed_grades[job[:id]] = {
-        start_time: Time.now,
+        start_time: Time.current,
         grader_type: grader.display_type,
         user_name: sub.user.display_name,
         course: assn.course.id,
@@ -275,7 +275,7 @@ class Grader < ApplicationRecord
     up.upload_data = data
     up.metadata = {
       type: "#{type} Configuration",
-      date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      date: Time.current.strftime("%Y/%b/%d %H:%M:%S %Z"),
       mimetype: data.content_type,
       prof_override: {file_count: true, file_size: true}
     }
@@ -294,7 +294,7 @@ class Grader < ApplicationRecord
     up.upload_data = data
     up.metadata = {
       type: "#{type} Extra Configuration",
-      date: Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      date: Time.current.strftime("%Y/%b/%d %H:%M:%S %Z"),
       mimetype: data.content_type,
       prof_override: {file_count: true, file_size: true}
     }
@@ -332,6 +332,10 @@ class Grader < ApplicationRecord
     # Describe the format for import_data
     # Return either and html_safe? string, or the name of a partial
     fail NotImplementedError, "Each grader should implement this"
+  end
+
+  def check_for_malformed_submission(upload)
+    []
   end
 
   protected

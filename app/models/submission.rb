@@ -10,12 +10,25 @@ class Submission < ApplicationRecord
   belongs_to :upload, optional: true
   belongs_to :comments_upload, class_name: "Upload", optional: true
   has_many :used_subs, dependent: :destroy
-  has_many :grades
+  has_many :grades, dependent: :destroy
   has_many :reviews, class_name: "ReviewFeedback", dependent: :destroy
   has_many :user_submissions, dependent: :destroy
   has_many :users, through: :user_submissions
   has_many :inline_comments, dependent: :destroy
 
+  def self.bulk_delete(ids)
+    Submission.transaction do
+      # Matches all the dependent: :destroy associations above
+      InlineComment.where(submission_id: ids).delete_all
+      UserSubmission.where(submission_id: ids).delete_all
+      UsedSub.where(submission_id: ids).delete_all
+      ReviewFeedback.where(submission_id: ids).delete_all
+      Grade.where(submission_id: ids).delete_all
+      # Then bulk-delete all these submissions
+      Submission.where(id: ids).delete_all
+    end
+  end
+  
   validates :assignment_id, :presence => true
 
   validate :has_team_or_user
@@ -39,7 +52,9 @@ class Submission < ApplicationRecord
         UserSubmission.find_or_create_by!(user: u, submission: self)
       end
     elsif user
-      UserSubmission.find_or_create_by!(user: user, submission: self)
+      if !(association(:user_submissions).loaded?) || !(user_submissions.to_a.find {|us| us.user_id == user_id})
+        UserSubmission.find_or_create_by!(user: user, submission: self)
+      end
     end
   end
   
@@ -157,11 +172,21 @@ class Submission < ApplicationRecord
       user:       "#{user.name} (#{user.id})",
       course:     "#{course.name} (#{course.id})",
       assignment: "#{assignment.name} (#{assignment.id})",
-      date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      date:       Time.current.strftime("%Y/%b/%d %H:%M:%S %Z"),
       mimetype:   data.content_type,
       prof_override: prof_override
     }
     begin
+      malformed = assignment.graders.any? do |g|
+        errs = g.check_for_malformed_submission up
+        if errs && errs.size > 0
+          errs.each { |e| errors.add(:base, e) }
+          true
+        else
+          false
+        end
+      end
+      return false if malformed
       up.save!
       self.upload_id = up.id
       Audit.log("Sub #{self.id}: New submission upload by #{user.name} " +
@@ -218,7 +243,7 @@ class Submission < ApplicationRecord
       user:       "Some teacher for #{user.name} (#{user.id})",
       course:     "#{course.name} (#{course.id})",
       assignment: "#{assignment.name} (#{assignment.id})",
-      date:       Time.now.strftime("%Y/%b/%d %H:%M:%S %Z"),
+      date:       Time.current.strftime("%Y/%b/%d %H:%M:%S %Z"),
       mimetype:   data.content_type
     }
     up.save!
@@ -250,7 +275,7 @@ class Submission < ApplicationRecord
       if config.autograde?
         # Students will have their delayed jobs de-prioritized based on how many submissions
         # they've spammed the system with in the past fifteen minutes
-        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.now - 15.minutes).count
+        num_recent_attempts = assignment.submissions_for(user).where("created_at > ?", Time.current - 15.minutes).count
         config.autograde!(assignment, self, num_recent_attempts)
         true
       else
@@ -279,7 +304,7 @@ class Submission < ApplicationRecord
       if delay
         # Students will have their delayed jobs de-prioritized based on how many submissions
         # they've spammed the system with in the past fifteen minutes
-        assignment.submissions_for(user).where("created_at > ?", Time.now - 15.minutes).count
+        assignment.submissions_for(user).where("created_at > ?", Time.current - 15.minutes).count
       else
         0
       end
@@ -329,7 +354,7 @@ class Submission < ApplicationRecord
     end
     plagiarism = self.plagiarism_status
     if plagiarism.count > 0
-      penalty = plagiarism.pluck(:weight).sum
+      penalty = plagiarism.sum(:weight)
       log += "Plagiarism penalty => #{penalty}"
       score -= penalty
     end

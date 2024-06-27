@@ -379,7 +379,11 @@ class ArchiveUtils
           temp[dir] = {} if temp[dir].nil?
           temp = temp[dir]
         end
-        temp[File.basename(out)] = true unless entry.directory?
+        if entry.directory?
+          temp[File.basename(out)] = {}
+        else
+          temp[File.basename(out)] = true
+        end
       else
         puts "Problem with #{entry.name}"
         #raise SafeExtractionError.new(file, "./", entry.name)

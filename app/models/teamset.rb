@@ -52,28 +52,27 @@ class Teamset < ActiveRecord::Base
       grouped_students_to_team = [users_without_active_team(section.active_students)]
     end
     leftovers = []
+    new_teams = []
     grouped_students_to_team.each do |students_to_team|
       students_to_team.shuffle!.each_slice(size).each do |t|
-        @team = Team.new(course: self.course,
-                         start_date: start_date,
-                         end_date: end_date,
-                         teamset: self
-                        )
+        team = Team.new(course: self.course,
+                        start_date: start_date,
+                        end_date: end_date,
+                        teamset: self
+                       )
 
         if t.count == size
-          @team.users = t
-          
-          if @team.save
-            count += 1
-          else
-            debugger
-          end
+          team.users = t
+          new_teams << team
         else
           leftovers += t
         end
       end
     end
-    return count
+    Teamset.transaction do
+      new_teams.each(&:save!)
+    end
+    return new_teams.count
   end
 
   # NOTE: Throws an ActiveTeamWithDroppedStudent, as teams with dropped 
@@ -117,11 +116,11 @@ class Teamset < ActiveRecord::Base
     self.course.users_with_drop_info.order(:last_name, :first_name)
   end
 
-  def active_teams(as_of = DateTime.now)
+  def active_teams(as_of = DateTime.current)
     self.teams.where(Team.active_query, as_of, as_of).includes(:users)
   end
 
-  def active_teams_in_section(section_id, as_of = DateTime.now)
+  def active_teams_in_section(section_id, as_of = DateTime.current)
     section = course.sections.find(section_id)
     return [] unless section
     users_in_section = section.users.map{|u| [u.id, true]}.to_h
@@ -134,7 +133,7 @@ class Teamset < ActiveRecord::Base
     user.teams.where(course: self.course, teamset: self).select(&:active?).first
   end
 
-  def active_teams_for(users, as_of = DateTime.now)
+  def active_teams_for(users, as_of = DateTime.current)
     self.active_teams(as_of).map do |t|
       t.users.map{|u| [u.id, t]}
     end.flatten(1).to_h.slice(*users.map(&:id))
@@ -165,7 +164,7 @@ class Teamset < ActiveRecord::Base
     assn.submissions.where(team: nil).group_by(&:user_id).each do |uid, subs|
       team = Team.new(course: self.course,
                       start_date: assn.available,
-                      end_date: Date.today,
+                      end_date: Date.current,
                       teamset: self)
       team.users = [User.find(uid)]
       team.save

@@ -13,7 +13,11 @@ class CheckerGrader < Grader
   end
 
   def display_type
-    "Checker Tests"
+    if self.test_class&.downcase.include?("examplar")
+      "Examplar results"
+    else
+      "Checker Tests"
+    end
   end
   
   def to_s
@@ -43,7 +47,7 @@ class CheckerGrader < Grader
         g.score = 0
         g.out_of = self.avail_score
       end
-      g.updated_at = DateTime.now
+      g.updated_at = DateTime.current
       g.available = true
     end
   end
@@ -74,7 +78,7 @@ class CheckerGrader < Grader
               g.grading_output_path = details.path
               g.score = 0
               g.out_of = self.avail_score
-              g.updated_at = DateTime.now
+              g.updated_at = DateTime.current
               g.available = true
               g.save!
             else
@@ -85,7 +89,7 @@ class CheckerGrader < Grader
                 if tap
                   g.score = tap.points_earned
                   g.out_of = tap.points_available
-                  g.updated_at = DateTime.now
+                  g.updated_at = DateTime.current
                   g.available = true
                   g.save!
                   Audit.log("#{prefix}: Tests give raw score of #{g.score} / #{g.out_of}")
@@ -94,6 +98,10 @@ class CheckerGrader < Grader
                     details.write("Test output: (exit status #{err[:status] || 'unknown'})\n")
                     details.write(err[:output])
                   end
+                  if err[:err]
+                    details.write("Test errored: (exit status #{err[:status] || 'unknown'})\n")
+                    details.write(err[:err])
+                  end
                   if err[:timed_out]
                     details.write("Running tests timed out after #{self.test_timeout} seconds")
                   end
@@ -101,7 +109,7 @@ class CheckerGrader < Grader
                   g.grading_output_path = details.path
                   g.score = 0
                   g.out_of = self.avail_score
-                  g.updated_at = DateTime.now
+                  g.updated_at = DateTime.current
                   g.available = true
                   g.save!
                 end
@@ -113,7 +121,7 @@ class CheckerGrader < Grader
         Audit.log("Assignment #{assignment.id}, submission #{sub.id}: Errors prevented grading; giving a 0: #{e}")
         g.score = 0
         g.out_of = self.avail_score
-        g.updated_at = DateTime.now
+        g.updated_at = DateTime.current
         g.available = true
         g.save!
       end
@@ -198,8 +206,8 @@ class CheckerGrader < Grader
         if ok
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
-            if !entries["testing"]["test"]["#{tc}.java"]
-              add_error("There is no #{tc}.java file to match the specified test class")
+            if !classNamed(entries["testing"]["test"], tc)
+              add_error("There is no #{tc} file (either .java or .class) to match the specified test class")
             end
           end
         end
@@ -209,11 +217,11 @@ class CheckerGrader < Grader
           add_error("The archive does not contain src/ and test/ subdirectories")
           ok = false
         end
-        if ok && !self.test_class.include?("Examplar")
+        if ok && !self.test_class.downcase.include?("examplar")
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
-            if !entries["test"]["#{tc}.java"]
-              add_error("There is no #{tc}.java file to match the specified test class")
+            if !classNamed(entries["test"], tc)
+              add_error("There is no #{tc} file (either .java or .class) to match the specified test class")
             end
           end
         end
@@ -223,5 +231,13 @@ class CheckerGrader < Grader
       e_msg = e_msg.dump[1...-1] unless e_msg.is_utf8?
       add_error("Could not read upload: #{e_msg}")
     end
+  end
+  
+  def classNamed(dict, name)
+    sources = name.split(".")
+    sources[-1] += "\.java"
+    classes = name.split(".")
+    classes[-1] += ".class"
+    return dict.dig(*sources) || dict.dig(*classes)
   end
 end

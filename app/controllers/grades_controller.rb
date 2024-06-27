@@ -27,6 +27,11 @@ class GradesController < ApplicationController
   end
 
   def show
+    unless @submission.visible_to?(current_user)
+      redirect_to course_assignment_path(@course, @assignment), alert: "That's not your submission."
+      return
+    end
+
     if !(current_user_site_admin? || current_user_staff_for?(@course)) && !@grade.available
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "That grader is not yet available"
@@ -118,6 +123,11 @@ class GradesController < ApplicationController
   end
 
   def details
+    unless @submission.visible_to?(current_user)
+      redirect_to course_assignment_path(@course, @assignment), alert: "That's not your submission."
+      return
+    end
+
     if !(current_user_site_admin? || current_user_staff_for?(@course)) && !@grade.available
       redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission),
                     alert: "That grader is not yet available"
@@ -263,7 +273,7 @@ class GradesController < ApplicationController
     if alloc && alloc.grading_completed.nil?
       if alloc.who_grades_id != current_user.id
         alloc.abandoned = true
-        alloc.grading_completed = DateTime.now
+        alloc.grading_completed = DateTime.current
         alloc.save
         alloc = GraderAllocation.new(
           assignment: @assignment,
@@ -273,14 +283,14 @@ class GradesController < ApplicationController
           grading_assigned: alloc.grading_assigned)
       end
       alloc.abandoned = false
-      alloc.grading_completed = DateTime.now
+      alloc.grading_completed = DateTime.current
       alloc.save
     elsif alloc.nil?
       GraderAllocation.create!(
         abandoned: false,
         who_grades_id: current_user.id,
         grading_assigned: @assignment.due_date,
-        grading_completed: DateTime.now,
+        grading_completed: DateTime.current,
         course: @course,
         assignment: @assignment,
         submission: @submission
@@ -472,7 +482,7 @@ class GradesController < ApplicationController
           if sub
             comments = InlineComment.where(submission_id: sub.id)
             render :json => {grades: (comments.to_a.map do |c| [c.line, c.weight] end.to_h),
-                             timestamp: Time.now}
+                             timestamp: Time.current}
           else
             render :json => {"none found": true}
           end
@@ -797,14 +807,14 @@ HEADER
     end
 
     if current_user_site_admin? || current_user_staff_for?(@course)
-      if @grading_output.kind_of?(String)
+      if @grading_output.nil? || @grading_output.kind_of?(String)
         @grading_header = "Errors running tests"
       else
         @grading_header = "All test results"
         @tests = @grading_output.tests
       end
     else
-      if @grading_output.kind_of?(String)
+      if @grading_output.nil? || @grading_output.kind_of?(String)
         @grading_header = "Errors running tests"
       elsif @grading_output.passed_count == @grading_output.test_count
         @grading_header = "Test results"
@@ -815,7 +825,12 @@ HEADER
       end
     end
 
-    if !@grading_output.kind_of?(String) && @grading_output.commentary.member?("Examplar results")
+    if @grading_output && !@grading_output.kind_of?(String) && @grading_output.commentary.member?("Examplar results")
+      if @grading_output.tests.count == 1 && @grading_output.tests[0].dig(:info, 'actual', 1) == "Missing:"
+        @grading_output.tests[0][:info]['stack'] = @grading_output.tests[0][:info]['actual']
+        render renderer
+        return
+      end
       @tests = {}
       @grading_output.tests.each do |t|
         type = t[:comment].split(":").first.downcase
@@ -829,7 +844,8 @@ HEADER
       @testMatrixByChaff = @chaffNames.map do |c|
         [c,
          @testNames.map do |t|
-           [t, thoroughnessTest[:info]['results'][c].include?(t)]
+           relevant = thoroughnessTest[:info]['results'][c]
+           [t, relevant.is_a?(Array) && relevant.include?(t)]
          end.to_h
         ]
       end.to_h

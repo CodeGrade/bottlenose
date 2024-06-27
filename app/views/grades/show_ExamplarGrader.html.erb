@@ -96,7 +96,7 @@
 <%= render 'submissions/sub_info' %>
 
 
-<h1>Scoring Details: Examplar</h1>
+<h1>Scoring Details: <%= @grader.display_type %></h1>
 
 <h3>
   <%= @grading_header %>
@@ -137,6 +137,7 @@
 <pre><%= @grading_output %></pre>
 <% else %>
 <div id="tests">
+  <% firstFailed = @tests.dig("thoroughness", "passed", :info, "results")&.select {|k, v| v.is_a? String}&.keys&.sort&.first %>
   <% @tests.each do |comment, ts| %>
     <% t = ts['passed'] %>
     <% percentCorrect = t[:info]["actual"]["value"].to_f / t[:info]["expected"]["value"].to_f %>
@@ -239,7 +240,7 @@
                 <% if check %>
                 <span class="glyphicon glyphicon-flash" />
                 <% else %>
-                <span />
+                <span class="glyphicon">&nbsp;</span>
                 <% end %>
               </td>
             <% end %>
@@ -295,8 +296,8 @@
     const lastTh = chaffTable.querySelector("th:last-child");
     const lastMeasureDiv = lastTh.querySelector("div.measure");
     const lastThSize = lastTh.getBoundingClientRect();
-    console.log(lastThSize);
-    console.log(lastTh.querySelector("div.display").getBoundingClientRect());
+    /* console.log(lastThSize); */
+    /* console.log(lastTh.querySelector("div.display").getBoundingClientRect()); */
     const lastMeasureDivSize = lastMeasureDiv.getBoundingClientRect();
     $(chaffTable).css("margin-right", (lastMeasureDivSize.width - lastThSize.width) + "px");
   })();

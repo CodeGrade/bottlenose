@@ -159,7 +159,7 @@ class Course < ApplicationRecord
   end
 
   def assignments_sorted
-    self.assignments.to_a.sort_by(&:due_date)
+    self.assignments.order(:due_date, :available, :name, :created_at)
   end
 
   def all_partners
@@ -306,7 +306,7 @@ class Course < ApplicationRecord
   def abnormal_subs
     abnormals = {}
     people = self.users_with_drop_info.where("registrations.dropped_date IS ?", nil).to_a
-    assns = self.assignments_sorted
+    assns = self.assignments_sorted.to_a
     all_subs = Assignment.submissions_for(people, assns).group_by(&:assignment_id)
     used_subs = UsedSub.where(assignment_id: assns.map(&:id)).group_by(&:assignment_id)
     assns.each do |a|

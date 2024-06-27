@@ -84,7 +84,11 @@
                         style: "vertical-align: initial; margin: -6pt -8pt;" %>
                   </div>
                 <% end %>
+                <% if gr.object.display_type != gr.object.type.underscore.humanize %>
+                <strong><%= gr.object.display_type %> (<%= gr.object.type.underscore.humanize %>)</strong>
+                <% else %>
                 <strong><%= gr.object.display_type %></strong>
+                <% end %>
               </div>
               <div class="panel-body">
                 <%= render partial: "graders/#{gr.object.type.underscore}", formats: [:html], locals: { f: gr } %>

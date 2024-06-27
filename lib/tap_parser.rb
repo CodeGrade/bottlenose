@@ -121,7 +121,10 @@ class TapParser
       info.push(make_yaml_safe(mm[1]))
     end
     begin
-      YAML.load(info.join("\n"))
+      # replace carriage-returns with visible \r, since they won't render properly in HTML
+      # need three levels of escaping the backslash: one for Ruby, one for YAML,
+      # and one more for fields within the YAML
+      YAML.load(info.join("\n").gsub("\r", "\\\\\\\\r"))
     rescue Exception => ee
       # triple-backtick snarled things up
       print "Couldn't parse YAML (#{@filename}) for:\n``" + "`\n"

@@ -8,15 +8,31 @@
       @times[timechunk][key] = @times[timechunk][key].to_i + 1
     end
   end
+  if assn.team_subs
+    firstSubs = allSubs.group(:team_id).minimum(:created_at).values
+  else
+    firstSubs = allSubs.group(:user_id).minimum(:created_at).values
+  end
+  processTimes(firstSubs, assn.available, assn.due_date, :first)
   processTimes(allSubs.pluck(:created_at), assn.available, assn.due_date, :all)
   processTimes(usedSubs.pluck(:created_at), assn.available, assn.due_date, :used)
   if !(@times.empty?)
     (@times.keys.min..[@times.keys.max, 0].max).each do |chunk|
       @times[chunk] ||= {time: (assn.due_date + chunk.hours).at_beginning_of_hour.iso8601,
-                         all: nil, used: nil}
+                         first: nil, all: nil, used: nil, started: 0, finished: 0}
     end
   end
-  @times = @times.to_a.sort_by(&:first).to_h
+  @times = @times.to_a.sort_by(&:first)
+  @times.each_with_index do |(_, chunk), i|
+    if i == 0
+      chunk[:started] = chunk[:first].to_i
+      chunk[:finished] = chunk[:used].to_i
+    else
+      chunk[:started] = chunk[:first].to_i + @times[i - 1][1][:started]
+      chunk[:finished] = chunk[:used].to_i + @times[i - 1][1][:finished]
+    end  
+  end
+  @times = @times.to_h
 %>
 var allTimes = <%= raw json_escape(JSON.generate(@times)) %>;
 GoogleCharts.load('corechart', function() {
@@ -37,13 +53,13 @@ GoogleCharts.load('corechart', function() {
   var options = {
     title: 'Submission time distribution',
     legend: { position: 'in' },
-    colors: [colors[0], colors[10]],
+    colors: [colors[0], colors[10], colors[1]],
     interpolateNulls: false,
     focusTarget: 'category',
     lineWidth: 3,
     series: {
       0: { labelInLegend: "All (<%= allSubs.count %>)" },
-      1: { labelInLegend: "Used (<%= usedSubs.count %>)" }
+      1: { labelInLegend: "Used (<%= usedSubs.count %>)" },
     },
     hAxis: {
       title: 'Submission time',
@@ -57,6 +73,41 @@ GoogleCharts.load('corechart', function() {
       }
     },
   };
-  var chart = new GoogleCharts.api.visualization.LineChart(document.getElementById('byTime'));
+  var container = document.getElementById("byTime");
+  var div = document.createElement("div");
+  container.appendChild(div);
+  var chart = new GoogleCharts.api.visualization.LineChart(div);
+  chart.draw(data, options);
+
+  data = [[{label: "Time", type: 'number'}, "Started", "Finished"]]
+      .concat(dataKeys.map((t) => [{v: Number.parseInt(t), f: makeFriendlyDate(allTimes[t].time, true)},
+                                   allTimes[t].started, allTimes[t].finished]));
+  data = GoogleCharts.api.visualization.arrayToDataTable(data);
+  var options = {
+    title: 'Submission completion distribution',
+    legend: { position: 'in' },
+    colors: [colors[0], colors[10]],
+    interpolateNulls: false,
+    focusTarget: 'category',
+    lineWidth: 3,
+    series: {
+      0: { labelInLegend: "# Started" },
+      1: { labelInLegend: "# Finished" },
+    },
+    hAxis: {
+      title: 'Submission time',
+      baseline: 0,
+      showTextEvery: 2,
+      ticks: timeTicks,
+      maxTextLines: 2,
+      viewWindow: {
+        // min: -72,
+        max: 24
+      }
+    },
+  };
+  var div = document.createElement("div");
+  container.appendChild(div);
+  var chart = new GoogleCharts.api.visualization.LineChart(div);
   chart.draw(data, options);
 });

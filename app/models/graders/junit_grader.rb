@@ -23,7 +23,11 @@ class JunitGrader < Grader
   end
 
   def display_type
-    "JUnit Tests"
+    if self.test_class&.downcase.include?("examplar")
+      "Examplar results"
+    else
+      "JUnit Tests"
+    end
   end
   
   def to_s
@@ -53,7 +57,7 @@ class JunitGrader < Grader
         g.score = 0
         g.out_of = self.avail_score
       end
-      g.updated_at = DateTime.now
+      g.updated_at = DateTime.current
       g.available = true
     end
   end
@@ -93,7 +97,50 @@ class JunitGrader < Grader
     ans
   end
 
+  def check_for_malformed_submission(upload)
+    errors = []
+    entries = upload.upload_entries
+    if entries["src"] && !entries["test"]
+      errors << "Having a src/ directory requires having a test/ directory also"
+    end
+    if entries["test"] && !entries["src"]
+      errors << "Having a test/ directory requires having a src/ directory also"
+    end
+    if entries.size == 1
+      rootName, rootEntry = entries.first
+      if rootEntry == true
+        # nothing to do; it's just one file
+      elsif rootName != "src" && rootName != "test"
+        errors << "Make sure your submission is directly at the root of your zip, not nested within another directory (#{rootName}/)"
+      end
+    end
+    if self.test_class&.downcase.include?("examplar")
+      if entries["src"].is_a?(Hash)
+        java_files = search_for(entries["src"], "src") {|f| f.ends_with? ".java" }
+        if java_files.size > 0
+          errors << "Make sure not to submit any src/ files for Examplar assignments (#{java_files.to_sentence})"
+        end
+      end
+    end
+    errors
+  end
+  
   protected
+  def search_for(entries, path, &block)
+    entries.map do |k, v|
+      filename = "#{path}#{File::SEPARATOR}#{k}"
+      if v == true
+        if block.call(filename)
+          [filename]
+        else
+          []
+        end
+      else
+        search_for(v, filename, &block)
+      end
+    end.flatten
+  end
+  
   def load_junit_params
     return if new_record?
     testClass, errorsToShow, testTimeout = self.params.to_s.split(";")
@@ -115,7 +162,7 @@ class JunitGrader < Grader
             g.grading_output_path = details.path
             g.score = 0
             g.out_of = self.avail_score
-            g.updated_at = DateTime.now
+            g.updated_at = DateTime.current
             g.available = true
             g.save!            
           else
@@ -126,7 +173,7 @@ class JunitGrader < Grader
               if tap
                 g.score = tap.points_earned
                 g.out_of = tap.points_available
-                g.updated_at = DateTime.now
+                g.updated_at = DateTime.current
                 g.available = true
                 g.save!
                 Audit.log("#{prefix}: Tests give raw score of #{g.score} / #{g.out_of}")
@@ -135,6 +182,10 @@ class JunitGrader < Grader
                   details.write("Test output: (exit status #{err[:status] || 'unknown'})\n")
                   details.write(err[:output])
                 end
+                if err[:err]
+                  details.write("Test errored: (exit status #{err[:status] || 'unknown'})\n")
+                  details.write(err[:err])
+                end
                 if err[:timed_out]
                   details.write("Running tests timed out after #{self.test_timeout} seconds")
                 end
@@ -142,7 +193,7 @@ class JunitGrader < Grader
                 g.grading_output_path = details.path
                 g.score = 0
                 g.out_of = self.avail_score
-                g.updated_at = DateTime.now
+                g.updated_at = DateTime.current
                 g.available = true
                 g.save!
               end
@@ -153,7 +204,7 @@ class JunitGrader < Grader
         Audit.log("Assignment #{assignment.id}, submission #{sub.id}: Errors prevented grading; giving a 0: #{e} at #{e.backtrace.join("\n")}")
         g.score = 0
         g.out_of = self.avail_score
-        g.updated_at = DateTime.now
+        g.updated_at = DateTime.current
         g.available = true
         g.save!
       end
@@ -247,11 +298,11 @@ class JunitGrader < Grader
         if ok
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
-            if !entries["testing"]["test"]["#{tc}.java"]
-              add_error("There is no #{tc}.java file to match the specified test class")
+            if !classNamed(entries["testing"]["test"], tc)
+              add_error("There is no #{tc} file (either .java or .class) to match the specified test class")
             end
           end
-          if entries["testing"]["test"]["GradingSandbox.java"]
+          if classNamed(entries["testing"]["test"], "GradingSandbox")
             add_error("There must not be a class named GradingSandbox")
           end
         end
@@ -264,11 +315,11 @@ class JunitGrader < Grader
         if ok && !self.test_class.downcase.include?("examplar")
           self.test_class.split.each do |tc|
             next if (tc.starts_with?("-") || (Float(tc) rescue false))
-            if !entries["test"]["#{tc}.java"]
-              add_error("There is no #{tc}.java file to match the specified test class")
+            if !classNamed(entries["test"], tc)
+              add_error("There is no #{tc} file (either .java or .class) to match the specified test class")
             end
           end
-          if entries["test"]["GradingSandbox.java"]
+          if classNamed(entries["test"], "GradingSandbox")
             add_error("There must not be a class named GradingSandbox")
           end
         end
@@ -378,4 +429,11 @@ class JunitGrader < Grader
     end
   end
 
+  def classNamed(dict, name)
+    sources = name.split(".")
+    sources[-1] += "\.java"
+    classes = name.split(".")
+    classes[-1] += ".class"
+    return dict.dig(*sources) || dict.dig(*classes)
+  end
 end

@@ -18,7 +18,7 @@
   <% comments.each do |c| %>
   <div class="<%= "#{c.severity.humanize} #{c.grade&.grader&.type}" %>">
     <span class="label label-default">- <%= to_fixed(c.weight) %></span>
-    <span class="description"><%= c.grade&.grader&.type&.underscore&.humanize %> <%= c.title %>: <%= c.comment %></span>
+    <span class="description"><%= c.grade&.grader&.display_type %> <%= c.title %>: <%= c.comment %></span>
   </div>
   <% end %>
 <% end %>
