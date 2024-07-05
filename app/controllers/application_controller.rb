@@ -20,6 +20,7 @@ ERROR
     end
   end
 
+  before_action :set_mailer_host
   before_action :configure_permitted_parameters, if: :devise_controller?
 
   protected
@@ -31,6 +32,15 @@ ERROR
       Hash[hash.map{|v| [(v[keys[index]] rescue v.__send__(keys[index])), v]}]
     else
       Hash[hash.group_by(&(keys[index])).map {|k, v| [k, multi_group_by(v, keys, last_key_unique, index + 1)]}]
+    end
+  end
+
+  def set_mailer_host
+    ActionMailer::Base.default_url_options[:host] = request.host_with_port
+    ActionMailer::Base.default_url_options[:protocol] = request.protocol
+
+    if Settings["site_url"].blank?
+      Settings.set_site_url!(request)
     end
   end
 
