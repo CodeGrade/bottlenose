@@ -29,7 +29,7 @@ class JunitGrader < Grader
       "JUnit Tests"
     end
   end
-  
+
   def to_s
     if self.upload
       filename = self.upload.file_name
@@ -69,9 +69,13 @@ class JunitGrader < Grader
     begin
       secret, secret_file_path = generate_orca_secret!(submission)
       send_job_to_orca(submission, secret)
-    rescue OrcaJobCreationError => exception
+    rescue Net::HTTPError => exception
       FileUtils.rm(secret_file_path)
-      Audit.log("Failed to send job to orca on submission #{submission.id} for assignment #{assignment.id}.")
+      grader_dir = submission.upload_path_for
+      result_path = File.join(grader_dir, "result.json")
+      File.open(result_path, "w") do |f|
+        f.write(generate_failed_job_result(exception).to_json)
+      end
     end
     super(assignment, submission, prio)
   end
@@ -79,7 +83,7 @@ class JunitGrader < Grader
   def send_job_to_orca(submission, secret)
     job_json = JSON.generate(generate_grading_job(submission, secret))
     uri = URI.parse("#{Settings["orca_url"]}/grading_queue")
-    post_job_json_with_retry(job_json, uri)
+    put_job_json_with_retry!(uri, job_json)
   end
 
   def generate_grading_job(sub, secret)
@@ -124,7 +128,7 @@ class JunitGrader < Grader
     end
     errors
   end
-  
+
   protected
   def search_for(entries, path, &block)
     entries.map do |k, v|
@@ -140,7 +144,7 @@ class JunitGrader < Grader
       end
     end.flatten
   end
-  
+
   def load_junit_params
     return if new_record?
     testClass, errorsToShow, testTimeout = self.params.to_s.split(";")
@@ -151,7 +155,7 @@ class JunitGrader < Grader
   def set_junit_params
     self.params = "#{self.test_class};#{self.errors_to_show};#{self.test_timeout}"
   end
-  
+
   def do_grading(assignment, sub)
     g = self.grade_for sub
     Dir.mktmpdir("grade-#{sub.id}-#{g.id}_") do |build_dir|
@@ -164,7 +168,7 @@ class JunitGrader < Grader
             g.out_of = self.avail_score
             g.updated_at = DateTime.current
             g.available = true
-            g.save!            
+            g.save!
           else
             timeout = Grader::DEFAULT_GRADING_TIMEOUT
             # If the professor supplied a per-test timeout, then we can relax our overall timeout a bit
@@ -338,7 +342,7 @@ class JunitGrader < Grader
   # file_path to which it was saved.
   def generate_orca_secret!(sub)
     grader_dir = sub.upload.grader_path(self)
-    secret = SecureRandom.hex(32) 
+    secret = SecureRandom.hex(32)
     file_path = grader_dir.join("orca.secret")
     File.open(file_path, "w") do |secret_file|
       secret_file.write(secret)
@@ -346,38 +350,45 @@ class JunitGrader < Grader
     return secret, file_path
   end
 
-  def post_job_json_with_retry(uri, job_json)
+  def generate_failed_job_result(error)
+    {
+      shell_responses: [],
+      errors: ["Failed to send grading job to Orca; encountered the following error: #{error.message}."]
+    }
+  end
+
+  # PUT JSONified grading job to the given uri for Orca. Return true
+  # if successful, else false. Run with exponential backoff.
+  def put_job_json_with_retry!(uri, job_json)
     # Exponential back off variables. Wait time in ms.
-    max_wait_time, current_exponent, status_code = 32 * 1000, 0, nil
-    while status_code != 200 do
-     unless status_code == nil
-       random_wait_interval = rand(1000)
-       wait_time = [(2**current_exponent * 1000) + random_wait_interval, max_wait_time].min
-       if wait_time == max_wait_time
-         break
-       end
-       sleep(wait_time)
-     end
+    max_requests = 5
+    attempts, status_code = 0, nil
+    while status_code != 200
+        response = Net::HTTP.put(uri, job_json, { "Content-Type" => "application/json" })
+        status_code = response.code
+        if should_retry_web_request? status_code
+          attempts += 1
+          if attempts == max_requests
+            break
+          end
+          sleep(2**attempts + rand)
+        end
     end
+    response.value
+  end
 
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    res = http.post(job_json, {"Content-Type": "application/json"})
-    status_code = res.status_code
-    current_exponent++
-
-    if status_code != 200
-      raise OrcaJobCreationError.new(status_code)
-    end
- end
+  def should_retry_web_request?(status_code)
+    [503, 504].include? status_code
+  end
 
   def generate_files_hash(sub)
-    files = {}
-
-    files["sub"] = {}
-    files["sub"]["url"] = sub.upload.url
-    files["sub"]["mime_type"] = sub.upload.read_metadata["mimetype"].first
-    files["sub"]["should_replace_paths"] = false
+    files = {
+      submission: {
+        url: sub.upload.url,
+        mime_type: sub.upload.read_metadata["mimetype"].first,
+        should_replace_paths: false
+      }
+    }
 
     @zip_paths.each do |key, path|
       files[key] = {}
@@ -387,17 +398,18 @@ class JunitGrader < Grader
     end
 
     # TODO: configure separation of starter and test and rewrite this logic
-    files["grader_zip"] = {}
-    files["grader_zip"]["url"] = self.upload.url
-    files["grader_zip"]["mime_type"] = self.upload.read_metadata["mimetype"].first
-    files["grader_zip"]["should_replace_paths"] = false
-    
+    files["grader_zip"] = {
+      url: self.upload.url,
+      mime_type: self.upload.read_metadata["mimetype"].first,
+      should_replace_paths: false
+    }
+
     @@resource_files.each do |file_path, (files_key, mime, should_replace_paths)|
-      files[files_key] = {}
-      files[files_key]["url"] = 
-        "#{Settings.site_url}/resources/#{files_path.gsub('lib/assets/', '')}"
-      files[files_key]["mime_type"] = mime
-      files[files_key]["should_replace_paths"] = should_replace_paths
+      files[files_key] = {
+        url: "#{Settings.site_url}/resources/#{files_path.gsub('lib/assets/', '')}",
+        mime_type: mime,
+        should_replace_paths: should_replace_paths
+      }
     end
     files
   end
@@ -417,16 +429,6 @@ class JunitGrader < Grader
   def process_grader_zip
     zip_paths = JavaGraderFileProcessor.process_zip(self.upload, self)
     @zip_paths = zip_paths
-  end
-
-  class OrcaJobCreationError < StandardError
-    
-    attr_reader :status_code
-
-    def initialize(status_code, msg="Could not send a job to Orca after multiple HTTP request retries.")
-      @status_code = status_code
-      super
-    end
   end
 
   def classNamed(dict, name)
