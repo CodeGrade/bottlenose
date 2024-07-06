@@ -114,20 +114,24 @@ class Grader < ApplicationRecord
   before_save :save_uploads
 
   include GradersHelper
-  
+
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
   end
-  
+
   @delayed_grades = {}
   @delayed_count = 0
-  
+
   def self.delayed_grades
     @delayed_grades
   end
   def self.delayed_count
     @delayed_count
+  end
+
+  def self.orca_config
+    YAML.load(Rails.root.join("config/orca.yml"))
   end
 
   def generate_grading_job(sub)
@@ -206,7 +210,7 @@ class Grader < ApplicationRecord
       0.0
     end
   end
-  
+
   def grade_sync!(assignment, submission)
     ans = do_grading(assignment, submission)
     submission.compute_grade! if submission.grade_complete?
@@ -342,18 +346,19 @@ class Grader < ApplicationRecord
 
   def delay_for_sub(sub)
     # Delay = 1 minute * # of subs (excluding given sub) in the last 15 minutes.
-    duration = 15.minutes
-    recent_subs = self.assignment.submissions_for(sub.user_or_team)
-                    .where("created_at >= :start_time", { start_time: sub.created_at - 15.minutes })
+    delay_window = orca_config['queue']['delay_window_mins'].minutes
+    delay_base = orca_config['queue']['delay_base_mins'].minutes
+    recent_subs = assignment.submissions_for(sub.team || sub.user)
+                    .where('created_at >= :start_time', { start_time: sub.created_at - delay_window })
                     .count - 1
-    recent_subs * 1.minute 
+    recent_subs * delay_base
   end
 
   def save_uploads
     self.upload&.save!
     self.extra_upload&.save!
   end
-  
+
   def recompute_grades
     # nothing to do by default
   end
@@ -370,7 +375,7 @@ class Grader < ApplicationRecord
     end
     g
   end
- 
+
   def is_int(v)
     Integer(v) rescue false
   end

@@ -525,13 +525,7 @@ class Submission < ApplicationRecord
     return sub_dirs, sub_files
   end
 
-  def priority
-    duration = 15.minutes
-    priority_base = 60 # seconds
-    priority_base * (self.team ? 
-      self.team.num_submissions_in_last_duration(self.created_at, duration) :
-      self.user.num_submissions_in_last_duration(self.created_at, duration))
-  end
+
 
   protected
 

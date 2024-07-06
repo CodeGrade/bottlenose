@@ -1,0 +1,6 @@
+queue:
+  delay_window_mins: 15
+  delay_base_mins: 1
+
+site_url:
+  development: http://localhost:4000
