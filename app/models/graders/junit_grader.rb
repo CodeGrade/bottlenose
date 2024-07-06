@@ -66,23 +66,27 @@ class JunitGrader < Grader
   end
 
   def grade(assignment, submission, prio = 0)
-    begin
-      secret, secret_file_path = generate_orca_secret!(submission)
-      send_job_to_orca(submission, secret)
-    rescue Net::HTTPError => exception
-      FileUtils.rm(secret_file_path)
-      grader_dir = submission.upload_path_for
-      result_path = File.join(grader_dir, "result.json")
-      File.open(result_path, "w") do |f|
-        f.write(generate_failed_job_result(exception).to_json)
+    Thread.new do
+      grader_dir = submission.upload.path_for(self)
+      begin
+        secret, secret_file_path = generate_orca_secret!(submission, grader_dir)
+        send_job_to_orca(submission, secret)
+      rescue IOError => e
+        error_str = "Failed to create secret for job; encountered the following: #{e}"
+        write_failed_job_result(error_str, grader_dir)
+      rescue Net::HTTPError => e
+        FileUtils.rm(secret_file_path)
+        error_str = "Failed to send job to Orca; enountered the following: #{e}"
+        write_failed_job_result(error_str, grader_dir)
       end
     end
     super(assignment, submission, prio)
   end
 
   def send_job_to_orca(submission, secret)
+    orca_url = orca_config['site_url'][Rails.env]
     job_json = JSON.generate(generate_grading_job(submission, secret))
-    uri = URI.parse("#{Settings["orca_url"]}/grading_queue")
+    uri = URI.parse("#{orca_url}/grading_queue")
     put_job_json_with_retry!(uri, job_json)
   end
 
@@ -340,39 +344,43 @@ class JunitGrader < Grader
   # Generates a secret to be paired with an Orca grading job
   # and compared upon response. Returns the secret and the
   # file_path to which it was saved.
-  def generate_orca_secret!(sub)
-    grader_dir = sub.upload.grader_path(self)
-    secret = SecureRandom.hex(32)
-    file_path = grader_dir.join("orca.secret")
+  def generate_orca_secret!(sub, secret_save_dir)
+    secret_length = 32
+    secret = SecureRandom.hex(secret_length)
+    file_path = secret_save_dir.join("orca.secret")
     File.open(file_path, "w") do |secret_file|
       secret_file.write(secret)
     end
-    return secret, file_path
+    [secret, file_path]
   end
 
-  def generate_failed_job_result(error)
+  def write_failed_job_result(error_str, result_dir)
+    result = generate_failed_job_result(error_str)
+    File.open(result_dir.join('result.json'), 'w') do |f|
+      f.write(result.to_json)
+    end
+  end
+
+  def generate_failed_job_result(error_str)
     {
+      type: "GradingJobResult",
       shell_responses: [],
-      errors: ["Failed to send grading job to Orca; encountered the following error: #{error.message}."]
+      errors: [error_str]
     }
   end
 
-  # PUT JSONified grading job to the given uri for Orca. Return true
-  # if successful, else false. Run with exponential backoff.
   def put_job_json_with_retry!(uri, job_json)
     # Exponential back off variables. Wait time in ms.
     max_requests = 5
     attempts, status_code = 0, nil
     while status_code != 200
-        response = Net::HTTP.put(uri, job_json, { "Content-Type" => "application/json" })
-        status_code = response.code
-        if should_retry_web_request? status_code
-          attempts += 1
-          if attempts == max_requests
-            break
-          end
-          sleep(2**attempts + rand)
-        end
+      response = Net::HTTP.put(uri, job_json, { 'Content-Type' => 'application/json' })
+      status_code = response.code
+      if should_retry_web_request? status_code
+        attempts += 1
+        if attempts == max_requests then break end
+        sleep(2**attempts + rand)
+      end
     end
     response.value
   end
