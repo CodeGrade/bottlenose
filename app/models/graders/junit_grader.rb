@@ -2,10 +2,11 @@ require 'open3'
 require 'tap_parser'
 require 'audit'
 require 'net/http'
+require 'digest'
 require 'securerandom'
 
 class JunitGrader < Grader
-  after_initialize :load_junit_params
+  after_initialize :load_junit_params, :create_image_build_config
   after_save :process_grader_zip
   before_validation :set_junit_params
   validate :proper_configuration
@@ -131,6 +132,26 @@ class JunitGrader < Grader
       end
     end
     errors
+  end
+
+  def create_image_build_config
+    save_dir = upload.grader_dir(self)
+    File.open(save_dir.join('image-config.json'), 'w') do |f|
+      f.write(image_build_config)
+    end
+  end
+
+  def image_build_config
+    # TODO: This should be saved to the assets or resources dir.
+    dockerfile_path = Rails.root.join("app/models/graders/dockerfiles/orca-java-grader.Dockerfile")
+    File.open(dockerfile_path) do |dockerfile_fp|
+      contents = dockerfile_fp.read
+      sha_sum = Digest::SHA256.base64digest
+      return {
+        dockerfileContents: contents,
+        dockerfileSHASum: sha_sum
+      }
+    end
   end
 
   protected
@@ -435,8 +456,7 @@ class JunitGrader < Grader
   end
 
   def process_grader_zip
-    zip_paths = JavaGraderFileProcessor.process_zip(self.upload, self)
-    @zip_paths = zip_paths
+    @zip_paths = JavaGraderFileProcessor.process_zip(upload, self)
   end
 
   def classNamed(dict, name)
