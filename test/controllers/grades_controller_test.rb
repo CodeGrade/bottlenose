@@ -25,14 +25,15 @@ class GradesControllerTest < ActionController::TestCase
         status_code: 0,
         timed_out: false,
         cmd: ["echo", "\"TAP output.\""]
-      }]
+      }],
+      errors: []
     }
-    @grader_dir = @john_hello.upload.grader_path(@grader)
+    @grader_dir = @john_hello_grade.dir_for_submission(@john_hello)
     @grader_dir.mkdir
     @orca_response_base_params = {
       course_id: @cs101.id,
       assignment_id: @hello.id,
-      submission_id: @john_hello.id,
+      submission_id: @john_hello.id
     }
   end
 
@@ -51,24 +52,12 @@ class GradesControllerTest < ActionController::TestCase
     controller_params = @orca_response_base_params.merge(@orca_john_hello_response)
     post :orca_response, params: controller_params
     assert_response :success
-    assert_not File.exist? secret_file_path 
-    
-    log_file_path, output_file_path = @grader_dir.join("orca_logs.json"), @grader_dir.join("orca_output")
-    assert File.exist? log_file_path
-    File.open(log_file_path) do |f|
-      expected_logs = JSON.generate(
-        {shell_responses: @orca_john_hello_response[:shell_responses],
-          execution_errors: nil
-          }
-        )
-      logs = f.read
-      assert_equal(expected_logs, logs)
-    end
-    assert File.exist? output_file_path
-    File.open(output_file_path) do |f|
-      expected_output = @orca_john_hello_response[:output]
-      output = f.read
-      assert_equal(expected_output, output)
+    assert_not File.exist? secret_file_path
+
+    File.open(@grader_dir.join("result.json")) do |f|
+      contents = JSON.parse(f.read)
+      response_with_string_keys = JSON.parse(JSON.generate(@orca_john_hello_response.except(:key)))
+      assert_equal response_with_string_keys, contents
     end
   end
 
@@ -81,8 +70,8 @@ class GradesControllerTest < ActionController::TestCase
     end
 
     controller_params = @orca_response_base_params
-                          .merge(@orca_john_hello_response)
-                          .merge({key: JSON.generate({grade_id: 12345, secret: @orca_secret})})
+                        .merge(@orca_john_hello_response)
+                        .merge({ key: JSON.generate({ grade_id: Grade.last.id + 1, secret: @orca_secret }) })
     post :orca_response, params: controller_params
     assert_response :missing
   end
@@ -104,9 +93,13 @@ class GradesControllerTest < ActionController::TestCase
     end
 
     controller_params = @orca_response_base_params
-                          .merge(@orca_john_hello_response)
-                          .merge({key: JSON.generate({grade_id: @john_hello_grade.id, 
-                            secret: "This is not the secret you're looking for."})})
+                        .merge(@orca_john_hello_response)
+                        .merge({ key: JSON.generate(
+                                {
+                                  grade_id: @john_hello_grade.id,
+                                  secret: "This is not the secret you're looking for."
+                                }
+                              ) })
     post :orca_response, params: controller_params
     assert_response :missing
   end

@@ -48,30 +48,24 @@ class GradesController < ApplicationController
 
   def orca_response
     response_params = orca_response_params
-    key = response_params["key"]
-    grade_id, secret = key["grade_id"], key["secret"]
+    key = response_params[:key]
+    grade_id, secret = key['grade_id'], key['secret']
     grade = Grade.find_by(id: grade_id)
-    if grade == nil
+    if grade.nil?
       render body: nil, status: 404
       return
     end
 
-    grader_dir = @submission.upload.grader_path(grade.grader)
-    secret_file_path = grader_dir.join("orca.secret")
+    grader_dir = grade.dir_for_submission(@submission)
+    secret_file_path = grader_dir.join('orca.secret')
     unless valid_orca_response?(secret_file_path, secret)
       render body: nil, status: 404
       return
     end
 
-    File.open(grader_dir.join("orca_logs.json"), "w") do |f|
-      f.write(JSON.generate(response_params["logs"]))
+    File.open(grader_dir.join("result.json"), "w") do |f|
+      f.write(JSON.generate(response_params.except(:key)))
     end
-    if response_params["output"]
-      File.open(grader_dir.join("orca_output"), "w") do |f|
-        f.write(response_params["output"])
-      end
-    end
-
     FileUtils.rm(secret_file_path)
   end
 
@@ -107,7 +101,7 @@ class GradesController < ApplicationController
       FileUtils.rm_rf(export)
     end
   end
-  
+
   def update
     if current_user_site_admin? || current_user_staff_for?(@course)
       self.send("update_#{@assignment.type.capitalize}")
@@ -153,7 +147,6 @@ class GradesController < ApplicationController
   protected
 
   def orca_response_params
-    ans = {}
     key = params.require(:key)
     shell_responses = params.require(:shell_responses).map do |response_as_param|
       response_hash = response_as_param.permit!.to_h
@@ -161,16 +154,15 @@ class GradesController < ApplicationController
       response_hash[:timed_out] = response_hash[:timed_out] == "true" ? true : false
       response_hash
     end
-    permitted = params.permit(:execution_errors, :output)
-    execution_errors, output = permitted[:execution_errors], permitted["output"]
-    ans["key"] = JSON.parse(key)
-    ans["logs"] = {
+    errors, output = params[:errors] || [], params[:output]
+    {
+      key: JSON.parse(key),
       shell_responses: shell_responses,
-      execution_errors: execution_errors
+      output: output,
+      errors: errors
     }
-    ans["output"] = output
-    ans
   end
+
   def comments_params
     if params[:comments].is_a? String
       comms = JSON.parse(params[:comments])
@@ -195,9 +187,8 @@ class GradesController < ApplicationController
   end
 
   def valid_orca_response?(secret_file_path, response_secret)
-    unless File.exist? secret_file_path
-      return false
-    end
+    return false unless File.exist? secret_file_path
+
     File.open(secret_file_path) do |fp|
       secret_from_file = fp.read
       return secret_from_file == response_secret
@@ -217,7 +208,7 @@ class GradesController < ApplicationController
     @grader = @grade.grader
   end
 
-  def find_grader  
+  def find_grader
     @grader = Grader.find_by(id: params[:id])
     if @grader.nil?
       redirect_to course_assignment_path(params[:course_id], params[:assignment_id]),
@@ -294,7 +285,7 @@ class GradesController < ApplicationController
         course: @course,
         assignment: @assignment,
         submission: @submission
-      )        
+      )
     end
   end
 
@@ -349,7 +340,7 @@ class GradesController < ApplicationController
   # Bulk editing of grades
   def bulk_edit_ExamGrader
     edit_exam_grades_for(@course.students_with_drop_info)
-    
+
     render "edit_#{@assignment.type.underscore}_grades"
   end
   def bulk_edit_RacketStyleGrader
@@ -392,7 +383,7 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade editing for that assignment type is not supported"
   end
-  
+
   def bulk_edit_curve_Files
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk curved grade editing for that assignment type is not supported"
@@ -428,11 +419,11 @@ class GradesController < ApplicationController
   def bulk_update_JavaStyleGrader
     bulk_update_tap_grader
   end
-  
+
   def bulk_update_PythonStyleGrader
     bulk_update_tap_grader
   end
-  
+
   def bulk_update_JunitGrader
     bulk_update_tap_grader
   end
@@ -511,7 +502,7 @@ class GradesController < ApplicationController
 
   def bulk_edit_curve_ExamGrader
     edit_exam_grades_for(@course.students_with_drop_info)
-    
+
     render "edit_#{@assignment.type.underscore}_curved_grades"
   end
   def bulk_update_curve_ExamGrader
@@ -769,7 +760,7 @@ HEADER
     end
     render "submissions/details_files"
   end
-  
+
   # JavaStyleGrader
   def show_JavaStyleGrader
     show_inline_comment_grader
