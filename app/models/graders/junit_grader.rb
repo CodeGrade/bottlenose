@@ -4,9 +4,10 @@ require 'audit'
 require 'net/http'
 require 'digest'
 require 'securerandom'
+require 'java_grader_file_processor'
 
 class JunitGrader < Grader
-  after_initialize :load_junit_params, :create_image_build_config
+  after_initialize :load_junit_params
   after_save :process_grader_zip
   before_validation :set_junit_params
   validate :proper_configuration
@@ -69,15 +70,20 @@ class JunitGrader < Grader
   def grade(assignment, submission, prio = 0)
     Thread.new do
       grader_dir = submission.upload.path_for(self)
+      Audit.log("Attempting to send job to Orca.")
       begin
         secret, secret_file_path = generate_orca_secret!(submission, grader_dir)
+        Audit.log("Orca secret created.")
         send_job_to_orca(submission, secret)
+        Audit.log("Sent job to Orca!")
       rescue IOError => e
         error_str = "Failed to create secret for job; encountered the following: #{e}"
+        Audit.log(error_str)
         write_failed_job_result(error_str, grader_dir)
       rescue Net::HTTPError => e
         FileUtils.rm(secret_file_path)
         error_str = "Failed to send job to Orca; enountered the following: #{e}"
+        Audit.log(error_str)
         write_failed_job_result(error_str, grader_dir)
       end
     end
@@ -135,7 +141,7 @@ class JunitGrader < Grader
   end
 
   def create_image_build_config
-    save_dir = upload.grader_dir(self)
+    save_dir = upload.grader_path(self)
     File.open(save_dir.join('image-config.json'), 'w') do |f|
       f.write(image_build_config)
     end
