@@ -25,10 +25,11 @@ class GradingConflictsController < ApplicationController
 
   def new
     @tas_and_graders = Registration.where(course: @course)
-      .where(role: [Registration.roles[:grader], Registration.roles[:assistant]])
-      .map{|reg| reg.user}
+                         .where(role: [Registration.roles[:grader], Registration.roles[:assistant]])
+                         .includes(:user)
+                         .map{|reg| reg.user}
     @students = Registration.where(course: @course, role: Registration.roles[:student])
-      .map{|reg| reg.user}
+                  .includes(:user).map{|reg| reg.user}
 
     if current_user.course_grader?(@course) || current_user.course_assistant?(@course)
       @students = @students.select{ |s| !GradingConflict.exists?(course: @course, 

@@ -6,7 +6,7 @@ class UploadTest < ActiveSupport::TestCase
   test "Should ensure extracted contents are readable" do
     make_standard_course
     assn = create(:assignment, name: "Assignment 1", course: @cs101, teamset: @ts1,
-             available: DateTime.now - 1.weeks, due_date: DateTime.now + 1.weeks,
+             available: DateTime.current - 1.weeks, due_date: DateTime.current + 1.weeks,
              lateness_config: @cs101.lateness_config)
 
     upload_file = fixture_file_upload("Archive-no-perms.zip", "application/octet-stream")

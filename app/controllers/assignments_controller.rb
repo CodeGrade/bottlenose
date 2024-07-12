@@ -19,7 +19,7 @@ class AssignmentsController < ApplicationController
         (Grade.where(submission: submissions, grader: @assignment.graders).count ==
          submissions.count * @assignment.graders.count)
       @all_complete = no_missing_grades && (Grade.where(submission: submissions, score: nil).count == 0)
-    elsif @assignment.nil? || (@assignment.available > DateTime.now)
+    elsif @assignment.nil? || (@assignment.available > DateTime.current)
       redirect_back fallback_location: course_assignments_path, alert: "No such assignment exists or is available"
       return
     else
@@ -77,7 +77,7 @@ class AssignmentsController < ApplicationController
   end
 
   def index
-    @ordered_assignments = @course.assignments.order(due_date: :desc, available: :desc)
+    @ordered_assignments = @course.assignments.order(due_date: :desc, available: :desc, name: :desc, created_at: :desc)
     @stats = Submission.joins(:used_subs).where(assignment: @ordered_assignments)
              .select("min(submissions.assignment_id) as a_id")
              .select("min(score), avg(score), max(score)")
@@ -92,8 +92,8 @@ class AssignmentsController < ApplicationController
       @files = @assignment
     else
       @files = Files.new(course_id: @course.id,
-                         due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
-                         available: Time.now.strftime("%Y/%m/%d %H:%M"),
+                         due_date: (Time.current + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
+                         available: Time.current.strftime("%Y/%m/%d %H:%M"),
                          lateness_config_id: @course.lateness_config_id,
                          points_available: last_assns["Files"]&.points_available,
                          request_time_taken: true)
@@ -103,8 +103,8 @@ class AssignmentsController < ApplicationController
       @exam = @assignment
     else
       @exam = Exam.new(course_id: @course.id,
-                       due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
-                       available: Time.now.strftime("%Y/%m/%d %H:%M"),
+                       due_date: (Time.current + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
+                       available: Time.current.strftime("%Y/%m/%d %H:%M"),
                        lateness_config_id: @course.lateness_config_id,
                        points_available: last_assns["Exam"]&.points_available,
                        request_time_taken: false)
@@ -115,8 +115,8 @@ class AssignmentsController < ApplicationController
       @quest = @assignment
     else
       @quest = Questions.new(course_id: @course.id,
-                             due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
-                             available: Time.now.strftime("%Y/%m/%d %H:%M"),
+                             due_date: (Time.current + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
+                             available: Time.current.strftime("%Y/%m/%d %H:%M"),
                              lateness_config_id: @course.lateness_config_id,
                              points_available: last_assns["Questions"]&.points_available,
                              request_time_taken: false)
@@ -127,8 +127,8 @@ class AssignmentsController < ApplicationController
       @codereview = @assignment
     else
       @codereview = Codereview.new(course_id: @course.id,
-                                   due_date: (Time.now + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
-                                   available: Time.now.strftime("%Y/%m/%d %H:%M"),
+                                   due_date: (Time.current + 1.week).end_of_day.strftime("%Y/%m/%d %H:%M"),
+                                   available: Time.current.strftime("%Y/%m/%d %H:%M"),
                                    lateness_config_id: @course.lateness_config_id,
                                    points_available: last_assns["Codereview"]&.points_available,
                                    request_time_taken: false)
@@ -146,6 +146,7 @@ class AssignmentsController < ApplicationController
   end
 
   def edit_weights
+    @ordered_assignments = @course.assignments_sorted.reverse_order
   end
 
   def update_weights

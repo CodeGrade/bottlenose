@@ -47,7 +47,7 @@ ERROR
   def get_queue_info
     Grader::GradingJob.prune(0)
     @queue_stats = Grader.delayed_grades
-    now = Time.now
+    now = Time.current
     @avg_wait = @queue_stats.reduce(0) do |sum, (k, v)|
       delay = now - v[:start_time]
       v[:wait_s] = "#{(delay / 60).to_i} minutes, #{(delay % 60).to_i} seconds"

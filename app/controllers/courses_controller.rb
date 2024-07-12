@@ -33,7 +33,7 @@ class CoursesController < ApplicationController
 
     if current_user_prof_for?(@course)
       @abnormals = @course.abnormal_subs
-      @assns = @course.assignments_sorted
+      @assns = @course.assignments_sorted.to_a
       @unpublished = @course.unpublished_grades
       @missing_grading = @course.missing_grading.group_by(&:assignment)
     end
@@ -140,7 +140,7 @@ class CoursesController < ApplicationController
       redirect_to course_path(@course), alert: "You cannot withdraw from the course: you are the only instructor for it."
       return
     end
-    reg.dropped_date = DateTime.now
+    reg.dropped_date = DateTime.current
     reg.show_in_lists = false
     reg.save!
     current_user.disconnect(@course)

@@ -38,8 +38,7 @@ class Exam < Assignment
     sc.check(questions).each{|e| self.errors.add(:base, e)}
     return false if self.errors.count > 0
     questions = sc.convert(questions)
-    weights = questions.map{|q| q["parts"] || q}.flatten.select{|q| !q["extra"]}.map{|q| q["weight"]}
-    @total_weight = weights.sum
+    @total_weight = flattened_questions(questions).reject{|q| q["extra"]}.sum{|q| q["weight"]}
     grader = self.graders.first
     if grader.nil?
       grader = Grader.new(type: "ExamGrader", assignment: self)
@@ -70,7 +69,7 @@ class Exam < Assignment
     @new_flat = self.flattened_questions(@new_questions)
     case @exam_disposal
     when "delete"
-      self.submissions.destroy_all
+      Submission.bulk_delete(self.submissions.map(&:id))
     when "percentage"
       inconsistency = questions_incompatible(@old_questions, @new_questions)
       if inconsistency
@@ -98,7 +97,7 @@ class Exam < Assignment
       raise "Unexpected exam disposal option: #{@exam_disposal}"
     end
 
-    weights = @new_flat.select{|q| !q["extra"]}.map{|q| q["weight"]}
+    weights = @new_flat.reject{|q| q["extra"]}.map{|q| q["weight"]}
     @total_weight = weights.sum
     grader = self.graders.first
     if grader.nil?
@@ -169,17 +168,7 @@ class Exam < Assignment
   
   def flattened_questions(qs = nil)
     qs = qs || self.questions
-    flat = []
-    qs.each do |q|
-      if q["parts"]
-        q["parts"].each do |p|
-          flat.push p
-        end
-      else
-        flat.push q
-      end
-    end
-    flat
+    qs.map {|q| q["parts"] || q}.flatten(1)
   end
   
   def sections

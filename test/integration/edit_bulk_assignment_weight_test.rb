@@ -12,17 +12,17 @@ class EditBulkAssignmentWeightTest < ActionDispatch::IntegrationTest
   end
 
   def create_exams
-    @exam = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @exam = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam1",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @exam.due_date = @exam.available
     @exam.assignment_file = assign_upload_obj("Exam", "exam.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)
     @exam.graders << g
     @exam.save!
-    @exam2 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.now, points_available: 25,
+    @exam2 = Exam.new(course: @cs101, teamset: @ts1, due_date: Time.current, points_available: 25,
                     team_subs: false, lateness_config: @cs101.lateness_config, name: "Exam2",
-                    available: Time.now - 1.days, blame: @fred)
+                    available: Time.current - 1.days, blame: @fred)
     @exam2.due_date = @exam2.available
     @exam2.assignment_file = assign_upload_obj("Exam", "exam.yaml")
     g = ExamGrader.new(avail_score: 50, order: 1)

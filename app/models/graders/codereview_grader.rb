@@ -35,7 +35,7 @@ class CodereviewGrader < Grader
 
     g.out_of = self.avail_score
 
-    g.updated_at = DateTime.now
+    g.updated_at = DateTime.current
     g.available = false
     g.save!
 
@@ -89,7 +89,7 @@ class CodereviewGrader < Grader
     g.out_of = self.avail_score
     g.score = score.clamp(0, self.avail_score)
 
-    g.updated_at = DateTime.now
+    g.updated_at = DateTime.current
     g.available = false
     g.save!
 

@@ -106,7 +106,7 @@ div.pdfPages > div.pageContainer > div.regionComments > div.page {
                                           syntax_highlighter: :rouge,
                                           syntax_highlighter_opts: {formatter: "html_legacy", line_numbers: true, inline_theme: "github"},
                                           math_engine_opts: {preview: true, preview_as_code: true})
-         content = sanitize(content.to_html, scrubber: SubmissionsHelper::MarkupScrubber.new)
+         content = sanitize(content.to_html, scrubber: SubmissionsHelper::MarkupScrubber.new(@submission))
          content = escape_javascript(render("submissions/markdown_template", body: content)) %>
       <script>
         (function() {

@@ -1,0 +1,306 @@
+<% @page_title = @grader.display_type %>
+<% cur_reg = current_user.registration_for(@course)
+   cur_reg_staff = cur_reg&.staff? %>
+
+<style>
+  table.rotated {
+    border-collapse: collapse;
+    white-space: nowrap;
+    overflow-x: auto;
+    --table-border-width: 1px;
+  }
+  table.rotated > thead > tr > th {
+    position: relative;
+  }
+  table.rotated > thead > tr > th:not(:first-child) {
+    width: fit-content;
+    padding: 0.5em;
+  }
+  table.rotated > thead > tr {
+    min-width: fit-content;
+    min-height: fit-content;
+    
+  }
+  th.rotated {
+    pointer-events: none;
+  }
+  th.rotated * {
+    pointer-events: initial;
+  }
+  th.rotated > div.measure {
+    transform: skew(-45deg);
+    transform-origin: center bottom;
+    margin: -0.5em;
+    border-left: 0px;
+  }
+  th.rotated > div.display, th.rotated > div.border {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    text-align: left;
+    transform:
+      translate(calc(100% - var(--table-border-width) / 2), var(--table-border-width))
+      rotate(-45deg);
+    transform-origin: 0% calc(100% - var(--table-border-width));
+  }
+  th.rotated > div.border {
+    width: 100%;
+    z-index: 1000;
+  }
+  th.rotated > div.display {
+    left: 70%;
+  }
+  th.rotated > div.display > span {
+    cursor: pointer;
+  }
+  th.rotated > div.measure > span {
+    writing-mode: vertical-rl;
+    font-size: 75%;
+    visibility: hidden;
+  }
+  th.rotated > div.display > span, th.rotated > div.border > span {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+  }
+  th.rotated:nth-child(2) > div.measure {
+    border-left: var(--table-border-width) solid gray;
+  }
+  th.rotated > div.border > span {
+    border-bottom: var(--table-border-width) solid gray;
+  }
+  th.rotated > div.border > span > span {
+    visibility: hidden;
+    padding-right: 1em;
+  }
+  table.rotated > tbody > tr > td {
+    border-right: var(--table-border-width) solid gray;
+    min-width: fit-content;
+  }
+  table.rotated > tbody > tr > td:not(:first-child) {
+    text-align: center;
+    padding: 0.5em;
+  }
+  div.with-table {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+</style>
+<p>
+  <%= link_to "< Back to submission", course_assignment_submission_path(@course, @assignment, @submission) %>
+</p>
+
+<h1>Submission</h1>
+
+<%= render 'submissions/sub_info' %>
+
+
+<h1>Scoring Details: <%= @grader.display_type %></h1>
+
+<h3>
+  <%= @grading_header %>
+  <% if cur_reg_staff && @grading_output.kind_of?(TapParser) %>
+  <% if File.file?(@grade.full_log) %>
+  <div class="btn-group" style="white-space: nowrap;">
+    <%= link_to Upload.upload_path_for(@grade.grading_output), class: "btn btn-default" do %>
+      <i class="glyphicon glyphicon-download-alt"></i> Download raw output
+    <% end %><button type="button" class="btn btn-md btn-default dropdown-toggle"
+                     data-toggle="dropdown"
+                     aria-haspopup="true" aria-expanded="false">
+         <span class="caret"></span>
+         <span class="sr-only">Toggle Dropdown</span>
+    </button><% #
+    %><ul class="dropdown-menu">
+      <li><%= link_to "Download raw output", 
+              Upload.upload_path_for(@grade.grading_output),
+              class: "dropdown-item" %></li>
+      <li><%= link_to "Download detailed build log", 
+              Upload.upload_path_for(@grade.full_log),
+              class: "dropdown-item" %></li>
+      <!-- <div class="dropdown-divider"></div> -->
+    </ul>
+  </div>
+  <% else %>
+    <%= link_to Upload.upload_path_for(@grade.grading_output), class: "btn btn-default" do %>
+      <i class="glyphicon glyphicon-download-alt"></i> Download raw output
+    <% end %>
+  <% end %>
+
+  <span class="pull-right">Total score:
+    <%= to_fixed(@grading_output.points_earned) %>&nbsp;/&nbsp;
+    <%= to_fixed(@grading_output.points_available)%>
+  </span>
+  <% end %>
+</h3>
+<% if @grading_output.kind_of?(String) %>
+<pre><%= @grading_output %></pre>
+<% else %>
+<div id="tests">
+  <% firstFailed = @tests.dig("thoroughness", "passed", :info, "results")&.select {|k, v| v.is_a? String}&.keys&.sort&.first %>
+  <% @tests.each do |comment, ts| %>
+    <% t = ts['passed'] %>
+    <% percentCorrect = t[:info]["actual"]["value"].to_f / t[:info]["expected"]["value"].to_f %>
+    <% if percentCorrect == 1
+       style = "alert-success"
+       elsif percentCorrect == 0
+       style = "alert-danger"
+       else
+       style = "alert-warning"
+       end %>
+    <div class="alert <%= style %>">
+      <p>
+        <% if cur_reg_staff %>
+        <span class="pull-right">Weight: <%= t[:info]["weight"] || 1 %></span>
+        <% end %>
+        <b><%= t[:comment] %></b>
+      </p>
+      <div style="padding: 0.75em 0; display: flex;">
+        <b><%= t[:info]["actual"]["label"] %>:</b>
+        <div style="flex-grow: 1;
+                    background: gray;
+                    padding: 2px;
+                    display: flex;
+                    margin-left: 2em;">
+          <b style="text-align: right;
+                    flex-basis: <%= (percentCorrect * 100).to_i %>%;
+                    min-width: fit-content;
+                    padding: 0 1em;" class="<%= style %>">
+            <%= t[:info]["actual"]["value"] %> out of <%= t[:info]["expected"]["value"] %>
+          </b>
+        </div>
+      </div>
+      <% if comment == 'correctness' %>
+      <p><b>Details:</b></p>
+      <table class="table table-condensed" style="margin-bottom: 0">
+        <thead>
+          <tr>
+            <th style="white-space: nowrap;"><%= t[:info]["details"][0] %></th>
+            <th style="padding-left: 2em;"><%= t[:info]["details"][1] %></th>
+          </tr>
+        </thead>
+        <tbody style="color: black;">
+          <% t[:info]["results"].sort_by(&:first).each do |k, v| %>
+          <tr>
+            <td style="border: none; width: 1%; white-space: nowrap; vertical-align: baseline;">
+              <pre style="padding: 0.25em; display: inline;"><%= k %></pre>
+            </td>
+            <td style="border: none; padding-left: 2em; vertical-align: baseline">
+              <% if v.is_a?(String) %>
+              <%= v %>
+              <% else %>
+              <pre style="margin: 0; padding: 0.25em;"><%= v.join("\n") %></pre>
+              <% end %>
+            </td>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <% end %>
+    </div>
+  <% end %>
+  <div class="panel panel-info">
+    <div class="panel-heading">
+      <h4><b>Which tests caught which chaffs?</b></h4>
+      <ul>
+        <li>The <b class="glyphicon glyphicon-flash"></b> cells indicate
+          that a particular test case caught a particular chaff.
+          The table shows all the test methods, including any invalid
+          ones that mistakenly caught a wheat.</li>
+        <li>Click on a chaff name to highlight all the chaffs that were
+          caught by the exact same tests as this one.  Click again to
+          unhighlight.</li>
+        <li>Click on a test name to highlight all the tests that 
+          caught the exact same chaffs as this one. Click again to
+          unhighlight.</li>
+      </ul>
+    </div>
+    <div class="with-table panel-body" id="byChaffs">
+      <table class="table table-condensed rotated" style="margin-bottom: 0;">
+        <thead>
+          <tr>
+            <th style="white-space: nowrap;">Chaff name</th>
+            <% @testNames.each do |t| %>
+              <th class="rotated">
+                <div class="measure" data-test="<%= t %>" ><span><%= t %></span></div>
+                <div class="display"><span><%= t %></span></div>
+                <div class="border"><span><span><%= t %></span></span></div>
+              </th>
+            <% end %>
+          </tr>
+        </thead>
+        <tbody>
+          <% @chaffNames.each do |c| %>
+          <tr>
+            <td style="white-space: nowrap; cursor: pointer;" data-chaff="<%= c %>"><%= c %></td>
+            <% @testNames.each do |t| %>
+              <% check = @testMatrixByChaff[c][t] %>
+              <td data-chaff="<%= c %>" data-test="<%= t %>" data-passed="<%= check %>"
+                  class="<%= check ? 'alert-info' : '' %>">
+                <% if check %>
+                <span class="glyphicon glyphicon-flash" />
+                <% else %>
+                <span class="glyphicon">&nbsp;</span>
+                <% end %>
+              </td>
+            <% end %>
+          </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+  const testMatrixByChaff = <%= raw json_escape(JSON.pretty_generate(@testMatrixByChaff)) %>;
+  const equivChaffs = <%= raw json_escape(JSON.pretty_generate(@equivChaffs)) %>;
+  const equivTests  = <%= raw json_escape(JSON.pretty_generate(@equivTests)) %>;
+  const chaffTable = document.getElementById("byChaffs");
+  (function() {
+    function unhighlight(tds) {
+      tds.each(function(index, elt) {
+        $(elt).removeClass("alert-warning").removeClass("alert-info");
+        if ($(elt).data("passed")) {
+          $(elt).addClass("alert-info");
+        }
+      });
+    }
+    function highlightRow(table, equivs) {
+      for (const equiv of equivs) {
+        $(table).find("tr:contains('" + equiv + "') td").addClass("alert-warning");
+      }
+    }
+    function selectChaff(e) {
+      if ($(e.target).hasClass("alert-warning")) {
+        unhighlight($(chaffTable).find(".alert-warning"));
+        return;
+      }
+      unhighlight($(chaffTable).find(".alert-warning"));
+      highlightRow(chaffTable, equivChaffs[e.target.innerText]);
+    }
+    function selectTestCol(e) {
+      if ($(e.target).closest("th").find(".measure").hasClass("alert-warning")) {
+        unhighlight($(chaffTable).find(".alert-warning"));
+        return;
+      }
+      unhighlight($(chaffTable).find(".alert-warning"));
+      const equivs = equivTests[e.target.innerText];
+      for (const equiv of equivs) {
+        $(chaffTable).find("*[data-test='" + equiv + "']")
+          .removeClass("alert-info")
+          .addClass("alert-warning");
+      }
+    }
+    $(chaffTable).find("tbody td:first-child").click(selectChaff);
+    $(chaffTable).find("th:not(:first-child) span").click(selectTestCol);
+    const lastTh = chaffTable.querySelector("th:last-child");
+    const lastMeasureDiv = lastTh.querySelector("div.measure");
+    const lastThSize = lastTh.getBoundingClientRect();
+    /* console.log(lastThSize); */
+    /* console.log(lastTh.querySelector("div.display").getBoundingClientRect()); */
+    const lastMeasureDivSize = lastMeasureDiv.getBoundingClientRect();
+    $(chaffTable).css("margin-right", (lastMeasureDivSize.width - lastThSize.width) + "px");
+  })();
+</script>
+
+<% end %>

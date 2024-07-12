@@ -15,9 +15,6 @@ gem 'devise_ldap_authenticatable' #, github: 'cschiewek/devise_ldap_authenticata
 gem 'pg'
 gem "passenger", ">= 5.0.25", require: "phusion_passenger/rack_handler"
 
-gem 'execjs'
-gem 'therubyracer'
-
 gem 'yaml_db' # used to dump database to YAML
 
 gem 'activerecord-import' # used for bulk import of multiple InlineComments
@@ -63,7 +60,7 @@ gem 'whenever', :require => false
 
 gem 'pretender'
 
-gem 'doorkeeper', "5.4.0"
+gem 'doorkeeper', "5.6.6"
 
 group :development do
   #gem "flatten_migrations"

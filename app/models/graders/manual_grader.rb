@@ -5,7 +5,7 @@ class ManualGrader < Grader
 
     g.out_of = self.avail_score
 
-    g.updated_at = DateTime.now
+    g.updated_at = DateTime.current
     g.available = false
     g.save!
 
@@ -80,7 +80,7 @@ class ManualGrader < Grader
       g.score = self.avail_score - deductions
     end
 
-    g.updated_at = DateTime.now
+    g.updated_at = DateTime.current
     g.available = false
     g.save!
 
@@ -99,7 +99,7 @@ class ManualGrader < Grader
           g.score = self.avail_score - deductions
         end
       end
-      g.updated_at = DateTime.now
+      g.updated_at = DateTime.current
       g.save!
     end
   end

@@ -53,7 +53,7 @@ module GradersHelper
     details_out, env, cmds, replacements, build_dir = get_build_arguments(assignment, sub)
     any_problems = false
     File.open(grader_dir.join(details_out), "w") do |details|
-      start_time = Time.now
+      start_time = Time.current
       details.puts("#{prefix}: Build began at #{start_time}")
       if include_dirtree
         details.puts("#{prefix}: Contents of temp directory are:")
@@ -97,7 +97,7 @@ module GradersHelper
       else
         details.puts("#{prefix}: Omitting contents of temp directory")
       end
-      end_time = Time.now
+      end_time = Time.current
       details.puts("Build ended at #{end_time}")
       details.puts("Total build time: #{end_time - start_time} seconds")
       yield prefix, any_problems, details
@@ -120,7 +120,7 @@ module GradersHelper
 
       g.score = 0
       g.out_of = self.avail_score
-      g.updated_at = DateTime.now
+      g.updated_at = DateTime.current
       g.available = true
       g.save!
 
@@ -142,7 +142,7 @@ module GradersHelper
     InlineComment.transaction do
       g.score = tap.points_earned
       g.out_of = tap.points_available
-      g.updated_at = DateTime.now
+      g.updated_at = DateTime.current
       g.available = true
       g.save!
 
