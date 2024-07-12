@@ -45,6 +45,7 @@ Rails.application.routes.draw do
   end
 
   get 'files/*path', to: 'files#upload', constraints: {path: /.*/}
+  get 'resources/*path', to: 'files#resource', constraints: {path: /.*/}
   
   resources :terms
 
