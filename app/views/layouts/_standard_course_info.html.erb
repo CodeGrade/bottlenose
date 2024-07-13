@@ -5,10 +5,10 @@
     display: flex;
     flex-direction: row;
     align-items: baseline;
-    justify-content: space-between; 
+    justify-content: space-between;
   }
   .sectionList {
-    padding: 0; 
+    padding: 0;
     line-height: normal;
     max-height: 6.5rem;
     overflow-y: auto;
@@ -41,7 +41,7 @@
 
         <% if cur_reg %>
             <p>
-                You are a
+                You are a<% if cur_reg.role.starts_with?("a", "e", "i", "o", "u") %>n<% end %>
                 <strong><%= cur_reg.role %></strong>
                 of this course.
             </p>
