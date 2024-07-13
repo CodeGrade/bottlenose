@@ -9,6 +9,12 @@ class FilesControllerTest < ActionController::TestCase
     "resource": Rails.root.join("lib/assets")
   }
 
+  setup do
+    unless File.directory? Upload.base_upload_dir
+      FileUtils.mkdir Upload.base_upload_dir
+    end
+  end
+
   test "should get valid file path" do
     @@method_to_dir.each do |method, dir|
       Tempfile.create("foo", dir) do |f|
