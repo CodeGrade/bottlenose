@@ -47,4 +47,10 @@
     <td class="col-sm-4"><%= f.spinner "errors_to_show", errs, min: 0, delta: 1 %></td>
     <td></td>
   </tr>
+  <tr class="form-group">
+    <td><%= f.label "status", "Use Orca?" %></td>
+    <td><%= f.check_box :status, checked: f.object.status.dig("useOrca"),
+      data: {toggle: "toggle", on: "Yes", off: "No"} %></td>
+    <td></td>
+  </tr>
 </table>
