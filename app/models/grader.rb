@@ -130,23 +130,23 @@ class Grader < ApplicationRecord
     @delayed_count
   end
 
-  def self.orca_config
-    YAML.load(Rails.root.join("config/orca.yml"))
+  def Grader::orca_config
+    YAML.load(File.open(Rails.root.join("config/orca.yml")))
   end
 
   def generate_grading_job(sub)
     fail NotImplementedError, "Graders who send jobs to Orca should implement this method."
   end
 
-  def generate_grading_job_metadata_table(sub)
+  def generate_metadata_table(sub)
     ans = {}
     if sub.team
       ans["display_name"] = sub.team.member_names
-      ans["id"] = sub.team_id
+      ans["id"] = sub.team_id.to_s
       ans["user_or_team"] = "team"
     else
       ans["display_name"] = sub.user.display_name
-      ans["id"] = sub.user_id
+      ans["id"] = sub.user_id.to_s
       ans["user_or_team"] = "user"
     end
     ans
@@ -346,8 +346,8 @@ class Grader < ApplicationRecord
 
   def delay_for_sub(sub)
     # Delay = 1 minute * # of subs (excluding given sub) in the last 15 minutes.
-    delay_window = orca_config['queue']['delay_window_mins'].minutes
-    delay_base = orca_config['queue']['delay_base_mins'].minutes
+    delay_window = Grader::orca_config['queue']['delay_window_mins'].minutes
+    delay_base = Grader::orca_config['queue']['delay_base_mins'].minutes
     recent_subs = assignment.submissions_for(sub.team || sub.user)
                     .where('created_at >= :start_time', { start_time: sub.created_at - delay_window })
                     .count - 1

@@ -18,7 +18,7 @@ class JunitGrader < Grader
     "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/java-archive", false],
     "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/java-archive", false]
   }
-  @@dockerfile_sha = "74b320b733359ebfa19428c8f073de1a700b6883e84ca70d0f13858830a7b250"
+  @@dockerfile_sha = "orca-java-grader"
 
   def autograde?
     true
@@ -69,7 +69,8 @@ class JunitGrader < Grader
 
   def grade(assignment, submission, prio = 0)
     Thread.new do
-      grader_dir = submission.upload.path_for(self)
+      grader_dir = submission.upload.grader_path(self)
+      grader_dir.mkpath
       Audit.log("Attempting to send job to Orca.")
       begin
         secret, secret_file_path = generate_orca_secret!(submission, grader_dir)
@@ -91,24 +92,26 @@ class JunitGrader < Grader
   end
 
   def send_job_to_orca(submission, secret)
-    orca_url = orca_config['site_url'][Rails.env]
+    orca_url = Grader::orca_config['site_url'][Rails.env]
     job_json = JSON.generate(generate_grading_job(submission, secret))
-    uri = URI.parse("#{orca_url}/grading_queue")
-    put_job_json_with_retry!(uri, job_json)
+    put_job_json_with_retry!(URI.parse("#{orca_url}/api/v1/grading_queue"), job_json)
   end
 
   def generate_grading_job(sub, secret)
+    url_helpers = Rails.application.routes.url_helpers
+    response_path = url_helpers.orca_response_course_assignment_submission_grades_path(
+      assignment.course, assignment, sub
+    )
     ans = {}
     ans["key"] = JSON.generate({ grade_id: self.grade_for(sub).id, secret: secret })
-    ans["files"] = self.generate_file_hash
-    ans["collation"] = sub.team ? { id: sub.team.id, type: "team" } :
-                        { id: sub.user.id, type: "user"}
-    ans["response_url"] = "#{Settings['site_url']}/"\
-                          "#{orca_response_course_assignment_submission_grades(@assignment.course, @assignment, sub)}"
-    ans["script"] = self.get_grading_script
-    ans["grading_image_sha"] = @@dockerfile_sha
-    ans["metadata"] = self.generate_grading_job_metadata_table(sub)
-    ans["priority"] = self.delay_for_sub(sub).in_seconds
+    ans["files"] = generate_files_hash sub
+    ans["collation"] = sub.team ? { id: sub.team.id.to_s, type: "team" } :
+      { id: sub.user.id.to_s, type: "user" }
+    ans["response_url"] = "#{Settings['site_url']}/#{response_path}"
+    ans["script"] = get_grading_script
+    ans["grader_image_sha"] = @@dockerfile_sha
+    ans["metadata_table"] = generate_metadata_table(sub)
+    ans["priority"] = delay_for_sub(sub).in_seconds
     ans
   end
 
@@ -396,16 +399,23 @@ class JunitGrader < Grader
     }
   end
 
-  def put_job_json_with_retry!(uri, job_json)
+  def put_job_json_with_retry!(orca_uri, job_json)
     # Exponential back off variables. Wait time in ms.
     max_requests = 5
     attempts, status_code = 0, nil
     while status_code != 200
-      response = Net::HTTP.put(uri, job_json, { 'Content-Type' => 'application/json' })
+      http_obj = Net::HTTP.new(orca_uri.host, orca_uri.port)
+      response = http_obj.send_request(
+        'PUT',
+        orca_uri.path,
+        job_json,
+        { 'Content-Type' => 'application/json' }
+      )
       status_code = response.code
+      debugger
       if should_retry_web_request? status_code
         attempts += 1
-        if attempts == max_requests then break end
+        break if attempts == max_requests
         sleep(2**attempts + rand)
       end
     end
@@ -420,28 +430,20 @@ class JunitGrader < Grader
     files = {
       submission: {
         url: sub.upload.url,
-        mime_type: sub.upload.read_metadata["mimetype"].first,
+        mime_type: sub.upload.read_metadata[:mimetype].first,
         should_replace_paths: false
       }
     }
-
-    @zip_paths.each do |key, path|
+    grader_zip_paths.each do |key, path|
       files[key] = {}
       files[key]["url"] = Settings["site_url"] + Upload.upload_path_for(path)
       files[key]["mime_type"] = "application/zip"
       files[key]["should_replace_paths"] = false
     end
 
-    # TODO: configure separation of starter and test and rewrite this logic
-    files["grader_zip"] = {
-      url: self.upload.url,
-      mime_type: self.upload.read_metadata["mimetype"].first,
-      should_replace_paths: false
-    }
-
     @@resource_files.each do |file_path, (files_key, mime, should_replace_paths)|
       files[files_key] = {
-        url: "#{Settings.site_url}/resources/#{files_path.gsub('lib/assets/', '')}",
+        url: "#{Settings['site_url']}/resources/#{file_path.to_s.gsub('lib/assets/', '')}",
         mime_type: mime,
         should_replace_paths: should_replace_paths
       }
@@ -450,7 +452,10 @@ class JunitGrader < Grader
   end
 
   def get_grading_script
-    build_script = JSON.load "lib/assets/build-scripts/junit_grader.json"
+    # NOTE: the JSON script from lib/assets contains everything that we know to be static, i.e., the build steps.
+    # A JUnit Grader's test classes are dynamic, thus why we load in the partial script and
+    # append the tap runner at the end.
+    build_script = JSON.load(File.open(Rails.root.join("lib/assets/orca-grading-scripts/junit_grader.json")))
     build_script << {
       cmd: ["java", "-cp", "junit-4.13.2.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
         "edu.neu.TAPRunner", *(self.test_class.split(" ")),
@@ -461,8 +466,21 @@ class JunitGrader < Grader
     }
   end
 
+  def save_uploads
+    super
+  end
+
+  def grader_zip_paths
+    [] unless File.directory? upload.extracted_path
+    keys_to_paths = {
+      'starter': File.join(upload.extracted_path, 'starter.zip'),
+      'testing': File.join(upload.extracted_path, 'testing.zip')
+    }
+    keys_to_paths.select { |_, p| File.exist? p }
+  end
+
   def process_grader_zip
-    @zip_paths = JavaGraderFileProcessor.process_zip(upload, self)
+    JavaGraderFileProcessor.process_zip(upload, self)
   end
 
   def classNamed(dict, name)
