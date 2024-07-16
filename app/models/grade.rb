@@ -49,7 +49,7 @@ class Grade < ApplicationRecord
     self.grading_output = Upload.upload_path_for(val)
   end
 
-  def dir_for_submission(sub)
-    sub.upload.grader_path(grader)
+  def submission_grader_dir
+    submission.upload.grader_path(grader)
   end
 end

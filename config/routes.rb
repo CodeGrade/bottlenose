@@ -15,6 +15,13 @@ Rails.application.routes.draw do
         collection do
           post :create_or_update
         end
+        resources :submissions, only: [] do
+          resources :grades, only: [] do
+            collection do
+              post :orca_response
+            end
+          end
+        end
       end
     end
   end
@@ -46,7 +53,7 @@ Rails.application.routes.draw do
 
   get 'files/*path', to: 'files#upload', constraints: {path: /.*/}
   get 'resources/*path', to: 'files#resource', constraints: {path: /.*/}
-  
+
   resources :terms
 
   resources :courses, except: [:destroy] do
@@ -62,7 +69,7 @@ Rails.application.routes.draw do
       end
     end
 
-    resources :grading_conflicts do 
+    resources :grading_conflicts do
       member do
         post 'resubmit', to: 'grading_conflicts#resubmit_conflict_request', as: 'resubmit'
       end
@@ -147,9 +154,9 @@ Rails.application.routes.draw do
           post 'recreate/:grader_id', to: 'submissions#recreate_grade', as: 'recreate_grade'
           get 'plagiarism', to: 'submissions#edit_plagiarism', as: 'edit_plagiarism'
           patch 'plagiarism', to: 'submissions#update_plagiarism', as: 'update_plagiarism'
-          patch 'split', to: 'submissions#split_submission', as: 'split'          
+          patch 'split', to: 'submissions#split_submission', as: 'split'
         end
-        resources :reviews, only: [:show] 
+        resources :reviews, only: [:show]
         resources :grades, only: [:show, :edit, :update] do
           collection do
             post :orca_response, to: 'grades#orca_response', as: 'orca_response'
