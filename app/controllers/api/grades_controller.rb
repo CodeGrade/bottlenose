@@ -8,41 +8,38 @@ module Api
       grade_id = key['grade_id']
       secret = key['secret']
       grade = Grade.find_by(id: grade_id)
-      if grade.nil?
-        return render json: { message: "No grade for ID #{grade_id}" },
-                      status: :not_found
-      end
-      grader_dir = grade.submission_grader_dir
-      secret_file_path = grader_dir.join('orca.secret')
-      unless valid_orca_response?(secret_file_path, secret)
-        return render json: { message: 'Invalid secret provided.' },
-                      status: :not_found
-      end
-      File.open(grader_dir.join('result.json'), 'w') do |f|
+      return head :bad_request if grade.nil?
+
+      grader = grade.grader
+      return head :bad_request  unless grader.valid_orca_secret? secret, grade
+
+      File.open(grade.submission_grader_dir.join('result.json'), 'w') do |f|
         f.write(JSON.generate(body.except(:key)))
       end
-      FileUtils.rm(secret_file_path)
-      render json: { message: 'OK' }, status: :ok
+
+      FileUtils.rm(grader.orca_secret_path(grade))
+      head :ok
     end
 
     private
 
-    def valid_orca_response?(secret_file_path, response_secret)
-      return false unless File.exist? secret_file_path
-
-      File.open(secret_file_path) do |fp|
-        secret_from_file = fp.read
-        return secret_from_file == response_secret
-      end
-    end
-
     def orca_response_params
       key = params.require(:key)
+      shell_responses = (params[:shell_responses] || []).map do |response_as_param|
+        shell_response_hash = response_as_param.permit!.to_h
+        {
+          **shell_response_hash,
+          status_code: shell_response_hash[:status_code].to_i,
+          timed_out: shell_response_hash[:timed_out] == 'true'
+        }
+      end
+      errors = params[:errors] || []
+      output = params[:output]
       {
-        key: JSON.parse(key),
-        shell_responses: params[:shell_responses] || [],
-        output: params[:output] || [],
-        errors: params[:errors] || []
+        key: JSON.parse(key, { max_nesting: 1, create_additons: false }),
+        shell_responses: shell_responses,
+        output: output,
+        errors: errors
       }
     end
   end

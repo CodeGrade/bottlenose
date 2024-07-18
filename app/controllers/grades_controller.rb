@@ -5,7 +5,7 @@ class GradesController < ApplicationController
   before_action :find_course
   before_action :find_assignment
   before_action :find_submission, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
-  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball, :orca_response]
+  before_action :find_grade, except: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
   before_action :find_grader, only: [:bulk_edit, :bulk_update, :bulk_edit_curve, :bulk_update_curve, :tarball]
   before_action :require_registered_user
   before_action -> {
@@ -46,29 +46,6 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_submission_path(@course, @assignment, @submission)
   end
 
-  def orca_response
-    response_params = orca_response_params
-    key = response_params[:key]
-    grade_id, secret = key['grade_id'], key['secret']
-    grade = Grade.find_by(id: grade_id)
-    if grade.nil?
-      render body: nil, status: 404
-      return
-    end
-
-    grader_dir = grade.dir_for_submission(@submission)
-    secret_file_path = grader_dir.join('orca.secret')
-    unless valid_orca_response?(secret_file_path, secret)
-      render body: nil, status: 404
-      return
-    end
-
-    File.open(grader_dir.join("result.json"), "w") do |f|
-      f.write(JSON.generate(response_params.except(:key)))
-    end
-    FileUtils.rm(secret_file_path)
-  end
-
   def bulk_edit
     self.send("bulk_edit_#{@grader.type}")
   end
@@ -101,7 +78,7 @@ class GradesController < ApplicationController
       FileUtils.rm_rf(export)
     end
   end
-
+  
   def update
     if current_user_site_admin? || current_user_staff_for?(@course)
       self.send("update_#{@assignment.type.capitalize}")
@@ -146,23 +123,6 @@ class GradesController < ApplicationController
 
   protected
 
-  def orca_response_params
-    key = params.require(:key)
-    shell_responses = params.require(:shell_responses).map do |response_as_param|
-      response_hash = response_as_param.permit!.to_h
-      response_hash[:status_code] = response_hash[:status_code].to_i
-      response_hash[:timed_out] = response_hash[:timed_out] == "true" ? true : false
-      response_hash
-    end
-    errors, output = params[:errors] || [], params[:output]
-    {
-      key: JSON.parse(key),
-      shell_responses: shell_responses,
-      output: output,
-      errors: errors
-    }
-  end
-
   def comments_params
     if params[:comments].is_a? String
       comms = JSON.parse(params[:comments])
@@ -184,15 +144,6 @@ class GradesController < ApplicationController
                            :flatPoints, :flatMax,
                            :linearMapMin, :linearMapMax, :linearRawMin, :linearRawMax,
                            :contrastDegree, :contrastWeight)
-  end
-
-  def valid_orca_response?(secret_file_path, response_secret)
-    return false unless File.exist? secret_file_path
-
-    File.open(secret_file_path) do |fp|
-      secret_from_file = fp.read
-      return secret_from_file == response_secret
-    end
   end
 
   def find_grade
@@ -285,7 +236,7 @@ class GradesController < ApplicationController
         course: @course,
         assignment: @assignment,
         submission: @submission
-      )
+      )        
     end
   end
 
@@ -340,7 +291,7 @@ class GradesController < ApplicationController
   # Bulk editing of grades
   def bulk_edit_ExamGrader
     edit_exam_grades_for(@course.students_with_drop_info)
-
+    
     render "edit_#{@assignment.type.underscore}_grades"
   end
   def bulk_edit_RacketStyleGrader
@@ -383,7 +334,7 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade editing for that assignment type is not supported"
   end
-
+  
   def bulk_edit_curve_Files
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk curved grade editing for that assignment type is not supported"
@@ -419,11 +370,11 @@ class GradesController < ApplicationController
   def bulk_update_JavaStyleGrader
     bulk_update_tap_grader
   end
-
+  
   def bulk_update_PythonStyleGrader
     bulk_update_tap_grader
   end
-
+  
   def bulk_update_JunitGrader
     bulk_update_tap_grader
   end
@@ -502,7 +453,7 @@ class GradesController < ApplicationController
 
   def bulk_edit_curve_ExamGrader
     edit_exam_grades_for(@course.students_with_drop_info)
-
+    
     render "edit_#{@assignment.type.underscore}_curved_grades"
   end
   def bulk_update_curve_ExamGrader
@@ -760,7 +711,7 @@ HEADER
     end
     render "submissions/details_files"
   end
-
+  
   # JavaStyleGrader
   def show_JavaStyleGrader
     show_inline_comment_grader
@@ -946,7 +897,7 @@ HEADER
     @submission_info = @related_subs.map do |sub, answers|
       d, f = sub.get_submission_files(current_user)
       @answers_are_newer << (sub.created_at < @submission.created_at)
-      [d, f, sub.id, sub.team&.to_s, sub.user.display_name]
+      [d, f, sub.upload, sub.id, sub.team&.to_s, sub.user.display_name]
     end
 
     if @grade.grading_output

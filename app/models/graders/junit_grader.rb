@@ -73,7 +73,7 @@ class JunitGrader < Grader
       grader_dir.mkpath
       Audit.log("Attempting to send job to Orca.")
       begin
-        secret, secret_file_path = generate_orca_secret!(submission, grader_dir)
+        secret, secret_file_path = generate_orca_secret!(grader_dir)
         Audit.log("Orca secret created.")
         send_job_to_orca(submission, secret)
         Audit.log("Sent job to Orca!")
@@ -99,7 +99,7 @@ class JunitGrader < Grader
 
   def generate_grading_job(sub, secret)
     url_helpers = Rails.application.routes.url_helpers
-    response_path = url_helpers.orca_response_course_assignment_submission_grades_path(
+    response_path = url_helpers.orca_response_api_course_assignment_submission_grades_path(
       assignment.course, assignment, sub
     )
     ans = {}
@@ -107,7 +107,7 @@ class JunitGrader < Grader
     ans["files"] = generate_files_hash sub
     ans["collation"] = sub.team ? { id: sub.team.id.to_s, type: "team" } :
       { id: sub.user.id.to_s, type: "user" }
-    ans["response_url"] = "#{Settings['site_url']}/#{response_path}"
+    ans["response_url"] = "#{Settings['site_url']}#{response_path}"
     ans["script"] = get_grading_script
     ans["grader_image_sha"] = @@dockerfile_sha
     ans["metadata_table"] = generate_metadata_table(sub)
@@ -141,6 +141,19 @@ class JunitGrader < Grader
       end
     end
     errors
+  end
+
+  def valid_orca_secret?(secret, grade)
+    secret_path = orca_secret_path(grade)
+    return false unless File.exist? secret_path
+
+    File.open(secret_path) do |f|
+      return secret == f.read
+    end
+  end
+
+  def orca_secret_path(grade)
+    File.join(grade.submission_grader_dir, 'orca.secret')
   end
 
   def create_image_build_config
@@ -374,7 +387,7 @@ class JunitGrader < Grader
   # Generates a secret to be paired with an Orca grading job
   # and compared upon response. Returns the secret and the
   # file_path to which it was saved.
-  def generate_orca_secret!(sub, secret_save_dir)
+  def generate_orca_secret!(secret_save_dir)
     secret_length = 32
     secret = SecureRandom.hex(secret_length)
     file_path = secret_save_dir.join("orca.secret")
@@ -403,7 +416,7 @@ class JunitGrader < Grader
     # Exponential back off variables. Wait time in ms.
     max_requests = 5
     attempts, status_code = 0, nil
-    while status_code != 200
+    while true
       http_obj = Net::HTTP.new(orca_uri.host, orca_uri.port)
       response = http_obj.send_request(
         'PUT',
@@ -411,12 +424,12 @@ class JunitGrader < Grader
         job_json,
         { 'Content-Type' => 'application/json' }
       )
-      status_code = response.code
-      debugger
       if should_retry_web_request? status_code
         attempts += 1
         break if attempts == max_requests
         sleep(2**attempts + rand)
+      else
+        break
       end
     end
     response.value
