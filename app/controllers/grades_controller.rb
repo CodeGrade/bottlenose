@@ -37,6 +37,7 @@ class GradesController < ApplicationController
                     alert: "That grader is not yet available"
       return
     end
+    @orca_output = @grade.orca_output
     self.send("show_#{@grade.grader.type}")
   end
 
@@ -78,7 +79,7 @@ class GradesController < ApplicationController
       FileUtils.rm_rf(export)
     end
   end
-  
+
   def update
     if current_user_site_admin? || current_user_staff_for?(@course)
       self.send("update_#{@assignment.type.capitalize}")
@@ -236,7 +237,7 @@ class GradesController < ApplicationController
         course: @course,
         assignment: @assignment,
         submission: @submission
-      )        
+      )
     end
   end
 
@@ -291,7 +292,7 @@ class GradesController < ApplicationController
   # Bulk editing of grades
   def bulk_edit_ExamGrader
     edit_exam_grades_for(@course.students_with_drop_info)
-    
+
     render "edit_#{@assignment.type.underscore}_grades"
   end
   def bulk_edit_RacketStyleGrader
@@ -334,7 +335,7 @@ class GradesController < ApplicationController
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk grade editing for that assignment type is not supported"
   end
-  
+
   def bulk_edit_curve_Files
     redirect_back fallback_location: course_assignment_path(@course, @assignment),
                   alert: "Bulk curved grade editing for that assignment type is not supported"
@@ -370,11 +371,11 @@ class GradesController < ApplicationController
   def bulk_update_JavaStyleGrader
     bulk_update_tap_grader
   end
-  
+
   def bulk_update_PythonStyleGrader
     bulk_update_tap_grader
   end
-  
+
   def bulk_update_JunitGrader
     bulk_update_tap_grader
   end
@@ -453,7 +454,7 @@ class GradesController < ApplicationController
 
   def bulk_edit_curve_ExamGrader
     edit_exam_grades_for(@course.students_with_drop_info)
-    
+
     render "edit_#{@assignment.type.underscore}_curved_grades"
   end
   def bulk_update_curve_ExamGrader
@@ -711,7 +712,7 @@ HEADER
     end
     render "submissions/details_files"
   end
-  
+
   # JavaStyleGrader
   def show_JavaStyleGrader
     show_inline_comment_grader

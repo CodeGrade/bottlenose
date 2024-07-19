@@ -49,6 +49,15 @@ class Grade < ApplicationRecord
     self.grading_output = Upload.upload_path_for(val)
   end
 
+  def orca_output
+    return nil unless File.exist? orca_result_path
+    JSON.parse(File.open(orca_result_path).read)
+  end
+
+  def orca_result_path
+    File.join(submission.upload.grader_path(grader), 'result.json')
+  end
+
   def submission_grader_dir
     submission.upload.grader_path(grader)
   end

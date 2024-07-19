@@ -27,10 +27,10 @@
          <span class="sr-only">Toggle Dropdown</span>
     </button><% #
     %><ul class="dropdown-menu">
-      <li><%= link_to "Download raw output", 
+      <li><%= link_to "Download raw output",
               Upload.upload_path_for(@grade.grading_output),
               class: "dropdown-item" %></li>
-      <li><%= link_to "Download detailed build log", 
+      <li><%= link_to "Download detailed build log",
               Upload.upload_path_for(@grade.full_log),
               class: "dropdown-item" %></li>
       <!-- <div class="dropdown-divider"></div> -->
@@ -81,6 +81,11 @@
         <pre><%= t[:info]["stack"].join("\n") %></pre>
       </div>
     <% end %>
-  <% end %>  
+  <% end %>
 </div>
 <% end %>
+
+<hr />
+<h3>Output from Orca:</h3>
+<%# TODO: check if this grader uses Orca %>
+<%= render 'orca_output' %>

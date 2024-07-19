@@ -1,0 +1,42 @@
+<% if @orca_output.nil? %>
+  <%# TODO: add status check rendering here. %>
+  <h4>No output from Orca yet...</h4>
+<% else %>
+  <% unless @orca_output['output'].nil? %>
+    <h4>Output:</h4>
+    <% debugger %>
+  <% end %>
+  <% unless @orca_output['errors'].blank? %>
+    <h4>Errors:</h4>
+    <ul>
+      <% @orca_output['errors'].each do |err| %>
+      <li><pre class="error output"><%= err %></pre></li>
+      <% end %>
+    </ul>
+  <% end %>
+  <% unless @orca_output['shell_responses'].blank? %>
+    <h4>Detailed build:</h4>
+    <ol>
+      <% @orca_output['shell_responses'].each do |cmd| %>
+      <li>
+        <h5>Command: <pre class="output"><%= cmd['cmd'] %></pre></h5>
+        <% if cmd['status_code'].present? && cmd['status_code'] != 0 %>
+        <h5>Exit code: <%= cmd['status_code'] %></h5>
+        <% elsif cmd['timed_out']  %>
+        <h5>This Command Timed Out</h5>
+        <% end %>
+        <% if cmd['stdout'].blank? %>
+        <h5>Output: <i>none</i></h5>
+        <% else %>
+        <h5>Output:</h5>
+        <pre class="output"><%= cmd['stdout'] %></pre>
+        <% end %>
+        <% unless cmd['stderr'].blank? %>
+        <h5>Errors:</h5>
+        <pre class="output error"><%= cmd['stderr'] %></pre>
+        <% end %>
+      </li>
+      <% end %>
+    </ol>
+  <%end%>
+<% end %>
