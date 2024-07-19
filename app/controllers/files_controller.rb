@@ -14,7 +14,7 @@ class FilesController < ApplicationController
   private
 
   def send_file_from_path(file_path)
-    if valid_path_param(params[:path]) && File.file?(file_path)
+    if valid_path_param?(params[:path]) && File.file?(file_path)
       disp = get_file_disposition(File.extname(params[:path]).downcase)
       mime = ApplicationHelper.mime_type(params[:path])
 
@@ -27,10 +27,10 @@ class FilesController < ApplicationController
     end
   end
 
-  def valid_path_param(path)
-    !path.include? "../"
+  def valid_path_param?(path)
+    !path.include?("../") && !%r{/graders/[0-9]+/.*\.secret$}.match?(path)
   end
-  
+
   def get_file_disposition(file_ext)
     case file_ext
     when ".jpg", ".jpeg", ".png", ".gif", ".tap", ".log"
