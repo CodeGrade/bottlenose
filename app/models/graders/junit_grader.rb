@@ -102,17 +102,17 @@ class JunitGrader < Grader
     response_path = url_helpers.orca_response_api_course_assignment_submission_grades_path(
       assignment.course, assignment, sub
     )
-    ans = {}
-    ans["key"] = JSON.generate({ grade_id: self.grade_for(sub).id, secret: secret })
-    ans["files"] = generate_files_hash sub
-    ans["collation"] = sub.team ? { id: sub.team.id.to_s, type: "team" } :
-      { id: sub.user.id.to_s, type: "user" }
-    ans["response_url"] = "#{Settings['site_url']}#{response_path}"
-    ans["script"] = get_grading_script
-    ans["grader_image_sha"] = @@dockerfile_sha
-    ans["metadata_table"] = generate_metadata_table(sub)
-    ans["priority"] = delay_for_sub(sub).in_seconds
-    ans
+    {
+      key: JSON.generate({ grade_id: grade_for(sub).id, secret: secret }),
+      files: generate_files_hash(sub),
+      response_url: "#{Settings['site_url']}#{response_path}",
+      script: get_grading_script,
+      metadata_table: generate_metadata_table(sub),
+      grader_image_sha: @@dockerfile_sha,
+      collation: sub.team ? { id: sub.team.id.to_s, type: "team" } :
+      { id: sub.user.id.to_s, type: "user" },
+      priority: delay_for_sub(sub).in_seconds
+    }
   end
 
   def check_for_malformed_submission(upload)
@@ -448,10 +448,11 @@ class JunitGrader < Grader
       }
     }
     grader_zip_paths.each do |key, path|
-      files[key] = {}
-      files[key]["url"] = Settings["site_url"] + Upload.upload_path_for(path)
-      files[key]["mime_type"] = "application/zip"
-      files[key]["should_replace_paths"] = false
+      files[key] = {
+        url: Settings["site_url"] + Upload.upload_path_for(path),
+        mime_type: "application/zip",
+        should_replace_paths: false
+      }
     end
 
     @@resource_files.each do |file_path, (files_key, mime, should_replace_paths)|
