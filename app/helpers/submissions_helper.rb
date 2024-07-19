@@ -3,7 +3,7 @@ module SubmissionsHelper
     PROXY = "https://deliberately.invalid/?url="
     def initialize(sub)
       @attributes = Loofah::HTML5::WhiteList::ALLOWED_ATTRIBUTES
-      @submission = sub
+      @upload = sub
     end
     def scrub(node)
       if (node.name == "script")
@@ -15,8 +15,8 @@ module SubmissionsHelper
         src_attr = node.attribute('src')
         super if src_attr.nil?
         
-        full_path = @submission.upload.extracted_path + src_attr.value
-        file = @submission.upload.extracted_files.find{|f| f[:full_path] == full_path}
+        full_path = @upload.extracted_path + src_attr.value
+        file = @upload.extracted_files.find{|f| f[:full_path] == full_path}
         if file
           src_attr.value = file[:public_link]
           return node

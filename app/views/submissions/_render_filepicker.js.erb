@@ -94,10 +94,14 @@ $(function (){
     var filesTreeview = $("#" + root).find(".files").treeview(true);
     filesTreeview.expandAll({ silent: true });
     document.addEventListener("keydown", function(e) {
+      if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
       var sel = $(document.getSelection().focusNode).parent(".files li.node-files-" + root + " span");
+      if (document.getSelection() && document.getSelection().focusNode) {
+        if (!e.target.contains(document.getSelection().focusNode)) return;
+      }
       if (sel.length === 0) return;
       sel = filesTreeview.getSelected();
-      if (!sel) return;
+      if (!sel || !sel[0]) return;
       sel = sel[0].href;
       var sib = -10;
       for (var i = 0; i < fileMap[root].length; i++) {
@@ -106,15 +110,12 @@ $(function (){
           break;
         }
       }
-      var move = false;
       if (e.key === "ArrowDown") {
         sib++;
-        move = true;
       } else if (e.key === "ArrowUp") {
         sib--;
-        move = true;
       }
-      if (move && sib >= 0 && sib < fileMap[root].length) {
+      if (sib >= 0 && sib < fileMap[root].length) {
         selectTreeviewFileByIndex(root, sib);
         e.preventDefault();
         e.stopPropagation();
@@ -122,7 +123,7 @@ $(function (){
         if (sel) sel = sel[0];
         if (sel) sel = sel.$el;
         if (sel) sel = sel[0];
-        if (sel.scrollIntoView)
+        if (sel && sel.scrollIntoView)
           sel.scrollIntoView();
       }
     });

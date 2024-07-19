@@ -109,7 +109,7 @@
     </div>
   </div>
   <div class="col-sm-9 tab-content">
-    <%= render "submissions/files", sub_files: @submission_files, root: "all-files", grade_id: @grade&.id %>
+    <%= render "submissions/files", sub_files: @submission_files, sub_upload: @submission.upload, root: "all-files", grade_id: @grade&.id %>
   </div>
 </div>
 

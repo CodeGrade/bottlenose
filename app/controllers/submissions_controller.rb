@@ -423,7 +423,7 @@ class SubmissionsController < ApplicationController
     @submission.related_subs = @subs_to_review
     @submission_info = @subs_to_review&.map do |s|
       d, f = s.get_submission_files(current_user)
-      [d, f, s.id]
+      [d, f, s.upload, s.id]
     end
     if @submission_info.count < @assignment.review_count && @submission_view_new
       # don't bother interlocking this assignment with the underlying one,,
@@ -509,7 +509,7 @@ class SubmissionsController < ApplicationController
       @questions = @assignment.questions
       @submission_info = @submission.related_subs.map do |s|
         d, f = s.get_submission_files(current_user)
-        [d, f, s.id]
+        [d, f, s.upload, s.id]
       end
       render "new_#{@assignment.type.underscore}"
     end
@@ -648,7 +648,7 @@ class SubmissionsController < ApplicationController
     @submission_info = @related_subs.map do |sub, answers|
       d, f = sub.get_submission_files(current_user)
       @answers_are_newer << (sub.created_at < @submission.created_at)
-      [d, f, sub.id, sub.team&.to_s, sub.user.display_name]
+      [d, f, sub.upload, sub.id, sub.team&.to_s, sub.user.display_name]
     end
     render "details_codereview"
   end
