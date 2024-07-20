@@ -28,7 +28,7 @@ class FilesController < ApplicationController
   end
 
   def valid_path_param?(path)
-    !path.include?("../") && !%r{/graders/[0-9]+/.*\.secret$}.match?(path)
+    !path.include?('../') && !Grader.path_to_grader_secret?(path)
   end
 
   def get_file_disposition(file_ext)

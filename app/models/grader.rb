@@ -130,8 +130,12 @@ class Grader < ApplicationRecord
     @delayed_count
   end
 
-  def Grader::orca_config
-    YAML.load(File.open(Rails.root.join("config/orca.yml")))
+  def self.orca_config
+    YAML.load(File.open(Rails.root.join('config/orca.yml')))
+  end
+
+  def self.path_to_grader_secret?(path)
+    %r{/graders/[0-9]+/.*\.secret$}.match?(path)
   end
 
   def generate_grading_job(sub)
@@ -346,8 +350,8 @@ class Grader < ApplicationRecord
 
   def delay_for_sub(sub)
     # Delay = 1 minute * # of subs (excluding given sub) in the last 15 minutes.
-    delay_window = Grader::orca_config['queue']['delay_window_mins'].minutes
-    delay_base = Grader::orca_config['queue']['delay_base_mins'].minutes
+    delay_window = Grader.orca_config['queue']['delay_window_mins'].minutes
+    delay_base = Grader.orca_config['queue']['delay_base_mins'].minutes
     recent_subs = assignment.submissions_for(sub.team || sub.user)
                     .where('created_at >= :start_time', { start_time: sub.created_at - delay_window })
                     .count - 1
