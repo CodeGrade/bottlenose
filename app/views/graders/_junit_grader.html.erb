@@ -53,4 +53,23 @@
       data: {toggle: "toggle", on: "Yes", off: "No"} %></td>
     <td></td>
   </tr>
+  <%# TODO: connect to the Orca "source of truth" for if the image exists.%>
+  <% if f.object.status.dig("useOrca") && !f.object.status.dig("buildStatus").nil? %>
+    <% build_status = f.object.status.dig("buildStatus") %>
+    <tr>
+      <td><strong>Orca Grader Build</strong></td>
+      <%# TODO: link to detailed output logs from Orca %>
+      <% if build_status == "Completed" %>
+        <td class="text-success">Completed</td>
+      <% elsif build_status == "Failed" %>
+        <td class="text-danger">Failed</td>
+      <% else %>
+        <td class="text-warning">Pending</td>
+      <% end %>
+      <% unless f.object.status.dig("logs").nil? %>
+        <td>Build Logs</td>
+      <% end %>
+      <td></td>
+    </tr>
+  <% end %>
 </table>
