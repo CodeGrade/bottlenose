@@ -14,30 +14,18 @@
   }
 -->
 <h3>Detailed Orca Build Logs</h3>
-<% if @build_status == "Completed" %>
-  <div class="alert alert-success">
-    <ul>
-    <% @logs.each do |log| %>
-      <li>
-        <h5><%= log["step"] %></h5>
-        <pre class="ouptut"><%= log["output"] %></pre>
-      </li>
-    <% end %>
-    </ul>
-  </div>
-<% else %>
-  <div class="alert alert-danger">
-    <ul>
-    <% @logs.each do |log| %>
-      <li>
-        <h5><%= log["step"] %></h5>
-        <% if log["output"] %>
-         <pre class="output"><%= log["output"] %></pre>
-        <% else %>
-         <pre class="output error"><%= log["error"] %></pre>
-        <% end %>
-      </li>
-    <% end %>
-    </ul>
-  </div>
-<% end %>
+<ol>
+  <% @logs.each do |log| %>
+    <li>
+      <% if log["error"] %>
+        <div class="alert alert-danger">
+          <h4><%= log["step"] %></h4>
+          <pre class="output error"><%= log["error"] %></pre>
+        </div>
+      <% else %>
+          <h4><%= log["step"] %></h4>
+          <pre class="output"><%= log["output"] %></pre>
+      <% end %>
+    </li>
+  <% end %>
+</ol>
