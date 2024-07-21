@@ -114,19 +114,23 @@ class Grader < ApplicationRecord
   before_save :save_uploads
 
   include GradersHelper
-  
+
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
   end
   @delayed_grades = {}
   @delayed_count = 0
-  
+
   def self.delayed_grades
     @delayed_grades
   end
   def self.delayed_count
     @delayed_count
+  end
+
+  def self.orca_build_config_path
+    File.join(upload.extracted_path, 'orca-build-config.json')
   end
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
@@ -187,7 +191,7 @@ class Grader < ApplicationRecord
       0.0
     end
   end
-  
+
   def grade_sync!(assignment, submission)
     ans = do_grading(assignment, submission)
     submission.compute_grade! if submission.grade_complete?
@@ -325,7 +329,7 @@ class Grader < ApplicationRecord
     self.upload&.save!
     self.extra_upload&.save!
   end
-  
+
   def recompute_grades
     # nothing to do by default
   end
@@ -342,7 +346,7 @@ class Grader < ApplicationRecord
     end
     g
   end
- 
+
   def is_int(v)
     Integer(v) rescue false
   end

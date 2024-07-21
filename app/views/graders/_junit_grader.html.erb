@@ -48,7 +48,7 @@
     <td></td>
   </tr>
   <tr class="form-group">
-    <td><%= f.label "status", "Use Orca?" %></td>
+    <td class="col-sm-4"><%= f.label "status", "Use Orca? (Experimental: do not use yet!)" %></td>
     <td><%= f.check_box :status, checked: f.object.status.dig("useOrca"),
       data: {toggle: "toggle", on: "Yes", off: "No"} %></td>
     <td></td>
@@ -67,7 +67,7 @@
         <td class="text-warning">Pending</td>
       <% end %>
       <% unless f.object.status.dig("logs").nil? %>
-        <td>Build Logs</td>
+        <td><%= link_to "Build Logs", build_log_course_assignment_grader_path(@course, @assignment, f.object) %></td>
       <% end %>
       <td></td>
     </tr>

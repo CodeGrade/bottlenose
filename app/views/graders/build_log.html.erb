@@ -1,0 +1,43 @@
+<!--
+  interface ImageBuildResult {
+    was_successful: boolean,
+    logs: Array<ImageBuildLog>
+  }
+
+  // NOTE: ImageBuildLogs should always have
+  // either an output property (X)OR an error property.
+  // When a build is successful, no logs will have error properties.
+  interface ImageBuildLog {
+    step: string,
+    output?: string,
+    error?: string
+  }
+-->
+<h3>Detailed Orca Build Logs</h3>
+<% if @build_status == "Completed" %>
+  <div class="alert alert-success">
+    <ul>
+    <% @logs.each do |log| %>
+      <li>
+        <h5><%= log["step"] %></h5>
+        <pre class="ouptut"><%= log["output"] %></pre>
+      </li>
+    <% end %>
+    </ul>
+  </div>
+<% else %>
+  <div class="alert alert-danger">
+    <ul>
+    <% @logs.each do |log| %>
+      <li>
+        <h5><%= log["step"] %></h5>
+        <% if log["output"] %>
+         <pre class="output"><%= log["output"] %></pre>
+        <% else %>
+         <pre class="output error"><%= log["error"] %></pre>
+        <% end %>
+      </li>
+    <% end %>
+    </ul>
+  </div>
+<% end %>
