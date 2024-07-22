@@ -15,11 +15,11 @@ Rails.application.routes.draw do
         collection do
           post :create_or_update
         end
-        resources :graders do
-          collection do
-            post :orca_response
-          end
-        end
+      end
+    end
+    resources :graders do
+      collection do
+        post :orca_response
       end
     end
   end
