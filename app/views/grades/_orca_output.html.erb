@@ -4,7 +4,7 @@
 <% else %>
   <% unless @orca_output['output'].nil? %>
     <h4>Output:</h4>
-    <% debugger %>
+    <pre class="output"><%= @orca_output['output'] %></pre>
   <% end %>
   <% unless @orca_output['errors'].blank? %>
     <h4>Errors:</h4>
