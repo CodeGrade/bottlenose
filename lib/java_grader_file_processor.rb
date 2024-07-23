@@ -1,7 +1,7 @@
 require 'fileutils'
 
 class JavaGraderFileProcessor
-  def self.process_zip(upload, grader)
+  def self.process_zip(upload)
     grader_dir = upload.extracted_path
     starter_zip_path = grader_dir.join('starter.zip')
     testing_zip_path = grader_dir.join('testing.zip')
@@ -23,10 +23,10 @@ class JavaGraderFileProcessor
 
   def self.populate_zip(zip_file_path, grader_dir, grader_contents_path)
     Zip::File.open(zip_file_path, Zip::File::CREATE) do |zipfile|
-      Dir[File.join(grader_dir, grader_contents_path, '**', '**')] do |file|
+      Dir[File.join(grader_dir, grader_contents_path, '**', '**')].each do |file|
         path = Pathname.new(file)
         zipfile.add(
-          path.relative_path_from(Pathname.join(grader_dir, grader_contents_path)),
+          path.relative_path_from(File.join(grader_dir, grader_contents_path)),
           file
         )
       end
