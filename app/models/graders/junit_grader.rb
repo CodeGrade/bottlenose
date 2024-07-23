@@ -13,10 +13,10 @@ class JunitGrader < Grader
   validate :proper_configuration
 
   @@resource_files = {
-    "lib/assets/annotations.jar": ["annotations-jar", "application/java-archive", false],
-    "lib/assets/junit-4.13.2.jar": ["junit-jar", "application/java-archive", false],
-    "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/java-archive", false],
-    "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/java-archive", false]
+    "lib/assets/annotations.jar": ["annotations-jar", "application/zip", false],
+    "lib/assets/junit-4.13.2.jar": ["junit-jar", "application/zip", false],
+    "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/zip", false],
+    "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/zip", false]
   }
   @@dockerfile_sha = "orca-java-grader"
 
@@ -443,7 +443,7 @@ class JunitGrader < Grader
     files = {
       submission: {
         url: sub.upload.url,
-        mime_type: sub.upload.read_metadata[:mimetype].first,
+        mime_type: sub.upload.read_metadata[:mimetype],
         should_replace_paths: false
       }
     }
@@ -494,7 +494,7 @@ class JunitGrader < Grader
   end
 
   def process_grader_zip
-    JavaGraderFileProcessor.process_zip(upload, self)
+    JavaGraderFileProcessor.process_zip(upload)
   end
 
   def classNamed(dict, name)

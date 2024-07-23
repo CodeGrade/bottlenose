@@ -20,16 +20,16 @@
     "cmd": ["cp", "-r", "$EXTRACTED/submission/test/.", "$BUILD/"]
   },
   {
-    "cmd": ["cp", "-r", "$EXTRACTED/junit-jar/*", "$BUILD/"]
+    "cmd": "cp -r $EXTRACTED/junit-jar/* $BUILD/"
   },
   {
-    "cmd": ["cp", "-r", "$EXTRACTED/hamcrest-jar/*", "$BUILD/"]
+    "cmd": "cp -r $EXTRACTED/hamcrest-jar/* $BUILD/"
   },
   {
-    "cmd": ["cp", "-r", "$EXTRACTED/junit-tap-jar/*", "$BUILD/"]
+    "cmd": "cp -r $EXTRACTED/junit-tap-jar/* $BUILD/"
   },
   {
-    "cmd": ["cp", "-r", "$EXTRACTED/annotations-jar/*", "$BUILD/"]
+    "cmd": "cp -r $EXTRACTED/annotations-jar/* $BUILD/"
   },
   {
     "condition": {
@@ -46,19 +46,7 @@
     ]
   },
   {
-    "cmd": ["tree"],
-    "working_dir": "$BUILD"
-  },
-  {
-    "cmd": [
-      "find",
-      "-type",
-      "f",
-      "-name",
-      "'*.java'",
-      "-fprint",
-      "compile-list.txt"
-    ],
+    "cmd": "find -type f -name '*.java' > compile-list.txt",
     "working_dir": "$BUILD",
     "label": "gen-compile-list"
   },
@@ -73,10 +61,6 @@
       "junit-4.13.2.jar:junit-tap.jar:hamcrest-core-1.3.jar:annotations.jar:.:./*",
       "@compile-list.txt"
     ],
-    "working_dir": "$BUILD"
-  },
-  {
-    "cmd": ["tree"],
     "working_dir": "$BUILD"
   }
 ]
