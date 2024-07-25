@@ -24,6 +24,11 @@ Rails.application.routes.draw do
         end
       end
     end
+    resources :graders do
+      collection do
+        post :orca_response
+      end
+    end
   end
 
   resources :sandboxes
@@ -113,6 +118,7 @@ Rails.application.routes.draw do
       end
       resources :graders, only: [] do
         member do
+          get 'build_log' => 'graders#build_log'
           get 'all_grades' => 'grades#tarball'
           get 'bulk' => 'grades#bulk_edit'
           post 'bulk' => 'grades#bulk_update'

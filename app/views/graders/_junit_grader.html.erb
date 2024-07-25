@@ -47,4 +47,29 @@
     <td class="col-sm-4"><%= f.spinner "errors_to_show", errs, min: 0, delta: 1 %></td>
     <td></td>
   </tr>
+  <tr class="form-group">
+    <td class="col-sm-4"><%= f.label "status", "Use Orca? (Experimental: do not use yet!)" %></td>
+    <td><%= f.check_box :status, checked: f.object.status.dig("useOrca"),
+      data: {toggle: "toggle", on: "Yes", off: "No"} %></td>
+    <td></td>
+  </tr>
+  <%# TODO: connect to the Orca "source of truth" for if the image exists.%>
+  <% if f.object.status.dig("useOrca") && !f.object.status.dig("buildStatus").nil? %>
+    <% build_status = f.object.status.dig("buildStatus") %>
+    <tr>
+      <td><strong>Orca Grader Build</strong></td>
+      <%# TODO: link to detailed output logs from Orca %>
+      <% if build_status == "Completed" %>
+        <td class="text-success">Completed</td>
+      <% elsif build_status == "Failed" %>
+        <td class="text-danger">Failed</td>
+      <% else %>
+        <td class="text-warning">Pending</td>
+      <% end %>
+      <% unless f.object.status.dig("logs").nil? %>
+        <td><%= link_to "Build Logs", build_log_course_assignment_grader_path(@course, @assignment, f.object) %></td>
+      <% end %>
+      <td></td>
+    </tr>
+  <% end %>
 </table>

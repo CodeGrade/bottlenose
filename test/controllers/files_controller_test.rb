@@ -10,11 +10,9 @@ class FilesControllerTest < ActionController::TestCase
   }
 
   setup do
-    Upload.base_upload_dir.mkpath
-  end
-
-  teardown do
-    FileUtils.rmdir(Upload.base_upload_dir)
+    unless File.directory? Upload.base_upload_dir
+      FileUtils.mkdir Upload.base_upload_dir
+    end
   end
 
   test "should get valid file path" do
