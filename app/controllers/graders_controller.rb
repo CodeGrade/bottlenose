@@ -4,16 +4,16 @@ class GradersController < ApplicationController
   before_action :find_grader
 
   def build_log
-    unless @grader.status['useOrca']
+    unless @grader.orca_status
       return redirect_to course_assignment_path(@course, @assignment),
                          alert: 'This grader does not use Orca'
     end
-    @build_status = @grader.status['buildStatus']
-    if @build_status.nil? || @build_status == 'Pending'
+    build_result = @grader.orca_build_result
+    if build_result.nil?
       return redirect_to course_assignment_path(@course, @assignment),
-                         alert: 'This grader is still being built'
+                         alert: 'This grader has no build logs from Orca'
     end
-    @logs = @grader.status['logs']
+    @logs = build_result['logs']
     render action: 'build_log'
   end
 

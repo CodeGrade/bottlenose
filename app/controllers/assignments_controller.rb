@@ -183,7 +183,6 @@ class AssignmentsController < ApplicationController
     ap = assignment_params
     ap[:graders_attributes]&.each do |k, v|
       v[:upload_by_user_id] = current_user.id
-      v[:status] = { "useOrca": v[:status] == "1" }
     end
     ap[:course_id] = @course.id
     ap[:blame_id] = current_user.id
@@ -221,7 +220,6 @@ class AssignmentsController < ApplicationController
     # Assign the current user to all file uploads for grader configs
     ap[:graders_attributes]&.each do |k, v|
       v[:upload_by_user_id] = current_user.id
-      v[:status] = { "useOrca": v[:status] == "1" }
     end
     if ap[:prevent_late_submissions] == "1" # i.e., true
       ap[:prevent_late_submissions] = ap[:related_assignment_id]
@@ -389,7 +387,7 @@ class AssignmentsController < ApplicationController
                                  :type, :id, :_destroy, :errors_to_show, :test_class, :test_timeout,
                                  :review_target, :review_count, :review_threshold,
                                  :upload_by_user_id, :order, :line_length, :extra_credit,
-                                 :removefile, :status
+                                 :removefile, :orca_status
                                ]
                               )
   end

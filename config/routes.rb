@@ -25,7 +25,7 @@ Rails.application.routes.draw do
       end
     end
     resources :graders do
-      collection do
+      member do
         post :orca_response
       end
     end

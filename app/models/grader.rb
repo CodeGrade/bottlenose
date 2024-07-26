@@ -138,6 +138,19 @@ class Grader < ApplicationRecord
     %r{/graders/[0-9]+/.*\.secret$}.match?(path)
   end
 
+  def has_orca_build_result?
+    File.exist? orca_build_result_path
+  end
+
+  def orca_build_result
+    return nil unless File.exist? orca_build_result_path
+    JSON.parse(File.read(orca_build_result_path))
+  end
+
+  def orca_build_result_path
+    File.join(upload.extracted_path, 'build_result.json')
+  end
+
   def generate_grading_job(sub)
     fail NotImplementedError, "Graders who send jobs to Orca should implement this method."
   end
