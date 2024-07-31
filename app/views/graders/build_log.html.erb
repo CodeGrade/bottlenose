@@ -14,18 +14,22 @@
   }
 -->
 <h3>Detailed Orca Build Logs</h3>
-<ol>
-  <% @logs.each do |log| %>
-    <li>
-      <% if log["error"] %>
-        <div class="alert alert-danger">
-          <h4><%= log["step"] %></h4>
-          <pre class="output error"><%= log["error"] %></pre>
-        </div>
-      <% else %>
-          <h4><%= log["step"] %></h4>
-          <pre class="output"><%= log["output"] %></pre>
-      <% end %>
-    </li>
-  <% end %>
-</ol>
+<% if @logs.length == 1 && @logs.first.is_a?(String) %>
+  <h4><%= @logs.first %></h4>
+<% else %>
+  <ol>
+    <% @logs.each do |log| %>
+      <li>
+        <% if log["error"] %>
+          <div class="alert alert-danger">
+            <h4><%= log["step"] %></h4>
+            <pre class="output error"><%= log["error"] %></pre>
+          </div>
+        <% else %>
+            <h4><%= log["step"] %></h4>
+            <pre class="output"><%= log["output"] %></pre>
+        <% end %>
+      </li>
+    <% end %>
+  </ol>
+<% end %>

@@ -1,5 +1,6 @@
 require 'open3'
 require 'tap_parser'
+require 'digest'
 require 'audit'
 require 'headless'
 
@@ -136,6 +137,39 @@ class Grader < ApplicationRecord
 
   def self.path_to_grader_secret?(path)
     %r{/graders/[0-9]+/.*\.secret$}.match?(path)
+  end
+
+  def valid_orca_secret?(secret, grade)
+    secret_path = orca_secret_path(grade)
+    return false unless File.exist? secret_path
+
+    File.open(secret_path) do |f|
+      return secret == f.read
+    end
+  end
+
+  def orca_secret_for(grade)
+    return nil unless File.exist? orca_secret_path(grade)
+    File.read orca_secret_path(grade)
+  end
+
+  def orca_secret_path(grade)
+    File.join(grade.submission_grader_dir, 'orca.secret')
+  end
+
+  def orca_id_path(grade)
+    File.join grade.submission_grader_dir, 'orca.id'
+  end
+
+  def orca_id_for(grade)
+    return nil unless File.exist? orca_id_path(grade)
+    File.read orca_id_path grade
+  end
+
+  def save_orca_id(grade, orca_id)
+    File.open(orca_id_path(grade), 'w') do |f|
+      f.write orca_id.to_s
+    end
   end
 
   def has_orca_build_result?

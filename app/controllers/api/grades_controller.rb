@@ -1,27 +1,38 @@
 module Api
   class GradesController < ApiController
     skip_before_action :doorkeeper_authorize!
+    before_action :find_grade
 
     def orca_response
-      body = orca_response_params
-      key = body[:key]
-      grade_id = key['grade_id']
-      secret = key['secret']
-      grade = Grade.find_by(id: grade_id)
-      return head :bad_request if grade.nil?
+      response_params = orca_response_params
+      id_update_params = orca_id_update_params
+      return head :bad_request if response_params.nil? && id_update_params.nil?
 
-      grader = grade.grader
-      return head :bad_request  unless grader.valid_orca_secret? secret, grade
-
-      File.open(grade.submission_grader_dir.join('result.json'), 'w') do |f|
-        f.write(JSON.generate(body.except(:key)))
-      end
-
-      FileUtils.rm(grader.orca_secret_path(grade))
-      head :ok
+      response_params.nil? ? handle_orca_id_update(id_update_params) : handle_response(response_params)
     end
 
     private
+
+    def handle_response(response)
+      key = response[:key]
+      secret = key['secret']
+      grader = @grade.grader
+      return head :bad_request unless grader.valid_orca_secret? secret, @grade
+
+      File.open(@grade.submission_grader_dir.join('result.json'), 'w') do |f|
+        f.write(JSON.generate(response.except(:key)))
+      end
+
+      FileUtils.rm(grader.orca_secret_path(@grade))
+      FileUtils.rm(grader.orca_id_path(@grade))
+      head :ok
+    end
+
+    def handle_orca_id_update(response)
+      new_id = response[:job_id]
+      @grade.grader.save_orca_id @grade, new_id
+      head :ok
+    end
 
     def orca_response_params
       key = params.require(:key)
@@ -41,6 +52,21 @@ module Api
         output: output,
         errors: errors
       }
+    rescue ActionController::ParameterMissing
+      nil
+    end
+
+    def orca_id_update_params
+      {
+        job_id: params.require(:jobID).to_i
+      }
+    rescue ActionController::ParameterMissing
+      nil
+    end
+
+    def find_grade
+      @grade = Grade.find_by(id: params[:id])
+      head :bad_request if @grade.nil?
     end
   end
 end

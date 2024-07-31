@@ -8,10 +8,14 @@
      grades = @gradesheet.raw_grades[@submission.id]&.values
      unavailable = (!grades || !(grades.all?(&:available)))
      complete = grades&.all?(&:complete?)
+     grades_to_get_status_for = []
      @gradesheet.graders.each_with_index do |gr, i|
        scores = all_scores[:scores][i]
        update_time = all_grades[:grade_times][i]
        grade = grades&.find{|g| g.grader_id == gr.id}
+       if gr.orca_status && !grade.has_orca_output?
+        grades_to_get_status_for << { id: grade.id, orca_id: gr.orca_id_for(grade) }
+       end
      %>
   <tr>
     <td><%= gr.display_type %> <% if gr.extra_credit %>(Extra credit)<% end %></td>
@@ -33,12 +37,17 @@
               recreate_grade_course_assignment_submission_path(@course, @assignment, @submission, @gradesheet.graders[i]),
               method: 'post', class: "btn btn-warning" %>
         <% else %>
-          <%= link_to "Grader output", 
+          <%= link_to "Grader output",
               course_assignment_submission_grade_path(@course, @assignment, @submission, grade) %>
           <%= if !grade.available then " (unavailable)"
               elsif !grade.complete? then " (hidden)" end %>
+          <% if gr.orca_status %>
+            <br/>
+            <% orca_job_status = grade.has_orca_output? ? "Completed" : "" %>
+            Orca Status: <span id="<%= "orca-status-grade-#{grade.id}" %>" class=""><%= orca_job_status %></span>
+          <% end %>
           <% if gr.autograde? %>
-            <%= link_to "Rerun autograder", 
+            <%= link_to "Rerun autograder",
                 regrade_course_assignment_submission_grade_path(@course, @assignment, @submission, grade),
                 method: 'post', class: "btn btn-default", style: "margin-left: 5em;" %>
           <% else %>
@@ -52,7 +61,7 @@
                 class: "btn btn-success", style: "margin-left: 5em;" %>
             <% end %>
           <% end %>
-        <% end %>  
+        <% end %>
       <% else %>
         <% if grade&.available %>
           <%= link_to "Grader output",
@@ -158,7 +167,7 @@
         <% if @gradesheet.assignment.due_date > DateTime.now %>
         <span class="btn btn-default disabled">Cannot publish grades before assignment is due</span>
         <% elsif complete && unavailable %>
-        <%= link_to "Publish grades", 
+        <%= link_to "Publish grades",
             publish_course_assignment_submission_path(@course, @gradesheet.assignment, @submission), class: "btn btn-default",
             method: 'patch',
             data: { confirm: "Are you sure you want to publish grades for this submission?" }%>
@@ -194,3 +203,8 @@
     </td>
   </tr>
 </table>
+<% unless grades_to_get_status_for.length.zero? %>
+  <script>
+    <%= render partial: "scoring_common", formats: [:js], locals: { grades_with_orca_ids: JSON.generate(grades_to_get_status_for) }  %>
+  </script>
+<% end %>

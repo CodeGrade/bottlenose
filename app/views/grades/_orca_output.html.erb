@@ -15,28 +15,36 @@
     </ul>
   <% end %>
   <% unless @orca_output['shell_responses'].blank? %>
-    <h4>Detailed build:</h4>
-    <ol>
-      <% @orca_output['shell_responses'].each do |cmd| %>
-      <li>
-        <h5>Command: <pre class="output"><%= cmd['cmd'] %></pre></h5>
-        <% if cmd['status_code'].present? && cmd['status_code'] != 0 %>
-        <h5>Exit code: <%= cmd['status_code'] %></h5>
-        <% elsif cmd['timed_out']  %>
-        <h5>This Command Timed Out</h5>
-        <% end %>
-        <% if cmd['stdout'].blank? %>
-        <h5>Output: <i>none</i></h5>
-        <% else %>
-        <h5>Output:</h5>
-        <pre class="output"><%= cmd['stdout'] %></pre>
-        <% end %>
-        <% unless cmd['stderr'].blank? %>
-        <h5>Errors:</h5>
-        <pre class="output error"><%= cmd['stderr'] %></pre>
-        <% end %>
-      </li>
-      <% end %>
-    </ol>
+    <div style="margin-top: 2em; margin-bottom: 5em;">
+      <div style="background-color: #eaeaea; padding: 15px 0 10px 10px; cursor: pointer;"
+        class="collapsed" data-toggle="collapse" data-target="#detailed-build"
+        id="details-collapse">
+        <h3 style="margin: 0 0 0 2px;">Detailed Build</h3>
+      </div>
+      <div id="detailed-build" class="collapse" style="border: 1px solid #ddd; padding-right: 10px;">
+        <ol>
+          <% @orca_output['shell_responses'].each do |cmd| %>
+          <li>
+            <h5>Command: <pre class="output"><%= cmd['cmd'] %></pre></h5>
+            <% if cmd['status_code'].present? && cmd['status_code'] != 0 %>
+            <h5>Exit code: <%= cmd['status_code'] %></h5>
+            <% elsif cmd['timed_out']  %>
+            <h5>This Command Timed Out</h5>
+            <% end %>
+            <% if cmd['stdout'].blank? %>
+            <h5>Output: <i>none</i></h5>
+            <% else %>
+            <h5>Output:</h5>
+            <pre class="output"><%= cmd['stdout'] %></pre>
+            <% end %>
+            <% unless cmd['stderr'].blank? %>
+            <h5>Errors:</h5>
+            <pre class="output error"><%= cmd['stderr'] %></pre>
+            <% end %>
+          </li>
+          <% end %>
+        </ol>
+      </div>
+    </div>
   <%end%>
 <% end %>

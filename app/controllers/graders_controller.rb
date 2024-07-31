@@ -17,6 +17,11 @@ class GradersController < ApplicationController
     render action: 'build_log'
   end
 
+  def rebuild_orca_image
+    @grader.send_build_request_to_orca
+    redirect_to edit_course_assignment_path(@course, @assignment), notice: 'Requested Orca to rebuild this image.'
+  end
+
   private
 
   def find_grader

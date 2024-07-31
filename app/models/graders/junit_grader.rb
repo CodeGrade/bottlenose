@@ -8,6 +8,7 @@ require 'java_grader_file_processor'
 
 class JunitGrader < Grader
   after_initialize :load_junit_params
+  after_initialize :send_build_request_to_orca
   after_save :process_grader_zip
   before_validation :set_junit_params
   validate :proper_configuration
@@ -18,7 +19,14 @@ class JunitGrader < Grader
     "lib/assets/junit-tap.jar": ["junit-tap-jar", "application/zip", false],
     "lib/assets/hamcrest-core-1.3.jar": ["hamcrest-jar", "application/zip", false]
   }
-  @@dockerfile_sha = "orca-java-grader"
+
+  def self.dockerfile_path
+    Rails.root.join 'lib/assets/dockerfiles/java-grader.Dockerfile'
+  end
+
+  def self.dockerfile_sha_sum
+    Digest::SHA256.hexdigest(File.read(JunitGrader.dockerfile_path))
+  end
 
   def autograde?
     true
@@ -69,50 +77,95 @@ class JunitGrader < Grader
 
   def grade(assignment, submission, prio = 0)
     Thread.new do
-      grader_dir = submission.upload.grader_path(self)
-      grader_dir.mkpath
+      grade = grade_for submission
+      grade.submission_grader_dir.mkpath
       Audit.log("Attempting to send job to Orca.")
       begin
-        secret, secret_file_path = generate_orca_secret!(grader_dir)
+        FileUtils.rm grade.orca_result_path if grade.has_orca_output?
+        secret, secret_file_path = generate_orca_secret!(grade.submission_grader_dir)
         Audit.log("Orca secret created.")
-        send_job_to_orca(submission, secret)
+        orca_id = send_job_to_orca(submission, secret)
+        save_orca_id grade, orca_id
         Audit.log("Sent job to Orca!")
       rescue IOError => e
         error_str = "Failed to create secret for job; encountered the following: #{e}"
         Audit.log(error_str)
-        write_failed_job_result(error_str, grader_dir)
+        write_failed_job_result(error_str, grade.orca_result_path)
       rescue Net::HTTPError => e
         FileUtils.rm(secret_file_path)
         error_str = "Failed to send job to Orca; enountered the following: #{e}"
         Audit.log(error_str)
-        write_failed_job_result(error_str, grader_dir)
+        write_failed_job_result(error_str, grade.orca_result_path)
+      rescue StandardError => e
+        FileUtils.rm(secret_file_path) if File.exist? secret_file_path
+        error_str = "Unexpected error while attempting to create and send job to Orca; enountered the following: #{e}"
+        Audit.log(error_str)
+        write_failed_job_result(error_str, grade.orca_result_path)
       end
     end
     super(assignment, submission, prio)
   end
 
   def send_job_to_orca(submission, secret)
-    orca_url = Grader::orca_config['site_url'][Rails.env]
+    orca_url = Grader.orca_config['site_url'][Rails.env]
     job_json = JSON.generate(generate_grading_job(submission, secret))
     put_job_json_with_retry!(URI.parse("#{orca_url}/api/v1/grading_queue"), job_json)
   end
 
   def generate_grading_job(sub, secret)
-    url_helpers = Rails.application.routes.url_helpers
-    response_path = url_helpers.orca_response_api_course_assignment_submission_grades_path(
-      assignment.course, assignment, sub
-    )
+    grade = grade_for sub
     {
       key: JSON.generate({ grade_id: grade_for(sub).id, secret: secret }),
       files: generate_files_hash(sub),
-      response_url: "#{Settings['site_url']}#{response_path}",
+      response_url: grade.orca_response_url,
       script: get_grading_script,
       metadata_table: generate_metadata_table(sub),
-      grader_image_sha: @@dockerfile_sha,
+      grader_image_sha: JunitGrader.dockerfile_sha_sum,
       collation: sub.team ? { id: sub.team.id.to_s, type: "team" } :
       { id: sub.user.id.to_s, type: "user" },
       priority: delay_for_sub(sub).in_seconds
     }
+  end
+
+  def send_build_request_to_orca
+    Thread.new do
+      begin
+        if File.exist? orca_build_result_path
+          FileUtils.remove_file orca_build_result_path
+        end
+        orca_url = Grader.orca_config['site_url'][Rails.env]
+        body, status_code = post_image_request_with_retry(
+          URI.parse("#{orca_url}/api/v1/grader_images"),
+          orca_image_build_config
+        )
+        handle_image_build_attempt body['message'], status_code
+      rescue StandardError => e
+        handle_image_build_attempt e.message
+      end
+    end
+  end
+
+  def orca_image_build_config
+    url_helpers = Rails.application.routes.url_helpers
+    response_url = url_helpers.orca_response_api_grader_path(self)
+    dockerfile_contents = File.read(JunitGrader.dockerfile_path)
+    sha_sum = Digest::SHA256.hexdigest dockerfile_contents
+    {
+      dockerfile_contents: dockerfile_contents,
+      dockerfile_sha_sum: sha_sum,
+      response_url: response_url
+    }
+  end
+
+  def handle_image_build_attempt(message, status_code=nil)
+    return if status_code == 200 && message == 'OK'
+    build_result = {
+      was_successful: status_code == 200,
+      logs: [message]
+    }
+    File.open(orca_build_result_path, 'w') do |f|
+      f.write JSON.generate(build_result)
+    end
   end
 
   def check_for_malformed_submission(upload)
@@ -143,36 +196,10 @@ class JunitGrader < Grader
     errors
   end
 
-  def valid_orca_secret?(secret, grade)
-    secret_path = orca_secret_path(grade)
-    return false unless File.exist? secret_path
-
-    File.open(secret_path) do |f|
-      return secret == f.read
-    end
-  end
-
-  def orca_secret_path(grade)
-    File.join(grade.submission_grader_dir, 'orca.secret')
-  end
-
   def create_image_build_config
     save_dir = upload.grader_path(self)
     File.open(save_dir.join('image-config.json'), 'w') do |f|
       f.write(image_build_config)
-    end
-  end
-
-  def image_build_config
-    # TODO: This should be saved to the assets or resources dir.
-    dockerfile_path = Rails.root.join("app/models/graders/dockerfiles/orca-java-grader.Dockerfile")
-    File.open(dockerfile_path) do |dockerfile_fp|
-      contents = dockerfile_fp.read
-      sha_sum = Digest::SHA256.base64digest
-      return {
-        dockerfileContents: contents,
-        dockerfileSHASum: sha_sum
-      }
     end
   end
 
@@ -397,9 +424,9 @@ class JunitGrader < Grader
     [secret, file_path]
   end
 
-  def write_failed_job_result(error_str, result_dir)
+  def write_failed_job_result(error_str, result_path)
     result = generate_failed_job_result(error_str)
-    File.open(result_dir.join('result.json'), 'w') do |f|
+    File.open(result_path, 'w') do |f|
       f.write(result.to_json)
     end
   end
@@ -415,7 +442,7 @@ class JunitGrader < Grader
   def put_job_json_with_retry!(orca_uri, job_json)
     # Exponential back off variables. Wait time in ms.
     max_requests = 5
-    attempts, status_code = 0, nil
+    attempts = 0
     while true
       http_obj = Net::HTTP.new(orca_uri.host, orca_uri.port)
       response = http_obj.send_request(
@@ -424,15 +451,26 @@ class JunitGrader < Grader
         job_json,
         { 'Content-Type' => 'application/json' }
       )
-      if should_retry_web_request? status_code
-        attempts += 1
-        break if attempts == max_requests
-        sleep(2**attempts + rand)
-      else
-        break
-      end
+      break unless should_retry_web_request? response.code.to_i
+      attempts += 1
+      break if attempts == max_requests
+      sleep(2**attempts + rand)
     end
     response.value
+    JSON.parse(response.body)['jobID']
+  end
+
+  def post_image_request_with_retry(orca_uri, image_build_req_body)
+    max_requests = 5
+    attempts = 0
+    while true
+      response = Net::HTTP.post orca_uri, JSON.generate(image_build_req_body), { 'Content-Type' => 'application/json' }
+      break unless should_retry_web_request? response.code.to_i
+      attempts += 1
+      break if attempts == max_requests
+      sleep(2**attempts + rand)
+    end
+    [JSON.parse(response.body), response.code.to_i]
   end
 
   def should_retry_web_request?(status_code)

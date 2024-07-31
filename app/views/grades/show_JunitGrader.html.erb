@@ -85,7 +85,8 @@
 </div>
 <% end %>
 
-<hr />
-<h3>Output from Orca:</h3>
-<%# TODO: check if this grader uses Orca %>
-<%= render 'orca_output' %>
+<% if @grader.orca_status %>
+  <hr />
+  <h3>Output from Orca:</h3>
+  <%= render 'orca_output' %>
+<% end %>

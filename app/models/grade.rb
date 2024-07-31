@@ -49,13 +49,22 @@ class Grade < ApplicationRecord
     self.grading_output = Upload.upload_path_for(val)
   end
 
+  def has_orca_output?
+    File.exist? orca_result_path
+  end
+
   def orca_output
-    return nil unless File.exist? orca_result_path
+    return nil unless has_orca_output?
     JSON.parse(File.open(orca_result_path).read)
   end
 
   def orca_result_path
     File.join(submission.upload.grader_path(grader), 'result.json')
+  end
+
+  def orca_response_url
+    url_helpers = Rails.application.routes.url_helpers
+    "#{Settings['site_url']}#{url_helpers.orca_response_api_grade_path(self.id)}"
   end
 
   def submission_grader_dir
