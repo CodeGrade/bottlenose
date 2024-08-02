@@ -14,7 +14,7 @@
        update_time = all_grades[:grade_times][i]
        grade = grades&.find{|g| g.grader_id == gr.id}
        if gr.orca_status && !grade.has_orca_output?
-        grades_to_get_status_for << { id: grade.id, orca_id: gr.orca_id_for(grade) }
+        grades_to_get_status_for << { id: grade.id, job_status: gr.orca_job_status_for(grade) }
        end
      %>
   <tr>
@@ -205,6 +205,6 @@
 </table>
 <% unless grades_to_get_status_for.length.zero? %>
   <script>
-    <%= render partial: "scoring_common", formats: [:js], locals: { grades_with_orca_ids: JSON.generate(grades_to_get_status_for) }  %>
+    <%= render partial: "scoring_common", formats: [:js], locals: { grades_with_orca_job_status: JSON.generate(grades_to_get_status_for) }  %>
   </script>
 <% end %>

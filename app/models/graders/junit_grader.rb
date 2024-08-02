@@ -8,8 +8,8 @@ require 'java_grader_file_processor'
 
 class JunitGrader < Grader
   after_initialize :load_junit_params
-  after_initialize :send_build_request_to_orca
-  after_save :process_grader_zip
+  after_create :send_build_request_to_orca
+  # after_save :process_grader_zip
   before_validation :set_junit_params
   validate :proper_configuration
 
@@ -84,8 +84,8 @@ class JunitGrader < Grader
         FileUtils.rm grade.orca_result_path if grade.has_orca_output?
         secret, secret_file_path = generate_orca_secret!(grade.submission_grader_dir)
         Audit.log("Orca secret created.")
-        orca_id = send_job_to_orca(submission, secret)
-        save_orca_id grade, orca_id
+        status = send_job_to_orca(submission, secret)
+        save_orca_job_status grade, status
         Audit.log("Sent job to Orca!")
       rescue IOError => e
         error_str = "Failed to create secret for job; encountered the following: #{e}"
@@ -115,7 +115,7 @@ class JunitGrader < Grader
   def generate_grading_job(sub, secret)
     grade = grade_for sub
     {
-      key: JSON.generate({ grade_id: grade_for(sub).id, secret: secret }),
+      key: JSON.generate({ secret: secret }),
       files: generate_files_hash(sub),
       response_url: grade.orca_response_url,
       script: get_grading_script,
@@ -457,7 +457,7 @@ class JunitGrader < Grader
       sleep(2**attempts + rand)
     end
     response.value
-    JSON.parse(response.body)['jobID']
+    JSON.parse(response.body)['status']
   end
 
   def post_image_request_with_retry(orca_uri, image_build_req_body)
@@ -520,6 +520,7 @@ class JunitGrader < Grader
 
   def save_uploads
     super
+    JavaGraderFileProcessor.process_zip(self.upload)
   end
 
   def grader_zip_paths
@@ -531,10 +532,10 @@ class JunitGrader < Grader
     keys_to_paths.select { |_, p| File.exist? p }
   end
 
-  def process_grader_zip
-    JavaGraderFileProcessor.process_zip(upload)
-  end
-
+  # def process_grader_zip
+  #   JavaGraderFileProcessor.process_zip(self.upload)
+  # end
+  #
   def classNamed(dict, name)
     sources = name.split(".")
     sources[-1] += "\.java"

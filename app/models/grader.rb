@@ -157,18 +157,18 @@ class Grader < ApplicationRecord
     File.join(grade.submission_grader_dir, 'orca.secret')
   end
 
-  def orca_id_path(grade)
-    File.join grade.submission_grader_dir, 'orca.id'
+  def orca_job_status_path(grade)
+    File.join grade.submission_grader_dir, 'job_status.json'
   end
 
-  def orca_id_for(grade)
-    return nil unless File.exist? orca_id_path(grade)
-    File.read orca_id_path grade
+  def orca_job_status_for(grade)
+    return nil unless File.exist? orca_job_status_path(grade)
+    JSON.parse(File.read(orca_job_status_path(grade)))
   end
 
-  def save_orca_id(grade, orca_id)
-    File.open(orca_id_path(grade), 'w') do |f|
-      f.write orca_id.to_s
+  def save_orca_job_status(grade, status)
+    File.open(orca_job_status_path(grade), 'w') do |f|
+      f.write JSON.generate(status)
     end
   end
 
