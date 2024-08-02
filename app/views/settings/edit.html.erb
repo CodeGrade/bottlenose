@@ -29,6 +29,13 @@
   </div>
 
   <div class="form-group">
+    <%= label_tag :orca_api_key, "Orca API Key" %>
+    <%= text_field_tag :orca_api_key, @cfg["orca_api_key"], class: 'form-control' %>
+
+    <p>This is the API Key needed to utilize Orca API "mutation" endpoints.</p>
+  </div>
+
+  <div class="form-group">
     <%= submit_tag "Save Settings", class: 'btn btn-primary' %>
   </div>
 <% end %>

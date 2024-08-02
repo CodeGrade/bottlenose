@@ -449,7 +449,10 @@ class JunitGrader < Grader
         'PUT',
         orca_uri.path,
         job_json,
-        { 'Content-Type' => 'application/json' }
+        {
+          'Content-Type' => 'application/json',
+          'x-api-key' => Settings['orca_api_key']
+        }
       )
       break unless should_retry_web_request? response.code.to_i
       attempts += 1
@@ -464,7 +467,14 @@ class JunitGrader < Grader
     max_requests = 5
     attempts = 0
     while true
-      response = Net::HTTP.post orca_uri, JSON.generate(image_build_req_body), { 'Content-Type' => 'application/json' }
+      response = Net::HTTP.post(
+        orca_uri,
+        JSON.generate(image_build_req_body),
+        {
+          'Content-Type' => 'application/json',
+          'x-api-key' => Settings['orca_api_key']
+        }
+      )
       break unless should_retry_web_request? response.code.to_i
       attempts += 1
       break if attempts == max_requests
