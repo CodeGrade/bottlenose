@@ -9,7 +9,7 @@ require 'java_grader_file_processor'
 class JunitGrader < Grader
   after_initialize :load_junit_params
   after_create :send_build_request_to_orca
-  # after_save :process_grader_zip
+  after_save :process_grader_zip
   before_validation :set_junit_params
   validate :proper_configuration
 
@@ -530,7 +530,6 @@ class JunitGrader < Grader
 
   def save_uploads
     super
-    JavaGraderFileProcessor.process_zip(self.upload)
   end
 
   def grader_zip_paths
@@ -542,10 +541,10 @@ class JunitGrader < Grader
     keys_to_paths.select { |_, p| File.exist? p }
   end
 
-  # def process_grader_zip
-  #   JavaGraderFileProcessor.process_zip(self.upload)
-  # end
-  #
+  def process_grader_zip
+    JavaGraderFileProcessor.process_zip(self.upload)
+  end
+
   def classNamed(dict, name)
     sources = name.split(".")
     sources[-1] += "\.java"

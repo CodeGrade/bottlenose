@@ -23,7 +23,7 @@ class JavaGraderFileProcessor
 
   def self.populate_zip(zip_file_path, grader_dir, grader_contents_path)
     Zip::File.open(zip_file_path, Zip::File::CREATE) do |zipfile|
-      Dir[File.join(grader_dir, grader_contents_path, '**', '**')].each do |file|
+      Find.find(File.join(grader_dir, grader_contents_path)) do |file|
         path = Pathname.new(file)
         zipfile.add(
           path.relative_path_from(File.join(grader_dir, grader_contents_path)),
