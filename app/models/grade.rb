@@ -38,6 +38,32 @@ class Grade < ApplicationRecord
     self.grading_output&.sub(/#{go.basename}$/, "details.log")
   end
 
+  def can_compare_orca_tap?
+    return false unless has_orca_output?
+    !(self.grading_output.nil? || orca_output['output'].nil?)
+  end
+
+  def orca_tap_comparison
+    local_tap = TapParser.new(File.read(self.grading_output_path))
+    orca_tap = TapParser.new(orca_output['output'])
+    unless local_tap.test_count == orca_tap.test_count
+      return "Test count does not match; Bottlenose: #{local_tap.test_count} / Orca: #{orca_tap.test_count}"
+    end
+    local_names_to_weights = local_tap.tests.map { |t| [t[:comment], t[:info]['weight']] }.to_h
+    orca_names_to_weights = orca_tap.tests.map { |t| [t[:comment], t[:info]['weight']] }.to_h
+    unless local_names_to_weights.keys.sort == orca_names_to_weights.keys.sort
+      return 'Bottlenose and Orca TAP test names do not match.'
+    end
+    unless local_names_to_weights.all? { |n, w| orca_names_to_weights[n] == w }
+      return 'Bottlenose and Orca TAP weights do not match.'
+    end
+    unless local_tap.points_earned == orca_tap.points_earned
+      return 'Bottlenose and Orca scores don\'t match. ' \
+        "Bottlenose #{local_tap.points_earned} / Orca: #{orca_tap.points_earned}"
+    end
+    'Bottlenose TAP and Orca TAP match.'
+  end
+
   def grading_output_path
     if self.grading_output
       Upload.full_path_for(self.grading_output)
