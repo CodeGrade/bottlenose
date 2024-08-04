@@ -24,7 +24,7 @@
       <div style="background-color: #eaeaea; padding: 15px 0 10px 10px; cursor: pointer;"
         class="collapsed" data-toggle="collapse" data-target="#detailed-build"
         id="details-collapse">
-        <h3 style="margin: 0 0 0 2px;">Detailed Build <small><span id="details-chevron" class="glyphicon glyphicon-chevron-right"></span></small></h3>
+        <h3 style="margin: 0 0 0 2px;">Detailed Build <small><span id="details-chevron" class="glyphicon glyphicon-chevron-down"></span></small></h3>
       </div>
       <div id="detailed-build" class="collapse" style="border: 1px solid #ddd; padding-right: 10px;">
         <ol>
@@ -53,3 +53,7 @@
     </div>
   <% end %>
 <% end %>
+
+<script>
+  <%= render partial: "orca_output", formats: [:js] %>
+</script>

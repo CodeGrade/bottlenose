@@ -1,0 +1,13 @@
+$(function () {
+  const detailsOnClick = function () {
+    const chevronElement = $("#details-chevron");
+    if (chevronElement.hasClass("glyphicon-chevron-down")) {
+      chevronElement.removeClass("glyphicon-chevron-down");
+      chevronElement.addClass("glyphicon-chevron-up");
+    } else {
+      chevronElement.removeClass("glyphicon-chevron-up");
+      chevronElement.addClass("glyphicon-chevron-down");
+    }
+  };
+  $("#details-collapse").click(detailsOnClick);
+});
