@@ -1,0 +1,65 @@
+#!/usr/bin/env ruby
+require 'json'
+require 'uri'
+require 'optparse'
+require 'net/http'
+require 'digest'
+
+options = {}
+required_opts = %w[api-key dockerfile response-url]
+opt_parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: push-orca-image-build [options]'
+  opts.on('-k', '--api-key APIKEY', 'API Key needed to authorize Orca mutation operations.') do |k|
+    options['api-key'] = k
+  end
+  opts.on('-d', '--dockerfile DOCKERFILEPATH', 'Path to dockerfile to push up to Orca.') do |fp|
+    options['dockerfile'] = fp
+  end
+  opts.on('-r', '--response-url RESPONSEURL', 'URL Orca should hit when sending a build result back to client.') do |r|
+    options['response-url'] = r
+  end
+end
+
+opt_parser.parse!(ARGV)
+unless (missing_opts = required_opts.filter { |k| options[k].nil? }).empty?
+  warn "Missing options: #{missing_opts.join ', '}"
+  warn opt_parser
+  exit! 1
+end
+
+dockerfile_contents = File.read options['dockerfile']
+
+image_build_req = {
+  dockerfile_contents: dockerfile_contents,
+  dockerfile_sha_sum: Digest::SHA256.hexdigest(dockerfile_contents),
+  response_url: options['response-url']
+}
+
+max_requests = 5
+attempts = 0
+orca_uri = URI.parse("#{ENV['ORCA_URL'] || 'http://localhost:4000'}/api/v1/grader_images")
+while true
+  warn "Retrying request; attempt no. #{attempts}. Attempts left: #{max_requests - 1 - attempts}" unless attempts.zero?
+  response = Net::HTTP.post(
+    orca_uri,
+    JSON.generate(image_build_req),
+    {
+      'Content-Type' => 'application/json',
+      'x-api-key' => options['api-key']
+    }
+  )
+  break unless [503, 504].include? response.code.to_i
+
+  break if (attempts += 1) == max_requests
+
+  sleep(2**attempts + rand)
+end
+
+status_code = response.code.to_i
+
+if status_code != 200
+  warn "Request could not be completed; See response body below:\n#{response.body}"
+  exit! 1
+end
+
+puts response.body
