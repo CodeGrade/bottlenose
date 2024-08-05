@@ -8,7 +8,6 @@ require 'digest'
 options = {}
 required_opts = %w[api-key dockerfile response-url]
 opt_parser = OptionParser.new do |opts|
-  opts.banner = 'Usage: push-orca-image-build [options]'
   opts.on('-k', '--api-key APIKEY', 'API Key needed to authorize Orca mutation operations.') do |k|
     options['api-key'] = k
   end

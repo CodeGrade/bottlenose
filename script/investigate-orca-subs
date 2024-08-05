@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+=begin
+Given the ID of an assignment, finds all submissions that have local
+TAP output and Orca TAP output that don't match and returns tab-separated
+values for the submission ID and comma-separated reasons for the diff, respectively.
+=end
+
+require 'optparse'
+
+APP_PATH = File.expand_path('../../config/application',  __FILE__)
+require File.expand_path('../../config/boot',  __FILE__)
+require APP_PATH
+Rails.application.require_environment!
+
+options = {}
+required = ['assignment-id']
+opt_parser = OptionParser.new do |opts|
+  opts.on('-a', '--assignment-id ASSIGNMENTID',
+          'Database ID of the assignment whose submissions should be investigated.') do |id|
+    options['assignment-id'] = id
+  end
+end
+opt_parser.parse!(ARGV)
+
+unless (missing = required.filter { |k| options[k].nil? }).empty?
+  warn "Missing options: #{missing.join(', ')}"
+  warn opt_parser
+  exit! 1
+end
+
+begin
+  options['assignment-id'] = Integer(options['assignment-id'])
+rescue ValueError
+  warn 'Provided assignment ID is not an integer.'
+  exit! 1
+end
+
+a = Assignment.find(options['assignment-id'])
+if a.nil?
+  warn 'No assignment exists with the provided ID.'
+  exit! 1
+end
+
+values = []
+a.submissions.each do |sub|
+  grades_with_diff = sub.grades.filter do |g|
+    g.can_compare_orca_tap? && !g.orca_tap_matches_bottlenose?
+  end
+
+  next if grades_with_diff.empty?
+
+  values << [sub.id.to_s, grades_with_diff.map(&:orca_tap_comparison).join(', ')]
+end
+puts "Submission ID\tReasons\n" << values.map { |pair| pair.join("\t") }.join("\n")
