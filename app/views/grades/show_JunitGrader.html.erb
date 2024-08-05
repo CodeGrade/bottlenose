@@ -85,7 +85,7 @@
 </div>
 <% end %>
 
-<% if current_user @grader.orca_status %>
+<% if current_user.site_admin? && @grader.orca_status %>
   <hr />
   <h3>Output from Orca:</h3>
   <%= render 'orca_output' %>

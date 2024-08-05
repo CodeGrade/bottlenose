@@ -37,7 +37,9 @@ class GradesController < ApplicationController
                     alert: "That grader is not yet available"
       return
     end
-    @orca_output = @grade.orca_output
+    if current_user_site_admin?
+      @orca_output = @grade.orca_output
+    end
     self.send("show_#{@grade.grader.type}")
   end
 

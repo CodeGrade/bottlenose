@@ -1,4 +1,5 @@
 class GradersController < ApplicationController
+  before_action :require_site_admin
   before_action :find_course
   before_action :find_assignment
   before_action :find_grader
