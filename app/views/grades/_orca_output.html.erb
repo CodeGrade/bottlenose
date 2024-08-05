@@ -1,15 +1,14 @@
 <% if @orca_output.nil? %>
-  <%# TODO: add status check rendering here. %>
   <h4>No output from Orca yet...</h4>
 <% else %>
   <% unless @orca_output['output'].nil? %>
-    <h4>
       <% if @grade.can_compare_orca_tap? %>
-        <%= @grade.orca_tap_comparison %>
+        <h4 class="<%= @grade.orca_tap_matches_bottlenose? ? 'text-success' : 'text-danger'  %>">
+          <%= @grade.orca_tap_comparison %>
+        </h4>
       <% else %>
-        Waiting on Bottlenose to return TAP output...
+        <h4>Waiting on Bottlenose to return TAP output...</h4>
       <% end %>
-    </h4>
   <% end %>
   <% unless @orca_output['errors'].blank? %>
     <h4>Errors:</h4>
