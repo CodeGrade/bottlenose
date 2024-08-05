@@ -133,5 +133,40 @@ module Api
       post :orca_response, params: controller_params
       assert_response :bad_request
     end
+
+    test 'controller rejects otherwise valid params when key missing' do
+
+      sign_in @fred
+
+      controller_params = @orca_response_base_params
+                          .merge(@orca_response)
+                          .merge({ key: JSON.generate(
+                            {
+                              grade_id: @grade.id,
+                              secret: "This is not the secret you're looking for."
+                            }
+                          ) })
+
+      post :orca_response, params: controller_params
+      assert_response :bad_request
+    end
+
+    test 'controller updates job status for job' do
+      sign_in @fred
+
+      secret_file_path = @grader_dir.join('orca.secret')
+      File.open(secret_file_path, 'w') do |f|
+        f.write @orca_secret
+      end
+
+      contoller_params = @orca_response_base_params
+                         .merge({ key: JSON.generate({ secret: @orca_secret }) })
+                         .merge({ status: { location: 'Queue', id: 10 } })
+      prev_status = @junit_grader.orca_job_status_for @grade
+      post :orca_response, params: contoller_params
+      assert_response :success
+      assert File.exist? @junit_grader.orca_job_status_path(@grade)
+      assert_not prev_status == @junit_grader.orca_job_status_for(@grade)
+    end
   end
 end
