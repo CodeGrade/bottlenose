@@ -73,8 +73,9 @@ module Api
 
     def find_grade
       @grade = Grade.find_by(id: params[:id])
+      return head :bad_request if @grade.nil?
+
       @grader = @grade.grader
-      head :bad_request if @grade.nil?
     end
   end
 end

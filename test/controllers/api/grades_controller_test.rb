@@ -48,10 +48,7 @@ module Api
 
       @orca_secret = 'abcdefg'
       @orca_response = {
-        key: JSON.generate({
-                             grade_id: @grade.id, # Assignment factory yields one grader.
-                             secret: @orca_secret
-                           }),
+        key: JSON.generate({ secret: @orca_secret }),
         output: 'TAP output.',
         shell_responses: [{
           stdout: 'TAP output.',
@@ -64,11 +61,9 @@ module Api
       }
       @grader_dir = @grade.submission_grader_dir
       @grader_dir.mkdir
-      @orca_response_base_params = {
-        course_id: @course.id,
-        assignment_id: @asgn.id,
-        submission_id: @sub.id
-      }
+      @orca_response_base_params = { id: @grade.id }
+      @junit_grader.save_orca_job_status @grade, { 'location' => 'Worker' }
+      assert File.exist? @junit_grader.orca_job_status_path(@grade)
     end
 
     teardown do
@@ -87,6 +82,7 @@ module Api
       post :orca_response, params: controller_params
       assert_response :success
       assert_not File.exist? secret_file_path
+      assert_not File.exist? @junit_grader.orca_job_status_path(@grade)
 
       File.open(@grader_dir.join('result.json')) do |f|
         contents = JSON.parse(f.read)
@@ -104,8 +100,8 @@ module Api
       end
 
       controller_params = @orca_response_base_params
+                          .merge({ id: Grade.last.id + 1 })
                           .merge(@orca_response)
-                          .merge({ key: JSON.generate({ grade_id: Grade.last.id + 1, secret: @orca_secret }) })
       post :orca_response, params: controller_params
       assert_response :bad_request
     end
