@@ -4,6 +4,7 @@ class Settings
       "site_email"   => 'Bottlenose <noreply@example.com>',
       "backup_login" => '',
       "site_url"     => '',
+      "orca_api_key" => '',
     }
   end
 

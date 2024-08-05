@@ -47,4 +47,53 @@
     <td class="col-sm-4"><%= f.spinner "errors_to_show", errs, min: 0, delta: 1 %></td>
     <td></td>
   </tr>
+  <%# TODO: Only render if admin %>
+  <% if current_user.site_admin? %>
+    <tr class="form-group">
+      <td class="col-sm-4"><%= f.label "orca_status", "Use Orca? (Experimental: do not use yet!)" %></td>
+      <td><%= f.check_box :orca_status, checked: f.object.orca_status,
+        data: {toggle: "toggle", on: "Yes", off: "No"} %></td>
+      <td></td>
+    </tr>
+    <% if f.object.orca_status  %>
+      <% if f.object.has_orca_build_result? %>
+        <% build_status = f.object.orca_build_result['was_successful'] ? 'Completed' : 'Failed' %>
+      <% else %>
+        <% build_status = "Pending" %>
+      <% end %>
+      <tr>
+        <td><strong>Orca Grader Build</strong></td>
+        <td>
+        <% if build_status == "Completed" %>
+          <span class="text-success">Completed</span>
+        <% elsif build_status == "Failed" %>
+          <span class="text-danger">Failed</span>
+        <% else %>
+          <span class="text-warning">Pending</span>
+        <% end %>
+        <% if build_status == "Pending" %>
+          <br />
+          <span id="<%= "orca-server-image-status-#{f.object.id}" %>"></span>
+        <% end %>
+        </td>
+        <td>
+          <% if f.object.has_orca_build_result? %>
+            <%= link_to "Build Logs",
+              build_log_course_assignment_grader_path(@course, @assignment, f.object), target: '_blank',
+              class: "btn btn-info"
+            %>
+          <% end %>
+          <%= link_to "Rebuild Orca Image",
+            rebuild_orca_image_course_assignment_grader_path(@course, @assignment, f.object),
+            method: 'POST',
+            class: "btn btn-default" %>
+        </td>
+        <td></td>
+      </tr>
+    <% end %>
+  <% end %>
 </table>
+
+<script>
+  <%= render partial: "graders/junit_grader", formats: [:js], locals: { f: f } %>
+</script>

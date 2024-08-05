@@ -1,0 +1,23 @@
+$(function() {
+  const gradesWithOrcaIDs = JSON.parse('<%= raw grades_with_orca_job_status %>');
+   orcaURL = '<%= Grader.orca_config['site_url'][Rails.env] %>';
+  gradesWithOrcaIDs.forEach(({id, job_status}) => {
+    const { location, id: orca_id } = job_status;
+    const statusDOMID = `orca-status-grade-${id}`;
+    if (location === "Worker") {
+      return $(`#${statusDOMID}`).text("This job is currently being graded.");
+    }
+    const statusURL = `${orcaURL}/api/v1/${location === "HoldingPen" ? "holding_pen" : "grading_queue"}/${orca_id}/status`;
+    $.ajax({
+      url: statusURL,
+      type: 'GET',
+      dataType: 'json',
+      success: function (data) {
+        $(`#${statusDOMID}`).text(data);
+      },
+      error: function (err) {
+        $(`#${statusDOMID}`).text(`Could not fetch orca status; ${err.status} ${err.statusText}`);
+      }
+    });
+  });
+});

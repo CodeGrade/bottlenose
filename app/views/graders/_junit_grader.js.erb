@@ -1,0 +1,17 @@
+$(function () {
+  const statusID = '<%= "orca-server-image-status-#{f.object.id}" %>';
+  const url = '<%= "#{Grader::orca_config["site_url"][Rails.env]}/api/v1/grader_images/status/#{JunitGrader.dockerfile_sha_sum}" %>';
+  if (!$(`#${statusID}`).length) {
+    return;
+  }
+  $.ajax({
+    url,
+    success: function (statusMessage) {
+      $(`#${statusID}`).text(statusMessage);
+    },
+    error: function (err) {
+      $(`#${statusID}`).text(`Could not get status; ${err.status} ${err.statusMessage}`);
+    },
+    dataType: 'json'
+  });
+});

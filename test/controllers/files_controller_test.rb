@@ -48,4 +48,21 @@ class FilesControllerTest < ActionController::TestCase
     end
   end
 
+  test "should error on upload path with grader secret" do
+    top_level_folder = 'submission'
+    grader_path_prefix = 'graders/0'
+    dir = Pathname.new(File.join(@@method_to_dir[:upload], top_level_folder, grader_path_prefix))
+    begin
+      dir.mkpath
+      Tempfile.create(['foo', '.secret'], dir) do |f|
+        file_name = Pathname.new(f.path).basename
+        get "upload", params: {
+          path: File.join(top_level_folder, grader_path_prefix, file_name).to_s
+        }
+        assert_response :missing
+      end
+    ensure
+      FileUtils.rm_rf(File.join(@@method_to_dir[:upload], top_level_folder))
+    end
+  end
 end

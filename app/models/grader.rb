@@ -1,5 +1,6 @@
 require 'open3'
 require 'tap_parser'
+require 'digest'
 require 'audit'
 require 'headless'
 
@@ -114,19 +115,92 @@ class Grader < ApplicationRecord
   before_save :save_uploads
 
   include GradersHelper
-  
+
   class << self
     attr_accessor :delayed_grades
     attr_accessor :delayed_count
   end
+
   @delayed_grades = {}
   @delayed_count = 0
-  
+
   def self.delayed_grades
     @delayed_grades
   end
   def self.delayed_count
     @delayed_count
+  end
+
+  def self.orca_config
+    YAML.load(File.open(Rails.root.join('config/orca.yml')))
+  end
+
+  def self.path_to_grader_secret?(path)
+    %r{/graders/[0-9]+/.*\.secret$}.match?(path)
+  end
+
+  def valid_orca_secret?(secret, grade)
+    secret_path = orca_secret_path(grade)
+    return false unless File.exist? secret_path
+
+    File.open(secret_path) do |f|
+      return secret == f.read
+    end
+  end
+
+  def orca_secret_for(grade)
+    return nil unless File.exist? orca_secret_path(grade)
+    File.read orca_secret_path(grade)
+  end
+
+  def orca_secret_path(grade)
+    File.join(grade.submission_grader_dir, 'orca.secret')
+  end
+
+  def orca_job_status_path(grade)
+    File.join grade.submission_grader_dir, 'job_status.json'
+  end
+
+  def orca_job_status_for(grade)
+    return nil unless File.exist? orca_job_status_path(grade)
+    JSON.parse(File.read(orca_job_status_path(grade)))
+  end
+
+  def save_orca_job_status(grade, status)
+    File.open(orca_job_status_path(grade), 'w') do |f|
+      f.write JSON.generate(status)
+    end
+  end
+
+  def has_orca_build_result?
+    File.exist? orca_build_result_path
+  end
+
+  def orca_build_result
+    return nil unless File.exist? orca_build_result_path
+    JSON.parse(File.read(orca_build_result_path))
+  end
+
+  def orca_build_result_path
+    File.join(upload.extracted_path, 'build_result.json')
+  end
+
+  def generate_grading_job(sub)
+    fail NotImplementedError, "Graders who send jobs to Orca should implement this method."
+  end
+
+  def generate_metadata_table(sub)
+    ans = {}
+    if sub.team
+      ans["display_name"] = sub.team.member_names
+      ans["id"] = sub.team_id.to_s
+      ans["user_or_team"] = "team"
+    else
+      ans["display_name"] = sub.user.display_name
+      ans["id"] = sub.user_id.to_s
+      ans["user_or_team"] = "user"
+    end
+    ans
   end
 
   # Needed because when Cocoon instantiates new graders, it doesn't know what
@@ -187,7 +261,7 @@ class Grader < ApplicationRecord
       0.0
     end
   end
-  
+
   def grade_sync!(assignment, submission)
     ans = do_grading(assignment, submission)
     submission.compute_grade! if submission.grade_complete?
@@ -321,11 +395,21 @@ class Grader < ApplicationRecord
 
   protected
 
+  def delay_for_sub(sub)
+    # Delay = 1 minute * # of subs (excluding given sub) in the last 15 minutes.
+    delay_window = Grader.orca_config['queue']['delay_window_mins'].minutes
+    delay_base = Grader.orca_config['queue']['delay_base_mins'].minutes
+    recent_subs = assignment.submissions_for(sub.team || sub.user)
+                    .where('created_at >= :start_time', { start_time: sub.created_at - delay_window })
+                    .count - 1
+    recent_subs * delay_base
+  end
+
   def save_uploads
     self.upload&.save!
     self.extra_upload&.save!
   end
-  
+
   def recompute_grades
     # nothing to do by default
   end
@@ -342,7 +426,7 @@ class Grader < ApplicationRecord
     end
     g
   end
- 
+
   def is_int(v)
     Integer(v) rescue false
   end
@@ -353,5 +437,4 @@ class Grader < ApplicationRecord
     order = self.assignment.graders.sort_by(&:order).index(self)
     self.errors.add("##{order + 1}", msg)
   end
-
 end
