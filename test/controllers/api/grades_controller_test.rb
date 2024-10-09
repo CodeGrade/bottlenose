@@ -54,7 +54,7 @@ module Api
           stdout: 'TAP output.',
           stderr: '',
           status_code: 0,
-          timed_out: false,
+          did_timeout: false,
           cmd: ['echo', '"TAP output."']
         }],
         errors: []

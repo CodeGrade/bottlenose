@@ -75,7 +75,7 @@ module Api
           {
             **shell_response_hash,
             status_code: shell_response_hash[:status_code].to_i,
-            timed_out: shell_response_hash[:timed_out] == 'true'
+            did_timeout: shell_response_hash[:did_timeout] == 'true'
           }
         end
         errors = params[:errors] || []
