@@ -15,7 +15,7 @@ gem 'devise_ldap_authenticatable' #, github: 'cschiewek/devise_ldap_authenticata
 gem 'pg'
 gem "passenger", ">= 5.0.25", require: "phusion_passenger/rack_handler"
 
-gem 'rexml', '3.2.6' # NOTE: v3.2.7 and up seem to be broken for now
+gem 'rexml', '3.3.9' # NOTE: v3.2.7 and up seem to be broken for now
 # see https://github.com/ruby/rexml/issues/142, https://github.com/ruby/rexml/issues/131
 
 gem 'yaml_db' # used to dump database to YAML
